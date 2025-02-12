@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 from fastapi import FastAPI
 
-from server.infrastructure.di.container import ServerContainer
+from src.server.infrastructure.di.container import ServerContainer
 
 container = None
 
 
 def create_container():
     container = ServerContainer()
-    container.wire(packages=["server.application.controllers"])
+    container.wire(packages=["src.server.application.controllers"])
 
     container.config.from_yaml("./config.yml")
 

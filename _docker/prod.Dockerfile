@@ -1,4 +1,4 @@
-FROM python:3.12.5-slim-bullseye
+FROM python:3.12.8-slim-bullseye
 
 WORKDIR /app
 
@@ -8,13 +8,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install poetry
 COPY pyproject.toml /app/pyproject.toml
-COPY poetry.lock /app/poetry.lock
-RUN poetry lock --no-update \
-    && poetry config virtualenvs.create false \
+RUN poetry config virtualenvs.create false \
     && poetry install --no-root --no-interaction
 
-COPY server /app/server
-COPY core /app/core
+COPY src/server /app/src/server
+COPY src/core /app/src/core
 COPY config.yml /app/config.yml
 COPY _env/prod.env /app/.env
 

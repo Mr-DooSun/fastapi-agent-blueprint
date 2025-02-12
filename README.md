@@ -10,7 +10,9 @@
 
 2. **의존성 설치**
     ```bash
+    poetry env activate
     poetry install
+    pre-commit install
     ```
 
 3. **프로젝트 실행**

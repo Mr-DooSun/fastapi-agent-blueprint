@@ -4,3 +4,13 @@ database:
   host: ${DATABASE_HOST}
   port: ${DATABASE_PORT}
   name: ${DATABASE_NAME}
+
+minio:
+  endpoint: ${MINIO_ENPOINT}
+  access_key: ${MINIO_ACCESS_KEY}
+  secret_key: ${MINIO_SECRET_KEY}
+  bucket_name: ${MINIO_BUCKET_NAME}
+
+rabbitmq:
+  host: ${RABBITMQ_HOST}
+  port: ${RABBITMQ_PORT}

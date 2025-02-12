@@ -1,23 +1,26 @@
-[tool.poetry]
+[project]
 name = "fastapi-layered-architecture"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = [
+    {name = "Mr-DooSun",email = "mrdoosun@gmail.com"}
+]
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.12"
-httpx = "^0.27.2"
-fastapi = "^0.115.4"
-uvicorn = "^0.32.0"
-pre-commit = "^4.0.1"
-sqlalchemy = "^2.0.36"
-poetry-dotenv = "^0.4.0"
-python-dotenv = "^1.0.1"
-dependency-injector = "^4.43.0"
-alembic = "^1.14.0"
+requires-python = "3.12.8"
+dependencies = [
+    "httpx (>=0.28.1,<0.29.0)",
+    "fastapi (>=0.115.8,<0.116.0)",
+    "uvicorn (>=0.34.0,<0.35.0)",
+    "pre-commit (>=4.1.0,<5.0.0)",
+    "sqlalchemy (>=2.0.38,<3.0.0)",
+    "alembic (>=1.14.1,<2.0.0)",
+    "dependency-injector (>=4.45.0,<5.0.0)",
+    "python-dotenv (>=1.0.1,<2.0.0)",
+    "aiomysql (>=0.2.0,<0.3.0)",
+    "pymysql (>=1.1.1,<2.0.0)"
+]
 
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.src.core.masonry.api"
