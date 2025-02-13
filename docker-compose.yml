@@ -4,7 +4,7 @@ services:
   server:
     build:
       context: .
-      dockerfile: _docker/prod.Dockerfile
+      dockerfile: _docker/docker.Dockerfile
     container_name: server
     image: server:v0.0.1
     env_file: _env/prod.env
