@@ -3,6 +3,7 @@ from dependency_injector import containers, providers
 from minio import Minio
 
 from src.core.application.services.base_service import BaseService
+from src.core.application.messaging.rabbitmq_publisher import RabbitMQPublisher
 from src.core.infrastructure.database.database import Database
 from src.core.infrastructure.messaging.rabbitmq_manager import RabbitMQManager
 from src.core.infrastructure.repositories.base_repository import BaseRepository
@@ -32,6 +33,11 @@ class CoreContainer(containers.DeclarativeContainer):
         RabbitMQManager,
         host=config.rabbitmq.host,
         port=config.rabbitmq.port,
+    )
+
+    rabbitmq_publisher = providers.Factory(
+        RabbitMQPublisher,
+        rabbitmq_manager=rabbitmq_manager
     )
 
     base_repository = providers.Singleton(

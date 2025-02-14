@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-import json
-
+# src/core/infrastructure/messaging/rabbitmq_manager.py
 import pika
 
 
@@ -8,30 +6,23 @@ class RabbitMQManager:
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
+        self.connection = None
+        self.channel = None
+        self._connect()
 
-    async def send_message(self, queue_name: str, body: json):
-        try:
-            connection = pika.BlockingConnection(
-                pika.ConnectionParameters(host=self.host, port=self.port)
-            )
-            channel = connection.channel()
+    def _connect(self):
+        if self.connection and self.connection.is_open:
+            return
 
-            try:
-                channel.queue_declare(queue=queue_name, passive=True)
-            except Exception:
-                if channel.is_closed:
-                    channel = self.connection.channel()
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host=self.host, port=self.port)
+        )
+        self.channel = self.connection.channel()
 
-                channel.queue_declare(
-                    queue=queue_name, durable=True, exclusive=False, auto_delete=False
-                )
+    def _ensure_channel(self):
+        if not self.channel or self.channel.is_closed:
+            self._connect()
 
-            channel.basic_publish(
-                exchange="",
-                routing_key=queue_name,
-                body=body,
-                properties=pika.BasicProperties(delivery_mode=2),
-            )
-            print(f"[x] Sent message to {queue_name}")
-        finally:
-            connection.close()
+    def close(self):
+        if self.connection and self.connection.is_open:
+            self.connection.close()
