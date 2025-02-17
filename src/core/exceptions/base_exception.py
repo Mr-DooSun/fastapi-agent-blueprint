@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 
 class BaseCustomException(Exception):
     def __init__(self, message: str, status_code: int = 400):
