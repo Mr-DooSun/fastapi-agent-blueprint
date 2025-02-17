@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from fastapi import FastAPI
 
+from src.core.middleware.exception_handler import ExceptionMiddleware
 from src.server.infrastructure.di.container import ServerContainer
 
 container = None
@@ -20,6 +21,7 @@ def create_app():
     container = create_container()
 
     app = FastAPI(docs_url="/docs")
+    app.add_middleware(ExceptionMiddleware)
 
     return app
 
