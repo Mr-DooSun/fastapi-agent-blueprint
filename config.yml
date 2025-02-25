@@ -1,3 +1,5 @@
+env: ${ENV}
+
 database:
   user: ${DATABASE_USER}
   password: ${DATABASE_PASSWORD}
