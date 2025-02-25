@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
+from typing import List, Union
+
+from src.core.application.dtos.user_dto import UserDto
 from src.core.application.responses.base import BaseResponse
-from src.core.domain.entities.user_entity import UserEntity
-
-
-class UserDto(UserEntity):
-    pass
 
 
 class UserResponse(BaseResponse):
-    data: UserDto
+    data: Union[UserDto, List[UserDto]]
