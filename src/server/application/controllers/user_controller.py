@@ -6,9 +6,9 @@ from typing import List
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
 
 from src.core.application.dtos.user_dto import CreateUserDto, UpdateUserDto, UserDto
+from src.core.application.responses.user_response import UserResponse
 from src.server.application.services.user_service import UserService
 from src.server.infrastructure.di.container import ServerContainer
 
@@ -48,16 +48,10 @@ async def get_users(
 async def get_user_by_user_id(
     user_id: int,
     user_service: UserService = Depends(Provide[ServerContainer.user_service]),
-):
+) -> UserResponse:
     data = await user_service.get_data_by_data_id(data_id=user_id)
     encoded_data = jsonable_encoder(data)
-    return JSONResponse(
-        content={  # content로 직접 반환할 응답 구조 설정
-            "success": True,
-            "message": "Request processed successfully",
-            "data": encoded_data,
-        }
-    )
+    return UserResponse(data=encoded_data)
 
 
 @router.put("/user/{user_id}", summary="유저 수정", tags=["유저"])

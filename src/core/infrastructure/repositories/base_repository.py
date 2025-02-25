@@ -6,15 +6,14 @@ from typing import Callable, Generic, List, Type, TypeVar
 from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.application.dtos.base import BaseRequest
 from src.core.domain.entities.entity import Entity
 from src.core.infrastructure.database.database import Base
 
 SessionFactory = Callable[..., AbstractAsyncContextManager[AsyncSession]]
 
-CreateEntity = TypeVar("CreateEntity", bound=BaseRequest)
+CreateEntity = TypeVar("CreateEntity", bound=Entity)
 ReturnEntity = TypeVar("ReturnEntity", bound=Entity)
-UpdateEntity = TypeVar("UpdateEntity", bound=BaseRequest)
+UpdateEntity = TypeVar("UpdateEntity", bound=Entity)
 
 
 class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):

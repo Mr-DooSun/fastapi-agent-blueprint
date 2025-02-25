@@ -1,21 +1,12 @@
 # -*- coding: utf-8 -*-
 
-
-from src.core.application.dtos.base import BaseRequest, BaseResponse
-from src.core.domain.entities.user_entity import (
-    CreateUserEntity,
-    UpdateUserEntity,
-    UserEntity,
-)
+from src.core.application.dtos.base import BaseRequest
+from src.core.domain.entities.user_entity import CreateUserEntity, UpdateUserEntity
 
 
-class UserDto(BaseResponse, UserEntity):
+class CreateUserRequestDto(BaseRequest, CreateUserEntity):
     pass
 
 
-class CreateUserDto(BaseRequest, CreateUserEntity):
-    pass
-
-
-class UpdateUserDto(BaseRequest, UpdateUserEntity):
+class UpdateUserRequestDto(BaseRequest, UpdateUserEntity):
     pass

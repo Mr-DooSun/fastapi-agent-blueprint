@@ -3,12 +3,13 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List, Type, TypeVar
 
-from src.core.application.dtos.base import BaseRequest, BaseResponse
+from pydantic import BaseModel
+
 from src.core.infrastructure.repositories.base_repository import BaseRepository
 
-CreateDTO = TypeVar("CreateDTO", bound=BaseRequest)
-UpdateDTO = TypeVar("UpdateDTO", bound=BaseRequest)
-ResponseDTO = TypeVar("ResponseDTO", bound=BaseResponse)
+CreateDTO = TypeVar("CreateDTO", bound=BaseModel)
+UpdateDTO = TypeVar("UpdateDTO", bound=BaseModel)
+ResponseDTO = TypeVar("ResponseDTO", bound=BaseModel)
 
 
 class BaseService(ABC):

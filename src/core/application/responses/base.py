@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from abc import ABC
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
@@ -15,5 +16,9 @@ dto_model_config = ConfigDict(
 )
 
 
-class BaseRequest(ABC, BaseModel):
+class BaseResponse(ABC, BaseModel):
+    success: bool = True
+    message: str = "Request processed successfully"
+    data: Optional[Any] = None
+
     model_config = dto_model_config
