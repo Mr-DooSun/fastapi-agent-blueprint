@@ -7,9 +7,9 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 
-from src.core.application.dtos.user_dto import CreateUserDto, UpdateUserDto
-from src.core.application.responses.base import BaseResponse
-from src.core.application.responses.user_response import UserResponse
+from src.core.applications.dtos.user_dto import CreateUserDto, UpdateUserDto
+from src.core.applications.responses.base import BaseResponse
+from src.core.applications.responses.user_response import UserResponse
 from src.server.application.services.user_service import UserService
 from src.server.infrastructure.di.container import ServerContainer
 
