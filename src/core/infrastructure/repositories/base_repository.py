@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 from abc import ABC, abstractmethod
-from contextlib import AbstractAsyncContextManager
-from typing import Callable, Generic, List, Type, TypeVar
+from typing import Generic, List, Type, TypeVar
 
+from fastapi import HTTPException
 from sqlalchemy import insert, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.domain.entities.entity import Entity
-from src.core.infrastructure.database.database import Base
-
-SessionFactory = Callable[..., AbstractAsyncContextManager[AsyncSession]]
+from src.core.infrastructure.database.database import Base, Database
 
 CreateEntity = TypeVar("CreateEntity", bound=Entity)
 ReturnEntity = TypeVar("ReturnEntity", bound=Entity)
@@ -17,8 +14,8 @@ UpdateEntity = TypeVar("UpdateEntity", bound=Entity)
 
 
 class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):
-    def __init__(self, session: SessionFactory) -> None:
-        self.session = session
+    def __init__(self, database: Database) -> None:
+        self.database = database
 
     @property
     @abstractmethod
@@ -41,7 +38,7 @@ class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):
         pass
 
     async def create_data(self, create_data: CreateEntity) -> ReturnEntity:
-        async with self.session() as session:
+        async with self.database.session() as session:
             data = self.model(**create_data.model_dump(exclude_none=True))
 
             session.add(data)
@@ -53,7 +50,7 @@ class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):
     async def create_datas(
         self, create_datas: List[CreateEntity]
     ) -> List[ReturnEntity]:
-        async with self.session() as session:
+        async with self.database.session() as session:
             result = await session.execute(
                 insert(self.model).values(
                     [
@@ -72,7 +69,7 @@ class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):
             return [self.return_entity(**vars(data)) for data in result.scalars().all()]
 
     async def get_datas(self, page: int, page_size: int) -> List[ReturnEntity]:
-        async with self.session() as session:
+        async with self.database.session() as session:
             result = await session.execute(
                 select(self.model).offset((page - 1) * page_size).limit(page_size)
             )
@@ -81,18 +78,23 @@ class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):
         return [self.return_entity(**vars(data)) for data in datas]
 
     async def get_data_by_data_id(self, data_id: int) -> ReturnEntity:
-        async with self.session() as session:
+        async with self.database.session() as session:
             result = await session.execute(
                 select(self.model).filter(self.model.id == data_id)
             )
             data = result.scalar_one_or_none()
 
-        return self.return_entity(**vars(data)) if data else None
+        if not data:
+            raise HTTPException(
+                status_code=404, detail=f"Data with ID {data_id} not found"
+            )
+
+        return self.return_entity(**vars(data))
 
     async def get_datas_by_data_id(
         self, data_id: int, page: int, page_size: int
     ) -> List[ReturnEntity]:
-        async with self.session() as session:
+        async with self.database.session() as session:
             result = await session.execute(
                 select(self.model)
                 .filter(self.model.id == data_id)
@@ -106,7 +108,7 @@ class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):
     async def update_data_by_data_id(
         self, data_id: int, update_data: UpdateEntity
     ) -> ReturnEntity:
-        async with self.session() as session:
+        async with self.database.session() as session:
             result = await session.execute(
                 select(self.model).filter(self.model.id == data_id)
             )
@@ -123,7 +125,7 @@ class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):
             return self.return_entity(**vars(data))
 
     async def delete_data_by_data_id(self, data_id: int) -> None:
-        async with self.session() as session:
+        async with self.database.session() as session:
             result = await session.execute(
                 select(self.model).filter(self.model.id == data_id)
             )

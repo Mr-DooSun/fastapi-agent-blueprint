@@ -9,7 +9,7 @@ from src.server.infrastructure.repositories.user_repository import UserRepositor
 class ServerContainer(CoreContainer):
     user_repository = providers.Singleton(
         UserRepository,
-        session=CoreContainer.database.provided.session,
+        session=CoreContainer.database,
     )
 
     user_service = providers.Factory(

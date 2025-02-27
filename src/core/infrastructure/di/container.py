@@ -41,7 +41,7 @@ class CoreContainer(containers.DeclarativeContainer):
 
     base_repository = providers.Singleton(
         BaseRepository,
-        session=database.provided.session,
+        database=database,
     )
 
     base_service = providers.Factory(
