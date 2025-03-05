@@ -5,6 +5,8 @@ from typing import Any, Optional
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
+from src.core.applications.responses.pagination_response import PaginationResponse
+
 dto_model_config = ConfigDict(
     extra="ignore",
     frozen=True,
@@ -20,5 +22,6 @@ class BaseResponse(ABC, BaseModel):
     success: bool = True
     message: str = "Request processed successfully"
     data: Optional[Any] = None
+    pagination: Optional[PaginationResponse] = None
 
     model_config = dto_model_config
