@@ -6,7 +6,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.core.applications.responses.base import BaseResponse
+from src.core.applications.responses.base_response import BaseResponse
 from src.core.exceptions.base_exception import BaseCustomException
 
 

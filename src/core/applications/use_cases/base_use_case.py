@@ -5,7 +5,7 @@ from typing import List, Type, TypeVar
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 
-from src.core.applications.responses.base import BaseResponse
+from src.core.applications.responses.base_response import BaseResponse
 from src.core.domain.services.base_service import BaseService
 
 CreateDTO = TypeVar("CreateDTO", bound=BaseModel)
