@@ -6,8 +6,7 @@ from typing import List
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 
-from src.core.applications.dtos.user_dto import CreateUserDto, UpdateUserDto
-from src.core.applications.responses.base_response import BaseResponse
+from src.core.applications.dtos.user_dto import CreateUserDto, UpdateUserDto, UserDto
 from src.core.applications.responses.user_response import UserResponse
 from src.server.application.use_cases.user_use_case import UserUseCase
 from src.server.infrastructure.di.server_container import ServerContainer
@@ -22,9 +21,9 @@ async def create_user(
     user_use_case: UserUseCase = Depends(
         Provide[ServerContainer.user_container.user_use_case]
     ),
-) -> BaseResponse:
-    await user_use_case.create_data(create_data=create_data)
-    return BaseResponse()
+) -> UserResponse:
+    data = await user_use_case.create_data(create_data=create_data)
+    return UserResponse(data=data)
 
 
 @router.post("/users", summary="유저 생성 (복수)", tags=["유저"])
@@ -34,9 +33,9 @@ async def create_users(
     user_use_case: UserUseCase = Depends(
         Provide[ServerContainer.user_container.user_use_case]
     ),
-) -> BaseResponse:
-    await user_use_case.create_datas(create_datas=create_datas)
-    return BaseResponse()
+) -> UserResponse:
+    data = await user_use_case.create_datas(create_datas=create_datas)
+    return UserResponse(data=UserDto(data))
 
 
 @router.get("/users", summary="유저 정보 모두 조회", tags=["유저"])
@@ -48,7 +47,8 @@ async def get_users(
         Provide[ServerContainer.user_container.user_use_case]
     ),
 ) -> UserResponse:
-    return await user_use_case.get_datas(page=page, page_size=page_size)
+    data = await user_use_case.get_datas(page=page, page_size=page_size)
+    return UserResponse(data=data)
 
 
 @router.get("/user/{user_id}", summary="유저 정보 조회", tags=["유저"])
@@ -59,7 +59,8 @@ async def get_user_by_user_id(
         Provide[ServerContainer.user_container.user_use_case]
     ),
 ) -> UserResponse:
-    return await user_use_case.get_data_by_data_id(data_id=user_id)
+    data = await user_use_case.get_data_by_data_id(data_id=user_id)
+    return UserResponse(data=data)
 
 
 @router.put("/user/{user_id}", summary="유저 수정", tags=["유저"])
@@ -71,9 +72,10 @@ async def update_user_by_user_id(
         Provide[ServerContainer.user_container.user_use_case]
     ),
 ) -> UserResponse:
-    return await user_use_case.update_data_by_data_id(
+    data = await user_use_case.update_data_by_data_id(
         data_id=user_id, update_data=update_data
     )
+    return UserResponse(data=data)
 
 
 @router.delete("/user/{user_id}", summary="유저 삭제", tags=["유저"])
@@ -84,4 +86,5 @@ async def delete_user_by_user_id(
         Provide[ServerContainer.user_container.user_use_case]
     ),
 ) -> UserResponse:
-    return await user_use_case.delete_data_by_data_id(data_id=user_id)
+    await user_use_case.delete_data_by_data_id(data_id=user_id)
+    return UserResponse()

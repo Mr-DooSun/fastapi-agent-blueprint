@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-from src.core.applications.dtos.user_dto import CreateUserDto, UpdateUserDto
-from src.core.applications.responses.user_response import UserDto
+from src.core.applications.dtos.user_dto import CreateUserDto, UpdateUserDto, UserDto
 from src.core.domain.services.base_service import BaseService
 from src.server.infrastructure.repositories.user_repository import UserRepository
 

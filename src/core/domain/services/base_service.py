@@ -36,23 +36,28 @@ class BaseService(ABC):
         pass
 
     async def create_data(self, create_data: CreateDTO) -> ResponseDTO:
-        return await self.base_repository.create_data(create_data=create_data)
+        data = await self.base_repository.create_data(create_data=create_data)
+        return self.response_dto(**vars(data))
 
     async def create_datas(self, create_datas: List[CreateDTO]) -> List[ResponseDTO]:
-        return await self.base_repository.create_datas(create_datas=create_datas)
+        datas = await self.base_repository.create_datas(create_datas=create_datas)
+        return [self.response_dto(**vars(data)) for data in datas]
 
     async def get_datas(self, page: int, page_size: int) -> List[ResponseDTO]:
-        return await self.base_repository.get_datas(page=page, page_size=page_size)
+        datas = await self.base_repository.get_datas(page=page, page_size=page_size)
+        return [self.response_dto(**vars(data)) for data in datas]
 
     async def get_data_by_data_id(self, data_id: int) -> ResponseDTO:
-        return await self.base_repository.get_data_by_data_id(data_id=data_id)
+        data = await self.base_repository.get_data_by_data_id(data_id=data_id)
+        return self.response_dto(**vars(data))
 
     async def update_data_by_data_id(
         self, data_id: int, update_data: UpdateDTO
     ) -> ResponseDTO:
-        return await self.base_repository.update_data_by_data_id(
+        data = await self.base_repository.update_data_by_data_id(
             data_id=data_id, update_data=update_data
         )
+        return self.response_dto(**vars(data))
 
     async def delete_data_by_data_id(self, data_id: int):
         await self.base_repository.delete_data_by_data_id(data_id=data_id)
