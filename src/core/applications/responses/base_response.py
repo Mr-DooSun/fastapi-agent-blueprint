@@ -23,8 +23,8 @@ class PaginationInfo(BaseModel):
     total_pages: int
     has_previous: bool
     has_next: bool
-    next_page: int
-    previous_page: int
+    next_page: Optional[int] = None
+    previous_page: Optional[int] = None
 
 
 class BaseResponse(ABC, BaseModel):

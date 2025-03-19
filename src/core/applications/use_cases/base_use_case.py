@@ -4,7 +4,7 @@ from typing import List, Type, TypeVar
 
 from pydantic import BaseModel
 
-from src.core.applications.responses.base_response import BaseResponse
+from src.core.applications.responses.base_response import BaseResponse, PaginationInfo
 from src.core.domain.services.base_service import BaseService
 
 CreateDTO = TypeVar("CreateDTO", bound=BaseModel)
@@ -41,7 +41,23 @@ class BaseUseCase(ABC):
         return await self.base_service.create_datas(create_datas=create_datas)
 
     async def get_datas(self, page: int, page_size: int) -> List[ResponseDto]:
-        return await self.base_service.get_datas(page=page, page_size=page_size)
+        datas = await self.base_service.get_datas(page=page, page_size=page_size)
+
+        total_items = await self.base_service.count_datas()
+        total_pages = (total_items + page_size - 1) // page_size
+
+        pagination = PaginationInfo(
+            current_page=page,
+            page_size=page_size,
+            total_items=total_items,
+            total_pages=total_pages,
+            has_previous=page > 1,
+            has_next=page < total_pages,
+            next_page=page + 1 if page < total_pages else None,
+            previous_page=page - 1 if page > 1 else None,
+        )
+
+        return datas, pagination
 
     async def get_data_by_data_id(self, data_id: int) -> ResponseDto:
         return await self.base_service.get_data_by_data_id(data_id=data_id)

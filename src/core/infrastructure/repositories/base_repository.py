@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Generic, List, Type, TypeVar
 
 from fastapi import HTTPException
-from sqlalchemy import insert, select
+from sqlalchemy import func, insert, select
 
 from src.core.domain.entities.entity import Entity
 from src.core.infrastructure.database.database import Base, Database
@@ -45,7 +45,7 @@ class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):
             await session.commit()
             await session.refresh(data)
 
-        return self.return_entity(**vars(data))
+        return self.return_entity.model_validate(vars(data))
 
     async def create_datas(
         self, create_datas: List[CreateEntity]
@@ -66,7 +66,10 @@ class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):
             result = await session.execute(
                 select(self.model).where(self.model.id.in_(inserted_ids))
             )
-            return [self.return_entity(**vars(data)) for data in result.scalars().all()]
+            return [
+                self.return_entity.model_validate(vars(data))
+                for data in result.scalars().all()
+            ]
 
     async def get_datas(self, page: int, page_size: int) -> List[ReturnEntity]:
         async with self.database.session() as session:
@@ -75,7 +78,7 @@ class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):
             )
             datas = result.scalars().all()
 
-        return [self.return_entity(**vars(data)) for data in datas]
+        return [self.return_entity.model_validate(vars(data)) for data in datas]
 
     async def get_data_by_data_id(self, data_id: int) -> ReturnEntity:
         async with self.database.session() as session:
@@ -89,7 +92,7 @@ class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):
                 status_code=404, detail=f"Data with ID {data_id} not found"
             )
 
-        return self.return_entity(**vars(data))
+        return self.return_entity.model_validate(vars(data))
 
     async def get_datas_by_data_id(
         self, data_id: int, page: int, page_size: int
@@ -103,7 +106,11 @@ class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):
             )
             datas = result.scalars().all()
 
-        return [self.return_entity(**vars(data)) for data in datas]
+        return [self.return_entity.model_validate(vars(data)) for data in datas]
+
+    async def count_datas(self) -> int:
+        async with self.database.session() as session:
+            return await session.scalar(select(func.count()).select_from(self.model))
 
     async def update_data_by_data_id(
         self, data_id: int, update_data: UpdateEntity
@@ -122,7 +129,7 @@ class BaseRepository(ABC, Generic[CreateEntity, ReturnEntity, UpdateEntity]):
 
             await session.commit()
             await session.refresh(data)
-            return self.return_entity(**vars(data))
+            return self.return_entity.model_validate(vars(data))
 
     async def delete_data_by_data_id(self, data_id: int) -> None:
         async with self.database.session() as session:

@@ -47,8 +47,8 @@ async def get_users(
         Provide[ServerContainer.user_container.user_use_case]
     ),
 ) -> UserResponse:
-    data = await user_use_case.get_datas(page=page, page_size=page_size)
-    return UserResponse(data=data)
+    data, pagination = await user_use_case.get_datas(page=page, page_size=page_size)
+    return UserResponse(data=data, pagination=pagination)
 
 
 @router.get("/user/{user_id}", summary="유저 정보 조회", tags=["유저"])
