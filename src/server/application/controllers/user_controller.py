@@ -6,7 +6,7 @@ from typing import List
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 
-from src.core.applications.dtos.user_dto import CreateUserDto, UpdateUserDto, UserDto
+from src.core.applications.dtos.user_dto import CreateUserDto, UpdateUserDto
 from src.core.applications.responses.user_response import UserResponse
 from src.server.application.use_cases.user_use_case import UserUseCase
 from src.server.infrastructure.di.server_container import ServerContainer
@@ -35,7 +35,7 @@ async def create_users(
     ),
 ) -> UserResponse:
     data = await user_use_case.create_datas(create_datas=create_datas)
-    return UserResponse(data=UserDto(data))
+    return UserResponse(data=data)
 
 
 @router.get("/users", summary="유저 정보 모두 조회", tags=["유저"])
