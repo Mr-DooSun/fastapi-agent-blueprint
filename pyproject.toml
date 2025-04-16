@@ -1,29 +1,21 @@
 [project]
 name = "fastapi-layered-architecture"
 version = "0.1.0"
-description = ""
-authors = [
-    {name = "Mr-DooSun",email = "mrdoosun@gmail.com"}
-]
+description = "This is layered architecture for fastapi"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12.8"
 dependencies = [
-    "httpx (>=0.28.1,<0.29.0)",
-    "fastapi (>=0.115.8,<0.116.0)",
-    "uvicorn (>=0.34.0,<0.35.0)",
-    "pre-commit (>=4.1.0,<5.0.0)",
-    "sqlalchemy (>=2.0.38,<3.0.0)",
-    "alembic (>=1.14.1,<2.0.0)",
-    "dependency-injector (>=4.45.0,<5.0.0)",
-    "python-dotenv (>=1.0.1,<2.0.0)",
-    "aiomysql (>=0.2.0,<0.3.0)",
-    "pymysql (>=1.1.1,<2.0.0)",
-    "minio (>=7.2.15,<8.0.0)",
-    "pika (>=1.3.2,<2.0.0)",
-    "greenlet (>=3.1.1,<4.0.0)"
+    "aiomysql>=0.2.0",
+    "alembic>=1.15.2",
+    "dependency-injector>=4.46.0",
+    "fastapi>=0.115.12",
+    "greenlet>=3.2.0",
+    "httpx>=0.28.1",
+    "minio>=7.2.15",
+    "pika>=1.3.2",
+    "pre-commit>=4.2.0",
+    "pymysql>=1.1.1",
+    "python-dotenv>=1.1.0",
+    "sqlalchemy>=2.0.40",
+    "uvicorn>=0.34.1",
 ]
-
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
