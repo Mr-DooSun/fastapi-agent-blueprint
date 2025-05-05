@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from urllib.parse import quote_plus
 
@@ -48,8 +49,10 @@ class Database:
         )
 
     @asynccontextmanager
-    async def session(self):
+    async def session(self) -> AsyncGenerator[AsyncSession, None]:
         async with self.async_session_factory() as session:
+            session: AsyncSession
+
             try:
                 yield session
             except IntegrityError:
