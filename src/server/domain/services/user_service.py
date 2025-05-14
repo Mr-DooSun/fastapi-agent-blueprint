@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-from src.core.application.dtos.user_dto import CreateUserDto, UpdateUserDto, UserDto
+from src.core.application.dtos.user_dto import CoreCreateUserDto, CoreUpdateUserDto, CoreUserDto
 from src.core.domain.services.base_service import BaseService
 from src.server.infrastructure.repositories.user_repository import UserRepository
 
@@ -12,12 +12,12 @@ class UserService(BaseService):
 
     @property
     def create_dto(self):
-        return CreateUserDto
+        return CoreCreateUserDto
 
     @property
     def response_dto(self):
-        return UserDto
+        return CoreUserDto
 
     @property
     def update_dto(self):
-        return UpdateUserDto
+        return CoreUpdateUserDto

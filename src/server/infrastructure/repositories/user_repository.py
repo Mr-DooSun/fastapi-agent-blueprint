@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from src.core.domain.entities.user_entity import (
-    CreateUserEntity,
-    UpdateUserEntity,
-    UserEntity,
+    CoreCreateUserEntity,
+    CoreUpdateUserEntity,
+    CoreUserEntity,
 )
 from src.core.infrastructure.database.database import Database
 from src.core.infrastructure.database.models.user_model import UserModel
@@ -20,12 +20,12 @@ class UserRepository(BaseRepository):
 
     @property
     def create_entity(self):
-        return CreateUserEntity
+        return CoreCreateUserEntity
 
     @property
     def return_entity(self):
-        return UserEntity
+        return CoreUserEntity
 
     @property
     def update_entity(self):
-        return UpdateUserEntity
+        return CoreUpdateUserEntity

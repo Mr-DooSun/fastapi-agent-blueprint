@@ -6,7 +6,7 @@ from typing import List
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 
-from src.core.application.dtos.user_dto import CreateUserDto, UpdateUserDto
+from src.core.application.dtos.user_dto import CoreCreateUserDto, CoreUpdateUserDto
 from src.core.application.responses.base_response import BaseResponse
 from src.server.application.use_cases.user_use_case import UserUseCase
 from src.server.infrastructure.di.server_container import ServerContainer
@@ -23,7 +23,7 @@ router = APIRouter()
 )
 @inject
 async def create_user(
-    create_data: CreateUserDto,
+    create_data: CoreCreateUserDto,
     user_use_case: UserUseCase = Depends(
         Provide[ServerContainer.user_container.user_use_case]
     ),
@@ -41,7 +41,7 @@ async def create_user(
 )
 @inject
 async def create_users(
-    create_datas: List[CreateUserDto],
+    create_datas: List[CoreCreateUserDto],
     user_use_case: UserUseCase = Depends(
         Provide[ServerContainer.user_container.user_use_case]
     ),
@@ -97,7 +97,7 @@ async def get_user_by_user_id(
 @inject
 async def update_user_by_user_id(
     user_id: int,
-    update_data: UpdateUserDto,
+    update_data: CoreUpdateUserDto,
     user_use_case: UserUseCase = Depends(
         Provide[ServerContainer.user_container.user_use_case]
     ),
