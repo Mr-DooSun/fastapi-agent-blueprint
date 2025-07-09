@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from typing import Generic, Optional, TypeVar
 
-from pydantic import BaseModel
-
 from src.core.application.dtos.base_config import BaseConfig
 
 
@@ -17,7 +15,7 @@ class PaginationInfo(BaseConfig):
     previous_page: Optional[int] = None
 
 
-ReturnType = TypeVar("ReturnType", bound=BaseModel)
+ReturnType = TypeVar("ReturnType")
 
 
 class BaseResponse(BaseConfig, Generic[ReturnType]):
