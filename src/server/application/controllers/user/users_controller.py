@@ -4,7 +4,7 @@
 from typing import List
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from src.core.application.dtos.common.base_request import IdListDto
 from src.core.application.dtos.common.base_response import SuccessResponse
@@ -78,7 +78,7 @@ async def create_users(
 @inject
 async def get_users(
     page: int = 1,
-    page_size: int = 10,
+    page_size: int = Query(10, alias="pageSize"),
     user_use_case: UsersUseCase = Depends(
         Provide[ServerContainer.user_container.users_use_case]
     ),
