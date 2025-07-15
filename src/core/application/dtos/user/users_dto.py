@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from src.core.application.dtos.common.base_request import BaseRequest
+from src.core.application.dtos.common.base_response import BaseResponse
 from src.core.domain.entities.user.users_entity import (
     CoreCreateUsersEntity,
     CoreUpdateUsersEntity,
@@ -8,13 +9,13 @@ from src.core.domain.entities.user.users_entity import (
 )
 
 
-class CoreUsersDto(CoreUsersEntity):
+class CoreUsersResponse(BaseResponse, CoreUsersEntity):
     pass
 
 
-class CoreCreateUsersDto(BaseRequest, CoreCreateUsersEntity):
+class CoreCreateUsersRequest(BaseRequest, CoreCreateUsersEntity):
     pass
 
 
-class CoreUpdateUsersDto(BaseRequest, CoreUpdateUsersEntity):
+class CoreUpdateUsersRequest(BaseRequest, CoreUpdateUsersEntity):
     pass

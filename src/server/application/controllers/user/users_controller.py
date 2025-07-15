@@ -4,14 +4,19 @@
 from typing import List
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from src.core.application.dtos.common.base_request import IdListDto
 from src.core.application.dtos.common.base_response import SuccessResponse
 from src.core.application.dtos.user.users_dto import (
-    CoreCreateUsersDto,
-    CoreUpdateUsersDto,
-    CoreUsersDto,
+    CoreCreateUsersRequest,
+    CoreUpdateUsersRequest,
+    CoreUsersResponse,
+)
+from src.core.common.dto_utils import dtos_to_entities, entities_to_dtos
+from src.core.domain.entities.user.users_entity import (
+    CoreCreateUsersEntity,
+    CoreUpdateUsersEntity,
 )
 from src.server.application.use_cases.user.users_use_case import UsersUseCase
 from src.server.infrastructure.di.server_container import ServerContainer
@@ -19,21 +24,26 @@ from src.server.infrastructure.di.server_container import ServerContainer
 router = APIRouter()
 
 
+# ==========================================================================================
+
+
 @router.post(
     "/user",
     summary="유저 생성",
-    response_model=SuccessResponse[CoreUsersDto],
+    response_model=SuccessResponse[CoreUsersResponse],
     response_model_exclude={"pagination"},
 )
 @inject
 async def create_user(
-    create_data: CoreCreateUsersDto,
+    create_data: CoreCreateUsersRequest,
     user_use_case: UsersUseCase = Depends(
         Provide[ServerContainer.user_container.users_use_case]
     ),
-) -> SuccessResponse[CoreUsersDto]:
-    data = await user_use_case.create_data(create_data=create_data)
-    return SuccessResponse(data=data)
+) -> SuccessResponse[CoreUsersResponse]:
+    data = await user_use_case.create_data(
+        create_data=create_data.to_entity(CoreCreateUsersEntity)
+    )
+    return SuccessResponse(data=CoreUsersResponse.from_entity(data))
 
 
 # ==========================================================================================
@@ -42,18 +52,19 @@ async def create_user(
 @router.post(
     "/users",
     summary="유저 생성 (복수)",
-    response_model=SuccessResponse[List[CoreUsersDto]],
+    response_model=SuccessResponse[List[CoreUsersResponse]],
     response_model_exclude={"pagination"},
 )
 @inject
 async def create_users(
-    create_datas: List[CoreCreateUsersDto],
+    create_datas: List[CoreCreateUsersRequest],
     user_use_case: UsersUseCase = Depends(
         Provide[ServerContainer.user_container.users_use_case]
     ),
-) -> SuccessResponse[List[CoreUsersDto]]:
-    data = await user_use_case.create_datas(create_datas=create_datas)
-    return SuccessResponse(data=data)
+) -> SuccessResponse[List[CoreUsersResponse]]:
+    entities = dtos_to_entities(create_datas, CoreCreateUsersEntity)
+    datas = await user_use_case.create_datas(create_datas=entities)
+    return SuccessResponse(data=entities_to_dtos(datas, CoreUsersResponse))
 
 
 # ==========================================================================================
@@ -62,18 +73,20 @@ async def create_users(
 @router.get(
     "/users",
     summary="유저 정보 모두 조회",
-    response_model=SuccessResponse[List[CoreUsersDto]],
+    response_model=SuccessResponse[List[CoreUsersResponse]],
 )
 @inject
 async def get_users(
     page: int = 1,
-    page_size: int = 10,
+    page_size: int = Query(10, alias="pageSize"),
     user_use_case: UsersUseCase = Depends(
         Provide[ServerContainer.user_container.users_use_case]
     ),
-) -> SuccessResponse[List[CoreUsersDto]]:
-    data, pagination = await user_use_case.get_datas(page=page, page_size=page_size)
-    return SuccessResponse(data=data, pagination=pagination)
+) -> SuccessResponse[List[CoreUsersResponse]]:
+    datas, pagination = await user_use_case.get_datas(page=page, page_size=page_size)
+    return SuccessResponse(
+        data=entities_to_dtos(datas, CoreUsersResponse), pagination=pagination
+    )
 
 
 # ==========================================================================================
@@ -82,7 +95,7 @@ async def get_users(
 @router.get(
     "/user/{user_id}",
     summary="유저 정보 조회",
-    response_model=SuccessResponse[CoreUsersDto],
+    response_model=SuccessResponse[CoreUsersResponse],
     response_model_exclude_none=True,
     response_model_exclude={"pagination"},
 )
@@ -92,9 +105,9 @@ async def get_user_by_user_id(
     user_use_case: UsersUseCase = Depends(
         Provide[ServerContainer.user_container.users_use_case]
     ),
-) -> SuccessResponse[CoreUsersDto]:
+) -> SuccessResponse[CoreUsersResponse]:
     data = await user_use_case.get_data_by_data_id(data_id=user_id)
-    return SuccessResponse(data=data)
+    return SuccessResponse(data=CoreUsersResponse.from_entity(data))
 
 
 # ==========================================================================================
@@ -103,7 +116,7 @@ async def get_user_by_user_id(
 @router.post(
     "/users/by-ids",
     summary="ID 리스트로 유저 여러 명 조회",
-    response_model=SuccessResponse[List[CoreUsersDto]],
+    response_model=SuccessResponse[List[CoreUsersResponse]],
     response_model_exclude={"pagination"},
 )
 @inject
@@ -112,9 +125,9 @@ async def get_users_by_ids(
     user_use_case: UsersUseCase = Depends(
         Provide[ServerContainer.user_container.users_use_case]
     ),
-) -> SuccessResponse[List[CoreUsersDto]]:
-    data = await user_use_case.get_datas_by_data_ids(payload=payload)
-    return SuccessResponse(data=data)
+) -> SuccessResponse[List[CoreUsersResponse]]:
+    datas = await user_use_case.get_datas_by_data_ids(payload=payload)
+    return SuccessResponse(data=entities_to_dtos(datas, CoreUsersResponse))
 
 
 # ==========================================================================================
@@ -123,21 +136,21 @@ async def get_users_by_ids(
 @router.put(
     "/user/{user_id}",
     summary="유저 수정",
-    response_model=SuccessResponse[CoreUsersDto],
+    response_model=SuccessResponse[CoreUsersResponse],
     response_model_exclude={"pagination"},
 )
 @inject
 async def update_user_by_user_id(
     user_id: int,
-    update_data: CoreUpdateUsersDto,
+    update_data: CoreUpdateUsersRequest,
     user_use_case: UsersUseCase = Depends(
         Provide[ServerContainer.user_container.users_use_case]
     ),
-) -> SuccessResponse[CoreUsersDto]:
+) -> SuccessResponse[CoreUsersResponse]:
     data = await user_use_case.update_data_by_data_id(
-        data_id=user_id, update_data=update_data
+        data_id=user_id, update_data=update_data.to_entity(CoreUpdateUsersEntity)
     )
-    return SuccessResponse(data=data)
+    return SuccessResponse(data=CoreUsersResponse.from_entity(data))
 
 
 # ==========================================================================================

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-from typing import Generic, Optional, TypeVar
+from typing import Generic, Optional, Type, TypeVar
 
 from src.core.application.dtos.common.base_config import ApiConfig
+from src.core.domain.entities.entity import Entity
 
 
 class PaginationInfo(ApiConfig):
@@ -20,6 +21,12 @@ class ExistsData(ApiConfig):
 
 
 ReturnType = TypeVar("ReturnType")
+
+
+class BaseResponse(ApiConfig):
+    @classmethod
+    def from_entity(cls: Type[ReturnType], entity: Entity) -> ReturnType:
+        return cls(**entity.model_dump())
 
 
 class SuccessResponse(ApiConfig, Generic[ReturnType]):
