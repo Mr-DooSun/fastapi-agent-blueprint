@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
 from migrations.env_utils import create_folder_if_not_exists, load_models
-from src.core.infrastructure.database.database import Base
+from src.core.infrastructure.database.database import Base, create_sync_dsn
 
 # Alembic 설정 파일 로드
 config = context.config
@@ -33,17 +33,17 @@ load_models()
 
 load_dotenv(dotenv_path=f"_env/{env}.env", override=True)
 
-DATABASE_USER = os.getenv("DATABASE_USER")
-DATABASE_PASSWORD = quote_plus(os.getenv("DATABASE_PASSWORD") or "")
-DATABASE_HOST = os.getenv("DATABASE_HOST")
-DATABASE_PORT = os.getenv("DATABASE_PORT")
-DATABASE_NAME = os.getenv("DATABASE_NAME")
-
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# 데이터베이스 URL 설정
-url = f"mysql+pymysql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}?charset=utf8mb4"
+
+url = create_sync_dsn(
+    database_user=quote_plus(os.getenv("DATABASE_USER") or ""),
+    database_password=quote_plus(os.getenv("DATABASE_PASSWORD") or ""),
+    database_host=os.getenv("DATABASE_HOST") or "",
+    database_port=int(os.getenv("DATABASE_PORT") or ""),
+    database_name=os.getenv("DATABASE_NAME") or "",
+)
 
 # Base.metadata로 target_metadata 지정
 target_metadata = Base.metadata
