@@ -59,13 +59,21 @@ class Database:
             database_name=database_name,
         )
 
-        self.engine = create_engine(url=dsn, echo=True)
-        self.async_engine = create_async_engine(url=async_dsn, echo=True)
+        self.engine = create_engine(url=dsn)
+        self.async_engine = create_async_engine(
+            url=async_dsn,
+            echo=True,  # 개발환경에서만 True
+            pool_size=20,
+            max_overflow=30,
+            pool_pre_ping=True,
+        )
 
         self.async_session_factory = sessionmaker(
             bind=self.async_engine,
             class_=AsyncSession,
             expire_on_commit=False,
+            autoflush=False,
+            autocommit=False,
         )
 
     @asynccontextmanager
