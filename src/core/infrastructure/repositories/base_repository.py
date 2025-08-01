@@ -3,7 +3,6 @@ from abc import ABC
 from typing import Generic, List, Type, TypeVar
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
 
 from src.core.domain.entities.entity import Entity
 from src.core.exceptions.base_exception import BaseCustomException
@@ -57,12 +56,13 @@ class BaseRepository(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
     async def get_datas(self, page: int, page_size: int) -> List[ReturnEntity]:
         async with self.database.session() as session:
             result = await session.execute(
-                select(self.model)
-                .options(selectinload(self.model.related_entities))
-                .offset((page - 1) * page_size)
-                .limit(page_size)
+                select(self.model).offset((page - 1) * page_size).limit(page_size)
             )
             datas = result.scalars().all()
+
+            # 필요한 경우에만 관계 로딩
+            if hasattr(self.model, "related_entities"):
+                await session.refresh(datas, ["related_entities"])
 
             return [
                 self.return_entity.model_validate(data, from_attributes=True)
