@@ -8,10 +8,10 @@ from dotenv import load_dotenv
 
 
 def main():
-    uvicorn.run("src.server.app:app", reload=True, host="127.0.0.1", port=8000)
+    uvicorn.run("src.app:app", reload=True, host="127.0.0.1", port=8000)
     # subprocess.run([
     #     "gunicorn",
-    #     "src.server.app:app",
+    #     "src.apps.monolith.app:app",
     #     "-k", "uvicorn.workers.UvicornWorker",
     #     "-w", "1",
     #     "-b", "0.0.0.0:8000"
