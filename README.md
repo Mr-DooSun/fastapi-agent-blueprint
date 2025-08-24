@@ -291,17 +291,406 @@ docker-compose up -d
 
 ## 📚 API 문서
 
+### API 문서 접근 방법
+
 서버 실행 후 다음 URL에서 API 문서를 확인할 수 있습니다:
 
-### 모놀리식 서버
-- **Swagger UI**: http://localhost:8000/api/docs-swagger
-- **ReDoc**: http://localhost:8000/api/docs-redoc
-- **관리자 페이지**: http://localhost:8000/admin
+#### 🎯 통합 문서 허브
+- **📚 API 문서 선택기**: http://localhost:8000/api/docs
+  - 다양한 스타일의 API 문서 중에서 선택할 수 있는 메인 페이지
+  - Swagger UI, ReDoc, Scalar, Elements, RapiDoc 등 5가지 문서 형태 제공
 
-### 마이크로서비스
-- **User Service**: http://localhost:8001/docs-swagger
-- **Chat Service**: http://localhost:8002/docs-swagger
-- **Gateway** (옵션): http://localhost:8000/docs-swagger
+#### 📋 개별 문서 페이지 (모놀리식 서버)
+- **Swagger UI**: http://localhost:8000/api/docs-swagger *(가장 많이 사용)*
+- **ReDoc**: http://localhost:8000/api/docs-redoc *(깔끔한 읽기 중심)*
+- **Scalar**: http://localhost:8000/api/docs-scalar *(모던한 디자인)*
+- **Elements**: http://localhost:8000/api/docs-elements *(인터랙티브)*
+- **RapiDoc**: http://localhost:8000/api/docs-rapidoc *(빠르고 가벼움)*
+- **관리자 페이지**: http://localhost:8000/api/admin *(데이터베이스 관리)*
+
+#### 🚀 마이크로서비스별 문서
+- **User Service**: http://localhost:8001/docs *(사용자 관리)*
+- **Chat Service**: http://localhost:8002/docs *(실시간 채팅)*
+- **Gateway** (옵션): http://localhost:8000/docs *(API 게이트웨이)*
+
+> **💡 추천**: `/api/docs`에서 시작하여 원하는 문서 스타일을 선택하세요!
+
+### API 설계 원칙
+
+#### 1. RESTful API 설계
+```
+GET    /api/v1/users       # 사용자 목록 조회 (페이지네이션)
+POST   /api/v1/user        # 사용자 생성
+GET    /api/v1/user/{id}   # 특정 사용자 조회
+PUT    /api/v1/user/{id}   # 사용자 정보 수정
+DELETE /api/v1/user/{id}   # 사용자 삭제
+POST   /api/v1/users       # 다수 사용자 생성
+POST   /api/v1/users/by-ids # ID 목록으로 사용자 조회
+```
+
+#### 2. 일관된 응답 구조
+모든 API는 표준화된 응답 구조를 사용합니다:
+
+**성공 응답 (SuccessResponse)**:
+```json
+{
+  "success": true,
+  "message": "Request processed successfully",
+  "data": {
+    "id": 1,
+    "username": "john_doe",
+    "full_name": "John Doe",
+    "email": "john@example.com",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  "pagination": null
+}
+```
+
+**페이지네이션이 포함된 응답**:
+```json
+{
+  "success": true,
+  "message": "Request processed successfully",
+  "data": [
+    {
+      "id": 1,
+      "username": "john_doe",
+      "full_name": "John Doe",
+      "email": "john@example.com",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "pagination": {
+    "current_page": 1,
+    "page_size": 10,
+    "total_items": 100,
+    "total_pages": 10,
+    "has_previous": false,
+    "has_next": true,
+    "next_page": 2,
+    "previous_page": null
+  }
+}
+```
+
+**오류 응답 (ErrorResponse)**:
+```json
+{
+  "success": false,
+  "message": "Request failed",
+  "error_code": "USER_NOT_FOUND",
+  "error_details": {
+    "user_id": 999,
+    "timestamp": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+#### 3. Request/Response DTO 시스템
+
+**요청 DTO 예시**:
+```json
+{
+  "username": "john_doe",
+  "full_name": "John Doe", 
+  "email": "john@example.com",
+  "password": "secure_password"
+}
+```
+
+**일괄 작업 요청**:
+```json
+{
+  "ids": [1, 2, 3, 4, 5]
+}
+```
+
+### API 엔드포인트 상세
+
+#### User Management API
+
+##### 1. 사용자 생성
+```http
+POST /api/v1/user
+Content-Type: application/json
+
+{
+  "username": "john_doe",
+  "full_name": "John Doe",
+  "email": "john@example.com", 
+  "password": "secure_password"
+}
+```
+
+**응답**:
+- **200 OK**: 사용자 생성 성공
+- **400 Bad Request**: 잘못된 요청 데이터
+- **409 Conflict**: 이미 존재하는 사용자명/이메일
+
+##### 2. 사용자 목록 조회
+```http
+GET /api/v1/users?page=1&pageSize=10
+```
+
+**쿼리 파라미터**:
+- `page`: 페이지 번호 (기본값: 1)
+- `pageSize`: 페이지 크기 (기본값: 10)
+
+**응답**: 페이지네이션이 포함된 사용자 목록
+
+##### 3. 특정 사용자 조회
+```http
+GET /api/v1/user/{user_id}
+```
+
+**경로 파라미터**:
+- `user_id`: 사용자 ID (정수)
+
+**응답**:
+- **200 OK**: 사용자 정보
+- **404 Not Found**: 사용자를 찾을 수 없음
+
+##### 4. 사용자 정보 수정
+```http
+PUT /api/v1/user/{user_id}
+Content-Type: application/json
+
+{
+  "username": "updated_username",
+  "full_name": "Updated Name",
+  "email": "updated@example.com",
+  "password": "new_password"
+}
+```
+
+##### 5. 사용자 삭제
+```http
+DELETE /api/v1/user/{user_id}
+```
+
+**응답**:
+- **200 OK**: 삭제 성공 (`success: true`)
+- **404 Not Found**: 사용자를 찾을 수 없음
+
+##### 6. 다수 사용자 생성
+```http
+POST /api/v1/users
+Content-Type: application/json
+
+[
+  {
+    "username": "user1",
+    "full_name": "User One",
+    "email": "user1@example.com",
+    "password": "password1"
+  },
+  {
+    "username": "user2", 
+    "full_name": "User Two",
+    "email": "user2@example.com",
+    "password": "password2"
+  }
+]
+```
+
+##### 7. ID 목록으로 사용자 조회
+```http
+POST /api/v1/users/by-ids
+Content-Type: application/json
+
+{
+  "ids": [1, 2, 3, 4, 5]
+}
+```
+
+#### Health Check API
+
+##### 시스템 상태 확인
+```http
+GET /api/status/health
+```
+
+**응답**:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-01-01T00:00:00Z",
+  "services": {
+    "database": "connected",
+    "rabbitmq": "connected", 
+    "minio": "connected"
+  }
+}
+```
+
+### API 테스트 가이드
+
+#### 1. cURL을 사용한 테스트
+
+**사용자 생성**:
+```bash
+curl -X POST "http://localhost:8000/api/v1/user" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "username": "test_user",
+       "full_name": "Test User",
+       "email": "test@example.com",
+       "password": "test_password"
+     }'
+```
+
+**사용자 목록 조회**:
+```bash
+curl -X GET "http://localhost:8000/api/v1/users?page=1&pageSize=5"
+```
+
+**특정 사용자 조회**:
+```bash
+curl -X GET "http://localhost:8000/api/v1/user/1"
+```
+
+#### 2. Python requests를 사용한 테스트
+
+```python
+import requests
+
+# 기본 URL
+BASE_URL = "http://localhost:8000/api/v1"
+
+# 사용자 생성
+user_data = {
+    "username": "test_user",
+    "full_name": "Test User", 
+    "email": "test@example.com",
+    "password": "test_password"
+}
+
+response = requests.post(f"{BASE_URL}/user", json=user_data)
+print(f"Status: {response.status_code}")
+print(f"Response: {response.json()}")
+
+# 사용자 목록 조회
+response = requests.get(f"{BASE_URL}/users", params={"page": 1, "pageSize": 10})
+users = response.json()
+print(f"Users count: {len(users['data'])}")
+print(f"Pagination: {users['pagination']}")
+```
+
+#### 3. 자동화된 API 테스트
+
+**pytest를 사용한 테스트 예시**:
+```python
+import pytest
+from fastapi.testclient import TestClient
+from src.app import app
+
+client = TestClient(app)
+
+def test_create_user():
+    user_data = {
+        "username": "test_user",
+        "full_name": "Test User",
+        "email": "test@example.com", 
+        "password": "test_password"
+    }
+    
+    response = client.post("/api/v1/user", json=user_data)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["success"] is True
+    assert data["data"]["username"] == "test_user"
+
+def test_get_users():
+    response = client.get("/api/v1/users?page=1&pageSize=10")
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["success"] is True
+    assert "pagination" in data
+```
+
+### OpenAPI/Swagger 사용자 정의
+
+#### 1. API 메타데이터 설정
+
+```python
+app = FastAPI(
+    title="FastAPI Layered Architecture",
+    description="DDD 기반 모놀리식 아키텍처",
+    version="1.0.0",
+    root_path="/api",
+    docs_url="/docs-swagger",
+    redoc_url="/docs-redoc",
+    openapi_tags=[
+        {"name": "사용자", "description": "사용자 관리 관련 API"},
+        {"name": "status", "description": "시스템 상태 확인"},
+        {"name": "docs", "description": "API 문서"},
+    ]
+)
+```
+
+#### 2. 응답 모델 문서화
+
+```python
+@router.post(
+    "/user",
+    summary="유저 생성",
+    description="새로운 사용자를 생성합니다.",
+    response_model=SuccessResponse[CoreUsersResponse],
+    response_model_exclude={"pagination"},
+    responses={
+        200: {"description": "사용자 생성 성공"},
+        400: {"description": "잘못된 요청 데이터"},
+        409: {"description": "이미 존재하는 사용자명 또는 이메일"},
+    }
+)
+```
+
+### API 보안
+
+#### 1. 인증 (향후 구현 예정)
+```python
+# JWT 토큰 기반 인증
+@router.get("/user/me")
+async def get_current_user(
+    token: str = Depends(oauth2_scheme)
+):
+    # 토큰 검증 로직
+    pass
+```
+
+#### 2. 권한 (향후 구현 예정)
+```python
+# Role-based Access Control
+@router.delete("/user/{user_id}")
+async def delete_user(
+    user_id: int,
+    current_user: User = Depends(get_current_admin_user)
+):
+    # 관리자만 사용자 삭제 가능
+    pass
+```
+
+#### 3. Rate Limiting (향후 구현 예정)
+```python
+# API 호출 제한
+@router.post("/user")
+@rate_limit("10/minute")
+async def create_user(...):
+    pass
+```
+
+### API 문서 활용 팁
+
+1. **Swagger UI에서 직접 테스트**: Try it out 기능으로 실시간 API 테스트
+2. **ReDoc**: 더 읽기 쉬운 문서 형태로 API 스펙 확인
+3. **OpenAPI 스펙 다운로드**: `/openapi.json`에서 스펙 파일 다운로드
+4. **코드 생성**: OpenAPI 스펙을 사용하여 클라이언트 SDK 자동 생성
+5. **API 테스트 도구**: Postman, Insomnia 등에서 OpenAPI 스펙 import
 
 ## 🔄 아키텍처 패턴 상세
 
