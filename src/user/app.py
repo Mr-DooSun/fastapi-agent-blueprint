@@ -28,9 +28,9 @@ def create_app():
         title="User Service",
         description="사용자 관리 마이크로서비스",
         version="1.0.0",
-        root_path="/user",
-        docs_url="/docs",
-        redoc_url="/redoc",
+        root_path="/api",
+        docs_url="/docs-swagger",
+        redoc_url="/docs-redoc",
     )
 
     # 미들웨어 설정

@@ -11,9 +11,9 @@ def create_app():
         title="Chat Service", 
         description="실시간 채팅 마이크로서비스",
         version="1.0.0",
-        root_path="/chat",
-        docs_url="/docs",
-        redoc_url="/redoc"
+        root_path="/api",
+        docs_url="/docs-swagger",
+        redoc_url="/docs-redoc"
     )
     
     # 미들웨어 설정
@@ -38,8 +38,3 @@ def create_app():
 
 
 app = create_app()
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("src.chat.app:app", reload=True, host="127.0.0.1", port=8002)
