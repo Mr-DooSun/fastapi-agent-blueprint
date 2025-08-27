@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from src.core.domain.entities.user.users_entity import (
+from src.core.domain.services.base_service import BaseService
+from src.user.domain.entities.users_entity import (
     CoreCreateUsersEntity,
     CoreUpdateUsersEntity,
     CoreUsersEntity,
 )
-from src.core.domain.services.base_service import BaseService
-from src.user.infrastructure.repositories.users_repository import (
-    UsersRepository,
-)
+from src.user.infrastructure.repositories.users_repository import UsersRepository
 
 
 class UsersService(

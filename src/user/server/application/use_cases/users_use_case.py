@@ -2,7 +2,7 @@
 
 
 from src.core.application.use_cases.base_use_case import BaseUseCase
-from src.core.domain.entities.user.users_entity import (
+from src.user.domain.entities.users_entity import (
     CoreCreateUsersEntity,
     CoreUpdateUsersEntity,
     CoreUsersEntity,

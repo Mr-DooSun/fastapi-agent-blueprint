@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from src.core.domain.entities.user.users_entity import (
+from src.core.infrastructure.database.database import Database
+from src.core.infrastructure.database.models.user.users_model import UsersModel
+from src.core.infrastructure.repositories.base_repository import BaseRepository
+from src.user.domain.entities.users_entity import (
     CoreCreateUsersEntity,
     CoreUpdateUsersEntity,
     CoreUsersEntity,
 )
-from src.core.infrastructure.database.database import Database
-from src.core.infrastructure.database.models.user.users_model import UsersModel
-from src.core.infrastructure.repositories.base_repository import BaseRepository
 
 
 class UsersRepository(

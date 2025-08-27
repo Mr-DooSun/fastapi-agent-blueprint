@@ -3,9 +3,7 @@
 from dependency_injector import containers, providers
 
 from src.user.domain.services.users_service import UsersService
-from src.user.infrastructure.repositories.users_repository import (
-    UsersRepository,
-)
+from src.user.infrastructure.repositories.users_repository import UsersRepository
 from src.user.server.application.use_cases.users_use_case import UsersUseCase
 
 

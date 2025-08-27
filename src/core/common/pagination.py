@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from src.core.application.dtos.common.base_response import PaginationInfo
+from src.core.application.dtos.base_response import PaginationInfo
 
 
 def make_pagination(total_items: int, page: int, page_size: int) -> PaginationInfo:

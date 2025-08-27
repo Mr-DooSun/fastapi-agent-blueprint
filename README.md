@@ -102,13 +102,13 @@ src/core/
 
 **1. 제네릭 베이스 클래스들**
 - `BaseUseCase`: CRUD 작업을 위한 제네릭 유스케이스
-- `BaseService`: 비즈니스 로직을 위한 제네릭 서비스  
+- `BaseService`: 비즈니스 로직을 위한 제네릭 서비스
 - `BaseRepository`: 데이터 액세스를 위한 제네릭 리포지토리
 
 ```python
 # 모든 베이스 클래스는 3개의 제네릭 타입을 받습니다
 BaseUseCase[CreateEntity, ReturnEntity, UpdateEntity]
-BaseService[CreateEntity, ReturnEntity, UpdateEntity] 
+BaseService[CreateEntity, ReturnEntity, UpdateEntity]
 BaseRepository[CreateEntity, ReturnEntity, UpdateEntity]
 ```
 
@@ -395,7 +395,7 @@ POST   /api/v1/users/by-ids # ID 목록으로 사용자 조회
 ```json
 {
   "username": "john_doe",
-  "full_name": "John Doe", 
+  "full_name": "John Doe",
   "email": "john@example.com",
   "password": "secure_password"
 }
@@ -420,7 +420,7 @@ Content-Type: application/json
 {
   "username": "john_doe",
   "full_name": "John Doe",
-  "email": "john@example.com", 
+  "email": "john@example.com",
   "password": "secure_password"
 }
 ```
@@ -488,7 +488,7 @@ Content-Type: application/json
     "password": "password1"
   },
   {
-    "username": "user2", 
+    "username": "user2",
     "full_name": "User Two",
     "email": "user2@example.com",
     "password": "password2"
@@ -520,7 +520,7 @@ GET /api/status/health
   "timestamp": "2024-01-01T00:00:00Z",
   "services": {
     "database": "connected",
-    "rabbitmq": "connected", 
+    "rabbitmq": "connected",
     "minio": "connected"
   }
 }
@@ -563,7 +563,7 @@ BASE_URL = "http://localhost:8000/api/v1"
 # 사용자 생성
 user_data = {
     "username": "test_user",
-    "full_name": "Test User", 
+    "full_name": "Test User",
     "email": "test@example.com",
     "password": "test_password"
 }
@@ -593,13 +593,13 @@ def test_create_user():
     user_data = {
         "username": "test_user",
         "full_name": "Test User",
-        "email": "test@example.com", 
+        "email": "test@example.com",
         "password": "test_password"
     }
-    
+
     response = client.post("/api/v1/user", json=user_data)
     assert response.status_code == 200
-    
+
     data = response.json()
     assert data["success"] is True
     assert data["data"]["username"] == "test_user"
@@ -607,7 +607,7 @@ def test_create_user():
 def test_get_users():
     response = client.get("/api/v1/users?page=1&pageSize=10")
     assert response.status_code == 200
-    
+
     data = response.json()
     assert data["success"] is True
     assert "pagination" in data
@@ -781,7 +781,7 @@ async def create_user(
 - 각 계층별 독립 테스트
 - Mock을 통한 의존성 격리
 
-### 2. 통합 테스트  
+### 2. 통합 테스트
 - 전체 흐름 테스트
 - 실제 데이터베이스 사용
 
@@ -923,6 +923,6 @@ chore: 빌드 프로세스 또는 보조 도구 변경
 
 ---
 
-이 프로젝트는 현대적인 파이썬 백엔드 개발의 모범 사례를 구현한 템플릿입니다. 
-엔터프라이즈급 애플리케이션 개발에 필요한 모든 패턴과 구조를 제공하며, 
+이 프로젝트는 현대적인 파이썬 백엔드 개발의 모범 사례를 구현한 템플릿입니다.
+엔터프라이즈급 애플리케이션 개발에 필요한 모든 패턴과 구조를 제공하며,
 개발자들이 비즈니스 로직에 집중할 수 있도록 견고한 기반을 제공합니다.

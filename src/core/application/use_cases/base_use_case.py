@@ -2,8 +2,8 @@
 from abc import ABC
 from typing import Generic, List, Tuple, Type, TypeVar
 
-from src.core.application.dtos.common.base_request import IdListDto
-from src.core.application.dtos.common.base_response import PaginationInfo
+from src.core.application.dtos.base_request import IdListDto
+from src.core.application.dtos.base_response import PaginationInfo
 from src.core.common.pagination import make_pagination
 from src.core.domain.entities.entity import Entity
 from src.core.domain.services.base_service import BaseService

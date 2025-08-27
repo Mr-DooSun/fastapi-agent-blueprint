@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from typing import List, Type, TypeVar
 
-from src.core.application.dtos.common.base_config import ApiConfig
+from src.core.application.dtos.base_config import ApiConfig
 from src.core.domain.entities.entity import Entity
 
 EntityType = TypeVar("EntityType", bound=Entity)
