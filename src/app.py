@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from src._core.application.dtos.base_response import ErrorResponse
 
 from src._core.application.routers.api import docs_router, health_check_router
 from src._shared.infrastructure.di.server_container import ServerContainer
@@ -21,6 +22,14 @@ def create_app():
         root_path="/api",
         docs_url="/docs-swagger",
         redoc_url="/docs-redoc",
+        responses={
+            400: {"model": ErrorResponse, "description": "잘못된 요청"},
+            401: {"model": ErrorResponse, "description": "인증 필요 또는 토큰 불일치"},
+            403: {"model": ErrorResponse, "description": "권한 없음"},
+            404: {"model": ErrorResponse, "description": "해당 리소스 없음"},
+            500: {"model": ErrorResponse, "description": "서버 오류"},
+        },
+
     )
 
     app.add_middleware(ExceptionMiddleware)
