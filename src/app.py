@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src._core.application.dtos.base_response import ErrorResponse
 
+from src._core.application.dtos.base_response import ErrorResponse
 from src._core.application.routers.api import docs_router, health_check_router
-from src._shared.infrastructure.di.server_container import ServerContainer
 from src._core.middleware.exception_middleware import ExceptionMiddleware
-from src.user.server.infrastructure.bootstrap.user_bootstrap import (
-    bootstrap_user_domain,
-)
+from src._shared.infrastructure.di.server_container import ServerContainer
+from src.user.interface.server.bootstrap.user_bootstrap import bootstrap_user_domain
 
 
 def create_app():
@@ -29,7 +27,6 @@ def create_app():
             404: {"model": ErrorResponse, "description": "해당 리소스 없음"},
             500: {"model": ErrorResponse, "description": "서버 오류"},
         },
-
     )
 
     app.add_middleware(ExceptionMiddleware)
@@ -45,9 +42,7 @@ def create_app():
     app.include_router(router=docs_router.router, tags=["docs"])
 
     bootstrap_user_domain(
-        app=app,
-        database=database,
-        user_container=server_container.user_container
+        app=app, database=database, user_container=server_container.user_container
     )
 
     return app

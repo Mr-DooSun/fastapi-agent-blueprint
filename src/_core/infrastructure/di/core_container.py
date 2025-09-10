@@ -3,11 +3,11 @@ from boto3 import client
 from dependency_injector import containers, providers
 from minio import Minio
 
-from src._core.application.messaging.rabbitmq_publisher import RabbitMQPublisher
 from src._core.domain.services.minio_service import MinioService
 from src._core.domain.services.s3_service import S3Service
 from src._core.infrastructure.database.database import Database
-from src._core.infrastructure.messaging.rabbitmq_manager import RabbitMQManager
+from src._core.infrastructure.messaging.celery_factory import create_celery_app
+from src._core.infrastructure.messaging.celery_manager import CeleryManager
 
 
 class CoreContainer(containers.DeclarativeContainer):
@@ -65,12 +65,16 @@ class CoreContainer(containers.DeclarativeContainer):
     # Messaging
     #########################################################
 
-    rabbitmq_manager = providers.Singleton(
-        RabbitMQManager,
-        host=config.rabbitmq.host,
-        port=config.rabbitmq.port,
+    celery_app = providers.Singleton(
+        create_celery_app,
+        env=config.env,
+        region=config.sqs.region,
+        access_key=config.sqs.access_key,
+        secret_key=config.sqs.secret_key,
+        queue=config.sqs.queue,
     )
 
-    rabbitmq_publisher = providers.Factory(
-        RabbitMQPublisher, rabbitmq_manager=rabbitmq_manager
+    celery_manager = providers.Singleton(
+        CeleryManager,
+        celery_app=celery_app,
     )
