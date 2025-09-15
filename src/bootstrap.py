@@ -27,4 +27,8 @@ def bootstrap_app(app: FastAPI) -> None:
 
     # 각 도메인 bootstrap
     server_container = ServerContainer()
-    bootstrap_user_domain(app=app, user_container=server_container.user_container)
+    bootstrap_user_domain(
+        app=app,
+        database=server_container.core_container.database(),
+        user_container=server_container.user_container,
+    )
