@@ -119,6 +119,5 @@ class Database:
                 await session.close()
 
     async def dispose(self) -> None:
-        """연결 풀을 정리하고 모든 연결을 닫습니다."""
         await self.async_engine.dispose()
         self.engine.dispose()
