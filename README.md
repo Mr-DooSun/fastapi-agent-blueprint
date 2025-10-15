@@ -88,10 +88,13 @@ src/core/
 │   ├── database/      # 데이터베이스 관련
 │   │   ├── database.py        # MySQL 연결/세션 관리
 │   │   └── models/            # SQLAlchemy 모델
+│   ├── http/          # HTTP 클라이언트
+│   │   └── http_client.py     # aiohttp 연결 풀 관리
 │   ├── messaging/     # 메시징 인프라
 │   │   └── rabbitmq_manager.py # RabbitMQ 연결 관리
-│   ├── repositories/ # 베이스 리포지토리
-│   └── di/           # 의존성 주입
+│   ├── repositories/  # 베이스 리포지토리 (DB)
+│   ├── gateways/      # 외부 API Gateway 예시
+│   └── di/            # 의존성 주입
 │       └── core_container.py  # 공통 DI 컨테이너
 ├── middleware/       # 미들웨어
 ├── exceptions/       # 예외 처리
@@ -113,10 +116,33 @@ BaseRepository[CreateEntity, ReturnEntity, UpdateEntity]
 ```
 
 **2. 의존성 주입 컨테이너 (`CoreContainer`)**
-- 데이터베이스 연결 관리
+- 데이터베이스 연결 관리 (`Database`)
+- HTTP 클라이언트 연결 풀 관리 (`HttpClient`)
 - MinIO/S3 스토리지 서비스
 - RabbitMQ 메시징 시스템
 - 환경별 설정 자동 로드
+
+**3. 인프라 계층 패턴**
+
+*Database 사용 (내부 데이터)*
+```
+Service → Repository → Database
+         (Entity 변환, CRUD)
+```
+
+*HttpClient 사용 (외부 API)*
+```
+Service → Gateway → HttpClient
+         (비즈니스 메서드)
+
+또는
+
+Service → HttpClient (직접 호출)
+```
+
+> **참고**: `BaseHttpRepository/Gateway`는 불필요한 추상화입니다.
+> 각 도메인에서 필요할 때 Gateway를 직접 구현하세요.
+> 자세한 내용은 `docs/http_client_usage_example.md` 참조
 
 ### 🚀 도메인별 모듈
 
@@ -166,6 +192,7 @@ src/chat/
 - **Pydantic**: 데이터 검증 및 시리얼라이제이션
 - **SQLAlchemy**: ORM 및 데이터베이스 추상화
 - **Alembic**: 데이터베이스 마이그레이션
+- **aiohttp**: 비동기 HTTP 클라이언트/서버
 
 ### 데이터베이스 및 스토리지
 - **MySQL**: 메인 관계형 데이터베이스
