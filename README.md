@@ -104,7 +104,7 @@ fastapi-layered-architecture/
 │   ├── _core/                    # 🎯 핵심 인프라 (모든 도메인이 공유)
 │   │   ├── application/          # Application Layer
 │   │   │   ├── dtos/            # DTO 베이스 클래스
-│   │   │   │   ├── base_request.py   # BaseRequest, IdListDto
+│   │   │   │   ├── base_request.py   # BaseRequest
 │   │   │   │   └── base_response.py  # SuccessResponse, ErrorResponse
 │   │   │   ├── routers/         # 공통 라우터
 │   │   │   │   └── api/

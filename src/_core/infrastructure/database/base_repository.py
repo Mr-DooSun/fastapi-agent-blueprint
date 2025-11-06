@@ -28,21 +28,19 @@ class BaseRepository(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
         self.return_entity = return_entity
         self.update_entity = update_entity
 
-    async def insert_data(self, create_data: CreateEntity) -> ReturnEntity:
+    async def insert_data(self, entity: CreateEntity) -> ReturnEntity:
         async with self.database.session() as session:
-            data = self.model(**create_data.model_dump(exclude_none=True))
+            data = self.model(**entity.model_dump(exclude_none=True))
             session.add(data)
             await session.commit()
             await session.refresh(data)
             return self.return_entity.model_validate(data, from_attributes=True)
 
-    async def insert_datas(
-        self, create_datas: list[CreateEntity]
-    ) -> list[ReturnEntity]:
+    async def insert_datas(self, entities: list[CreateEntity]) -> list[ReturnEntity]:
         async with self.database.session() as session:
             datas = [
-                self.model(**create_data.model_dump(exclude_none=True))
-                for create_data in create_datas
+                self.model(**entity.model_dump(exclude_none=True))
+                for entity in entities
             ]
             session.add_all(datas)
             await session.flush()
@@ -120,7 +118,7 @@ class BaseRepository(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
             ], total_count
 
     async def update_data_by_data_id(
-        self, data_id: int, update_data: UpdateEntity
+        self, data_id: int, entity: UpdateEntity
     ) -> ReturnEntity:
         async with self.database.session() as session:
             result = await session.execute(
@@ -131,7 +129,7 @@ class BaseRepository(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
                 raise BaseCustomException(
                     status_code=404, message=f"Data with ID [ {data_id} ] not found"
                 )
-            for key, value in update_data.model_dump(exclude_none=True).items():
+            for key, value in entity.model_dump(exclude_none=True).items():
                 setattr(data, key, value)
             await session.commit()
             await session.refresh(data)

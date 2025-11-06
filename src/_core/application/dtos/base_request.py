@@ -9,7 +9,3 @@ EntityType = TypeVar("EntityType", bound=Entity)
 class BaseRequest(ApiConfig):
     def to_entity(self, entity_cls: type[EntityType]) -> EntityType:
         return entity_cls(**self.model_dump())
-
-
-class IdListDto(BaseRequest):
-    ids: list[int]

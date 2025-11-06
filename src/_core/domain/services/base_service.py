@@ -23,13 +23,11 @@ class BaseService(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
         self.return_entity = return_entity
         self.update_entity = update_entity
 
-    async def create_data(self, create_data: CreateEntity) -> ReturnEntity:
-        return await self.base_repository.insert_data(create_data=create_data)
+    async def create_data(self, entity: CreateEntity) -> ReturnEntity:
+        return await self.base_repository.insert_data(entity=entity)
 
-    async def create_datas(
-        self, create_datas: list[CreateEntity]
-    ) -> list[ReturnEntity]:
-        return await self.base_repository.insert_datas(create_datas=create_datas)
+    async def create_datas(self, entities: list[CreateEntity]) -> list[ReturnEntity]:
+        return await self.base_repository.insert_datas(entities=entities)
 
     async def get_datas(self, page: int, page_size: int) -> list[ReturnEntity]:
         return await self.base_repository.select_datas(page=page, page_size=page_size)
@@ -51,10 +49,10 @@ class BaseService(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
         )
 
     async def update_data_by_data_id(
-        self, data_id: int, update_data: UpdateEntity
+        self, data_id: int, entity: UpdateEntity
     ) -> ReturnEntity:
         return await self.base_repository.update_data_by_data_id(
-            data_id=data_id, update_data=update_data
+            data_id=data_id, entity=entity
         )
 
     async def delete_data_by_data_id(self, data_id: int) -> bool:

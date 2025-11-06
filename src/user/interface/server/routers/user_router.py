@@ -1,7 +1,6 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 
-from src._core.application.dtos.base_request import IdListDto
 from src._core.application.dtos.base_response import SuccessResponse
 from src._core.common.dto_utils import dtos_to_entities, entities_to_dtos
 from src.user.application.use_cases.user_use_case import UserUseCase
@@ -30,12 +29,10 @@ router = APIRouter()
 )
 @inject
 async def create_user(
-    create_data: CoreCreateUserRequest,
+    item: CoreCreateUserRequest,
     user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
 ) -> SuccessResponse[CoreUserResponse]:
-    data = await user_use_case.create_data(
-        create_data=create_data.to_entity(CoreCreateUserEntity)
-    )
+    data = await user_use_case.create_data(entity=item.to_entity(CoreCreateUserEntity))
     return SuccessResponse(data=CoreUserResponse.from_entity(data))
 
 
@@ -50,11 +47,11 @@ async def create_user(
 )
 @inject
 async def create_users(
-    create_datas: list[CoreCreateUserRequest],
+    items: list[CoreCreateUserRequest],
     user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
 ) -> SuccessResponse[list[CoreUserResponse]]:
-    entities = dtos_to_entities(create_datas, CoreCreateUserEntity)
-    datas = await user_use_case.create_datas(create_datas=entities)
+    entities = dtos_to_entities(items, CoreCreateUserEntity)
+    datas = await user_use_case.create_datas(entities=entities)
     return SuccessResponse(data=entities_to_dtos(datas, CoreUserResponse))
 
 
@@ -100,7 +97,7 @@ async def get_user_by_user_id(
 # ==========================================================================================
 
 
-@router.post(
+@router.get(
     "/user/by-ids",
     summary="ID 리스트로 유저 여러 명 조회",
     response_model=SuccessResponse[list[CoreUserResponse]],
@@ -108,10 +105,10 @@ async def get_user_by_user_id(
 )
 @inject
 async def get_user_by_ids(
-    payload: IdListDto,
+    ids: list[int],
     user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
 ) -> SuccessResponse[list[CoreUserResponse]]:
-    datas = await user_use_case.get_datas_by_data_ids(payload=payload)
+    datas = await user_use_case.get_datas_by_data_ids(data_ids=ids)
     return SuccessResponse(data=entities_to_dtos(datas, CoreUserResponse))
 
 
@@ -127,11 +124,11 @@ async def get_user_by_ids(
 @inject
 async def update_user_by_user_id(
     user_id: int,
-    update_data: CoreUpdateUserRequest,
+    item: CoreUpdateUserRequest,
     user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
 ) -> SuccessResponse[CoreUserResponse]:
     data = await user_use_case.update_data_by_data_id(
-        data_id=user_id, update_data=update_data.to_entity(CoreUpdateUserEntity)
+        data_id=user_id, entity=item.to_entity(CoreUpdateUserEntity)
     )
     return SuccessResponse(data=CoreUserResponse.from_entity(data))
 
