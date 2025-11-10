@@ -44,7 +44,9 @@ def create_app():
     app.include_router(router=docs_router.router, tags=["docs"])
 
     # User 도메인 완전 독립 설정
-    bootstrap_user_domain(app, database=container.core_container.database())
+    bootstrap_user_domain(
+        app, database=container.core_container.database(), user_container=container
+    )
 
     return app
 

@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore")
 
     # 환경 설정 (예: local, dev, stg, prod)
-    env: str = Field(env="ENV")
+    env: str = Field(validation_alias=AliasChoices("ENV", "env"))
 
     @property
     def is_dev(self) -> bool:

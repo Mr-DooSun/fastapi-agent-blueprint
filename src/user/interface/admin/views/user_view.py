@@ -4,7 +4,7 @@ from sqlalchemy.orm import class_mapper
 from src.user.infrastructure.database.models.user_model import UserModel
 
 
-class UserView(ModelView, model=UserModel):
+class UserView(ModelView, model=UserModel):  # type: ignore[call-arg]
     category = "유저"
     name = "유저 목록"
     column_list = [attr.key for attr in class_mapper(UserModel).column_attrs]
