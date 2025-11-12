@@ -236,17 +236,17 @@ HTTP Response (JSON)
 @router.post("/user")
 @inject
 async def create_user(
-    item: CoreCreateUserRequest,  # DTO
+    item: CreateUserRequest,  # DTO
     user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
 ):
     # 2. DTO → Entity
-    entity = item.to_entity(CoreCreateUserEntity)
+    entity = item.to_entity(CreateUserEntity)
     
     # 3. UseCase 호출
     data = await user_use_case.create_data(entity=entity)
     
     # 4. Entity → DTO
-    return SuccessResponse(data=CoreUserResponse.from_entity(data))
+    return SuccessResponse(data=UserResponse.from_entity(data))
 
 # UseCase → Service → Repository → Database 자동 처리!
 ```

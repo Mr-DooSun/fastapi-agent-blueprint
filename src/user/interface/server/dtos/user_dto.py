@@ -1,19 +1,19 @@
 from src._core.application.dtos.base_request import BaseRequest
 from src._core.application.dtos.base_response import BaseResponse
 from src.user.domain.entities.user_entity import (
-    CoreCreateUserEntity,
-    CoreUpdateUserEntity,
-    CoreUserEntity,
+    CreateUserEntity,
+    UpdateUserEntity,
+    UserEntity,
 )
 
 
-class CoreUserResponse(BaseResponse, CoreUserEntity):
+class UserResponse(BaseResponse, UserEntity):
     pass
 
 
-class CoreCreateUserRequest(BaseRequest, CoreCreateUserEntity):
+class CreateUserRequest(BaseRequest, CreateUserEntity):
     pass
 
 
-class CoreUpdateUserRequest(BaseRequest, CoreUpdateUserEntity):
+class UpdateUserRequest(BaseRequest, UpdateUserEntity):
     pass
