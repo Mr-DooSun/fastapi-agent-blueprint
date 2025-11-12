@@ -16,5 +16,5 @@ class UserUseCase(BaseUseCase[CreateUserEntity, UserEntity, UpdateUserEntity]):
             update_entity=UpdateUserEntity,
         )
 
-    def process_user(self, entity: UserEntity) -> UserEntity:
+    async def process_user(self, entity: UserEntity) -> UserEntity:
         return entity
