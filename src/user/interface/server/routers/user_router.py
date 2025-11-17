@@ -76,6 +76,25 @@ async def get_user(
 
 
 @router.get(
+    "/user/by-ids",
+    summary="ID 리스트로 유저 여러 명 조회",
+    response_model=SuccessResponse[list[UserResponse]],
+    response_model_exclude={"pagination"},
+)
+@inject
+async def get_user_by_ids(
+    ids: list[int] = Query(..., description="쉼표로 구분된 ID 리스트 (예: 0,1,2)"),
+    user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
+) -> SuccessResponse[list[UserResponse]]:
+
+    datas = await user_use_case.get_datas_by_data_ids(data_ids=ids)
+    return SuccessResponse(data=entities_to_dtos(datas, UserResponse))
+
+
+# ==========================================================================================
+
+
+@router.get(
     "/user/{user_id}",
     summary="유저 정보 조회",
     response_model=SuccessResponse[UserResponse],
@@ -89,24 +108,6 @@ async def get_user_by_user_id(
 ) -> SuccessResponse[UserResponse]:
     data = await user_use_case.get_data_by_data_id(data_id=user_id)
     return SuccessResponse(data=UserResponse.from_entity(data))
-
-
-# ==========================================================================================
-
-
-@router.get(
-    "/user/by-ids",
-    summary="ID 리스트로 유저 여러 명 조회",
-    response_model=SuccessResponse[list[UserResponse]],
-    response_model_exclude={"pagination"},
-)
-@inject
-async def get_user_by_ids(
-    ids: list[int],
-    user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
-) -> SuccessResponse[list[UserResponse]]:
-    datas = await user_use_case.get_datas_by_data_ids(data_ids=ids)
-    return SuccessResponse(data=entities_to_dtos(datas, UserResponse))
 
 
 # ==========================================================================================
