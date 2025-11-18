@@ -16,7 +16,7 @@ def create_async_dsn(
     database_port: int,
     database_name: str,
 ):
-    return f"mysql+aiomysql://{database_user}:{database_password}@{database_host}:{database_port}/{database_name}?charset=utf8mb4"
+    return f"postgresql+asyncpg://{database_user}:{database_password}@{database_host}:{database_port}/{database_name}"
 
 
 def create_sync_dsn(
@@ -26,7 +26,7 @@ def create_sync_dsn(
     database_port: int,
     database_name: str,
 ):
-    return f"mysql+pymysql://{database_user}:{database_password}@{database_host}:{database_port}/{database_name}?charset=utf8mb4"
+    return f"postgresql+psycopg://{database_user}:{database_password}@{database_host}:{database_port}/{database_name}"
 
 
 def get_database_config(env: str):

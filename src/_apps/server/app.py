@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 
+from src._apps.server.bootstrap import bootstrap_app
 from src._core.application.dtos.base_response import ErrorResponse
 from src._core.config import settings
-from src.bootstrap import bootstrap_app
 
 
 def create_app():

@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 
 def main():
-    uvicorn.run("src.app:app", reload=True, host="127.0.0.1", port=8000)
+    uvicorn.run("src._apps.server.app:app", reload=True, host="127.0.0.1", port=8000)
     # subprocess.run([
     #     "gunicorn",
     #     "src.apps.monolith.app:app",

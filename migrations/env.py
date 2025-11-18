@@ -16,9 +16,9 @@ from src._core.infrastructure.database.database import Base, create_sync_dsn
 config = context.config
 
 env = config.get_main_option("env")
-if env != "dev" and env != "prod" and env != "stg":
+if env != "local" and env != "dev" and env != "prod" and env != "stg":
     raise RuntimeError(
-        "alembic.ini 파일에 ENV 환경변수가 지정되지 않았습니다. [dev], [prod], [stg] 중 하나를 입력해주세요."
+        "alembic.ini 파일에 ENV 환경변수가 지정되지 않았습니다. [local], [dev], [prod], [stg] 중 하나를 입력해주세요."
     )
 else:
     if not os.path.exists(f"_env/{env}.env"):

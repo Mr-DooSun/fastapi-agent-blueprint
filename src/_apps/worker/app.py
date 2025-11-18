@@ -1,14 +1,14 @@
 from celery import Celery
 from kombu.utils.url import safequote
 
-from src._shared.infrastructure.di.server_container import ServerContainer
-from src.celery_bootstrap import bootstrap_celery_app
+from src._apps.worker.bootstrap import bootstrap_app
+from src._apps.worker.di.container import WorkerContainer
 
 container = None
 
 
 def create_container():
-    container = ServerContainer()
+    container = WorkerContainer()
 
     return container
 
@@ -19,7 +19,7 @@ def create_app():
 
     env = container.core_container.config.env()
     aws_region = container.core_container.config.sqs.region()
-    aws_access_key = safequote(container.core_container.config.sqs.access_key())
+    aws_access_key = safequote(container.core_container.config.sqs.acecss_key())
     aws_secret_key = safequote(container.core_container.config.sqs.secret_key())
     aws_queue = container.core_container.config.sqs.queue()
 
@@ -34,7 +34,7 @@ def create_app():
     )
     app.conf.task_default_queue = f"{env}-{aws_queue}"
 
-    bootstrap_celery_app(app=app)
+    bootstrap_app(app=app)
 
     return app
 
