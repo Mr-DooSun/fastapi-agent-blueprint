@@ -2,13 +2,13 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from urllib.parse import quote_plus
 
-from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from src._core.infrastructure.database.config import DatabaseConfig
+from src._core.infrastructure.database.exceptions import DatabaseException
 
 
 def create_async_dsn(
@@ -78,7 +78,6 @@ class Database:
             autocommit=False,
         )
 
-    # TODO : HTTPException -> BaseCustomException 으로 변경 필요
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[AsyncSession, None]:
         session = None
@@ -89,11 +88,20 @@ class Database:
         except IntegrityError:
             if session:
                 await session.rollback()
-            raise HTTPException(status_code=400, detail="Data integrity error")
-        except Exception:
+            raise DatabaseException(
+                status_code=400,
+                message="Data integrity error",
+                error_code="DB_INTEGRITY_ERROR",
+            )
+        except Exception as e:
             if session:
                 await session.rollback()
-            raise HTTPException(status_code=500, detail="Internal server error")
+            raise DatabaseException(
+                status_code=500,
+                message="Internal database error",
+                error_code="DB_INTERNAL_ERROR",
+                details={"original_error": str(e)},
+            )
         finally:
             if session:
                 await session.close()
