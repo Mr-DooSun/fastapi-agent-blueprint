@@ -69,5 +69,18 @@ class Settings(BaseSettings):
             return f"{self.minio_host}:{self.minio_port}"
         return None
 
+    @property
+    def allowed_hosts(self) -> list[str]:
+        """TrustedHostMiddleware 용 호스트 목록"""
+        if self.is_dev:
+            return ["localhost", "127.0.0.1"]
+        return ["api.example.com"] # TODO: 실제 운영 도메인 입력 필요
+
+    @property
+    def allow_origins(self) -> list[str]:
+        if self.is_dev:
+            return ["*"]
+        return ["https://example.com"] # TODO: 실제 프론트엔드 도메인 입력 필요
+
 
 settings = Settings()

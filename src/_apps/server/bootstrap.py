@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from src._apps.server.di.container import ServerContainer
 from src._core.application.routers.api import docs_router, health_check_router
@@ -11,9 +12,17 @@ from src.user.interface.server.bootstrap.user_bootstrap import bootstrap_user_do
 def bootstrap_app(app: FastAPI) -> None:
     # 미들웨어 설정
     app.add_middleware(ExceptionMiddleware)
+    
+    # TrustedHostMiddleware 설정
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=settings.allowed_hosts
+    )
+
+    # CORSMiddleware 설정
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=settings.allow_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
