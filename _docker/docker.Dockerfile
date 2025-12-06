@@ -15,7 +15,6 @@ RUN poetry config virtualenvs.create false \
 
 COPY src/server /app/src/server
 COPY src/core /app/src/core
-COPY config.yml /app/config.yml
 COPY _env/${ENV}.env /app/.env
 
 
