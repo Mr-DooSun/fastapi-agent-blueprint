@@ -596,6 +596,8 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "sqladmin", extra = ["full"] },
     { name = "sqlalchemy" },
+    { name = "taskiq" },
+    { name = "taskiq-aws" },
     { name = "types-aiobotocore-s3" },
     { name = "uvicorn" },
 ]
@@ -622,6 +624,8 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.1.0" },
     { name = "sqladmin", extras = ["full"], specifier = ">=0.21.0" },
     { name = "sqlalchemy", specifier = ">=2.0.40" },
+    { name = "taskiq", specifier = ">=0.12.1" },
+    { name = "taskiq-aws", specifier = ">=0.4.0" },
     { name = "types-aiobotocore-s3", specifier = ">=2.25.0" },
     { name = "uvicorn", specifier = ">=0.34.1" },
 ]
@@ -970,6 +974,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/9c/cb/8ac0172223afbccb63986cc25049b154ecfb5e85932587206f42317be31d/itsdangerous-2.2.0.tar.gz", hash = "sha256:e0050c0b7da1eea53ffaf149c0cfbb5c6e2e2b69c4bef22c81fa6eb73e5f6173", size = 54410, upload-time = "2024-04-16T21:28:15.614Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/04/96/92447566d16df59b2a776c0fb82dbc4d9e07cd95062562af01e408583fc4/itsdangerous-2.2.0-py3-none-any.whl", hash = "sha256:c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef", size = 16234, upload-time = "2024-04-16T21:28:14.499Z" },
+]
+
+[[package]]
+name = "izulu"
+version = "0.50.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d0/58/6d6335c78b7ade54d8a6c6dbaa589e5c21b3fd916341d5a16f774c72652a/izulu-0.50.0.tar.gz", hash = "sha256:cc8e252d5e8560c70b95380295008eeb0786f7b745a405a40d3556ab3252d5f5", size = 48558, upload-time = "2025-03-24T15:52:21.51Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4a/9f/bf9d33546bbb6e5e80ebafe46f90b7d8b4a77410b7b05160b0ca8978c15a/izulu-0.50.0-py3-none-any.whl", hash = "sha256:4e9ae2508844e7c5f62c468a8b9e2deba2f60325ef63f01e65b39fd9a6b3fab4", size = 18095, upload-time = "2025-03-24T15:52:19.667Z" },
 ]
 
 [[package]]
@@ -1442,6 +1455,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pycron"
+version = "3.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8e/5d/340be12ae4a69c33102dfb6ddc1dc6e53e69b2d504fa26b5d34a472c3057/pycron-3.2.0.tar.gz", hash = "sha256:e125a28aca0295769541a40633f70b602579df48c9cb357c36c28d2628ba2b13", size = 4248, upload-time = "2025-06-05T13:24:12.636Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f0/76/caf316909f4545e7158e0e1defd8956a1da49f4af04f5d16b18c358dfeac/pycron-3.2.0-py3-none-any.whl", hash = "sha256:6d2349746270bd642b71b9f7187cf13f4d9ee2412b4710396a507b5fe4f60dac", size = 4904, upload-time = "2025-06-05T13:24:11.477Z" },
+]
+
+[[package]]
 name = "pydantic"
 version = "2.11.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1780,6 +1802,47 @@ wheels = [
 ]
 
 [[package]]
+name = "taskiq"
+version = "0.12.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "anyio" },
+    { name = "izulu" },
+    { name = "packaging" },
+    { name = "pycron" },
+    { name = "pydantic" },
+    { name = "taskiq-dependencies" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/92/cf/c4a47be05d85754f3e0ecc7b72131249adc067ea37517054459e94268fb1/taskiq-0.12.1.tar.gz", hash = "sha256:338dcf58eaca327e511a9380b2185bfa6a415dd79a5cf144546a2dbb95459298", size = 60536, upload-time = "2025-12-07T16:07:43.561Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4c/e4/a2fda3bcbb8b61108dc8e9db1a2d19a23578953db73e981f66b9d44f1207/taskiq-0.12.1-py3-none-any.whl", hash = "sha256:a8ade45e2e23edbadb972a88dec44e68c7daef83383d01fa3af48594a24a712a", size = 90668, upload-time = "2025-12-07T16:07:42.296Z" },
+]
+
+[[package]]
+name = "taskiq-aws"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiobotocore" },
+    { name = "taskiq" },
+    { name = "wait-for-it" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/aa/c0/ee09f1e12ad7fd87250549a7c5a9e86e8cebdc61e79c22b2d742db2fb0dc/taskiq_aws-0.4.0.tar.gz", hash = "sha256:a3656e3fadd9a856b7693599c38fc7e3001aabb8ff5e94d7899fd515400d2fff", size = 8210, upload-time = "2025-03-11T11:32:16.54Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2f/38/55d2e7c3f459250bd42009b14cd62cd86b2ceca8a900e2bde58e0c6d80f2/taskiq_aws-0.4.0-py3-none-any.whl", hash = "sha256:ba3d4de7d1681dac1b832b2530f1dbd9d6a698e82bae85438b1fd998f39c254d", size = 7663, upload-time = "2025-03-11T11:32:15.634Z" },
+]
+
+[[package]]
+name = "taskiq-dependencies"
+version = "1.5.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/90/47a627696e53bfdcacabc3e8c05b73bf1424685bcb5f17209cb8b12da1bf/taskiq_dependencies-1.5.7.tar.gz", hash = "sha256:0d3b240872ef152b719153b9526d866d2be978aeeaea6600e878414babc2dcb4", size = 14875, upload-time = "2025-02-26T22:07:39.876Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/99/6d/4a012f2de002c2e93273f5e7d3e3feea02f7fdbb7b75ca2ca1dd10703091/taskiq_dependencies-1.5.7-py3-none-any.whl", hash = "sha256:6fcee5d159bdb035ef915d4d848826169b6f06fe57cc2297a39b62ea3e76036f", size = 13801, upload-time = "2025-02-26T22:07:38.622Z" },
+]
+
+[[package]]
 name = "types-aiobotocore-s3"
 version = "2.25.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1861,6 +1924,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/38/e0/633e369b91bbc664df47dcb5454b6c7cf441e8f5b9d0c250ce9f0546401e/virtualenv-20.30.0.tar.gz", hash = "sha256:800863162bcaa5450a6e4d721049730e7f2dae07720e0902b0e4040bd6f9ada8", size = 4346945, upload-time = "2025-03-31T16:33:29.185Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/4c/ed/3cfeb48175f0671ec430ede81f628f9fb2b1084c9064ca67ebe8c0ed6a05/virtualenv-20.30.0-py3-none-any.whl", hash = "sha256:e34302959180fca3af42d1800df014b35019490b119eba981af27f2fa486e5d6", size = 4329461, upload-time = "2025-03-31T16:33:26.758Z" },
+]
+
+[[package]]
+name = "wait-for-it"
+version = "2.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/11/b9/494d24f3572f40d667df174cfeef75a245e7314425b7c438717268b5350c/wait_for_it-2.3.0.tar.gz", hash = "sha256:bc6eaeb0912cf4d59c824067f36c73739bb7a6182912ec8984f2fb3447ef68c0", size = 18305124, upload-time = "2024-10-13T02:38:33.968Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c4/93/fb9935c3bd263036785d30bdc84960c31bc2e925ec729a4db107231f5a4f/wait_for_it-2.3.0-py3-none-any.whl", hash = "sha256:22ddbf08d6fe1b5f59b3807d539a932df7cab3de2823cb8b63591f81fa666c38", size = 8132, upload-time = "2024-10-13T02:38:24.745Z" },
 ]
 
 [[package]]
