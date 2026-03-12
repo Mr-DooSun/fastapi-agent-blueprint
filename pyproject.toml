@@ -29,3 +29,16 @@ dependencies = [
     "types-aiobotocore-s3>=2.25.0",
     "uvicorn>=0.34.1",
 ]
+
+[dependency-groups]
+dev = [
+    "aiosqlite>=0.21.0",
+    "anyio[asyncio]>=4.0.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=5.0.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

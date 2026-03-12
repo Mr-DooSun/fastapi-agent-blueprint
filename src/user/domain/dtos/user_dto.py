@@ -1,11 +1,9 @@
 from datetime import datetime
 
-from pydantic import Field
-
-from src._core.domain.entities.entity import Entity
+from pydantic import BaseModel, Field
 
 
-class UserEntity(Entity):
+class UserDTO(BaseModel):
     id: int = Field(..., description="유저 고유 식별자")
     username: str = Field(..., description="유저 아이디")
     full_name: str = Field(..., description="유저 이름")
@@ -15,15 +13,15 @@ class UserEntity(Entity):
     updated_at: datetime = Field(..., description="유저 수정 시간")
 
 
-class CreateUserEntity(Entity):
+class CreateUserDTO(BaseModel):
     username: str = Field(..., description="유저 아이디")
     full_name: str = Field(..., description="유저 이름")
     email: str = Field(..., description="유저 이메일")
     password: str = Field(..., description="유저 비밀번호")
 
 
-class UpdateUserEntity(Entity):
-    username: str = Field(..., description="유저 아이디")
-    full_name: str = Field(..., description="유저 이름")
-    email: str = Field(..., description="유저 이메일")
-    password: str = Field(..., description="유저 비밀번호")
+class UpdateUserDTO(BaseModel):
+    username: str | None = Field(None, description="유저 아이디")
+    full_name: str | None = Field(None, description="유저 이름")
+    email: str | None = Field(None, description="유저 이메일")
+    password: str | None = Field(None, description="유저 비밀번호")

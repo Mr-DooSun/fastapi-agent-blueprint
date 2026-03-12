@@ -68,7 +68,7 @@ repos:
       - id: flake8
         exclude: ^migrations/
         args:
-          - --ignore=F841,E501,W503,E203,E402,F401,B008,B006,C901,SIM114,SIM910,SIM904
+          - --ignore=F841,E501,W503,E203,E402,F401,B008,B006,C901,SIM114,SIM910,SIM904,E704
           - --max-line-length=88
           - --max-complexity=20
           - --per-file-ignores=**/routers/*:B008,**/workflows/*:B006
@@ -113,7 +113,6 @@ repos:
         language: pygrep
         entry: "from src\\..*\\.infrastructure"
         files: "src/.*/domain/.*\\.py$"
-        args: [--negate]
 
       # Entity import 완전 제거 확인
       - id: no-entity-import
@@ -121,7 +120,6 @@ repos:
         language: pygrep
         entry: "from src\\._core\\.domain\\.entities"
         files: "\\.py$"
-        args: [--negate]
 
       # to_entity / from_entity 메서드 사용 금지
       - id: no-entity-methods
@@ -129,7 +127,6 @@ repos:
         language: pygrep
         entry: "\\.to_entity\\(|\\.from_entity\\("
         files: "\\.py$"
-        args: [--negate]
 
       # 다중상속 패턴 금지 (BaseResponse/BaseRequest + Entity/DTO 혼용)
       - id: no-multiple-inheritance-response
@@ -137,4 +134,3 @@ repos:
         language: pygrep
         entry: "class \\w+(Response|Request)\\(Base(Response|Request),\\s*\\w+(Entity|DTO)"
         files: "\\.py$"
-        args: [--negate]

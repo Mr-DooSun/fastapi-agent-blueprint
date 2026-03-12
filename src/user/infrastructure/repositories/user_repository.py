@@ -1,19 +1,15 @@
 from src._core.infrastructure.database.base_repository import BaseRepository
 from src._core.infrastructure.database.database import Database
-from src.user.domain.entities.user_entity import (
-    CreateUserEntity,
-    UpdateUserEntity,
-    UserEntity,
-)
+from src.user.domain.dtos.user_dto import CreateUserDTO, UpdateUserDTO, UserDTO
 from src.user.infrastructure.database.models.user_model import UserModel
 
 
-class UserRepository(BaseRepository[CreateUserEntity, UserEntity, UpdateUserEntity]):
+class UserRepository(BaseRepository[CreateUserDTO, UserDTO, UpdateUserDTO]):
     def __init__(self, database: Database) -> None:
         super().__init__(
             database=database,
             model=UserModel,
-            create_entity=CreateUserEntity,
-            return_entity=UserEntity,
-            update_entity=UpdateUserEntity,
+            create_entity=CreateUserDTO,
+            return_entity=UserDTO,
+            update_entity=UpdateUserDTO,
         )

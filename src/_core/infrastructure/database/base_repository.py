@@ -1,26 +1,26 @@
 from abc import ABC
 from typing import Generic, TypeVar
 
+from pydantic import BaseModel
 from sqlalchemy import func, select
 
-from src._core.domain.entities.entity import Entity
 from src._core.exceptions.base_exception import BaseCustomException
 from src._core.infrastructure.database.database import Base, Database
 
-CreateEntity = TypeVar("CreateEntity", bound=Entity)
-ReturnEntity = TypeVar("ReturnEntity", bound=Entity)
-UpdateEntity = TypeVar("UpdateEntity", bound=Entity)
+CreateDTO = TypeVar("CreateDTO", bound=BaseModel)
+ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
+UpdateDTO = TypeVar("UpdateDTO", bound=BaseModel)
 
 
-class BaseRepository(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
+class BaseRepository(Generic[CreateDTO, ReturnDTO, UpdateDTO], ABC):
     def __init__(
         self,
         database: Database,
         *,
         model: type[Base],
-        create_entity: type[CreateEntity],
-        return_entity: type[ReturnEntity],
-        update_entity: type[UpdateEntity],
+        create_entity: type[CreateDTO],
+        return_entity: type[ReturnDTO],
+        update_entity: type[UpdateDTO],
     ) -> None:
         self.database = database
         self.model = model
@@ -28,7 +28,7 @@ class BaseRepository(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
         self.return_entity = return_entity
         self.update_entity = update_entity
 
-    async def insert_data(self, entity: CreateEntity) -> ReturnEntity:
+    async def insert_data(self, entity: CreateDTO) -> ReturnDTO:
         async with self.database.session() as session:
             data = self.model(**entity.model_dump(exclude_none=True))
             session.add(data)
@@ -36,7 +36,7 @@ class BaseRepository(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
             await session.refresh(data)
             return self.return_entity.model_validate(data, from_attributes=True)
 
-    async def insert_datas(self, entities: list[CreateEntity]) -> list[ReturnEntity]:
+    async def insert_datas(self, entities: list[CreateDTO]) -> list[ReturnDTO]:
         async with self.database.session() as session:
             datas = [
                 self.model(**entity.model_dump(exclude_none=True))
@@ -50,7 +50,7 @@ class BaseRepository(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
                 for data in datas
             ]
 
-    async def select_datas(self, page: int, page_size: int) -> list[ReturnEntity]:
+    async def select_datas(self, page: int, page_size: int) -> list[ReturnDTO]:
         async with self.database.session() as session:
             result = await session.execute(
                 select(self.model).offset((page - 1) * page_size).limit(page_size)
@@ -66,7 +66,7 @@ class BaseRepository(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
                 for data in datas
             ]
 
-    async def select_data_by_id(self, data_id: int) -> ReturnEntity:
+    async def select_data_by_id(self, data_id: int) -> ReturnDTO:
         async with self.database.session() as session:
             result = await session.execute(
                 select(self.model).filter(self.model.id == data_id)
@@ -78,7 +78,7 @@ class BaseRepository(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
                 )
             return self.return_entity.model_validate(data, from_attributes=True)
 
-    async def select_datas_by_ids(self, data_ids: list[int]) -> list[ReturnEntity]:
+    async def select_datas_by_ids(self, data_ids: list[int]) -> list[ReturnDTO]:
         if not data_ids:
             return []
         async with self.database.session() as session:
@@ -93,7 +93,7 @@ class BaseRepository(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
 
     async def select_datas_with_count(
         self, page: int, page_size: int
-    ) -> tuple[list[ReturnEntity], int]:
+    ) -> tuple[list[ReturnDTO], int]:
         """데이터 조회와 카운트를 하나의 세션에서 처리하여 연결 풀 사용 최적화"""
         async with self.database.session() as session:
             # 데이터 조회
@@ -118,8 +118,8 @@ class BaseRepository(Generic[CreateEntity, ReturnEntity, UpdateEntity], ABC):
             ], total_count
 
     async def update_data_by_data_id(
-        self, data_id: int, entity: UpdateEntity
-    ) -> ReturnEntity:
+        self, data_id: int, entity: UpdateDTO
+    ) -> ReturnDTO:
         async with self.database.session() as session:
             result = await session.execute(
                 select(self.model).filter(self.model.id == data_id)
