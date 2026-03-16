@@ -1,8 +1,10 @@
 import pytest
+from pydantic import BaseModel
 
-from src.user.domain.dtos.user_dto import CreateUserDTO, UpdateUserDTO, UserDTO
+from src.user.domain.dtos.user_dto import UserDTO
 from src.user.domain.services.user_service import UserService
-from tests.factories.user_factory import make_create_user_dto, make_user_dto
+from src.user.interface.server.dtos.user_dto import UpdateUserRequest
+from tests.factories.user_factory import make_create_user_request, make_user_dto
 
 
 class MockUserRepository:
@@ -12,13 +14,13 @@ class MockUserRepository:
         self._store: dict[int, UserDTO] = {}
         self._next_id = 1
 
-    async def insert_data(self, entity: CreateUserDTO) -> UserDTO:
+    async def insert_data(self, entity: BaseModel) -> UserDTO:
         dto = make_user_dto(id=self._next_id, **entity.model_dump())
         self._store[self._next_id] = dto
         self._next_id += 1
         return dto
 
-    async def insert_datas(self, entities: list[CreateUserDTO]) -> list[UserDTO]:
+    async def insert_datas(self, entities: list[BaseModel]) -> list[UserDTO]:
         return [await self.insert_data(e) for e in entities]
 
     async def select_datas(self, page: int, page_size: int) -> list[UserDTO]:
@@ -39,9 +41,7 @@ class MockUserRepository:
     ) -> tuple[list[UserDTO], int]:
         return await self.select_datas(page, page_size), len(self._store)
 
-    async def update_data_by_data_id(
-        self, data_id: int, entity: UpdateUserDTO
-    ) -> UserDTO:
+    async def update_data_by_data_id(self, data_id: int, entity: BaseModel) -> UserDTO:
         dto = self._store[data_id]
         updated = dto.model_copy(
             update={k: v for k, v in entity.model_dump().items() if v is not None}
@@ -64,19 +64,19 @@ def user_service():
 
 @pytest.mark.asyncio
 async def test_create_user(user_service):
-    dto = make_create_user_dto()
-    result = await user_service.create_data(entity=dto)
+    request = make_create_user_request()
+    result = await user_service.create_data(entity=request)
 
     assert result.id == 1
-    assert result.username == dto.username
-    assert result.email == dto.email
-    assert result.password == dto.password
+    assert result.username == request.username
+    assert result.email == request.email
+    assert result.password == request.password
 
 
 @pytest.mark.asyncio
 async def test_get_user_by_id(user_service):
-    dto = make_create_user_dto()
-    created = await user_service.create_data(entity=dto)
+    request = make_create_user_request()
+    created = await user_service.create_data(entity=request)
 
     result = await user_service.get_data_by_data_id(data_id=created.id)
     assert result.id == created.id
@@ -85,12 +85,12 @@ async def test_get_user_by_id(user_service):
 
 @pytest.mark.asyncio
 async def test_update_user(user_service):
-    dto = make_create_user_dto()
-    created = await user_service.create_data(entity=dto)
+    request = make_create_user_request()
+    created = await user_service.create_data(entity=request)
 
-    update_dto = UpdateUserDTO(full_name="Updated Name")
+    update_request = UpdateUserRequest(full_name="Updated Name")
     result = await user_service.update_data_by_data_id(
-        data_id=created.id, entity=update_dto
+        data_id=created.id, entity=update_request
     )
     assert result.full_name == "Updated Name"
     assert result.username == created.username  # 변경 안 됨
@@ -98,8 +98,8 @@ async def test_update_user(user_service):
 
 @pytest.mark.asyncio
 async def test_delete_user(user_service):
-    dto = make_create_user_dto()
-    created = await user_service.create_data(entity=dto)
+    request = make_create_user_request()
+    created = await user_service.create_data(entity=request)
 
     success = await user_service.delete_data_by_data_id(data_id=created.id)
     assert success is True

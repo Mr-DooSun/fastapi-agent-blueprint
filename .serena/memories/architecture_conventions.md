@@ -1,26 +1,31 @@
 # Architecture Conventions
 
-## Data Flow (현재 리팩토링 목표)
+## Data Flow
 ```
-Request(BaseRequest) → CreateDTO(**item.model_dump())
-→ UseCase → Service → Repository
+Request(BaseRequest)
+→ UseCase → Service → Repository  (필드 동일 시 item 직접 전달)
 → DTO.model_validate(model, from_attributes=True)
 → Response(**dto.model_dump(exclude={'password'}))
 ```
+
+### Write DTO 생성 기준
+- Request 필드 == Domain 필드: Request 직접 전달 (변환 없음)
+- Request 필드 != Domain 필드 (auth context, 파생값 등): 별도 DTO 생성 후 변환
 
 ## Object Roles
 
 ### DTO (Domain DTO)
 - 위치: `src/{domain}/domain/dtos/{domain}_dto.py`
-- 역할: 모든 레이어를 흐르는 내부 데이터
-- 3종 세트: `{Name}DTO`, `Create{Name}DTO`, `Update{Name}DTO`
-- 민감 필드(password 등) 포함 가능 (내부 전달용)
+- 역할: Repository → Service → UseCase 읽기 결과 전달 (full data)
+- **읽기 전용 1종**: `{Name}DTO` — 민감 필드(password 등) 포함 가능
+- Create/Update DTO는 Request 필드와 다를 때만 별도 생성
 
 ### API Schema (Interface DTO)
 - 위치: `src/{domain}/interface/server/dtos/{domain}_dto.py`
 - `BaseRequest` / `BaseResponse` 상속
 - 명시적 필드 선언 (다중상속 금지)
-- 민감 필드 의도적 제외
+- 민감 필드 의도적 제외 (Response)
+- Request는 필드가 동일한 경우 레이어 DTO 역할도 겸함 (별도 Create/UpdateDTO 불필요)
 
 ### Model (SQLAlchemy ORM)
 - 위치: `src/{domain}/infrastructure/database/models/{domain}_model.py`

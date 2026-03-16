@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from src.user.domain.dtos.user_dto import CreateUserDTO, UpdateUserDTO, UserDTO
+from src.user.domain.dtos.user_dto import UserDTO
+from src.user.interface.server.dtos.user_dto import CreateUserRequest, UpdateUserRequest
 
 
 def make_user_dto(
@@ -24,13 +25,13 @@ def make_user_dto(
     )
 
 
-def make_create_user_dto(
+def make_create_user_request(
     username: str = "testuser",
     full_name: str = "Test User",
     email: str = "test@example.com",
     password: str = "hashed_password",
-) -> CreateUserDTO:
-    return CreateUserDTO(
+) -> CreateUserRequest:
+    return CreateUserRequest(
         username=username,
         full_name=full_name,
         email=email,
@@ -38,13 +39,13 @@ def make_create_user_dto(
     )
 
 
-def make_update_user_dto(
+def make_update_user_request(
     username: str | None = None,
     full_name: str | None = None,
     email: str | None = None,
     password: str | None = None,
-) -> UpdateUserDTO:
-    return UpdateUserDTO(
+) -> UpdateUserRequest:
+    return UpdateUserRequest(
         username=username,
         full_name=full_name,
         email=email,

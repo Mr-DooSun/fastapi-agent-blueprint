@@ -18,9 +18,9 @@ class BaseRepository(Generic[CreateDTO, ReturnDTO, UpdateDTO], ABC):
         database: Database,
         *,
         model: type[Base],
-        create_entity: type[CreateDTO],
         return_entity: type[ReturnDTO],
-        update_entity: type[UpdateDTO],
+        create_entity: type[CreateDTO] | None = None,
+        update_entity: type[UpdateDTO] | None = None,
     ) -> None:
         self.database = database
         self.model = model

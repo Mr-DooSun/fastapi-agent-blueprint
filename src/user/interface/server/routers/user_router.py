@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends, Query
 
 from src._core.application.dtos.base_response import SuccessResponse
 from src.user.application.use_cases.user_use_case import UserUseCase
-from src.user.domain.dtos.user_dto import CreateUserDTO, UpdateUserDTO
 from src.user.infrastructure.di.user_container import UserContainer
 from src.user.interface.server.dtos.user_dto import (
     CreateUserRequest,
@@ -28,7 +27,7 @@ async def create_user(
     item: CreateUserRequest,
     user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
 ) -> SuccessResponse[UserResponse]:
-    data = await user_use_case.create_data(entity=CreateUserDTO(**item.model_dump()))
+    data = await user_use_case.create_data(entity=item)
     return SuccessResponse(data=UserResponse(**data.model_dump(exclude={"password"})))
 
 
@@ -46,8 +45,7 @@ async def create_users(
     items: list[CreateUserRequest],
     user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
 ) -> SuccessResponse[list[UserResponse]]:
-    dtos = [CreateUserDTO(**item.model_dump()) for item in items]
-    datas = await user_use_case.create_datas(entities=dtos)
+    datas = await user_use_case.create_datas(entities=items)
     return SuccessResponse(
         data=[UserResponse(**data.model_dump(exclude={"password"})) for data in datas]
     )
@@ -128,9 +126,7 @@ async def update_user_by_user_id(
     item: UpdateUserRequest,
     user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
 ) -> SuccessResponse[UserResponse]:
-    data = await user_use_case.update_data_by_data_id(
-        data_id=user_id, entity=UpdateUserDTO(**item.model_dump())
-    )
+    data = await user_use_case.update_data_by_data_id(data_id=user_id, entity=item)
     return SuccessResponse(data=UserResponse(**data.model_dump(exclude={"password"})))
 
 

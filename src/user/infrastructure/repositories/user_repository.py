@@ -1,15 +1,15 @@
+from pydantic import BaseModel
+
 from src._core.infrastructure.database.base_repository import BaseRepository
 from src._core.infrastructure.database.database import Database
-from src.user.domain.dtos.user_dto import CreateUserDTO, UpdateUserDTO, UserDTO
+from src.user.domain.dtos.user_dto import UserDTO
 from src.user.infrastructure.database.models.user_model import UserModel
 
 
-class UserRepository(BaseRepository[CreateUserDTO, UserDTO, UpdateUserDTO]):
+class UserRepository(BaseRepository[BaseModel, UserDTO, BaseModel]):
     def __init__(self, database: Database) -> None:
         super().__init__(
             database=database,
             model=UserModel,
-            create_entity=CreateUserDTO,
             return_entity=UserDTO,
-            update_entity=UpdateUserDTO,
         )
