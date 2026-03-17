@@ -1,18 +1,13 @@
-from celery import Celery
+from taskiq_aws import SQSBroker
 
 from src.user.infrastructure.di.user_container import UserContainer
+from src.user.interface.worker.tasks import user_test_task
 
 
 def create_user_container(user_container: UserContainer):
-    user_container.wire(packages=["src.user.interface.worker.tasks"])
+    user_container.wire(modules=[user_test_task])
     return user_container
 
 
-def setup_user_routes(app: Celery):
-    app.autodiscover_tasks(["src.user.interface.worker.tasks"])
-
-
-def bootstrap_user(app: Celery, user_container: UserContainer):
-    user_container = create_user_container(user_container=user_container)
-
-    setup_user_routes(app=app)
+def bootstrap_user(app: SQSBroker, user_container: UserContainer):
+    create_user_container(user_container=user_container)

@@ -4,10 +4,10 @@ from src._core.config import settings
 from src._core.infrastructure.database.config import DatabaseConfig
 from src._core.infrastructure.database.database import Database
 from src._core.infrastructure.http.http_client import HttpClient
-from src._core.infrastructure.messaging.celery_factory import create_celery_app
-from src._core.infrastructure.messaging.celery_manager import CeleryManager
 from src._core.infrastructure.storage.object_storage import ObjectStorage
 from src._core.infrastructure.storage.object_storage_client import ObjectStorageClient
+from src._core.infrastructure.taskiq.broker import CustomSQSBroker
+from src._core.infrastructure.taskiq.manager import TaskiqManager
 
 
 class CoreContainer(containers.DeclarativeContainer):
@@ -66,19 +66,18 @@ class CoreContainer(containers.DeclarativeContainer):
     )
 
     #########################################################
-    # Messaging
+    # Message Queue (Taskiq)
     #########################################################
 
-    celery_app = providers.Singleton(
-        create_celery_app,
-        env=settings.env,
-        region=settings.aws_sqs_region,
-        access_key=settings.aws_sqs_access_key,
-        secret_key=settings.aws_sqs_secret_key,
-        queue=settings.aws_sqs_queue,
+    broker = providers.Singleton(
+        CustomSQSBroker,
+        queue_url=settings.aws_sqs_url,
+        aws_region=settings.aws_sqs_region,
+        aws_access_key_id=settings.aws_sqs_access_key,
+        aws_secret_access_key=settings.aws_sqs_secret_key,
     )
 
-    celery_manager = providers.Singleton(
-        CeleryManager,
-        celery_app=celery_app,
+    taskiq_manager = providers.Singleton(
+        TaskiqManager,
+        broker=broker,
     )

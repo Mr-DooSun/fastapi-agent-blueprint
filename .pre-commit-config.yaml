@@ -68,7 +68,7 @@ repos:
       - id: flake8
         exclude: ^migrations/
         args:
-          - --ignore=F841,E501,W503,E203,E402,F401,B008,B006,C901,SIM114,SIM910,SIM904
+          - --ignore=F841,E501,W503,E203,E402,F401,B008,B006,C901,SIM114,SIM910,SIM904,E704
           - --max-line-length=88
           - --max-complexity=20
           - --per-file-ignores=**/routers/*:B008,**/workflows/*:B006
@@ -103,3 +103,34 @@ repos:
         args:
           - -ll  # Low/Low severity만
           - --skip=B113,B314,B413  # 알려진 이슈 무시 (timeout, xml, pycrypto)
+
+  # ==================== STAGE: COMMIT (아키텍처 위반 검사) ====================
+  - repo: local
+    hooks:
+      # Domain 레이어에서 Infrastructure import 금지
+      - id: no-domain-infra-import
+        name: "Domain → Infrastructure import 금지"
+        language: pygrep
+        entry: "from src\\..*\\.infrastructure"
+        files: "src/.*/domain/.*\\.py$"
+
+      # Entity import 완전 제거 확인
+      - id: no-entity-import
+        name: "Entity import 금지 (DTO로 대체됨)"
+        language: pygrep
+        entry: "from src\\._core\\.domain\\.entities"
+        files: "\\.py$"
+
+      # to_entity / from_entity 메서드 사용 금지
+      - id: no-entity-methods
+        name: "to_entity/from_entity 메서드 금지"
+        language: pygrep
+        entry: "\\.to_entity\\(|\\.from_entity\\("
+        files: "\\.py$"
+
+      # 다중상속 패턴 금지 (BaseResponse/BaseRequest + Entity/DTO 혼용)
+      - id: no-multiple-inheritance-response
+        name: "Response/Request 다중상속 패턴 금지"
+        language: pygrep
+        entry: "class \\w+(Response|Request)\\(Base(Response|Request),\\s*\\w+(Entity|DTO)"
+        files: "\\.py$"

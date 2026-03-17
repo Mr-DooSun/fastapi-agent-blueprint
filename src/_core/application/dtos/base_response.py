@@ -1,7 +1,6 @@
 from typing import Generic, TypeVar
 
 from src._core.application.dtos.base_config import ApiConfig
-from src._core.domain.entities.entity import Entity
 
 
 class PaginationInfo(ApiConfig):
@@ -23,9 +22,7 @@ ReturnType = TypeVar("ReturnType")
 
 
 class BaseResponse(ApiConfig):
-    @classmethod
-    def from_entity(cls: type[ReturnType], entity: Entity) -> ReturnType:
-        return cls(**entity.model_dump())
+    pass
 
 
 class SuccessResponse(ApiConfig, Generic[ReturnType]):
