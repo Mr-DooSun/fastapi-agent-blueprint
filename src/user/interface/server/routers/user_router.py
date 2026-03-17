@@ -2,9 +2,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 
 from src._core.application.dtos.base_response import SuccessResponse
-from src._core.common.dto_utils import dtos_to_entities, entities_to_dtos
 from src.user.application.use_cases.user_use_case import UserUseCase
-from src.user.domain.entities.user_entity import CreateUserEntity, UpdateUserEntity
 from src.user.infrastructure.di.user_container import UserContainer
 from src.user.interface.server.dtos.user_dto import (
     CreateUserRequest,
@@ -29,8 +27,8 @@ async def create_user(
     item: CreateUserRequest,
     user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
 ) -> SuccessResponse[UserResponse]:
-    data = await user_use_case.create_data(entity=item.to_entity(CreateUserEntity))
-    return SuccessResponse(data=UserResponse.from_entity(data))
+    data = await user_use_case.create_data(entity=item)
+    return SuccessResponse(data=UserResponse(**data.model_dump(exclude={"password"})))
 
 
 # ==========================================================================================
@@ -47,9 +45,10 @@ async def create_users(
     items: list[CreateUserRequest],
     user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
 ) -> SuccessResponse[list[UserResponse]]:
-    entities = dtos_to_entities(items, CreateUserEntity)
-    datas = await user_use_case.create_datas(entities=entities)
-    return SuccessResponse(data=entities_to_dtos(datas, UserResponse))
+    datas = await user_use_case.create_datas(entities=items)
+    return SuccessResponse(
+        data=[UserResponse(**data.model_dump(exclude={"password"})) for data in datas]
+    )
 
 
 # ==========================================================================================
@@ -68,7 +67,8 @@ async def get_user(
 ) -> SuccessResponse[list[UserResponse]]:
     datas, pagination = await user_use_case.get_datas(page=page, page_size=page_size)
     return SuccessResponse(
-        data=entities_to_dtos(datas, UserResponse), pagination=pagination
+        data=[UserResponse(**data.model_dump(exclude={"password"})) for data in datas],
+        pagination=pagination,
     )
 
 
@@ -86,9 +86,10 @@ async def get_user_by_ids(
     ids: list[int] = Query(..., description="쉼표로 구분된 ID 리스트 (예: 0,1,2)"),
     user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
 ) -> SuccessResponse[list[UserResponse]]:
-
     datas = await user_use_case.get_datas_by_data_ids(data_ids=ids)
-    return SuccessResponse(data=entities_to_dtos(datas, UserResponse))
+    return SuccessResponse(
+        data=[UserResponse(**data.model_dump(exclude={"password"})) for data in datas]
+    )
 
 
 # ==========================================================================================
@@ -107,7 +108,7 @@ async def get_user_by_user_id(
     user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
 ) -> SuccessResponse[UserResponse]:
     data = await user_use_case.get_data_by_data_id(data_id=user_id)
-    return SuccessResponse(data=UserResponse.from_entity(data))
+    return SuccessResponse(data=UserResponse(**data.model_dump(exclude={"password"})))
 
 
 # ==========================================================================================
@@ -125,10 +126,8 @@ async def update_user_by_user_id(
     item: UpdateUserRequest,
     user_use_case: UserUseCase = Depends(Provide[UserContainer.user_use_case]),
 ) -> SuccessResponse[UserResponse]:
-    data = await user_use_case.update_data_by_data_id(
-        data_id=user_id, entity=item.to_entity(UpdateUserEntity)
-    )
-    return SuccessResponse(data=UserResponse.from_entity(data))
+    data = await user_use_case.update_data_by_data_id(data_id=user_id, entity=item)
+    return SuccessResponse(data=UserResponse(**data.model_dump(exclude={"password"})))
 
 
 # ==========================================================================================

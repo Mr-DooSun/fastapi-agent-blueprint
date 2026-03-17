@@ -51,13 +51,11 @@ class Settings(BaseSettings):
     # Messaging (AWS SQS)
     # ----------------------------------------------------------------
     aws_sqs_region: str | None = Field(default=None, validation_alias="AWS_SQS_REGION")
-    aws_sqs_access_key: str | None = Field(
-        default=None, validation_alias="AWS_SQS_ACCESS_KEY"
-    )
-    aws_sqs_secret_key: str | None = Field(
-        default=None, validation_alias="AWS_SQS_SECRET_KEY"
-    )
-    aws_sqs_queue: str | None = Field(default=None, validation_alias="AWS_SQS_QUEUE")
+    aws_sqs_access_key: str = Field(validation_alias="AWS_SQS_ACCESS_KEY")
+    aws_sqs_secret_key: str = Field(validation_alias="AWS_SQS_SECRET_KEY")
+    aws_sqs_url: str = Field(validation_alias="AWS_SQS_URL")
+
+    # ----------------------------------------------------------------
 
     @property
     def is_dev(self) -> bool:
