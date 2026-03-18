@@ -22,6 +22,7 @@
 - 필드가 다른 경우 (auth context 주입, 파생 필드 등): `application/` 또는 `domain/dtos/`에 별도 DTO 생성
 
 ## 작업별 Skills (slash commands)
+- `/plan-feature {description}` — 기능 구현 계획 수립 (요구사항 인터뷰 → 아키텍처 분석 → 보안 체크 → 태스크 분해)
 - `/new-domain {name}` — 도메인 전체 스캐폴딩 (28개 파일 + 테스트)
 - `/add-api {description}` — 기존 도메인에 API 엔드포인트 추가
 - `/add-worker-task {domain} {task}` — 비동기 Taskiq 태스크 추가
