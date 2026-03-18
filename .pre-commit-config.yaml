@@ -76,6 +76,16 @@ repos:
           - flake8-bugbear
           - flake8-comprehensions
 
+  # 7. 보안 정적 분석 (체크만)
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.0
+    hooks:
+      - id: bandit
+        exclude: ^(migrations/|tests/|.*_test\.py$)
+        args:
+          - -ll  # Low/Low severity만
+          - --skip=B113,B314,B413  # 알려진 이슈 무시 (timeout, xml, pycrypto)
+
   # ==================== STAGE: MANUAL (수동 실행) ====================
   # 타입 체킹: pre-commit run --hook-stage manual mypy
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -92,17 +102,6 @@ repos:
         additional_dependencies:
           - types-requests
           - pydantic
-
-  # 보안 체크: pre-commit run --hook-stage manual bandit
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.8.0
-    hooks:
-      - id: bandit
-        stages: [manual]
-        exclude: ^(migrations/|tests/|.*_test\.py$)
-        args:
-          - -ll  # Low/Low severity만
-          - --skip=B113,B314,B413  # 알려진 이슈 무시 (timeout, xml, pycrypto)
 
   # ==================== STAGE: COMMIT (아키텍처 위반 검사) ====================
   - repo: local

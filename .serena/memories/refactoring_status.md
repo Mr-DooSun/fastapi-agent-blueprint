@@ -2,6 +2,8 @@
 
 ## Current Phase: COMPLETE ✅
 
+> 최종 갱신: 2026-03-18
+
 All phases of the Entity → DTO refactoring have been completed.
 
 ## Completed Work
@@ -54,6 +56,7 @@ All phases of the Entity → DTO refactoring have been completed.
 - Domain → Infrastructure import: CLEAN
 - to_entity/from_entity methods: CLEAN
 - Multi-inheritance pattern: CLEAN
+- Mapper class: CLEAN
 
 ## Next Actions
 - Run `pytest tests/ -v` to verify all tests pass

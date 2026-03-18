@@ -9,6 +9,7 @@
 |---|------|------|------|
 | [000](000-rabbitmq-to-celery.md) | RabbitMQ에서 Celery로 전환 | Superseded by 001 | 2025-09-10 |
 | [001](001-celery-to-taskiq.md) | Celery에서 Taskiq로 전환 | Accepted | 2025-12-24 |
+| [002](002-serena-adoption.md) | Serena MCP 서버 도입 및 Claude Code 병행 전략 | Accepted | 2026-03-18 |
 
 ## 작성 가이드
 

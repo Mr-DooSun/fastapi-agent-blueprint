@@ -1,5 +1,8 @@
 # Suggested Commands
 
+> 용도: Serena/Claude가 쉘 명령을 실행할 때 참조하는 빠른 레퍼런스.
+> Skills 실행 시에도 이 명령어 목록을 참조한다.
+
 ## Run
 ```bash
 # FastAPI server (dev)
@@ -27,8 +30,11 @@ pre-commit run --all-files
 
 ## DB Migrations
 ```bash
-alembic revision --autogenerate -m "message"
+alembic revision --autogenerate -m "{domain}: {description}"
 alembic upgrade head
+alembic downgrade -1
+alembic current
+alembic history
 ```
 
 ## Package Management (uv)

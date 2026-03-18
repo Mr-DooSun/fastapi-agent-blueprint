@@ -9,5 +9,5 @@ def create_user_container(user_container: UserContainer):
     return user_container
 
 
-def bootstrap_user(app: SQSBroker, user_container: UserContainer):
+def bootstrap_user_domain(app: SQSBroker, user_container: UserContainer):
     create_user_container(user_container=user_container)
