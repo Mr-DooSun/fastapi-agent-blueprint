@@ -76,7 +76,7 @@
 
 | 태스크 유형 | 매핑 Skill | 인자 형식 | 비고 |
 |------------|-----------|----------|------|
-| 새 도메인 생성 | `/new-domain` | `{name}` | 26개 파일 자동 생성 |
+| 새 도메인 생성 | `/new-domain` | `{name}` | 소스 21개 + 테스트 4개 자동 생성 |
 | CRUD API 추가 | `/add-api` | `"{domain}에 {METHOD} /{path} 추가"` | Bottom-up 구현 |
 | 커스텀 API 추가 | `/add-api` | `"{description}"` | 비즈니스 로직 포함 시 감독 필요 |
 | 비동기 태스크 | `/add-worker-task` | `{domain} {task_name}` | UseCase 메서드 필요 시 먼저 추가 |
@@ -84,6 +84,7 @@
 | 테스트 생성 | `/test-domain` | `{domain} generate` | 4개 필수 테스트 파일 |
 | 테스트 실행 | `/test-domain` | `{domain} run` | unit + integration + e2e |
 | 아키텍처 검증 | `/review-architecture` | `{domain}` 또는 `all` | 20+ 항목 검사 |
+| 보안 감사 | `/security-review` | `{domain}`, `{file}`, 또는 `all` | OWASP 6카테고리 24+ 항목 |
 | 가이드라인 동기화 | `/sync-guidelines` | (없음) | 설계 변경 후 실행 |
 | 버그 수정 | `/fix-bug` | `"{description}"` | 재현→추적→수정→검증 |
 | DB 마이그레이션 | `/migrate-domain` | `generate\|upgrade\|downgrade\|status` | autogenerate 후 수동 검토 필수 |

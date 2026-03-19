@@ -3,7 +3,7 @@
 > 이 파일은 `/sync-guidelines` 실행 시 `src/user/`(레퍼런스 도메인)와 `src/_core/`(Base 클래스)에서
 > 자동 추출/갱신됩니다. **수동 편집 대신 `/sync-guidelines`를 실행하세요.**
 >
-> 최종 갱신: 2026-03-18
+> 최종 갱신: 2026-03-19
 
 ## 섹션 인덱스
 §0 프로젝트 스케일 및 설계 철학 |
@@ -261,9 +261,11 @@ def create_server_container() -> containers.DynamicContainer:
 - no-entity-methods: to_entity/from_entity 메서드 금지
 - no-multiple-inheritance-response: Response/Request 다중상속 금지
 
-### Claude Hook (PreToolUse)
+### Claude Hook
 
-- pre-tool-security: SQL injection, 하드코딩 시크릿, Domain→Infra import, 민감 데이터 로그 검사
+- PreToolUse (pre-tool-security): SQL injection, 하드코딩 시크릿, Domain→Infra import, 민감 데이터 로그 검사
+- PostToolUse (post-tool-sync-warning): 코어 파일(_core/, pyproject.toml, .pre-commit-config.yaml, .serena/memories/, .claude/skills/_shared/, .claude/hooks/) 수정 시 /sync-guidelines 실행 권고
+- Stop: 핵심 파일 수정 후 /sync-guidelines 미실행 시 세션 종료 전 경고
 
 ## §8. 활성 기능
 

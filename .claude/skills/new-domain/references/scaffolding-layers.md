@@ -26,11 +26,16 @@
    - `from src._core.exceptions.base_exception import BaseCustomException`
    - `{Name}NotFoundException(status_code=404, error_code="{NAME}_NOT_FOUND")`
    - `{Name}AlreadyExistsException(status_code=409, error_code="{NAME}_ALREADY_EXISTS")`
+7. `src/{name}/domain/events/{name}_events.py`
+   - `from src._core.domain.events.domain_event import DomainEvent`
+   - `{Name}Created(DomainEvent)` — event_type="{name}.created", {name}_id
+   - `{Name}Updated(DomainEvent)` — event_type="{name}.updated", {name}_id
+   - `{Name}Deleted(DomainEvent)` — event_type="{name}.deleted", {name}_id
 
 ## Layer 2: Application
 
-7. `src/{name}/application/__init__.py` — 빈 파일
-8. `src/{name}/application/use_cases/{name}_use_case.py`
+8. `src/{name}/application/__init__.py` — 빈 파일
+9. `src/{name}/application/use_cases/{name}_use_case.py`
    - `__init__(self, {name}_service: {Name}Service)`
    - Service 메서드 미러링 + `get_datas`에서 `make_pagination()` 적용
    - `from src._core.application.dtos.base_response import PaginationInfo`
@@ -38,20 +43,20 @@
 
 ## Layer 3: Infrastructure
 
-9. `src/{name}/infrastructure/__init__.py` — 빈 파일
-10. `src/{name}/infrastructure/database/__init__.py` — 빈 파일
-11. `src/{name}/infrastructure/database/models/{name}_model.py`
+10. `src/{name}/infrastructure/__init__.py` — 빈 파일
+11. `src/{name}/infrastructure/database/__init__.py` — 빈 파일
+12. `src/{name}/infrastructure/database/models/{name}_model.py`
     - `from src._core.infrastructure.database.database import Base`
     - `class {Name}Model(Base)` — SQLAlchemy 2.0 `Mapped[Type]` + `mapped_column()`
     - `__tablename__ = "{name}"`
     - `created_at`, `updated_at`에 `func.now()` 사용
-12. `src/{name}/infrastructure/repositories/{name}_repository.py`
+13. `src/{name}/infrastructure/repositories/{name}_repository.py`
     - `from src._core.infrastructure.database.base_repository import BaseRepository`
     - Generic: `BaseRepository[BaseModel, {Name}DTO, BaseModel]` (project-dna.md §3 참조)
     - `class {Name}Repository(BaseRepository[BaseModel, {Name}DTO, BaseModel])`
     - `__init__` 시그니처: **project-dna.md §3** "BaseRepository.__init__" 참조
     - `super().__init__(database=database, model={Name}Model, return_entity={Name}DTO)`
-13. `src/{name}/infrastructure/di/{name}_container.py`
+14. `src/{name}/infrastructure/di/{name}_container.py`
     - DI 패턴: **project-dna.md §5** 참조
     - `class {Name}Container(containers.DeclarativeContainer)`
     - `core_container = providers.DependenciesContainer()`
@@ -59,34 +64,34 @@
 
 ## Layer 4: Interface
 
-14. `src/{name}/interface/__init__.py` — 빈 파일
-15. `src/{name}/interface/server/dtos/{name}_dto.py`
+15. `src/{name}/interface/__init__.py` — 빈 파일
+16. `src/{name}/interface/server/dtos/{name}_dto.py`
     - `from src._core.application.dtos.base_response import BaseResponse`
     - `from src._core.application.dtos.base_request import BaseRequest`
     - `{Name}Response(BaseResponse)` — 민감 필드 제외
     - `Create{Name}Request(BaseRequest)` — 생성 필드
     - `Update{Name}Request(BaseRequest)` — 모든 필드 Optional (`| None = None`)
     - **다중상속 절대 금지**
-16. `src/{name}/interface/server/routers/{name}_router.py`
+17. `src/{name}/interface/server/routers/{name}_router.py`
     - Router 패턴: **project-dna.md §9** 참조
     - `router = APIRouter()`
     - CRUD 엔드포인트: POST /{name}, POST /{name}s, GET /{name}s, GET /{name}/{id}, PUT /{name}/{id}, DELETE /{name}/{id}
     - `@inject` + `Depends(Provide[{Name}Container.{name}_use_case])`
     - 변환 패턴: **project-dna.md §6** 참조
     - 반환: `SuccessResponse(data=...)`
-17. `src/{name}/interface/server/bootstrap/{name}_bootstrap.py`
+18. `src/{name}/interface/server/bootstrap/{name}_bootstrap.py`
     - `create_{name}_container()` — `wire(packages=["src.{name}.interface.server.routers"])`
     - `setup_{name}_routes(app)` — `app.include_router(prefix="/v1", tags=["{name}"])`
     - `setup_{name}_admin(app, database)` — Admin 뷰 등록
     - `bootstrap_{name}_domain(app, database, {name}_container)`
-18. `src/{name}/interface/admin/views/{name}_view.py`
+19. `src/{name}/interface/admin/views/{name}_view.py`
     - `from sqladmin import ModelView`
     - `class {Name}View(ModelView, model={Name}Model)`
-19. `src/{name}/interface/worker/tasks/{name}_test_task.py`
+20. `src/{name}/interface/worker/tasks/{name}_test_task.py`
     - `@broker.task(task_name="{project-name}.{name}.test")`
     - `@inject` + `Provide[{Name}Container.{name}_use_case]`
     - `**kwargs` → `{Name}DTO.model_validate(kwargs)`
-20. `src/{name}/interface/worker/bootstrap/{name}_bootstrap.py`
+21. `src/{name}/interface/worker/bootstrap/{name}_bootstrap.py`
     - `wire(modules=[{name}_test_task])`
     - 함수명: `bootstrap_{name}_domain` (server와 통일된 컨벤션)
 
@@ -102,9 +107,9 @@
 > - `src/{name}/infrastructure/di/{name}_container.py` 존재
 > - 디렉토리명이 `_` 또는 `.`으로 시작하지 않음
 
-## Layer 5 (이전 Layer 6): 테스트
+## Layer 5: 테스트
 
-23. `tests/factories/{name}_factory.py` — `make_{name}_dto()`, `make_create_{name}_request()`
-24. `tests/unit/{name}/domain/test_{name}_service.py` — MockRepository + CRUD 테스트
-25. `tests/unit/{name}/application/test_{name}_use_case.py` — MockService + 페이지네이션 테스트
-26. `tests/integration/{name}/infrastructure/test_{name}_repository.py` — test_db 픽스처 사용
+22. `tests/factories/{name}_factory.py` — `make_{name}_dto()`, `make_create_{name}_request()`
+23. `tests/unit/{name}/domain/test_{name}_service.py` — MockRepository + CRUD 테스트
+24. `tests/unit/{name}/application/test_{name}_use_case.py` — MockService + 페이지네이션 테스트
+25. `tests/integration/{name}/infrastructure/test_{name}_repository.py` — test_db 픽스처 사용

@@ -15,6 +15,12 @@
 - Model 객체를 Repository 밖으로 노출 금지
 - Mapper 클래스 별도 생성 금지 (인라인 변환으로 충분)
 
+## Claude 협업 규칙
+- 진단/리뷰 결과가 "적절하다"면 억지 개선 제안을 만들지 않는다
+- 제안 전 기존 4계층(CLAUDE.md / project-dna / Serena / auto-memory)에서 이미 커버되는지 검증한다
+- 기존 구조를 수정/삭제하는 제안은 새 구조의 이득이 명확할 때만 한다
+- 스킬 SKILL.md frontmatter 지원 속성: name, argument-hint, description, disable-model-invocation, compatibility (allowed-tools 미지원)
+
 ## 변환 패턴
 - Request → Service: `item` 직접 전달 (필드가 동일한 경우)
 - Request → 별도 DTO: `CreateNameDTO(**item.model_dump(), extra_field=...)` (필드가 다른 경우)
@@ -27,7 +33,7 @@
 
 ## 작업별 Skills (slash commands)
 - `/plan-feature {description}` — 기능 구현 계획 수립 (요구사항 인터뷰 → 아키텍처 분석 → 보안 체크 → 태스크 분해)
-- `/new-domain {name}` — 도메인 전체 스캐폴딩 (28개 파일 + 테스트)
+- `/new-domain {name}` — 도메인 전체 스캐폴딩 (소스 21개 + 테스트 4개)
 - `/add-api {description}` — 기존 도메인에 API 엔드포인트 추가
 - `/add-worker-task {domain} {task}` — 비동기 Taskiq 태스크 추가
 - `/add-cross-domain from:{a} to:{b}` — 도메인 간 의존성 연결
