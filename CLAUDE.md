@@ -14,6 +14,18 @@
 - `to_entity()`, `from_entity()` 메서드 사용 금지
 - Model 객체를 Repository 밖으로 노출 금지
 - Mapper 클래스 별도 생성 금지 (인라인 변환으로 충분)
+- Entity 용어 사용 금지 (DTO로 통일)
+
+## 계층 구조 (3-Tier 하이브리드)
+- 기본: Router → Service(BaseService 상속) → Repository(BaseRepository 상속)
+- 복합 로직 시: Router → UseCase(수동 작성) → Service → Repository
+- UseCase 추가 기준: 여러 Service 조합, 트랜잭션 경계 초과, 이벤트 발행 등
+- 판단이 애매하면: UseCase 없이 시작, 복잡해지면 추가
+
+## 용어 정의
+- **Request/Response**: API 통신 규격 (`interface/server/dtos/`)
+- **DTO**: 내부 레이어 간 데이터 운반 — Repository→Router (`domain/dtos/`)
+- **Model**: DB 테이블 매핑, Repository 밖으로 노출 금지 (`infrastructure/database/models/`)
 
 ## Claude 협업 규칙
 - 진단/리뷰 결과가 "적절하다"면 억지 개선 제안을 만들지 않는다
@@ -22,14 +34,20 @@
 - 스킬 SKILL.md frontmatter 지원 속성: name, argument-hint, description, disable-model-invocation, compatibility (allowed-tools 미지원)
 
 ## 변환 패턴
-- Request → Service: `item` 직접 전달 (필드가 동일한 경우)
-- Request → 별도 DTO: `CreateNameDTO(**item.model_dump(), extra_field=...)` (필드가 다른 경우)
-- Model → DTO: `UserDTO.model_validate(model, from_attributes=True)`
-- DTO → Response: `UserResponse(**dto.model_dump(exclude={'password'}))`
+### Write 방향 (Request → DB)
+- Router → Service: `entity=item` (Request 직접 전달)
+- Service → Repository: entity 그대로 전달
+- Repository → DB: `Model(**entity.model_dump(exclude_none=True))`
+
+### Read 방향 (DB → Response)
+- DB → Repository: `DTO.model_validate(model, from_attributes=True)`
+- Repository → Service → Router: DTO 그대로 전달
+- Router → Client: `Response(**dto.model_dump(exclude={'password'}))`
 
 ## Write DTO 생성 기준
-- Request 필드와 동일한 경우: Request를 직접 레이어 DTO로 사용, 별도 Create/Update DTO 불필요
-- 필드가 다른 경우 (auth context 주입, 파생 필드 등): `application/` 또는 `domain/dtos/`에 별도 DTO 생성
+- Request 필드와 동일한 경우: Request를 직접 전달, 별도 Create/Update DTO 불필요
+- 필드가 다른 경우 (auth context 주입, 파생 필드 등): `domain/dtos/`에 별도 DTO 생성
+  - 예: `CreateUserDTO(**item.model_dump(), created_by=current_user.id)`
 
 ## 작업별 Skills (slash commands)
 - `/plan-feature {description}` — 기능 구현 계획 수립 (요구사항 인터뷰 → 아키텍처 분석 → 보안 체크 → 태스크 분해)

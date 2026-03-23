@@ -58,7 +58,7 @@ src/{name}/
 │   ├── exceptions/{name}_exceptions.py
 │   ├── events/{name}_events.py
 │   └── value_objects/                    # (필요 시)
-├── application/
+├── application/                           # (선택 — 복잡한 로직 시에만)
 │   ├── __init__.py
 │   └── use_cases/{name}_use_case.py
 ├── infrastructure/
@@ -86,6 +86,7 @@ src/{name}/
 | 클래스명 | Import 경로 |
 |---------|------------|
 | BaseRepositoryProtocol | `src._core.domain.protocols.repository_protocol.BaseRepositoryProtocol` |
+| BaseService | `src._core.domain.services.base_service.BaseService` |
 | BaseRepository | `src._core.infrastructure.database.base_repository.BaseRepository` |
 | Base (ORM DeclarativeBase) | `src._core.infrastructure.database.database.Base` |
 | Database | `src._core.infrastructure.database.database.Database` |
@@ -112,21 +113,21 @@ src/{name}/
 ## §3. Generic 타입 시그니처
 
 ```python
-# BaseRepositoryProtocol / BaseRepository 공통
-CreateDTO = TypeVar("CreateDTO", bound=BaseModel)
+# BaseRepositoryProtocol / BaseRepository / BaseService 공통
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
-UpdateDTO = TypeVar("UpdateDTO", bound=BaseModel)
 
-class BaseRepositoryProtocol(Generic[CreateDTO, ReturnDTO, UpdateDTO]): ...
-class BaseRepository(Generic[CreateDTO, ReturnDTO, UpdateDTO], ABC): ...
+class BaseRepositoryProtocol(Generic[ReturnDTO]): ...
+class BaseRepository(Generic[ReturnDTO], ABC): ...
+class BaseService(Generic[ReturnDTO]): ...
 
 # SuccessResponse
 ReturnType = TypeVar("ReturnType")
 class SuccessResponse(ApiConfig, Generic[ReturnType]): ...
 
 # 레퍼런스 도메인 (user) 사용 예:
-class UserRepositoryProtocol(BaseRepositoryProtocol[BaseModel, UserDTO, BaseModel]): pass
-class UserRepository(BaseRepository[BaseModel, UserDTO, BaseModel]): ...
+class UserRepositoryProtocol(BaseRepositoryProtocol[UserDTO]): pass
+class UserRepository(BaseRepository[UserDTO]): ...
+class UserService(BaseService[UserDTO]): ...
 ```
 
 ### BaseRepository.__init__ 시그니처
@@ -138,8 +139,6 @@ def __init__(
     *,
     model: type[Base],
     return_entity: type[ReturnDTO],
-    create_entity: type[CreateDTO] | None = None,
-    update_entity: type[UpdateDTO] | None = None,
 ) -> None:
 ```
 
@@ -149,28 +148,31 @@ def __init__(
 
 | 메서드 | 시그니처 |
 |--------|---------|
-| insert_data | `async (entity: CreateDTO) -> ReturnDTO` |
-| insert_datas | `async (entities: list[CreateDTO]) -> list[ReturnDTO]` |
+| insert_data | `async (entity: BaseModel) -> ReturnDTO` |
+| insert_datas | `async (entities: list[BaseModel]) -> list[ReturnDTO]` |
 | select_datas | `async (page: int, page_size: int) -> list[ReturnDTO]` |
 | select_data_by_id | `async (data_id: int) -> ReturnDTO` |
 | select_datas_by_ids | `async (data_ids: list[int]) -> list[ReturnDTO]` |
 | select_datas_with_count | `async (page: int, page_size: int) -> tuple[list[ReturnDTO], int]` |
-| update_data_by_data_id | `async (data_id: int, entity: UpdateDTO) -> ReturnDTO` |
+| update_data_by_data_id | `async (data_id: int, entity: BaseModel) -> ReturnDTO` |
 | delete_data_by_data_id | `async (data_id: int) -> bool` |
 | count_datas | `async () -> int` |
 
-### Service 메서드 (Repository 위임 매핑)
+### BaseService 메서드 (Repository 위임 매핑)
 
-| Service 메서드 | Repository 호출 |
-|---------------|----------------|
-| create_data(entity) | insert_data(entity=entity) |
-| create_datas(entities) | insert_datas(entities=entities) |
-| get_datas_with_count(page, page_size) | select_datas_with_count(page, page_size) |
-| get_data_by_data_id(data_id) | select_data_by_id(data_id=data_id) |
-| get_datas_by_data_ids(data_ids) | select_datas_by_ids(data_ids=data_ids) |
-| update_data_by_data_id(data_id, entity) | update_data_by_data_id(data_id, entity) |
-| delete_data_by_data_id(data_id) | delete_data_by_data_id(data_id=data_id) |
-| count_datas() | count_datas() |
+> `BaseService[ReturnDTO]`가 아래 메서드를 모두 제공한다.
+> 도메인 Service는 `BaseService[{Name}DTO]`를 상속하며, 커스텀 로직이 필요한 경우만 오버라이드한다.
+
+| BaseService 메서드 | Repository 호출 | 비고 |
+|-------------------|----------------|------|
+| create_data(entity) | insert_data(entity=entity) | |
+| create_datas(entities) | insert_datas(entities=entities) | |
+| get_datas(page, page_size) | select_datas_with_count(page, page_size) | `(list[ReturnDTO], PaginationInfo)` 반환 |
+| get_data_by_data_id(data_id) | select_data_by_id(data_id=data_id) | |
+| get_datas_by_data_ids(data_ids) | select_datas_by_ids(data_ids=data_ids) | |
+| update_data_by_data_id(data_id, entity) | update_data_by_data_id(data_id, entity) | |
+| delete_data_by_data_id(data_id) | delete_data_by_data_id(data_id=data_id) | |
+| count_datas() | count_datas() | |
 
 ## §5. DI 패턴
 
@@ -190,19 +192,20 @@ class {Name}Container(containers.DeclarativeContainer):
         {name}_repository={name}_repository,
     )
 
-    {name}_use_case = providers.Factory(
-        {Name}UseCase,
-        {name}_service={name}_service,
-    )
+    # UseCase는 복잡한 비즈니스 로직이 필요할 때만 추가
+    # {name}_use_case = providers.Factory(
+    #     {Name}UseCase,
+    #     {name}_service={name}_service,
+    # )
 ```
 
-| 컴포넌트 | Provider 타입 |
-|---------|--------------|
-| Database | `providers.Singleton` |
-| Repository | `providers.Singleton` |
-| Service | `providers.Factory` |
-| UseCase | `providers.Factory` |
-| 도메인 Container | `containers.DeclarativeContainer` |
+| 컴포넌트 | Provider 타입 | 비고 |
+|---------|--------------|------|
+| Database | `providers.Singleton` | |
+| Repository | `providers.Singleton` | |
+| Service | `providers.Factory` | Router에서 직접 주입 |
+| UseCase | `providers.Factory` | 복잡한 로직 시에만 추가 |
+| 도메인 Container | `containers.DeclarativeContainer` | |
 | 외부 Container 참조 | `providers.DependenciesContainer()` |
 | App Container (Server/Worker) | `containers.DynamicContainer` (팩토리 함수) |
 | 도메인 자동 발견 | `src._core.infrastructure.discovery.discover_domains()` |
@@ -302,9 +305,9 @@ router = APIRouter()
 @inject
 async def create_{name}(
     item: Create{Name}Request,
-    {name}_use_case: {Name}UseCase = Depends(Provide[{Name}Container.{name}_use_case]),
+    {name}_service: {Name}Service = Depends(Provide[{Name}Container.{name}_service]),
 ) -> SuccessResponse[{Name}Response]:
-    data = await {name}_use_case.create_data(entity=item)
+    data = await {name}_service.create_data(entity=item)
     return SuccessResponse(data={Name}Response(**data.model_dump(exclude={...})))
 ```
 

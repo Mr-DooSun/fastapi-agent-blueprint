@@ -59,7 +59,6 @@ repos:
     hooks:
       - id: black
         exclude: ^migrations/
-        language_version: python3.12
 
   # 6. 린팅 (체크만, 완화)
   - repo: https://github.com/pycqa/flake8

@@ -15,13 +15,13 @@
    - 모든 필드에 `Field(..., description="...")` 사용
 4. `src/{name}/domain/protocols/{name}_repository_protocol.py`
    - `from src._core.domain.protocols.repository_protocol import BaseRepositoryProtocol`
-   - Generic: `BaseRepositoryProtocol[BaseModel, {Name}DTO, BaseModel]` (project-dna.md §3 참조)
-   - `class {Name}RepositoryProtocol(BaseRepositoryProtocol[BaseModel, {Name}DTO, BaseModel]): pass`
+   - Generic: `BaseRepositoryProtocol[{Name}DTO]` (project-dna.md §3 참조)
+   - `class {Name}RepositoryProtocol(BaseRepositoryProtocol[{Name}DTO]): pass`
 5. `src/{name}/domain/services/{name}_service.py`
-   - `__init__(self, {name}_repository: {Name}RepositoryProtocol)`
-   - CRUD 메서드: `create_data`, `create_datas`, `get_datas_with_count`, `get_data_by_data_id`, `get_datas_by_data_ids`, `update_data_by_data_id`, `delete_data_by_data_id`, `count_datas`
-   - 메서드 매핑: **project-dna.md §4** "Service 메서드 (Repository 위임 매핑)" 참조
-   - 모든 메서드는 repository에 위임만 함
+   - `from src._core.domain.services.base_service import BaseService`
+   - `class {Name}Service(BaseService[{Name}DTO])` — BaseService가 CRUD 위임 메서드를 모두 제공
+   - CRUD 메서드(create_data, get_datas, get_data_by_data_id 등)는 BaseService에서 상속
+   - 커스텀 비즈니스 로직이 필요한 경우만 메서드 오버라이드
 6. `src/{name}/domain/exceptions/{name}_exceptions.py`
    - `from src._core.exceptions.base_exception import BaseCustomException`
    - `{Name}NotFoundException(status_code=404, error_code="{NAME}_NOT_FOUND")`
@@ -32,14 +32,16 @@
    - `{Name}Updated(DomainEvent)` — event_type="{name}.updated", {name}_id
    - `{Name}Deleted(DomainEvent)` — event_type="{name}.deleted", {name}_id
 
-## Layer 2: Application
+## Layer 2: Application (선택 — 복잡한 비즈니스 로직이 있을 때만)
 
-8. `src/{name}/application/__init__.py` — 빈 파일
-9. `src/{name}/application/use_cases/{name}_use_case.py`
+> 기본 CRUD 도메인에서는 UseCase를 생성하지 않는다.
+> BaseService가 pagination 포함 CRUD 위임을 모두 제공하므로, Router → Service 직접 주입으로 충분하다.
+> UseCase는 여러 Service를 조합하거나 복잡한 비즈니스 워크플로우가 필요할 때만 추가한다.
+
+8. `src/{name}/application/__init__.py` — 빈 파일 (UseCase 추가 시에만 생성)
+9. `src/{name}/application/use_cases/{name}_use_case.py` — **복잡한 로직이 있을 때만 생성**
    - `__init__(self, {name}_service: {Name}Service)`
-   - Service 메서드 미러링 + `get_datas`에서 `make_pagination()` 적용
-   - `from src._core.application.dtos.base_response import PaginationInfo`
-   - `from src._core.common.pagination import make_pagination`
+   - 여러 Service 조합, 트랜잭션 오케스트레이션 등 복잡한 워크플로우 담당
 
 ## Layer 3: Infrastructure
 
@@ -52,15 +54,16 @@
     - `created_at`, `updated_at`에 `func.now()` 사용
 13. `src/{name}/infrastructure/repositories/{name}_repository.py`
     - `from src._core.infrastructure.database.base_repository import BaseRepository`
-    - Generic: `BaseRepository[BaseModel, {Name}DTO, BaseModel]` (project-dna.md §3 참조)
-    - `class {Name}Repository(BaseRepository[BaseModel, {Name}DTO, BaseModel])`
+    - Generic: `BaseRepository[{Name}DTO]` (project-dna.md §3 참조)
+    - `class {Name}Repository(BaseRepository[{Name}DTO])`
     - `__init__` 시그니처: **project-dna.md §3** "BaseRepository.__init__" 참조
     - `super().__init__(database=database, model={Name}Model, return_entity={Name}DTO)`
 14. `src/{name}/infrastructure/di/{name}_container.py`
     - DI 패턴: **project-dna.md §5** 참조
     - `class {Name}Container(containers.DeclarativeContainer)`
     - `core_container = providers.DependenciesContainer()`
-    - Repository = `providers.Singleton`, Service/UseCase = `providers.Factory`
+    - Repository = `providers.Singleton`, Service = `providers.Factory`
+    - UseCase provider는 기본 생성하지 않음 (복잡한 로직 필요 시에만 추가)
 
 ## Layer 4: Interface
 
@@ -76,7 +79,7 @@
     - Router 패턴: **project-dna.md §9** 참조
     - `router = APIRouter()`
     - CRUD 엔드포인트: POST /{name}, POST /{name}s, GET /{name}s, GET /{name}/{id}, PUT /{name}/{id}, DELETE /{name}/{id}
-    - `@inject` + `Depends(Provide[{Name}Container.{name}_use_case])`
+    - `@inject` + `Depends(Provide[{Name}Container.{name}_service])`
     - 변환 패턴: **project-dna.md §6** 참조
     - 반환: `SuccessResponse(data=...)`
 18. `src/{name}/interface/server/bootstrap/{name}_bootstrap.py`
@@ -90,7 +93,7 @@
 20. `src/{name}/interface/worker/tasks/{name}_test_task.py`
     - `@broker.task(task_name=f"{settings.task_name_prefix}.{name}.test")`
     - `from src._core.config import settings` import 필요
-    - `@inject` + `Provide[{Name}Container.{name}_use_case]`
+    - `@inject` + `Provide[{Name}Container.{name}_service]`
     - `**kwargs` → `{Name}DTO.model_validate(kwargs)`
 21. `src/{name}/interface/worker/bootstrap/{name}_bootstrap.py`
     - `wire(modules=[{name}_test_task])`
@@ -112,5 +115,5 @@
 
 22. `tests/factories/{name}_factory.py` — `make_{name}_dto()`, `make_create_{name}_request()`
 23. `tests/unit/{name}/domain/test_{name}_service.py` — MockRepository + CRUD 테스트
-24. `tests/unit/{name}/application/test_{name}_use_case.py` — MockService + 페이지네이션 테스트
+24. `tests/unit/{name}/application/test_{name}_use_case.py` — **UseCase가 있는 경우만** MockService + 테스트
 25. `tests/integration/{name}/infrastructure/test_{name}_repository.py` — test_db 픽스처 사용

@@ -14,12 +14,12 @@ description: |
 ## 분석
 
 1. 요청에서 파악: 도메인명, HTTP 메서드, 경로, 목적
-2. Serena `find_symbol`로 해당 도메인의 기존 Router, UseCase, Service, Repository 탐색
+2. Serena `find_symbol`로 해당 도메인의 기존 Router, Service, Repository 탐색 (UseCase가 있으면 함께 확인)
 3. 필요한 것 판단:
    - 새 Request/Response DTO가 필요한가? (기존 것으로 충분한가?)
-   - 새 Service 메서드가 필요한가? (BaseRepository 메서드로 충분한가?)
-   - 새 UseCase 메서드가 필요한가?
+   - 새 Service 메서드가 필요한가? (BaseService 메서드로 충분한가?)
    - 새 Repository 메서드가 필요한가? (커스텀 쿼리가 필요한가?)
+   - UseCase가 필요한가? (여러 Service 조합 등 복잡한 로직이 있는 경우만)
 
 ## 구현 순서 (Bottom-up)
 
@@ -30,12 +30,11 @@ description: |
 
 ### 2. Service
 - `src/{name}/domain/services/{name}_service.py`에 메서드 추가
-- Repository 메서드를 호출하는 위임 패턴 유지
+- BaseService가 기본 CRUD + pagination을 제공하므로, 커스텀 로직이 있을 때만 메서드 추가
 
-### 3. UseCase
-- `src/{name}/application/use_cases/{name}_use_case.py`에 메서드 추가
-- 목록 조회면 `make_pagination()` 적용
-- 비즈니스 로직이 있으면 여기에 추가
+### 3. UseCase (복잡한 로직이 필요한 경우만)
+- 여러 Service 조합 등 복잡한 워크플로우가 필요할 때만 `src/{name}/application/use_cases/{name}_use_case.py` 추가
+- 단순 CRUD는 Router → Service 직접 주입으로 충분
 
 ### 4. Interface DTO (필요한 경우)
 - `src/{name}/interface/server/dtos/{name}_dto.py`에 Request/Response 추가

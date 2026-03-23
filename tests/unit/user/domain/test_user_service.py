@@ -1,6 +1,7 @@
 import pytest
 from pydantic import BaseModel
 
+from src._core.application.dtos.base_response import PaginationInfo
 from src.user.domain.dtos.user_dto import UserDTO
 from src.user.domain.services.user_service import UserService
 from src.user.interface.server.dtos.user_dto import UpdateUserRequest
@@ -106,3 +107,20 @@ async def test_delete_user(user_service):
 
     count = await user_service.count_datas()
     assert count == 0
+
+
+@pytest.mark.asyncio
+async def test_get_datas_returns_pagination(user_service):
+    for i in range(3):
+        await user_service.create_data(
+            entity=make_create_user_request(username=f"user{i}")
+        )
+
+    datas, pagination = await user_service.get_datas(page=1, page_size=2)
+
+    assert len(datas) == 2
+    assert isinstance(pagination, PaginationInfo)
+    assert pagination.total_items == 3
+    assert pagination.total_pages == 2
+    assert pagination.has_next is True
+    assert pagination.has_previous is False

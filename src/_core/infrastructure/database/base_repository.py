@@ -7,28 +7,22 @@ from sqlalchemy import func, select
 from src._core.exceptions.base_exception import BaseCustomException
 from src._core.infrastructure.database.database import Base, Database
 
-CreateDTO = TypeVar("CreateDTO", bound=BaseModel)
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
-UpdateDTO = TypeVar("UpdateDTO", bound=BaseModel)
 
 
-class BaseRepository(Generic[CreateDTO, ReturnDTO, UpdateDTO], ABC):
+class BaseRepository(Generic[ReturnDTO], ABC):
     def __init__(
         self,
         database: Database,
         *,
         model: type[Base],
         return_entity: type[ReturnDTO],
-        create_entity: type[CreateDTO] | None = None,
-        update_entity: type[UpdateDTO] | None = None,
     ) -> None:
         self.database = database
         self.model = model
-        self.create_entity = create_entity
         self.return_entity = return_entity
-        self.update_entity = update_entity
 
-    async def insert_data(self, entity: CreateDTO) -> ReturnDTO:
+    async def insert_data(self, entity: BaseModel) -> ReturnDTO:
         async with self.database.session() as session:
             data = self.model(**entity.model_dump(exclude_none=True))
             session.add(data)
@@ -36,7 +30,7 @@ class BaseRepository(Generic[CreateDTO, ReturnDTO, UpdateDTO], ABC):
             await session.refresh(data)
             return self.return_entity.model_validate(data, from_attributes=True)
 
-    async def insert_datas(self, entities: list[CreateDTO]) -> list[ReturnDTO]:
+    async def insert_datas(self, entities: list[BaseModel]) -> list[ReturnDTO]:
         async with self.database.session() as session:
             datas = [
                 self.model(**entity.model_dump(exclude_none=True))
@@ -118,7 +112,7 @@ class BaseRepository(Generic[CreateDTO, ReturnDTO, UpdateDTO], ABC):
             ], total_count
 
     async def update_data_by_data_id(
-        self, data_id: int, entity: UpdateDTO
+        self, data_id: int, entity: BaseModel
     ) -> ReturnDTO:
         async with self.database.session() as session:
             result = await session.execute(
