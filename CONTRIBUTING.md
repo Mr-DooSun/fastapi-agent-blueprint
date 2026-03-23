@@ -148,33 +148,23 @@ http://localhost:8000/api/docs 에 접속하여 정상 동작 확인
 
 ### 코드 스타일
 
-이 프로젝트는 다음 도구들을 사용합니다:
+이 프로젝트는 **Ruff**를 사용하여 린팅과 포매팅을 통합 관리합니다:
 
-#### 1. **Black** (코드 포매팅)
+#### Ruff (린팅 + 포매팅)
 
 ```bash
-black src/
+# 린트 체크 + 자동 수정
+ruff check src/ --fix
+
+# 코드 포매팅
+ruff format src/
 ```
 
 - 라인 길이: 88자
-- 자동으로 일관된 스타일 적용
-
-#### 2. **isort** (Import 정렬)
-
-```bash
-isort src/
-```
-
-- Import 순서: 표준 라이브러리 → 외부 라이브러리 → 로컬 모듈
-
-#### 3. **Flake8** (린팅)
-
-```bash
-flake8 src/
-```
-
-- PEP 8 준수
-- 복잡도 체크
+- Import 정렬: Black 호환 (자동)
+- Python 3.12+ 구문 현대화 (자동)
+- 미사용 import/변수 제거 (자동)
+- 보안 검사 (flake8-bandit 호환)
 
 ### 타입 힌팅
 

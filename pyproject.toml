@@ -37,8 +37,60 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=5.0.0",
+    "ruff>=0.15.7",
 ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+# === Ruff Configuration ===
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+exclude = ["migrations"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "UP",   # pyupgrade
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "S",    # flake8-bandit
+]
+ignore = [
+    "F841",   # local variable assigned but never used
+    "E501",   # line too long (handled by formatter)
+    "E402",   # module level import not at top
+    "F401",   # unused import
+    "B008",   # function call in default argument
+    "B006",   # mutable default argument
+    "C901",   # too complex
+    "SIM102", # use single if instead of nested if
+    "SIM114", # combine if branches with same body
+    "SIM117", # multiple with statements
+    "SIM910", # use dict.get(key) instead of dict.get(key, None)
+    "B904",   # raise without from inside except
+    "UP046",  # non-PEP695 generic class
+    "S113",   # request without timeout (was bandit B113)
+    "S314",   # use of xml.etree.ElementTree (was bandit B314)
+    "S413",   # use of pycrypto (was bandit B413)
+    "S607",   # starting process with partial executable path
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 20
+
+[tool.ruff.lint.per-file-ignores]
+"**/routers/*.py" = ["B008"]
+"**/workflows/*.py" = ["B006"]
+"tests/**/*.py" = ["S"]
+"*_test.py" = ["S"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

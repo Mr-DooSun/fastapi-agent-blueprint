@@ -24,66 +24,17 @@ repos:
       - id: mixed-line-ending
         args: ["--fix=lf"]
 
-  # 2. Python 구문 현대화 (자동 수정)
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.1
+  # 2. Ruff: 린팅 + 포맷팅 (pyupgrade, autoflake, isort, Black, flake8, bandit 통합)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.7
     hooks:
-      - id: pyupgrade
-        args: ["--py312-plus"]
+      # Ruff linter (check + fix): replaces flake8, pyupgrade, autoflake, isort, bandit
+      - id: ruff-check
+        args: [--fix]
         exclude: ^migrations/
-
-  # 3. 미사용 import/변수 제거 (자동 수정)
-  - repo: https://github.com/PyCQA/autoflake
-    rev: v2.3.1
-    hooks:
-      - id: autoflake
+      # Ruff formatter: replaces Black
+      - id: ruff-format
         exclude: ^migrations/
-        args:
-          - --in-place
-          - --remove-unused-variables
-          - --remove-all-unused-imports
-          - --expand-star-imports
-          - --remove-duplicate-keys
-
-  # 4. Import 정렬 (자동 수정)
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        exclude: ^migrations/
-        args: ["--profile", "black", "--filter-files"]
-
-  # 5. 코드 포맷팅 (자동 수정)
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
-    hooks:
-      - id: black
-        exclude: ^migrations/
-
-  # 6. 린팅 (체크만, 완화)
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.1.1
-    hooks:
-      - id: flake8
-        exclude: ^migrations/
-        args:
-          - --ignore=F841,E501,W503,E203,E402,F401,B008,B006,C901,SIM114,SIM910,SIM904,E704
-          - --max-line-length=88
-          - --max-complexity=20
-          - --per-file-ignores=**/routers/*:B008,**/workflows/*:B006
-        additional_dependencies:
-          - flake8-bugbear
-          - flake8-comprehensions
-
-  # 7. 보안 정적 분석 (체크만)
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.8.0
-    hooks:
-      - id: bandit
-        exclude: ^(migrations/|tests/|.*_test\.py$)
-        args:
-          - -ll  # Low/Low severity만
-          - --skip=B113,B314,B413  # 알려진 이슈 무시 (timeout, xml, pycrypto)
 
   # ==================== STAGE: MANUAL (수동 실행) ====================
   # 타입 체킹: pre-commit run --hook-stage manual mypy

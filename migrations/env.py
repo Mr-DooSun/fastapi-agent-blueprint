@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# flake8: noqa: F401, F403
+# ruff: noqa: F401, F403
 
 import os
 from logging.config import fileConfig

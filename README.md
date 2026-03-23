@@ -700,9 +700,7 @@ class UserNotFoundException(BaseCustomException):
 
 | 기술 | 용도 |
 |------|------|
-| **Black** | 코드 포매팅 |
-| **isort** | Import 정렬 |
-| **Flake8** | 린팅 |
+| **Ruff** | 린팅 + 포매팅 (Black, isort, flake8, bandit 통합) |
 | **pre-commit** | Git hook 자동화 |
 | **SQLAdmin** | 데이터베이스 관리 UI |
 | **UV** | 빠른 Python 패키지 관리 |
@@ -798,8 +796,7 @@ fastapi-layered-architecture/
 
 ### 코딩 규칙
 
-- **Black**: 코드 포매팅 (88자 제한)
-- **isort**: Import 정렬
+- **Ruff**: 린팅 + 포매팅 (88자 제한, Black 호환)
 - **Type Hints**: 모든 함수/메서드에 타입 명시
 - **Docstring**: 복잡한 로직에 설명 추가
 
