@@ -10,6 +10,7 @@ class HealthCheckException(BaseCustomException):
 
 class HealthService:
     """Infrastructure health check — not a domain service, bypasses Repository by design."""
+
     def __init__(self, database: Database) -> None:
         self._database = database
 
