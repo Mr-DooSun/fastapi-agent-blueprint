@@ -95,6 +95,10 @@ These rules are enforced by pre-commit hooks:
 - **No separate Mapper classes** -- use inline conversion
 - **No Entity pattern** -- use DTOs only (see [ADR 004](docs/history/004-dto-entity-responsibility.md))
 
+## Note on Commit History
+
+This project was migrated from a private repository. Issue numbers in early commit messages (e.g., `[#57]`, `[#64]`) refer to the original repository and do not correspond to issues in this repository.
+
 ## Commit Convention
 
 ```
