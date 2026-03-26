@@ -31,6 +31,7 @@ def bootstrap_app(app: FastAPI) -> None:
     server_container = create_server_container()
 
     # Wire core container for health check DI
+    # (core is not a domain — no separate bootstrap file needed)
     server_container.core_container().wire(
         modules=["src._core.application.routers.api.health_check_router"]
     )
