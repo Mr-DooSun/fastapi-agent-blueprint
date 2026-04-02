@@ -171,3 +171,6 @@ cython_debug/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# Claude Code
+.claude/.sync-pending
