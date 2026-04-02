@@ -3,7 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: fastapi-blueprint-postgres
+    container_name: fastapi-agent-blueprint-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

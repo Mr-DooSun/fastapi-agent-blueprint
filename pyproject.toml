@@ -1,7 +1,7 @@
 [project]
-name = "fastapi-blueprint"
+name = "fastapi-agent-blueprint"
 version = "0.1.0"
-description = "This is layered architecture for fastapi"
+description = "AI Agent Backend Platform — MCP server, AI orchestration, and async DDD architecture on FastAPI"
 readme = "README.md"
 requires-python = ">=3.12.9"
 dependencies = [

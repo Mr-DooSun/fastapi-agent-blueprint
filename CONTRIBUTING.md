@@ -1,4 +1,4 @@
-# Contributing to FastAPI Blueprint
+# Contributing to FastAPI Agent Blueprint
 
 Thank you for your interest in contributing! This guide will help you get started.
 
@@ -6,8 +6,8 @@ Thank you for your interest in contributing! This guide will help you get starte
 
 ```bash
 # Clone the repository
-git clone https://github.com/Mr-DooSun/fastapi-blueprint.git
-cd fastapi-blueprint
+git clone https://github.com/Mr-DooSun/fastapi-agent-blueprint.git
+cd fastapi-agent-blueprint
 
 # Setup (installs dependencies + pre-commit hooks)
 make setup

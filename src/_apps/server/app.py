@@ -7,8 +7,8 @@ from src._core.config import settings
 
 def create_app():
     app = FastAPI(
-        title="FastAPI Blueprint",
-        description="DDD-based modular monolith -- each domain is independently structured",
+        title="FastAPI Agent Blueprint",
+        description="AI Agent Backend Platform — MCP server + AI orchestration + async DDD architecture",
         version="1.0.0",
         root_path="/api",
         docs_url=settings.docs_url,
