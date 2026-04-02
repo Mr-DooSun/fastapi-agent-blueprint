@@ -22,6 +22,7 @@ Each document captures the context and decision criteria for "why this technolog
 | [012](012-ruff-migration.md) | pre-commit Linting Tool Ruff Integration | Accepted | Done | 2026-03-23 |
 | [013](013-why-ioc-container.md) | Why IoC Container Over Inheritance | Accepted | Done | 2026-03-23 |
 | [014](014-omc-vs-native-orchestration.md) | OMC vs Native Orchestration Decision | Pending | In Progress | 2026-03-24 |
+| [015](015-rebrand-agent-platform.md) | Rebrand to AI Agent Backend Platform | Accepted | Done | 2026-04-03 |
 
 ## Future Considerations (Open Issues)
 

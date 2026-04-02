@@ -16,7 +16,7 @@
 ## §0. Project Scale and Design Philosophy
 
 ### Scale
-- Enterprise-grade service with 10+ domains and 5+ team members
+- AI Agent Backend Platform targeting enterprise-grade services with 10+ domains and 5+ team members
 - All proposals and designs must consider scalability, maintainability, and team collaboration at this scale
 
 ### Enterprise Practice Criteria for Proposals
