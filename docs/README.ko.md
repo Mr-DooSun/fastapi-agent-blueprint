@@ -115,7 +115,7 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 
 | 객체 | 역할 | 위치 |
 |------|------|------|
-| **Request/Response** | API 통신 규격 | `interface/server/dtos/` |
+| **Request/Response** | API 통신 규격 | `interface/server/schemas/` |
 | **DTO** | 내부 레이어 간 데이터 운반 | `domain/dtos/` |
 | **Model** | DB 테이블 매핑 (Repository 밖으로 노출 금지) | `infrastructure/database/models/` |
 

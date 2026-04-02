@@ -23,7 +23,7 @@ All proposals and designs must consider scalability, maintainability, and team c
 - When in doubt: start without UseCase, add when complexity grows
 
 ## Terminology
-- **Request/Response**: API communication schema (`interface/server/dtos/`)
+- **Request/Response**: API communication schema (`interface/server/schemas/`)
 - **DTO**: Internal data carrier between layers — Repository→Router (`domain/dtos/`)
 - **Model**: DB table mapping, never exposed outside Repository (`infrastructure/database/models/`)
 

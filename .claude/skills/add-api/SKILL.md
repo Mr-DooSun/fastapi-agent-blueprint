@@ -37,7 +37,7 @@ Request: $ARGUMENTS
 - Simple CRUD is sufficient with direct Router → Service injection
 
 ### 4. Interface DTO (if needed)
-- Add Request/Response to `src/{name}/interface/server/dtos/{name}_dto.py`
+- Add Request/Response to `src/{name}/interface/server/schemas/{name}_schema.py`
 - Request inherits from `BaseRequest`, Response inherits from `BaseResponse`
 - **Explicit field declaration** (single inheritance from BaseRequest/BaseResponse only)
 

@@ -37,7 +37,7 @@
 
 ```python
 from src.{name}.domain.dtos.{name}_dto import {Name}DTO
-from src.{name}.interface.server.dtos.{name}_dto import Create{Name}Request, Update{Name}Request
+from src.{name}.interface.server.schemas.{name}_schema import Create{Name}Request, Update{Name}Request
 
 def make_{name}_dto(**overrides) -> {Name}DTO:
     defaults = {

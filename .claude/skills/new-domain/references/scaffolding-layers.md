@@ -121,9 +121,9 @@ src/{name}/
     ├── __init__.py
     ├── server/
     │   ├── __init__.py
-    │   ├── dtos/
+    │   ├── schemas/
     │   │   ├── __init__.py
-    │   │   └── {name}_dto.py              ← #10
+    │   │   └── {name}_schema.py           ← #10
     │   ├── routers/
     │   │   ├── __init__.py
     │   │   └── {name}_router.py           ← #11
@@ -145,7 +145,7 @@ src/{name}/
             └── {name}_bootstrap.py        ← #15
 ```
 
-10. `src/{name}/interface/server/dtos/{name}_dto.py`
+10. `src/{name}/interface/server/schemas/{name}_schema.py`
     - `from src._core.application.dtos.base_response import BaseResponse`
     - `from src._core.application.dtos.base_request import BaseRequest`
     - `{Name}Response(BaseResponse)` — exclude sensitive fields

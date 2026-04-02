@@ -118,7 +118,7 @@ Criteria for adding a UseCase:
 
 | Term | Role | Location |
 |------|------|----------|
-| Request/Response | API communication contract | `interface/server/dtos/` |
+| Request/Response | API communication contract | `interface/server/schemas/` |
 | DTO | Data transport between internal layers | `domain/dtos/` |
 | Model | DB table mapping | `infrastructure/database/models/` |
 | Entity | Not used | - |

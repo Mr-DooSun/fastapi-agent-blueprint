@@ -116,7 +116,7 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 
 | Object | Role | Location |
 |--------|------|----------|
-| **Request/Response** | API contract | `interface/server/dtos/` |
+| **Request/Response** | API contract | `interface/server/schemas/` |
 | **DTO** | Internal data transfer between layers | `domain/dtos/` |
 | **Model** | DB table mapping (never exposed outside Repository) | `infrastructure/database/models/` |
 

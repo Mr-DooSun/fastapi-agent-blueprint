@@ -20,7 +20,7 @@ Check across all domain files:
 - [ ] Model -> DTO conversion uses `model_validate(..., from_attributes=True)`
 
 ## 3. DTO/Response Integrity
-Check interface/server/dtos/ files:
+Check interface/server/schemas/ files:
 
 - [ ] Response classes inherit only from `BaseResponse` (no multiple inheritance)
 - [ ] Request classes inherit only from `BaseRequest` (no multiple inheritance)

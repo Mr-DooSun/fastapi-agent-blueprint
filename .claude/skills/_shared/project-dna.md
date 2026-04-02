@@ -71,7 +71,7 @@ src/{name}/
 └── interface/
     ├── __init__.py
     ├── server/
-    │   ├── dtos/{name}_dto.py
+    │   ├── schemas/{name}_schema.py
     │   ├── routers/{name}_router.py
     │   └── bootstrap/{name}_bootstrap.py
     ├── admin/

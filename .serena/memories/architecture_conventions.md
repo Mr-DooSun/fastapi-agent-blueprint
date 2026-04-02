@@ -25,7 +25,7 @@ Complex logic:
 - Create/Update DTO is only created separately when fields differ from Request
 
 ### API Schema (Interface DTO)
-- Location: `src/{domain}/interface/server/dtos/{domain}_dto.py`
+- Location: `src/{domain}/interface/server/schemas/{domain}_schema.py`
 - Inherits `BaseRequest` / `BaseResponse`
 - Explicit field declarations
 - Intentionally excludes sensitive fields (Response)
