@@ -42,8 +42,7 @@ Sync required: X items / Total: Y items
 ```
 
 ## Post-run Cleanup
-After completing the sync, clear the Stop hook flag file:
-!`rm -f .claude/.sync-pending`
+After completing the sync, clear the Stop hook flag file by running: `rm -f .sync-pending`
 
 ## Actions When DRIFT Is Found
 1. Show the list of discovered mismatches to the user

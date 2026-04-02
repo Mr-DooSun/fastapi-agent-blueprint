@@ -3,7 +3,7 @@
 # Sets a flag file so the Stop hook can issue a final reminder.
 # Always exit 0 (PostToolUse cannot block, warning only)
 
-SYNC_FLAG="${BASH_SOURCE[0]%/.claude/*}/.claude/.sync-pending"
+SYNC_FLAG="${BASH_SOURCE[0]%/.claude/*}/.sync-pending"
 INPUT=$(cat)
 
 # Extract file_path from tool_input JSON

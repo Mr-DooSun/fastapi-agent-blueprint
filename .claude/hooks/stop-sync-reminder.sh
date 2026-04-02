@@ -3,7 +3,7 @@
 # The flag file is created by post-tool-sync-warning.sh during PostToolUse.
 # Always exit 0 (Stop hooks are informational only)
 
-SYNC_FLAG="${BASH_SOURCE[0]%/.claude/*}/.claude/.sync-pending"
+SYNC_FLAG="${BASH_SOURCE[0]%/.claude/*}/.sync-pending"
 
 if [ -f "$SYNC_FLAG" ]; then
     MODIFIED_FILES=$(sort -u "$SYNC_FLAG")

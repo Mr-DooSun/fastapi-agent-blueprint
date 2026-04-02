@@ -173,4 +173,4 @@ cython_debug/
 !.vscode/extensions.json
 
 # Claude Code
-.claude/.sync-pending
+.sync-pending
