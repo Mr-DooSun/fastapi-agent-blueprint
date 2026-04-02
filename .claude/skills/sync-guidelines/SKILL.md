@@ -41,9 +41,6 @@ Refer to `${CLAUDE_SKILL_DIR}/references/drift-checklist.md` for detailed inspec
 Sync required: X items / Total: Y items
 ```
 
-## Post-run Cleanup
-After completing the sync, clear the Stop hook flag file by running: `rm -f .sync-pending`
-
 ## Actions When DRIFT Is Found
 1. Show the list of discovered mismatches to the user
 2. Suggest a fix for each mismatch

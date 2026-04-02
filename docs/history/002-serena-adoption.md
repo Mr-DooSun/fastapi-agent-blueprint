@@ -101,8 +101,7 @@ Memory:
 
 ```
 On code changes:
-  PostToolUse hook -> Detects changes to core files (src/_core/ etc.) -> Outputs warning
-  Stop hook -> Detects /sync-guidelines not run before session end -> Block -> Force auto-run
+  Stop hook -> git diff로 변경 파일 감지 -> Foundation/Structure 분류 -> /sync-guidelines 권고
   /sync-guidelines -> Regenerates project-dna.md + Updates Serena memories
 ```
 

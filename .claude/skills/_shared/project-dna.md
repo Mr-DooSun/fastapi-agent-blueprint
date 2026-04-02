@@ -258,8 +258,7 @@ def create_server_container() -> containers.DynamicContainer:
 ### Claude Hook
 
 - PreToolUse (pre-tool-security): SQL injection, hardcoded secrets, Domain→Infra import, sensitive data logging check
-- PostToolUse (post-tool-sync-warning): Recommends running /sync-guidelines when core files (_core/, pyproject.toml, .pre-commit-config.yaml, .serena/memories/, .claude/skills/_shared/, .claude/hooks/) are modified
-- Stop (stop-sync-reminder): Warns before turn ends if core files were modified during the session but /sync-guidelines was not run
+- Stop (stop-sync-reminder): git diff 기반으로 변경 파일을 Foundation/Structure로 분류하여 /sync-guidelines 실행 권고
 
 ## §8. Active Features
 

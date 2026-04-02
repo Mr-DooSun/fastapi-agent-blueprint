@@ -11,17 +11,6 @@
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/post-tool-sync-warning.sh"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [
