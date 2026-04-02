@@ -106,7 +106,7 @@ Policy/standard-based content. Only detect whether related sources have changed 
 --- References Drift Inspection ---
 
 [AUTO-FIX] scaffolding-layers.md: File list
-  -> Addition required: src/{name}/domain/events/__init__.py
+  -> Missing file detected: src/{name}/domain/value_objects/__init__.py
   -> Fix suggestion generated -- Would you like to apply it?
 
 [OK] test-patterns.md: Factory pattern -- No changes

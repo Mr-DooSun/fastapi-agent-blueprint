@@ -112,7 +112,6 @@ Complex logic: Router -> UseCase(manually written) -> Service -> Repository
 Criteria for adding a UseCase:
 - When multiple Services need to be composed
 - When the transaction boundary exceeds a single Service
-- When orchestration such as event publishing is needed
 
 ### Change 4: Terminology Standardization
 

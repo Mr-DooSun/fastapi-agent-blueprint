@@ -19,7 +19,7 @@ All proposals and designs must consider scalability, maintainability, and team c
 ## Layer Architecture (3-Tier Hybrid)
 - Default: Router → Service (extends BaseService) → Repository (extends BaseRepository)
 - Complex logic: Router → UseCase (manually written) → Service → Repository
-- UseCase criteria: multiple Service composition, cross-transaction boundaries, event publishing, etc.
+- UseCase criteria: multiple Service composition, cross-transaction boundaries, etc.
 - When in doubt: start without UseCase, add when complexity grows
 
 ## Terminology

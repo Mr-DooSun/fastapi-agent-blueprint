@@ -40,7 +40,7 @@ After receiving user responses, organize the following:
 
 ### 1.1 Layer Impact Analysis
 Determine whether changes/additions are needed for each layer:
-- **Domain**: New DTO, Protocol, Service, Exception, Event needed?
+- **Domain**: New DTO, Protocol, Service, Exception needed?
 - **Application**: New UseCase method needed? Existing UseCase modification?
 - **Infrastructure**: New Model, Repository, DI Container needed? DB migration?
 - **Interface**: New Router, Request/Response DTO, Worker Task needed?

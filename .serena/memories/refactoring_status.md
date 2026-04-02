@@ -11,7 +11,6 @@ All phases of the Entity → DTO refactoring have been completed.
 ### Phase 1 ✅ Core Infrastructure
 - `src/_core/domain/protocols/repository_protocol.py` — BaseRepositoryProtocol
 - `src/_core/domain/value_objects/value_object.py` — ValueObject (frozen)
-- `src/_core/domain/events/domain_event.py` — DomainEvent base
 - Deleted: `src/_core/application/mappers/`, `src/user/application/mappers/`
 
 ### Phase 2 ✅ Base Class Cleanup
@@ -36,7 +35,6 @@ All phases of the Entity → DTO refactoring have been completed.
 ### Phase 5 ✅ Domain Patterns
 - `src/user/domain/protocols/user_repository_protocol.py`
 - `src/user/domain/exceptions/user_exceptions.py`
-- `src/user/domain/events/user_events.py`
 
 ### Phase 6 ✅ Tests
 - `tests/conftest.py` — aiosqlite fixture
