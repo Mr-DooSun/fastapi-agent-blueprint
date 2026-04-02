@@ -62,7 +62,7 @@ All proposals and designs must consider scalability, maintainability, and team c
 
 ## Skills (slash commands)
 - `/plan-feature {description}` — Feature implementation planning (requirements interview → architecture analysis → security check → task decomposition)
-- `/new-domain {name}` — Full domain scaffolding (14 content + 22 `__init__.py` + 3 tests = 39 files)
+- `/new-domain {name}` — Full domain scaffolding (13 content + 21 `__init__.py` + 3 tests = 37 files)
 - `/add-api {description}` — Add API endpoint to existing domain
 - `/add-worker-task {domain} {task}` — Add async Taskiq task
 - `/add-cross-domain from:{a} to:{b}` — Wire cross-domain dependency

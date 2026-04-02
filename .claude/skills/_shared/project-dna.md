@@ -3,7 +3,7 @@
 > This file is auto-extracted/updated from `src/user/` (reference domain) and `src/_core/` (Base classes)
 > when `/sync-guidelines` is run. **Run `/sync-guidelines` instead of editing manually.**
 >
-> Last updated: 2026-03-19
+> Last updated: 2026-04-02
 
 ## Section Index
 §0 Project Scale and Design Philosophy |

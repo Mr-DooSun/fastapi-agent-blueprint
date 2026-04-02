@@ -36,23 +36,39 @@
 `tests/factories/{name}_factory.py` reference pattern: `tests/factories/user_factory.py`
 
 ```python
+from datetime import datetime
+
 from src.{name}.domain.dtos.{name}_dto import {Name}DTO
-from src.{name}.interface.server.schemas.{name}_schema import Create{Name}Request, Update{Name}Request
+from src.{name}.interface.server.schemas.{name}_schema import (
+    Create{Name}Request,
+    Update{Name}Request,
+)
 
-def make_{name}_dto(**overrides) -> {Name}DTO:
-    defaults = {
-        "id": 1,
-        # ... domain field defaults
-        "created_at": datetime.now(),
-        "updated_at": datetime.now(),
-    }
-    defaults.update(overrides)
-    return {Name}DTO(**defaults)
+def make_{name}_dto(
+    id: int = 1,
+    # ... domain field defaults with explicit keyword args
+    created_at: datetime | None = None,
+    updated_at: datetime | None = None,
+) -> {Name}DTO:
+    now = datetime.now()
+    return {Name}DTO(
+        id=id,
+        # ... fields
+        created_at=created_at or now,
+        updated_at=updated_at or now,
+    )
 
-def make_create_{name}_request(**overrides) -> Create{Name}Request:
-    defaults = {
-        # ... creation field defaults
-    }
-    defaults.update(overrides)
-    return Create{Name}Request(**defaults)
+def make_create_{name}_request(
+    # ... creation field defaults with explicit keyword args
+) -> Create{Name}Request:
+    return Create{Name}Request(
+        # ... fields
+    )
+
+def make_update_{name}_request(
+    # ... all fields Optional (field: type | None = None)
+) -> Update{Name}Request:
+    return Update{Name}Request(
+        # ... fields
+    )
 ```
