@@ -1,7 +1,7 @@
 # 014. OMC vs Native Orchestration Decision
 
-- Status: Pending
-- Date: 2026-03-24
+- Status: Accepted (Option B — Native)
+- Date: 2026-03-24 (initiated), 2026-04-05 (decided)
 - Related Documents: None
 
 ## Background
@@ -158,20 +158,101 @@ plugin-name/
 - OMC can always be added later, but removing it after adoption is difficult
 - Context window savings (28 agent definitions not loaded)
 
+## Third Discussion (2026-04-05)
+
+### Background for Re-evaluation
+
+- Blueprint project is about to enter actual development phase
+- Current state: 97 files, ~2,200 lines, 1 business domain (user), 15 skills, 2 hooks
+- Target state: 10+ domains, 5+ team members (enterprise-grade AI Agent Backend Platform)
+- Needed to evaluate whether OMC adoption should happen before or after scaling
+
+### OMC Conflict Analysis (detailed investigation)
+
+| Area | Risk | Detail |
+|---|---|---|
+| Skills namespace | Low | OMC uses `oh-my-claudecode:<name>` prefix. No collision with existing 15 skills |
+| CLAUDE.md | Manageable | OMC uses marker-based injection (`<!-- OMC:START -->...<!-- OMC:END -->`) or preserve mode (`CLAUDE-omc.md`) |
+| Hooks | Moderate | OMC registers ~20 hook scripts across 11 lifecycle events. Stacks with existing hooks, doesn't replace. But adds latency and potential noise |
+| Context overhead | **High** | 29 agent definitions + 32 skill metadata + hook instructions added to context. Combined with existing CLAUDE.md + project-dna.md + Serena/context7 instructions, significantly reduces available context for actual work |
+
+### Native Orchestration Feasibility Assessment
+
+"Can we build OMC-equivalent orchestration natively?" → **Full equivalence is unrealistic, but unnecessary.**
+
+Feature-by-feature analysis:
+
+| Feature | Build yourself? | Verdict |
+|---|---|---|
+| tmux parallel workers | **Skip** — `/team` built-in already handles Claude-to-Claude parallelism. OMC's tmux is for multi-provider (Codex/Gemini), not needed now |
+| autopilot (autonomous execution) | **Feasible, 1-2 days with AI assistance** — SKILL.md that chains Plan→Agent(parallel)→review-architecture. Domain-aware autopilot > OMC's generic autopilot |
+| Model routing (Haiku/Sonnet/Opus) | **Already available** — Agent tool has `model` parameter. Define agents/*.md with model frontmatter. No custom logic needed |
+| Multi-provider (Codex/Gemini) | **Not possible natively** — OMC-exclusive feature. Not needed currently |
+
+Key insight: AI-assisted development dramatically lowers build cost for custom tooling.
+The remaining challenge is not building but **design iteration and maintenance when Claude Code updates**.
+However, SKILL.md and agents/*.md are markdown files — low breakage risk and easy to fix,
+unlike OMC's npm package + 20 hook scripts.
+
+### Industry Trend Context (2026-04)
+
+- CLAUDE.md, `.cursorrules`, `AGENTS.md` are becoming standard project-level AI configuration files
+- Gartner predicts 40% of enterprise apps will integrate task-specific AI agents by 2026
+- The practice of configuring AI agents for projects = **DX (Developer Experience) Engineering** or **개발환경 구성**
+- Current project's 15 skills + security hooks + project-dna.md = **Platform Engineering level** customization
+
+Realistic distribution of who does this:
+
+| Depth | Who | Analogy |
+|---|---|---|
+| CLAUDE.md with a few rules | Most developers | `.gitignore` |
+| Install frameworks/plugins (OMC etc.) | Team leads | Using GitHub Actions templates |
+| **Custom skills + hooks design** | **Senior/Lead (few)** | **Designing internal CI/CD pipelines** |
+| Full orchestration platform | DX/Platform team | Internal Developer Platform (IDP) |
+
+**The meta is not "every position configures their own AI environment" but rather
+"each position works on top of an AI environment configured by the lead."**
+This is exactly what the blueprint project is building.
+
+### Reinforced Arguments for Native (Option B)
+
+From first/second discussions, still valid:
+- Benchmark: Native Plugin (80.85) > OMC (75.44) — context overhead likely the cause
+- OMC's learning curve contribution: ~10% (core 90% is domain knowledge)
+- "Adopting without trying built-in features first is an unevaluated decision"
+- OMC can be added later; removing after adoption is difficult
+
+New from third discussion:
+- `/team` already covers the primary multi-agent use case (Claude-to-Claude parallelism)
+- Model routing is trivially achievable via native agent definitions
+- Domain-aware autopilot (custom SKILL.md) can outperform OMC's generic autopilot for this project
+- Building custom orchestration with AI assistance is feasible in 1-2 days, not weeks
+- Markdown-based skills/agents have lower maintenance burden than OMC's npm dependency
+
 ## Decision
 
-**Pending -- Undecided**
+**Option B selected — Native Plugin system**
 
-The escalation path is maintained:
+The escalation path is confirmed with concrete actions:
 ```
-Single agent (current)
-  -> /team (built-in) + Plugin system evaluation
-  -> If insufficient: OMC adoption
-  -> Trigger: Confirmed limitations of built-in features during simultaneous work across 3+ domains
+Phase 1 (now): Single agent + 15 domain skills
+  → Action: Use /team and agents/*.md (model routing) in actual development tasks
+  → Estimated effort: 1 day for agent definitions
+
+Phase 2 (3+ domains): Add native autopilot
+  → Action: Build domain-aware /autopilot skill (Plan→Execute→Verify pipeline)
+  → Estimated effort: 1-2 days with AI assistance
+
+Phase 3 (only if needed): Thin OMC adoption
+  → Trigger: Confirmed limitations of /team + native autopilot during 3+ domain simultaneous work
+  → Trigger: Team member familiar with OMC joins and makes a case for it
+  → Trigger: Multi-provider (Codex/Gemini) becomes a real requirement
 ```
 
 ## Future Considerations
 
-1. Evaluate Claude Code's built-in `/team` + Plugin system in actual work
-2. Document "specific cases where built-in features fell short" during the evaluation period
-3. Revisit OMC adoption if cases accumulate; otherwise, confirm Option B
+1. When entering Phase 1: document experience with `/team` + native agents in actual work
+2. When entering Phase 2: build `/autopilot` skill, iterate on design with real tasks
+3. Accumulate "specific cases where built-in features fell short" — this becomes the OMC adoption evidence
+4. Monitor Claude Code Plugin ecosystem maturity (Anthropic official marketplace, community plugins)
+5. If OMC benchmark improves above native or context overhead is resolved, re-evaluate
