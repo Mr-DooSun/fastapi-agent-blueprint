@@ -5,6 +5,7 @@ from src.user.interface.server.schemas.user_schema import (
     CreateUserRequest,
     UpdateUserRequest,
 )
+from src.user.interface.worker.payloads.user_payload import UserTestPayload
 
 
 def make_user_dto(
@@ -53,4 +54,25 @@ def make_update_user_request(
         full_name=full_name,
         email=email,
         password=password,
+    )
+
+
+def make_user_test_payload(
+    id: int = 1,
+    username: str = "testuser",
+    full_name: str = "Test User",
+    email: str = "test@example.com",
+    password: str = "hashed_password",
+    created_at: datetime | None = None,
+    updated_at: datetime | None = None,
+) -> UserTestPayload:
+    now = datetime.now()
+    return UserTestPayload(
+        id=id,
+        username=username,
+        full_name=full_name,
+        email=email,
+        password=password,
+        created_at=created_at or now,
+        updated_at=updated_at or now,
     )
