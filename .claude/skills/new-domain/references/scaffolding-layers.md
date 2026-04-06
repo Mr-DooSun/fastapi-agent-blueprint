@@ -1,8 +1,8 @@
 # Domain Scaffolding Layer Details
 
 ## File Count Summary
-- **Default (no UseCase)**: 13 content + 21 `__init__.py` + 3 tests = **37 files**
-- **With UseCase**: 14 content + 23 `__init__.py` + 4 tests = **41 files**
+- **Default (no UseCase)**: 14 content + 22 `__init__.py` + 3 tests = **39 files**
+- **With UseCase**: 15 content + 24 `__init__.py` + 4 tests = **43 files**
 
 > Every Python package directory gets an empty `__init__.py`.
 > The numbered items below are **content files only** — `__init__.py` files are created automatically
@@ -128,12 +128,15 @@ src/{name}/
     │       └── {name}_view.py             ← #13
     └── worker/
         ├── __init__.py
+        ├── payloads/
+        │   ├── __init__.py
+        │   └── {name}_payload.py          ← #14
         ├── tasks/
         │   ├── __init__.py
-        │   └── {name}_test_task.py        ← #14
+        │   └── {name}_test_task.py        ← #15
         └── bootstrap/
             ├── __init__.py
-            └── {name}_bootstrap.py        ← #15
+            └── {name}_bootstrap.py        ← #16
 ```
 
 10. `src/{name}/interface/server/schemas/{name}_schema.py`
@@ -158,12 +161,17 @@ src/{name}/
 13. `src/{name}/interface/admin/views/{name}_view.py`
     - `from sqladmin import ModelView`
     - `class {Name}View(ModelView, model={Name}Model)`
-14. `src/{name}/interface/worker/tasks/{name}_test_task.py`
+14. `src/{name}/interface/worker/payloads/{name}_payload.py`
+    - `from src._core.application.dtos.base_payload import BasePayload`
+    - `class {Name}TestPayload(BasePayload)` — worker message contract
+    - Define only the fields needed for the test task message
+    - Does NOT inherit from domain DTO (independent contract)
+15. `src/{name}/interface/worker/tasks/{name}_test_task.py`
     - `@broker.task(task_name=f"{settings.task_name_prefix}.{name}.test")`
     - Requires `from src._core.config import settings` import
     - `@inject` + `Provide[{Name}Container.{name}_service]`
-    - `**kwargs` -> `{Name}DTO.model_validate(kwargs)`
-15. `src/{name}/interface/worker/bootstrap/{name}_bootstrap.py`
+    - `**kwargs` → `{Name}TestPayload.model_validate(kwargs)` → `{Name}DTO(**payload.model_dump())`
+16. `src/{name}/interface/worker/bootstrap/{name}_bootstrap.py`
     - `wire(modules=[{name}_test_task])`
     - Function name: `bootstrap_{name}_domain` (unified convention with server)
 
@@ -181,7 +189,7 @@ src/{name}/
 
 ## Layer 6: Tests
 
-16. `tests/factories/{name}_factory.py` — `make_{name}_dto()`, `make_create_{name}_request()`
-17. `tests/unit/{name}/domain/test_{name}_service.py` — MockRepository + CRUD tests
-18. `tests/unit/{name}/application/test_{name}_use_case.py` — **only when UseCase exists** MockService + tests
-19. `tests/integration/{name}/infrastructure/test_{name}_repository.py` — uses test_db fixture
+17. `tests/factories/{name}_factory.py` — `make_{name}_dto()`, `make_create_{name}_request()`, `make_{name}_test_payload()`
+18. `tests/unit/{name}/domain/test_{name}_service.py` — MockRepository + CRUD tests
+19. `tests/unit/{name}/application/test_{name}_use_case.py` — **only when UseCase exists** MockService + tests
+20. `tests/integration/{name}/infrastructure/test_{name}_repository.py` — uses test_db fixture

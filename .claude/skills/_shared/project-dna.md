@@ -76,6 +76,7 @@ src/{name}/
     ├── admin/
     │   └── views/{name}_view.py
     └── worker/
+        ├── payloads/{name}_payload.py
         ├── tasks/{name}_test_task.py
         └── bootstrap/{name}_bootstrap.py
 ```
@@ -94,6 +95,8 @@ src/{name}/
 | SuccessResponse | `src._core.application.dtos.base_response.SuccessResponse` |
 | ErrorResponse | `src._core.application.dtos.base_response.ErrorResponse` |
 | PaginationInfo | `src._core.application.dtos.base_response.PaginationInfo` |
+| BasePayload | `src._core.application.dtos.base_payload.BasePayload` |
+| PayloadConfig | `src._core.application.dtos.base_config.PayloadConfig` |
 | ApiConfig | `src._core.application.dtos.base_config.ApiConfig` |
 | BaseCustomException | `src._core.exceptions.base_exception.BaseCustomException` |
 | ValueObject | `src._core.domain.value_objects.value_object.ValueObject` |
@@ -105,6 +108,7 @@ src/{name}/
 - `BaseRequest` → `ApiConfig` → `BaseModel` (camelCase alias, frozen, populate_by_name)
 - `BaseResponse` → `ApiConfig` → `BaseModel`
 - `SuccessResponse` → `ApiConfig`, `Generic[ReturnType]`
+- `BasePayload` → `PayloadConfig` → `BaseModel` (frozen, extra="forbid", no alias)
 - `ValueObject` → `BaseModel` (frozen=True)
 
 ## §3. Generic Type Signatures
@@ -237,6 +241,8 @@ def create_server_container() -> containers.DynamicContainer:
 | Request → Service | Direct pass `entity=item` (when fields match) | `create_data(entity=item)` |
 | Request → DTO | `CreateDTO(**item.model_dump(), extra=...)` (when fields differ) | `CreateOrderDTO(**item.model_dump(), user_id=current_user.id)` |
 | DTO → Response | `{Name}Response(**data.model_dump(exclude={...}))` | `UserResponse(**data.model_dump(exclude={"password"}))` |
+| Message → Payload | `{Name}Payload.model_validate(kwargs)` | `UserTestPayload.model_validate(kwargs)` |
+| Payload → DTO | `{Name}DTO(**payload.model_dump())` | `UserDTO(**payload.model_dump())` |
 
 ## §7. Security Tools
 

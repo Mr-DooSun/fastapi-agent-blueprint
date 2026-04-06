@@ -24,6 +24,7 @@ All proposals and designs must consider scalability, maintainability, and team c
 
 ## Terminology
 - **Request/Response**: API communication schema (`interface/server/schemas/`)
+- **Payload**: Worker message contract schema (`interface/worker/payloads/`) — background: [ADR 016](docs/history/016-worker-payload-schema.md)
 - **DTO**: Internal data carrier between layers — Repository→Router (`domain/dtos/`)
 - **Model**: DB table mapping, never exposed outside Repository (`infrastructure/database/models/`)
 
@@ -55,6 +56,11 @@ All proposals and designs must consider scalability, maintainability, and team c
 - Repository → Service → Router: pass DTO as-is
 - Router → Client: `Response(**dto.model_dump(exclude={'password'}))`
 
+### Worker Direction (Message → Service)
+- Message → Task: `Payload.model_validate(kwargs)`
+- Task → Service: `DTO(**payload.model_dump())` (when fields match)
+- Task → Service: `DTO(field=payload.field, ...)` (when fields differ)
+
 ## Write DTO Creation Criteria
 - When fields match Request: pass Request directly, no separate Create/Update DTO needed
 - When fields differ (auth context injection, derived fields, etc.): create separate DTO in `domain/dtos/`
@@ -62,7 +68,7 @@ All proposals and designs must consider scalability, maintainability, and team c
 
 ## Skills (slash commands)
 - `/plan-feature {description}` — Feature implementation planning (requirements interview → architecture analysis → security check → task decomposition)
-- `/new-domain {name}` — Full domain scaffolding (13 content + 21 `__init__.py` + 3 tests = 37 files)
+- `/new-domain {name}` — Full domain scaffolding (14 content + 22 `__init__.py` + 3 tests = 39 files)
 - `/add-api {description}` — Add API endpoint to existing domain
 - `/add-worker-task {domain} {task}` — Add async Taskiq task
 - `/add-cross-domain from:{a} to:{b}` — Wire cross-domain dependency
