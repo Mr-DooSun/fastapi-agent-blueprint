@@ -46,7 +46,6 @@ class {TaskName}Payload(BasePayload):
 from dependency_injector.wiring import Provide, inject
 from src._apps.worker.broker import broker
 from src._core.config import settings
-from src.{name}.domain.dtos.{name}_dto import {Name}DTO
 from src.{name}.domain.services.{name}_service import {Name}Service
 from src.{name}.infrastructure.di.{name}_container import {Name}Container
 from src.{name}.interface.worker.payloads.{name}_payload import {TaskName}Payload
@@ -58,8 +57,7 @@ async def {task_name}_task(
     **kwargs,
 ) -> None:
     payload = {TaskName}Payload.model_validate(kwargs)
-    dto = {Name}DTO(**payload.model_dump())
-    await {name}_service.{method}(dto=dto)
+    await {name}_service.{method}(entity=payload)
 ```
 
 ### 3. Update Worker Bootstrap
@@ -72,9 +70,10 @@ In `src/{name}/interface/worker/bootstrap/{name}_bootstrap.py`:
 - If not, add the method to the Service (and Repository if needed)
 
 ## Core Rules
-- Task functions are thin adapters: receive `**kwargs`, validate via Payload, convert to DTO, then call Service only
-- Payloads define the explicit message contract; DTOs carry data between layers
-- Payload fields may be a subset of DTO fields (task receives only what it needs)
+- Task functions are thin adapters: receive `**kwargs`, validate via Payload, then call Service only
+- Payloads define the explicit message contract (same principle as Request for HTTP)
+- When fields match: pass payload directly to Service (`entity=payload`)
+- When fields differ: create DTO and convert (`DTO(**payload.model_dump(), extra=...)`)
 - `extra="forbid"` on Payload catches producer-side contract violations early
 - Business logic must reside in the Service
 - Model objects must not be exposed to tasks

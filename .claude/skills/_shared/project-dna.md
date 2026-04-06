@@ -242,7 +242,7 @@ def create_server_container() -> containers.DynamicContainer:
 | Request → DTO | `CreateDTO(**item.model_dump(), extra=...)` (when fields differ) | `CreateOrderDTO(**item.model_dump(), user_id=current_user.id)` |
 | DTO → Response | `{Name}Response(**data.model_dump(exclude={...}))` | `UserResponse(**data.model_dump(exclude={"password"}))` |
 | Message → Payload | `{Name}Payload.model_validate(kwargs)` | `UserTestPayload.model_validate(kwargs)` |
-| Payload → DTO | `{Name}DTO(**payload.model_dump())` | `UserDTO(**payload.model_dump())` |
+| Payload → Service | Direct pass `entity=payload` (when fields match) | `create_data(entity=payload)` |
 
 ## §7. Security Tools
 

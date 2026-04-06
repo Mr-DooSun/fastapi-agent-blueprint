@@ -72,15 +72,14 @@ HTTP 인터페이스는 Request 스키마로 이 세 가지 문제를 이미 해
 - **용어**: "Payload" — [AsyncAPI](https://www.asyncapi.com/docs/concepts/asyncapi-document/define-payload) 표준에서 메시지 데이터 스키마를 지칭하는 업계 표준 용어
 - **Base 설정**: `frozen=True`(불변 메시지) + `extra="forbid"`(엄격한 계약)
 - **위치**: Interface 레이어 (`interface/worker/payloads/`)
-- **변환 흐름**: Message → Payload(검증) → DTO(서비스 전달)
+- **전달 규칙**: 필드가 같으면 Payload를 Service에 직접 전달 (Router의 Request 직접 전달과 동일 원칙)
 - **DTO와 독립**: 필드가 같더라도 별도 선언. 메시지 계약과 도메인 데이터를 독립적으로 진화 가능
 
 ```python
 # After: 명시적 계약
 async def consume_task(**kwargs):
     payload = UserTestPayload.model_validate(kwargs)  # 메시지 계약 검증
-    dto = UserDTO(**payload.model_dump())              # 도메인 DTO 변환
-    await user_service.process_user(dto=dto)
+    await user_service.process_user(dto=payload)       # 직접 전달 (Router의 Request와 동일 원칙)
 ```
 
 이로써 프로젝트의 데이터 객체 역할이 4가지로 완성된다:
@@ -101,4 +100,5 @@ async def consume_task(**kwargs):
 | `extra="forbid"` | 예상치 못한 필드를 즉시 거부. Producer 실수를 빠르게 감지 |
 | DTO와 독립 선언 | 메시지 계약 변경 없이 도메인 DTO 진화 가능 (그 반대도) |
 | AsyncAPI "Payload" 용어 | 업계 표준 용어로 팀 간 소통 비용 감소 |
+| Payload 직접 전달 | Router의 Request 직접 전달과 동일 원칙. 필드가 같으면 변환 불필요 |
 | TaskiqManager 미변경 | Producer는 `payload.model_dump()`로 직렬화. 인프라 레이어에 Application 의존성 추가 불필요 |

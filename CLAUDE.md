@@ -58,8 +58,8 @@ All proposals and designs must consider scalability, maintainability, and team c
 
 ### Worker Direction (Message → Service)
 - Message → Task: `Payload.model_validate(kwargs)`
-- Task → Service: `DTO(**payload.model_dump())` (when fields match)
-- Task → Service: `DTO(field=payload.field, ...)` (when fields differ)
+- Task → Service: pass payload as-is (when fields match)
+- Task → Service: `DTO(**payload.model_dump(), extra=...)` (when fields differ)
 
 ## Write DTO Creation Criteria
 - When fields match Request: pass Request directly, no separate Create/Update DTO needed

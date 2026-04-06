@@ -170,7 +170,7 @@ src/{name}/
     - `@broker.task(task_name=f"{settings.task_name_prefix}.{name}.test")`
     - Requires `from src._core.config import settings` import
     - `@inject` + `Provide[{Name}Container.{name}_service]`
-    - `**kwargs` → `{Name}TestPayload.model_validate(kwargs)` → `{Name}DTO(**payload.model_dump())`
+    - `**kwargs` → `{Name}TestPayload.model_validate(kwargs)` → pass payload to Service directly
 16. `src/{name}/interface/worker/bootstrap/{name}_bootstrap.py`
     - `wire(modules=[{name}_test_task])`
     - Function name: `bootstrap_{name}_domain` (unified convention with server)

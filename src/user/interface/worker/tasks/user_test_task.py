@@ -2,7 +2,6 @@ from dependency_injector.wiring import Provide, inject
 
 from src._apps.worker.broker import broker
 from src._core.config import settings
-from src.user.domain.dtos.user_dto import UserDTO
 from src.user.domain.services.user_service import UserService
 from src.user.infrastructure.di.user_container import UserContainer
 from src.user.interface.worker.payloads.user_payload import UserTestPayload
@@ -15,6 +14,5 @@ async def consume_task(
     **kwargs,
 ) -> None:
     payload = UserTestPayload.model_validate(kwargs)
-    dto = UserDTO(**payload.model_dump())
 
-    await user_service.process_user(dto=dto)
+    await user_service.process_user(dto=payload)

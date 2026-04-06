@@ -50,7 +50,8 @@ Check interface/worker/ files:
 - [ ] Worker tasks validate `**kwargs` via a Payload class (not directly via domain DTO)
 - [ ] Payload classes inherit from `BasePayload` (not `BaseModel` or `BaseRequest`)
 - [ ] Payload files live in `interface/worker/payloads/` (not in domain layer)
-- [ ] Service receives domain DTO, not Payload (conversion happens in task)
+- [ ] When fields match: Payload passed directly to Service (same as Request pattern)
+- [ ] When fields differ: explicit DTO conversion in task
 
 ## 7. Bootstrap Wiring
 Check app-level files and auto-discovery mechanism:
