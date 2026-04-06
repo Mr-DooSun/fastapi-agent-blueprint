@@ -1,12 +1,32 @@
 """PreToolUse Hook: Security pattern check before code writing
 
-Blocks when Edit/Write tools attempt to write dangerous patterns to .py files.
+Blocks when Edit/Write/Bash tools attempt to write dangerous patterns to .py files.
 Exit 0 = allow, Exit 2 = block
 """
 
 import json
 import re
 import sys
+
+
+def _extract_bash_write(command: str) -> tuple[str, str] | None:
+    """Bash 명령에서 .py 파일 쓰기를 감지하여 (path, content) 반환.
+
+    쓰기가 없으면 None.
+    """
+    # > 또는 >> 리다이렉트
+    m = re.search(r">{1,2}\s*(\S+\.py)\b", command)
+    if m:
+        return (m.group(1), command)
+    # tee [-a] file.py
+    m = re.search(r"\btee\s+(?:-a\s+)?(\S+\.py)\b", command)
+    if m:
+        return (m.group(1), command)
+    # heredoc: << EOF > file.py
+    m = re.search(r"<<\s*[\x27\"]?(\w+)[\x27\"]?\s*>{0,2}\s*(\S+\.py)\b", command)
+    if m:
+        return (m.group(2), command)
+    return None
 
 
 def check_security(data: dict) -> list[str]:
@@ -19,6 +39,11 @@ def check_security(data: dict) -> list[str]:
     elif tool == "Write":
         path = inp.get("file_path", "")
         content = inp.get("content", "")
+    elif tool == "Bash":
+        result = _extract_bash_write(inp.get("command", ""))
+        if result is None:
+            return []
+        path, content = result
     else:
         return []
 
@@ -61,17 +86,27 @@ def check_security(data: dict) -> list[str]:
         )
 
     # 2. Hardcoded secrets (excludes Pydantic Field, env var patterns, and test files)
+    _quoted_value_re = (
+        r"(?:[bruf]*)(?:"
+        r'"{3}[\s\S]{3,}?"{3}'  # """..."""
+        r"|\x27{3}[\s\S]{3,}?\x27{3}"  # '''...'''
+        r'|["\x27][^"\x27\s]{3,}["\x27]'  # "..." or '...'
+        r")"
+    )
+    _sensitive_keywords = [
+        r"(?:password|passwd|pwd)",
+        r"(?:secret|secret_key)",
+        r"(?:api_key|apikey)",
+        r"(?:private_key)",
+        r"(?:auth_token)",
+        r"(?:encryption_key)",
+        r"(?:credential)",
+        r"(?:access_token)",
+    ]
     is_test_file = "/tests/" in path or path.endswith("_test.py")
     if not is_test_file:
         secret_patterns = [
-            r'(?:password|passwd|pwd)\s*=\s*["\x27][^"\x27\s]{3,}["\x27]',
-            r'(?:secret|secret_key)\s*=\s*["\x27][^"\x27\s]{3,}["\x27]',
-            r'(?:api_key|apikey)\s*=\s*["\x27][^"\x27\s]{3,}["\x27]',
-            r'(?:private_key)\s*=\s*["\x27][^"\x27\s]{3,}["\x27]',
-            r'(?:auth_token)\s*=\s*["\x27][^"\x27\s]{3,}["\x27]',
-            r'(?:encryption_key)\s*=\s*["\x27][^"\x27\s]{3,}["\x27]',
-            r'(?:credential)\s*=\s*["\x27][^"\x27\s]{3,}["\x27]',
-            r'(?:access_token)\s*=\s*["\x27][^"\x27\s]{3,}["\x27]',
+            kw + r"\s*=\s*" + _quoted_value_re for kw in _sensitive_keywords
         ]
         for pat in secret_patterns:
             if re.search(pat, content, re.IGNORECASE):
