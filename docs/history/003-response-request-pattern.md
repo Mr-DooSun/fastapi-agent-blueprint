@@ -1,12 +1,19 @@
 # 003. Response/Request Pattern Design
 
 - Status: Accepted
-- Date: 2025-03-19 ~ 2025-09-09
+- Date: 2025-03 ~ 2025-09
 - Related issues: #1, #5, #22
 - Related PRs: #2, #24
 - Related commits: `cdcbf59`, `42fc118`, `204e325`, `2d4c6fe`, `fd191b3`, `3b69806`, `a05ced4`
 
+## Summary
+
+To standardize the API contract with the frontend — covering pagination, error formats, type safety, and response structure — we iteratively designed a unified Response/Request pattern with generic typing and global error registration.
+
 ## Background
+
+- **Trigger**: Multiple issues surfaced simultaneously: scattered pagination responses (#1), response format logic misplaced in the use case layer (#1), mixed return types breaking Swagger docs (#5), and non-standardized error responses preventing consistent frontend error handling (#22).
+- **Decision type**: Experience-based correction, iterative — four separate problems were identified and addressed incrementally over 6 months.
 
 The API response format is a contract with the frontend.
 In the early stages of the project, both single-item and multi-item query APIs existed,
@@ -52,6 +59,23 @@ Additionally, the `data` field was of type `Any`, providing no type safety.
 Error response formats were not standardized,
 so error response schemas were not displayed in Swagger documentation,
 and frontend developers could not write error handling logic consistently.
+
+## Alternatives Considered
+
+### A. Keep separate response classes per pattern (status quo)
+- PaginationResponse as a separate class → different response structures per API
+- Response format logic in use case layer → use case not reusable across API/Worker
+- `data: Any` without Generic typing → no Swagger schema accuracy
+- No standardized error format → frontend cannot handle errors consistently
+
+Each problem had incremental alternatives (e.g., keeping pagination separate, keeping format logic in use case), but they all shared the same root cause: lack of a unified response contract design.
+
+### B. Unified Response/Request pattern with Generic typing (chosen)
+- Single BaseResponse with optional PaginationInfo
+- Response formatting as the Router's responsibility (interface concern)
+- Separate SuccessResponse/ErrorResponse with only relevant fields
+- Global error response models registered in FastAPI app
+- Generic `ReturnType` for type-safe Swagger documentation
 
 ## Decision
 
@@ -135,6 +159,12 @@ into the `ErrorResponse` format.
 | Success/Error response separation | Each response contains only necessary fields for clear semantics. Errors have no data, successes have no error_code |
 | Global error response registration | Swagger auto-documentation lets frontend developers immediately check error formats |
 | data field Generic typing | Changed from `Any` to `ReturnType` for improved type safety and Swagger schema accuracy |
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?
 
 ## Follow-up
 

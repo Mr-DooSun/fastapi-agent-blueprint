@@ -5,7 +5,14 @@
 - Related Issues: #58
 - Related ADRs: 010-code-quality-tools.md (Supersedes)
 
+## Summary
+
+To consolidate 6 separate linting tools into one with faster execution and centralized configuration, we replaced the entire pre-commit linting stack with Ruff.
+
 ## Background
+
+- **Trigger**: 6 linting tools running sequentially made pre-commit slow, configurations were scattered across `.pre-commit-config.yaml` args, and Python version hardcoding in Black caused breakage when upgrading to Python 3.13.
+- **Decision type**: External factor — Ruff matured to the point where it could replace all 6 tools with a single Rust-based binary (adopted by FastAPI, Pydantic, Django, etc.).
 
 In ADR 010, the pre-commit configuration was systematized with a combination of 6 tools:
 pyupgrade, autoflake, isort, Black, flake8 + plugins, bandit.
@@ -46,17 +53,17 @@ causing the hook to fail when upgrading to Python 3.13.
 
 ## Alternatives Considered
 
-### 1. Maintain Status Quo (6 tools)
+### A. Maintain Status Quo (6 tools)
 - Stable and proven
 - Disadvantage: The 4 problems listed above persist
 
-### 2. Consolidate with Ruff (chosen)
+### B. Consolidate with Ruff (chosen)
 - Rust-based, 10-100x faster execution speed
 - Consolidates flake8, pyupgrade, autoflake, isort, Black, and bandit rules into one
 - Centralized configuration management in `pyproject.toml`
 - Only 1 rev to manage
 
-### 3. Partial Migration (only replace flake8 with Ruff)
+### C. Partial Migration (only replace flake8 with Ruff)
 - Keep Black/isort and only replace flake8
 - Disadvantage: The number of tools does not decrease, so the fundamental problem remains unsolved
 
@@ -126,3 +133,9 @@ were added to the ignore list for behavioral consistency.
 2. Settings readability: All linting rules visible in a single `pyproject.toml` location
 3. Simplified maintenance: Only 1 tool version to manage
 4. Ecosystem trend: Ruff is establishing itself as the Python linting standard (adopted by major projects including FastAPI, Pydantic, Django, etc.)
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?

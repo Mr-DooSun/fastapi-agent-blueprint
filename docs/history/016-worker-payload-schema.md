@@ -5,7 +5,14 @@
 - Related issue: #37
 - Related ADR: [003](003-response-request-pattern.md)(Response/Request Pattern), [004](004-dto-entity-responsibility.md)(DTO/Entity Responsibility)
 
+## Summary
+
+To eliminate implicit message contracts in worker tasks, we introduced Payload schemas in `interface/worker/payloads/` — mirroring the Request/Response pattern that the HTTP interface already had.
+
 ## Background
+
+- **Trigger**: As the project targets 10+ domains with independent teams developing Producers and Consumers, the lack of explicit message contracts in worker tasks became a concrete risk — unlike the HTTP interface, which already had Request schemas.
+- **Decision type**: Upfront design — addressing the gap before scaling, not after a production incident.
 
 The project has progressively established data object roles:
 
@@ -119,3 +126,9 @@ This completes the project's four data object roles:
 | Direct pass to Service | Consistent with Router's Request pass-through. `BaseService` accepts `entity: BaseModel`, so no conversion needed when fields match. Only convert when Payload and DTO fields actually differ |
 | AsyncAPI "Payload" terminology | Industry-standard term reduces communication overhead across teams |
 | No TaskiqManager changes | Producers serialize via `payload.model_dump()`. Avoids adding Application-layer dependency to Infrastructure |
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?

@@ -1,10 +1,17 @@
 # 014. OMC vs Native Orchestration Decision
 
-- Status: Accepted (Option B — Native)
-- Date: 2026-03-24 (initiated), 2026-04-05 (decided)
+- Status: Accepted
+- Date: 2026-03-24 ~ 2026-04-05
 - Related Documents: None
 
+## Summary
+
+To fill the absent orchestration layer (multi-agent coordination, autonomous execution), we chose Claude Code's native Plugin system over OMC — evaluating built-in capabilities before adopting an external dependency.
+
 ## Background
+
+- **Trigger**: The project had 11 domain skills + Serena + hooks, but no orchestration layer — limitations were anticipated for simultaneous multi-domain refactoring and complex task decomposition.
+- **Decision type**: Upfront design — deliberated across three sessions before the need became acute.
 
 The project has 11 domain skills + Serena + settings.json hooks established,
 but an **orchestration layer** (multi-agent coordination, autonomous execution, model routing) is absent.
@@ -22,7 +29,7 @@ The project is currently operational without an orchestration layer, but limitat
 
 ## Alternatives Considered
 
-### Option A: Thin OMC Adoption
+### A. Thin OMC Adoption
 
 Delegate only orchestration to OMC while keeping existing domain skills.
 
@@ -40,7 +47,7 @@ Delegate only orchestration to OMC while keeping existing domain skills.
 - Dependency on OMC maintainer (compatibility risk with Claude Code updates)
 - Risk of skill accumulation + keyword conflicts from Learner (auto skill suggestion)
 
-### Option B: Native Plugin System + /team
+### B. Native Plugin System + /team (chosen)
 
 Build commands/agents/hooks using Claude Code's official Plugin system.
 
@@ -56,7 +63,7 @@ Build commands/agents/hooks using Claude Code's official Plugin system.
 - Not a community standard -> structure may vary between projects
 - Higher initial setup cost than OMC
 
-### Option C: Full OMC Adoption
+### C. Full OMC Adoption
 
 Migrate existing skills to OMC format and fully adopt the Conductor model.
 
@@ -248,6 +255,12 @@ Phase 3 (only if needed): Thin OMC adoption
   → Trigger: Team member familiar with OMC joins and makes a case for it
   → Trigger: Multi-provider (Codex/Gemini) becomes a real requirement
 ```
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?
 
 ## Future Considerations
 

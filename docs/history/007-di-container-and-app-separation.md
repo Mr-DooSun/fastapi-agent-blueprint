@@ -1,12 +1,19 @@
 # 007. DI Container Layering and Interface-Specific App Separation
 
 - Status: Accepted
-- Date: 2025-09-09 ~ 2025-11-18
+- Date: 2025-09 ~ 2025-11
 - Related Issues: #21, #49
 - Related PRs: #23, #50
 - Related Commits: `5b96e3b`, `aafdcd4`
 
+## Summary
+
+To resolve single-container bloat, circular references between domains, and different dependency requirements per interface, we introduced per-domain DI containers and separated Server/Worker/Admin into independent apps sharing the same business logic.
+
 ## Background
+
+- **Trigger**: After the per-domain architecture migration ([006](006-ddd-layered-architecture.md)), the single DI container grew unbounded as domains increased, circular references between domains (e.g., User ↔ Video) were hard to resolve, and Server/Worker/Admin had different middleware and routing needs but were forced into a single app.
+- **Decision type**: Experience-based correction — the container scalability and circular reference issues emerged as new domains were added.
 
 After transitioning to a domain-based layered architecture ([006](006-ddd-layered-architecture.md)),
 two problems emerged with the DI container and application configuration.
@@ -35,6 +42,24 @@ Server (API), Worker (async tasks), and Admin (management tools) each required:
 - Shared business logic (Service, Repository)
 
 Handling all of this in a single app loaded unnecessary dependencies.
+
+## Alternatives Considered
+
+### A. Single container + single app (status quo)
+- All domains' Use Cases, Services, and Repositories in one container
+- One app handles Server, Worker, and Admin
+- Simple to understand but: container bloat as domains grow, circular references hard to resolve, unnecessary dependencies loaded for each interface
+
+### B. Per-domain container + single app
+- Each domain gets its own container, resolving bloat and circular references
+- Still one app — different interface requirements (middleware, routes) not addressed
+- A stepping stone, not the final solution
+
+### C. Per-domain container + per-interface app separation (chosen)
+- Each domain has its own DI container (DeclarativeContainer)
+- Server, Worker, Admin each have independent app, bootstrap, and top-level container
+- Business logic (Service/Repository) shared across all interfaces
+- More management points (3 apps) but eliminates duplication of sharable logic
 
 ## Decision
 
@@ -104,6 +129,12 @@ while sharing the domain's Service/Repository layers.
 1. **Business logic sharing is the key benefit**: Server, Worker, and Admin can share simple CRUD code and common business logic. Since Worker and Admin need to be built separately anyway, managing them within the same architecture actually reduces management overhead.
 2. **Container layering**: Compensates for the scalability weakness of layered architecture through DI containers.
 3. **Increased management points are acceptable**: The number of apps grows to 3, but eliminating duplication of sharable logic provides a greater benefit.
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?
 
 ## Follow-up
 

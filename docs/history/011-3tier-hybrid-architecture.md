@@ -5,7 +5,14 @@
 - Related Issues: #33
 - Related ADRs: 004-dto-entity-responsibility.md (evolution), 006-ddd-layered-architecture.md (evolution)
 
+## Summary
+
+To eliminate 16 passthrough delegation methods per domain, we transitioned from a rigid 4-layer structure to a 3-tier hybrid where UseCase is optional and BaseService provides CRUD via inheritance.
+
 ## Background
+
+- **Trigger**: After removing Entity in ADR 004, both UseCase and Service became pure delegation layers — 8 CRUD methods x 2 layers = 16 passthrough methods repeated per domain with no added value.
+- **Decision type**: Experience-based correction — the overhead of mandatory UseCase was discovered through actual domain development.
 
 The project was using a 4-layer structure (Router -> UseCase -> Service -> Repository).
 After replacing Entity with DTO in ADR 004, both the UseCase and Service layers were only serving as delegation layers that "pass data through as-is."
@@ -49,16 +56,16 @@ class UserRepositoryProtocol(BaseRepositoryProtocol[BaseModel, UserDTO, BaseMode
 
 ## Alternatives Considered
 
-### 1. Maintain Status Quo (4 layers)
+### A. Maintain Status Quo (4 layers)
 - Manually maintain 16 UseCase/Service delegation boilerplate methods
 - Copy the same boilerplate for every new domain
 - Advantage: Clear layer separation. Disadvantage: Repetition of code with no practical value
 
-### 2. Remove UseCase Entirely (Router -> Service -> Repository)
+### B. Remove UseCase Entirely (Router -> Service -> Repository)
 - Absorb pagination logic into Service
 - Disadvantage: Service becomes bloated when complex business logic is needed
 
-### 3. Hybrid (chosen)
+### C. Hybrid (chosen)
 - Simple CRUD: Router -> Service -> Repository (UseCase omitted)
 - Complex logic: Router -> UseCase -> Service -> Repository (UseCase retained)
 - Restore BaseService to eliminate Service boilerplate as well
@@ -136,6 +143,12 @@ Criteria for adding a UseCase:
 2. BaseService follows the same pattern as Spring Boot's CRUD Service and NestJS's TypeOrmCrudService
 3. Keeping UseCase optional preserves extensibility for complex logic
 4. Generic simplification makes type signatures reflect actual meaning
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?
 
 ## Lessons Learned
 

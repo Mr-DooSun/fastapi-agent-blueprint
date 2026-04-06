@@ -10,20 +10,20 @@ Each document captures the context and decision criteria for "why this technolog
 | [000](000-rabbitmq-to-celery.md) | Migration from RabbitMQ to Celery | Superseded by 001 | Done | 2025-09-10 |
 | [001](001-celery-to-taskiq.md) | Migration from Celery to Taskiq | Accepted | Done | 2025-12-24 |
 | [002](002-serena-adoption.md) | Serena MCP Server Adoption and Claude Code Parallel Strategy | Accepted | Done | 2026-03-18 |
-| [003](003-response-request-pattern.md) | Response/Request Pattern Design | Accepted | Done | 2025-03~09 |
-| [004](004-dto-entity-responsibility.md) | DTO/Entity Responsibility Redefinition | Accepted | Done | 2025-07 |
+| [003](003-response-request-pattern.md) | Response/Request Pattern Design | Accepted | Done | 2025-03 ~ 2025-09 |
+| [004](004-dto-entity-responsibility.md) | DTO/Entity Responsibility Redefinition | Accepted | Done | 2025-07-15 |
 | [005](005-poetry-to-uv.md) | Migration from Poetry to uv | Accepted | Done | 2025-04 |
-| [006](006-ddd-layered-architecture.md) | Migration to Per-Domain Layered Architecture | Accepted | Done | 2025-07~08 |
-| [007](007-di-container-and-app-separation.md) | DI Container Layering and Per-Interface App Separation | Accepted | Done | 2025-09~11 |
+| [006](006-ddd-layered-architecture.md) | Migration to Per-Domain Layered Architecture | Accepted | Done | 2025-07 ~ 2025-08 |
+| [007](007-di-container-and-app-separation.md) | DI Container Layering and Per-Interface App Separation | Accepted | Done | 2025-09 ~ 2025-11 |
 | [008](008-deploy-env-separation.md) | Deployment Environment Separation and Configuration Management | Accepted | Done | 2025-09 |
 | [009](009-async-external-clients.md) | Async External Client Standardization | Accepted | Done | 2025-10 |
 | [010](010-code-quality-tools.md) | Code Quality Tooling Systematization | Superseded by 012 | Done | 2025-10 |
 | [011](011-3tier-hybrid-architecture.md) | Migration to 3-Tier Hybrid Architecture | Accepted | Done | 2026-03-23 |
 | [012](012-ruff-migration.md) | pre-commit Linting Tool Ruff Integration | Accepted | Done | 2026-03-23 |
 | [013](013-why-ioc-container.md) | Why IoC Container Over Inheritance | Accepted | Done | 2026-03-23 |
-| [014](014-omc-vs-native-orchestration.md) | OMC vs Native Orchestration Decision | Pending | In Progress | 2026-03-24 |
+| [014](014-omc-vs-native-orchestration.md) | OMC vs Native Orchestration Decision | Accepted | Done | 2026-03-24 ~ 2026-04-05 |
 | [015](015-rebrand-agent-platform.md) | Rebrand to AI Agent Backend Platform | Accepted | Done | 2026-04-03 |
-| [016](016-worker-payload-schema.md) | Worker Payload Schema 도입 | Accepted | Done | 2026-04-06 |
+| [016](016-worker-payload-schema.md) | Worker Payload Schema | Accepted | Done | 2026-04-06 |
 
 ## Future Considerations (Open Issues)
 

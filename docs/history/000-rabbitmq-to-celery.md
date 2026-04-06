@@ -5,7 +5,14 @@
 - Related issue: #16
 - Related commit: `1f1db6b`
 
+## Summary
+
+To reduce the infrastructure boilerplate of direct RabbitMQ consumer implementation, we adopted Celery + SQS as a higher-level task queue abstraction.
+
 ## Background
+
+- **Trigger**: More development time was being spent on infrastructure code (connection management, serialization, retry logic) than on business logic. The custom RabbitMQ consumer required managing too many low-level concerns manually.
+- **Decision type**: Experience-based correction — the overhead of raw RabbitMQ was felt through accumulated boilerplate.
 
 We were using a custom RabbitMQ consumer implementation for asynchronous task processing.
 The basic architecture involved publishing messages and having consumers receive and process them.
@@ -19,6 +26,20 @@ Directly implementing RabbitMQ consumers required managing many concerns:
 - Boilerplate code for retries, error handling, etc.
 
 The structure led to spending more time on infrastructure code than on business logic.
+
+## Alternatives Considered
+
+### A. Keep raw RabbitMQ (improve custom consumer)
+- Continue managing consumer, exchange, queue, connection/channel lifecycle, serialization, and retry logic manually
+- Full control over the messaging layer
+- Infrastructure code continues to dominate development time
+- Every new task type requires repeating the same boilerplate
+
+### B. Adopt Celery + SQS (chosen)
+- Decorator-based task definition (`@task`) mirrors FastAPI's `@router` pattern
+- Automatic message serialization, retry management, and task discovery
+- SQS as broker leverages existing AWS infrastructure — no separate RabbitMQ server needed
+- Trades low-level control for higher-level abstraction
 
 ## Decision
 
@@ -58,6 +79,12 @@ Compared to direct consumer implementation, Celery provided the following abstra
 - Automatic message serialization/deserialization
 - Configuration-based retry and timeout management
 - Automated task discovery
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?
 
 ## Follow-up
 

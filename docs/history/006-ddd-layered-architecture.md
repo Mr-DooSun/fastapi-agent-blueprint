@@ -1,12 +1,19 @@
 # 006. Migration to Per-Domain Layered Architecture
 
 - Status: Accepted
-- Date: 2025-07-16 ~ 2025-08-24
+- Date: 2025-07 ~ 2025-08
 - Related issues: #19, #10, #9
 - Related PRs: #20, #14, #15
 - Related commits: `f59e96b`, `e248abf`, `bad7a62`, `88afd88`, `1567ec3`
 
+## Summary
+
+To simplify code navigation and align naming with FastAPI conventions, we flattened `apps/` and `domains/` into per-domain top-level folders, renamed controllers to routers, and removed unused gateway code.
+
 ## Background
+
+- **Trigger**: Tracing an issue in a single feature required navigating three separate directories (`apps/`, `domains/`, `core/`). Additionally, using "controller" naming conflicted with FastAPI's `APIRouter` convention.
+- **Decision type**: Experience-based correction — the navigation overhead and naming inconsistency were felt during daily development.
 
 In the early stages of the project, application code and domain code were separated into `src/apps/` and `src/domains/`.
 
@@ -58,6 +65,19 @@ router = APIRouter()  # FastAPI convention: router
 
 An API gateway was created as a separate app (`apps/gateway/`),
 but it was unused code in the current single-server architecture.
+
+## Alternatives Considered
+
+### A. Keep apps/domains separation
+- Maintain the existing structure with `src/apps/` and `src/domains/` as separate top-level directories
+- Clear separation between "application configuration" and "domain logic"
+- Disadvantage: Navigating 3 locations for a single domain's issue; gateway app unused; naming inconsistency persists
+
+### B. Per-domain flattening (chosen)
+- Place each domain directly under `src/` — domain contains its own app config and logic
+- Rename controllers to routers (align with FastAPI convention)
+- Remove unused gateway code
+- Disadvantage: Large refactoring (87 files), though mostly file moves with minimal logic changes
 
 ## Decision
 
@@ -118,6 +138,12 @@ src/
 2. Following FastAPI's `APIRouter` naming convention keeps framework documentation and code consistent
 3. Removing unused gateway code prevents confusion
 4. Although it was a large-scale refactoring involving 87 files, most changes were file moves, keeping logic changes minimal
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?
 
 ## Follow-up
 

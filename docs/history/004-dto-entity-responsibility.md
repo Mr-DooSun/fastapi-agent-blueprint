@@ -1,12 +1,19 @@
 # 004. DTO/Entity Responsibility Redefinition
 
-- Status: Accepted (evolving)
+- Status: Accepted
 - Date: 2025-07-15
 - Related issues: #6, #57
 - Related PR: #7
 - Related commits: `bbfd2bf`, `ceebe9c`
 
+## Summary
+
+To eliminate unnecessary conversion boilerplate and concern mixing caused by a misapplied Entity pattern, we removed the Entity layer and let DTOs directly handle data transfer between layers.
+
 ## Background
+
+- **Trigger**: Entity was being used as a pure data structure without business logic — effectively duplicating DTO. Conversion boilerplate (`to_entity`/`from_entity`) accumulated in every handler, and multiple inheritance mixed response format concerns with domain data.
+- **Decision type**: Experience-based correction — the misapplication of the Entity pattern was recognized through accumulated boilerplate pain, not anticipated upfront.
 
 The project had three types of objects representing data:
 
@@ -59,11 +66,11 @@ This caused:
 - Potential MRO (Method Resolution Order) conflicts
 - Entity field changes directly affecting Response schemas
 
-## Decision
+## Alternatives Considered
 
-### Phase 1: Introduce to_entity/from_entity Pattern (commit bbfd2bf, 2025-07)
+### A. Keep Entity with explicit to_entity/from_entity (Phase 1 attempt)
 
-Initially, we attempted to separate DTO and Entity responsibilities by making conversions explicit.
+Initially attempted in commit `bbfd2bf` (2025-07): separate DTO and Entity responsibilities by making conversions explicit.
 
 ```python
 class BaseRequest(ApiConfig):
@@ -76,12 +83,13 @@ class BaseResponse(ApiConfig):
         return cls(**entity.model_dump())
 ```
 
-### Phase 2: Remove Entity, Use DTO Directly (issue #57, 2026-03)
+Through actual usage, wrapping in Entity every time remained cumbersome, and Entity still held data without any business logic — the core problem was not solved, only made more verbose.
 
-Through actual usage, we realized that wrapping in Entity every time was cumbersome,
-and that Entity had no reason to exist since it held data without any business logic.
+### B. Remove Entity, use DTO directly (chosen)
 
-After research to relearn Entity's original role, we organized it as follows:
+Since domain objects in this project have no complex business behavior, remove the Entity layer entirely and let DTOs directly handle data transfer between layers.
+
+After research to relearn Entity's original role:
 
 | Object | Role | Business Logic |
 |--------|------|---------------|
@@ -89,8 +97,11 @@ After research to relearn Entity's original role, we organized it as follows:
 | Entity (DDD) | Domain behavior + identifier | **Yes** |
 | Model | DB table mapping | None |
 
-Since the domain objects in this project have no complex business behavior,
-we removed the Entity layer and let DTOs directly handle data transfer between layers.
+Entity has value only when there is business behavior. For CRUD-oriented domains, DTO is sufficient.
+
+## Decision
+
+**Removed Entity layer, using DTO directly** (issue #57, 2026-03)
 
 **Current rules:**
 - Using `to_entity()`, `from_entity()` methods is prohibited
@@ -110,6 +121,12 @@ we removed the Entity layer and let DTOs directly handle data transfer between l
 1. When Entity carries data without business behavior, it duplicates DTO — removal is rational
 2. Multiple inheritance mixes concerns and makes change impact scope unpredictable
 3. Inline conversion with `model_dump()` / `model_validate()` eliminates the need for separate methods or utilities
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?
 
 ## Lessons Learned
 
