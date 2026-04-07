@@ -7,6 +7,21 @@ on:
     branches: [main]
 
 jobs:
+  branch-name:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch name
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          PATTERN="^(feat|fix|refactor|docs|chore|test|i18n|ci|perf|style)/[a-z0-9]([a-z0-9._-]*[a-z0-9])?$"
+          if [[ ! "$BRANCH" =~ $PATTERN ]]; then
+            echo "::error::Branch name '$BRANCH' does not follow the required format: {type}/{description}"
+            echo "Valid types: feat, fix, refactor, docs, chore, test, i18n, ci, perf, style"
+            echo "Example: feat/add-user-auth, fix/null-pointer-in-service"
+            exit 1
+          fi
+
   lint:
     runs-on: ubuntu-latest
     steps:

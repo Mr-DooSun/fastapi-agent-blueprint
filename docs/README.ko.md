@@ -49,7 +49,7 @@
 
 ### 개발자 경험
 
-- **14개 AI 개발 스킬** — 스캐폴딩, 테스트, 아키텍처 리뷰 등을 위한 Claude Code 슬래시 커맨드
+- **13개 AI 개발 스킬** — 스캐폴딩, 테스트, 아키텍처 리뷰 등을 위한 Claude Code 슬래시 커맨드
 - **아키텍처 자동 강제** — Pre-commit hook이 커밋 시점에 `Domain -> Infrastructure` import를 차단
 - **타입 안전 제네릭** — `BaseRepository[ProductDTO]`, `BaseService[ProductDTO]`, `SuccessResponse[ProductResponse]`
 - **DDD 레이어드 구조** — 각 도메인이 완전히 독립된 계층 보유 (Domain / Infrastructure / Interface / Application)
@@ -175,7 +175,7 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 - **중급**: 이 프로젝트 고유의 패턴에 집중
 - **고급**: 아키텍처 규칙과 컨벤션으로 바로 이동
 
-### 14개 내장 스킬
+### 13개 내장 스킬
 
 | 명령어 | 기능 |
 |--------|------|
@@ -189,7 +189,6 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 | `/security-review {domain}` | OWASP 기반 보안 감사 |
 | `/test-domain {domain}` | 도메인 테스트 생성 또는 실행 |
 | `/fix-bug {description}` | 구조화된 버그 수정 워크플로우 |
-| `/create-pr` | 브랜치 검증 -> 커밋 분석 -> 템플릿 기반 PR |
 | `/review-pr {number}` | 아키텍처 인식 PR 리뷰 |
 | `/sync-guidelines` | 설계 변경 후 문서 동기화 |
 | `/migrate-domain {command}` | Alembic 마이그레이션 관리 |
@@ -457,7 +456,7 @@ src/
 | 보일러플레이트 제로 CRUD (7개 메서드) | **Yes** | No | No | No |
 | 도메인 자동 발견 | **Yes** | No | No | No |
 | 아키텍처 자동 강제 (pre-commit) | **Yes** | No | No | No |
-| AI 개발 스킬 | **14** | 0 | 0 | 0 |
+| AI 개발 스킬 | **13** | 0 | 0 | 0 |
 | 적응형 온보딩 (`/onboard`) | **Yes** | No | No | No |
 | 멀티 인터페이스 (API+Worker+Admin+MCP) | **4종** | 2 | 1 | 1 |
 | Architecture Decision Records | **14** | 0 | 0 | 0 |
@@ -509,7 +508,7 @@ src/
 - [x] 헬스 체크 엔드포인트
 - [x] 도메인 자동 발견
 - [x] 아키텍처 강제 (pre-commit)
-- [x] 14개 AI 개발 스킬
+- [x] 13개 AI 개발 스킬
 
 스타를 눌러 진행 상황을 팔로우하세요!
 

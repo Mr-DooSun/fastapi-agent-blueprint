@@ -50,7 +50,7 @@
 
 ### Developer Experience
 
-- **14 AI development skills** — Claude Code slash commands for scaffolding, testing, architecture review, and more
+- **13 AI development skills** — Claude Code slash commands for scaffolding, testing, architecture review, and more
 - **Architecture enforcement** — Pre-commit hooks block `Domain -> Infrastructure` imports at commit time
 - **Type-safe generics** — `BaseRepository[ProductDTO]`, `BaseService[ProductDTO]`, `SuccessResponse[ProductResponse]`
 - **DDD layered structure** — Each domain is fully independent with its own layers (Domain / Infrastructure / Interface / Application)
@@ -176,7 +176,7 @@ The `/onboard` skill adapts to your experience:
 - **Intermediate**: Focuses on this project's specific patterns
 - **Advanced**: Jumps straight to architecture rules and conventions
 
-### 14 Built-in Skills
+### 13 Built-in Skills
 
 | Command | What it does |
 |---------|------------|
@@ -190,7 +190,6 @@ The `/onboard` skill adapts to your experience:
 | `/security-review {domain}` | OWASP-based security audit |
 | `/test-domain {domain}` | Generate or run domain tests |
 | `/fix-bug {description}` | Structured bug fixing workflow |
-| `/create-pr` | Branch validation -> commit analysis -> template-based PR |
 | `/review-pr {number}` | Architecture-aware PR review |
 | `/sync-guidelines` | Sync docs after design changes |
 | `/migrate-domain {command}` | Alembic migration management |
@@ -458,7 +457,7 @@ src/
 | Zero-boilerplate CRUD (7 methods) | **Yes** | No | No | No |
 | Auto domain discovery | **Yes** | No | No | No |
 | Architecture enforcement (pre-commit) | **Yes** | No | No | No |
-| AI development skills | **14** | 0 | 0 | 0 |
+| AI development skills | **13** | 0 | 0 | 0 |
 | Adaptive onboarding (`/onboard`) | **Yes** | No | No | No |
 | Multi-interface (API+Worker+Admin+MCP) | **4 types** | 2 | 1 | 1 |
 | Architecture Decision Records | **14** | 0 | 0 | 0 |
@@ -510,7 +509,7 @@ Every technical choice in this project is documented as an ADR (Architecture Dec
 - [x] Health check endpoint
 - [x] Auto domain discovery
 - [x] Architecture enforcement (pre-commit)
-- [x] 14 AI development skills
+- [x] 13 AI development skills
 
 Star this repo to follow our progress!
 

@@ -76,7 +76,6 @@ All proposals and designs must consider scalability, maintainability, and team c
 - `/security-review {domain|file|all}` — OWASP-based code security audit
 - `/test-domain {domain} [generate|run]` — Generate or run tests
 - `/fix-bug {description}` — Structured bug-fix workflow
-- `/create-pr` — PR creation (branch validation → commit analysis → template-based PR)
 - `/review-pr {number|URL}` — Architecture-aware PR review (existing rules applied to PR diff)
 - `/sync-guidelines` — Synchronize guidelines after design changes + regenerate project-dna.md
 - `/migrate-domain {generate|upgrade|downgrade|status}` — Alembic migration management

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Branch name validation in CI for pull requests (`{type}/{description}` format enforcement)
+
+### Removed
+
+- `/create-pr` skill — branch name validation moved to CI; PR creation handled by Claude Code built-in capability
+
 ## [0.2.0] - 2026-04-07
 
 ### Added

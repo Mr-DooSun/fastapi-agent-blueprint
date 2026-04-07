@@ -60,13 +60,13 @@ A three-layer governance system:
 
 ### Layer 1: Skills (Executable Workflow Templates)
 
-14 skills in `.claude/skills/` that codify repeatable development workflows:
+13 skills in `.claude/skills/` that codify repeatable development workflows:
 
 | Category | Skills |
 |----------|--------|
 | Scaffolding | `/new-domain`, `/add-api`, `/add-worker-task`, `/add-cross-domain` |
 | Quality | `/review-architecture`, `/security-review`, `/test-domain` |
-| Workflow | `/plan-feature`, `/fix-bug`, `/create-pr`, `/review-pr` |
+| Workflow | `/plan-feature`, `/fix-bug`, `/review-pr` |
 | Governance | `/sync-guidelines`, `/onboard`, `/migrate-domain` |
 
 Each skill is a `SKILL.md` file with:
