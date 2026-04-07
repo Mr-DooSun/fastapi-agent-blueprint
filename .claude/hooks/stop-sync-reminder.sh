@@ -22,7 +22,7 @@ fi
 [ -z "$CHANGED" ] && exit 0
 
 # Foundation: project-wide impact
-FOUNDATION=$(echo "$CHANGED" | grep -E '^(src/_core/|src/_apps/|pyproject\.toml$|\.pre-commit-config\.yaml$|CLAUDE\.md$|\.serena/memories/|\.claude/skills/_shared/)' || true)
+FOUNDATION=$(echo "$CHANGED" | grep -E '^(src/_core/|src/_apps/|pyproject\.toml$|\.pre-commit-config\.yaml$|CLAUDE\.md$|\.serena/memories/|\.claude/skills/_shared/|\.claude/hooks/|\.claude/settings\.json$)' || true)
 
 # Domain Structure: domain-level architectural impact (exclude _core/_apps)
 STRUCTURE=$(echo "$CHANGED" | grep -E '^src/[^_].*/((infrastructure/di/|interface/server/routers/|domain/protocols/|domain/dtos/))' || true)
