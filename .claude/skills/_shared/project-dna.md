@@ -74,7 +74,7 @@ src/{name}/
     │   ├── routers/{name}_router.py
     │   └── bootstrap/{name}_bootstrap.py
     ├── admin/
-    │   └── views/{name}_view.py
+    │   └── pages/{name}_page.py
     └── worker/
         ├── payloads/{name}_payload.py
         ├── tasks/{name}_test_task.py

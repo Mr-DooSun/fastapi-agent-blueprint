@@ -123,9 +123,9 @@ src/{name}/
     │       └── {name}_bootstrap.py        ← #12
     ├── admin/
     │   ├── __init__.py
-    │   └── views/
+    │   └── pages/
     │       ├── __init__.py
-    │       └── {name}_view.py             ← #13
+    │       └── {name}_page.py             ← #13
     └── worker/
         ├── __init__.py
         ├── payloads/
@@ -160,6 +160,8 @@ src/{name}/
 13. `src/{name}/interface/admin/pages/{name}_page.py`
     - `from src._core.infrastructure.admin.base_admin_page import BaseAdminPage, ColumnConfig`
     - `{name}_admin_page = BaseAdminPage(domain_name="{name}", display_name="{Name}", ...)`
+    - `register_pages(all_page_configs, admin_container)` — registers `@ui.page("/admin/{name}")` with `page: int = 1, search: str = ""` params
+    - Passes `search` to `render_list_page()` for server-side filtering
 14. `src/{name}/interface/worker/payloads/{name}_payload.py`
     - `from src._core.application.dtos.base_payload import BasePayload`
     - `class {Name}TestPayload(BasePayload)` — worker message contract
