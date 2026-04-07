@@ -1,6 +1,11 @@
-from typing import Generic, TypeVar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from src._core.domain.value_objects.query_filter import QueryFilter
 
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
 
@@ -17,7 +22,10 @@ class BaseRepositoryProtocol(Generic[ReturnDTO]):
     async def select_datas_by_ids(self, data_ids: list[int]) -> list[ReturnDTO]: ...
 
     async def select_datas_with_count(
-        self, page: int, page_size: int
+        self,
+        page: int,
+        page_size: int,
+        query_filter: QueryFilter | None = None,
     ) -> tuple[list[ReturnDTO], int]: ...
 
     async def update_data_by_data_id(

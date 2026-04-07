@@ -1,10 +1,15 @@
-from typing import Generic, TypeVar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from pydantic import BaseModel
 
 from src._core.application.dtos.base_response import PaginationInfo
 from src._core.common.pagination import make_pagination
 from src._core.domain.protocols.repository_protocol import BaseRepositoryProtocol
+
+if TYPE_CHECKING:
+    from src._core.domain.value_objects.query_filter import QueryFilter
 
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
 
@@ -20,10 +25,15 @@ class BaseService(Generic[ReturnDTO]):
         return await self.repository.insert_datas(entities=entities)
 
     async def get_datas(
-        self, page: int, page_size: int
+        self,
+        page: int,
+        page_size: int,
+        query_filter: QueryFilter | None = None,
     ) -> tuple[list[ReturnDTO], PaginationInfo]:
         datas, total_items = await self.repository.select_datas_with_count(
-            page=page, page_size=page_size
+            page=page,
+            page_size=page_size,
+            query_filter=query_filter,
         )
         pagination = make_pagination(
             total_items=total_items, page=page, page_size=page_size

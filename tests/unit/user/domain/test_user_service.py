@@ -38,7 +38,10 @@ class MockUserRepository:
         return [self._store[i] for i in data_ids if i in self._store]
 
     async def select_datas_with_count(
-        self, page: int, page_size: int
+        self,
+        page: int,
+        page_size: int,
+        query_filter=None,
     ) -> tuple[list[UserDTO], int]:
         return await self.select_datas(page, page_size), len(self._store)
 

@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 from abc import ABC
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import String, func, or_, select
+from sqlalchemy.orm import InstrumentedAttribute
 
 from src._core.exceptions.base_exception import BaseCustomException
 from src._core.infrastructure.database.database import Base, Database
+
+if TYPE_CHECKING:
+    from src._core.domain.value_objects.query_filter import QueryFilter
 
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
 
@@ -86,20 +92,49 @@ class BaseRepository(Generic[ReturnDTO], ABC):
             ]
 
     async def select_datas_with_count(
-        self, page: int, page_size: int
+        self,
+        page: int,
+        page_size: int,
+        query_filter: QueryFilter | None = None,
     ) -> tuple[list[ReturnDTO], int]:
         """Fetch data and count in a single session to optimize connection pool usage."""
         async with self.database.session() as session:
-            # Fetch data
+            query = select(self.model)
+            count_query = select(func.count()).select_from(self.model)
+
+            if query_filter:
+                # Apply search filter
+                if query_filter.search_query and query_filter.search_fields:
+                    conditions = []
+                    for field_name in query_filter.search_fields:
+                        col = getattr(self.model, field_name, None)
+                        if isinstance(col, InstrumentedAttribute) and isinstance(
+                            col.type, String
+                        ):
+                            conditions.append(
+                                col.ilike(f"%{query_filter.search_query}%")
+                            )
+                    if conditions:
+                        query = query.where(or_(*conditions))
+                        count_query = count_query.where(or_(*conditions))
+
+                # Apply sorting
+                if query_filter.sort_field and hasattr(
+                    self.model, query_filter.sort_field
+                ):
+                    column = getattr(self.model, query_filter.sort_field)
+                    query = query.order_by(
+                        column.asc()
+                        if query_filter.sort_order == "asc"
+                        else column.desc()
+                    )
+
             result = await session.execute(
-                select(self.model).offset((page - 1) * page_size).limit(page_size)
+                query.offset((page - 1) * page_size).limit(page_size)
             )
             datas = result.scalars().all()
 
-            # Count query (same session)
-            count_result = await session.execute(
-                select(func.count()).select_from(self.model)
-            )
+            count_result = await session.execute(count_query)
             total_count = count_result.scalar_one()
 
             # Load relationships only when needed
