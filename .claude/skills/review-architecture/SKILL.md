@@ -16,7 +16,7 @@ When "all", audit all domain directories under `src/` (excluding `_core`, `_apps
 When a specific domain name, audit only `src/{name}/`.
 
 ## Current Domain List
-!`ls -d src/*/ 2>/dev/null | grep -v _core | grep -v _apps | sed 's|src/||;s|/||' || echo "(none)"`
+Identify domains using Glob pattern `src/*/` and exclude `_core`, `_apps` prefixes
 
 ## Audit Procedure
 

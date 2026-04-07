@@ -16,8 +16,7 @@ Description: $ARGUMENTS
 1. Read Serena `architecture_conventions` memory -- confirm current DO/DON'T rules
 2. Read Serena `refactoring_status` memory -- confirm work currently in progress
 3. Read Serena `project_overview` memory -- confirm tech stack and structure
-4. Identify current domain list:
-   !`ls -d src/*/ 2>/dev/null | grep -v _core | grep -v _apps | sed 's|src/||;s|/||' || echo "(none)"`
+4. Identify current domain list: use Glob pattern `src/*/` and exclude `_core`, `_apps` prefixes
 
 ## Phase 0: Requirements Interview
 

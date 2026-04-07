@@ -17,7 +17,7 @@ Target: $ARGUMENTS (domain name, file path, or "all")
 - When a file path, audit only that file.
 
 ## Current Domain List
-!`ls -d src/*/ 2>/dev/null | sed 's|src/||;s|/||' || echo "(none)"`
+Identify domains using Glob pattern `src/*/` (include all directories)
 
 ## Audit Procedure
 

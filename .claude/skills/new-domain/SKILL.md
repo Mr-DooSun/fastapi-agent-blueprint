@@ -12,7 +12,7 @@ description: |
 Domain name: $ARGUMENTS
 
 ## Currently existing domains
-!`ls -d src/*/ 2>/dev/null | grep -v _core | grep -v _apps | sed 's|src/||;s|/||' || echo "(none)"`
+Identify domains using Glob pattern `src/*/` and exclude `_core`, `_apps` prefixes
 
 ## Pre-check
 1. Verify `$ARGUMENTS` is a valid Python identifier (lowercase, underscores allowed, hyphens prohibited)
