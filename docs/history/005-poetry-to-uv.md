@@ -6,7 +6,14 @@
 - Related PR: #4
 - Related commit: `de6e063`
 
+## Summary
+
+To unify Python version management and package management into a single tool with faster dependency resolution, we migrated from pyenv + Poetry to uv.
+
 ## Background
+
+- **Trigger**: Environment setup required two separate tools (pyenv + Poetry) with independent configurations, and Poetry's dependency resolution speed was noticeably degrading as dependencies grew.
+- **Decision type**: External factor — uv emerged as a mature Rust-based alternative that unified both concerns.
 
 Python version management and package management were being performed with separate tools.
 
@@ -31,11 +38,11 @@ As dependencies grew, `poetry lock` execution time became noticeably longer.
 
 ## Alternatives Considered
 
-### 1. Keep Poetry
+### A. Keep Poetry + pyenv
 - Pros: Already familiar, mature ecosystem
-- Cons: Continued pyenv dependency, slow dependency resolution
+- Cons: Continued pyenv dependency, slow dependency resolution, two tools to maintain
 
-### 2. uv
+### B. uv (chosen)
 - Rust-based dependency resolution 10-100x faster than Poetry
 - Unifies Python version management (`uv python install`) and package management in a single tool
 - Uses `pyproject.toml` PEP standard format (no Poetry-specific `[tool.poetry]` section needed)
@@ -83,3 +90,9 @@ dependencies = [
 1. Managing Python versions and packages with a single tool simplifies environment setup
 2. Dependency resolution speed is noticeably faster, improving the development experience
 3. Using the PEP standard `pyproject.toml` format reduces tool dependency
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?

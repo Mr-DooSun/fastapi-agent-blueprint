@@ -5,7 +5,14 @@
 - Related issues: #16, #27, #56
 - Related commits: `1f1db6b`, `314d09c`, `54d3477`
 
+## Summary
+
+To share async business logic between API and Worker without duplication, we replaced Celery with Taskiq — an asyncio-native task queue where task handlers are `async def`.
+
 ## Background
+
+- **Trigger**: After adopting Celery ([000](000-rabbitmq-to-celery.md)), we discovered that sharing async business logic between API and Worker caused event loop conflicts — the core value of "code sharing without duplication" was unachievable with Celery's sync-only tasks.
+- **Decision type**: Experience-based correction — the limitation was discovered through actual usage, not anticipated upfront.
 
 We adopted Celery + SQS to reduce the complexity of direct RabbitMQ implementation.
 (Adoption context: [000. Migration from RabbitMQ to Celery](000-rabbitmq-to-celery.md))
@@ -60,7 +67,7 @@ This is not a Celery version issue but a **structural limitation**.
 
 ## Alternatives Considered
 
-### 1. Background Event Loop Pattern
+### A. Background Event Loop Pattern
 Maintain one persistent loop in a separate thread per worker process, calling via `run_coroutine_threadsafe()`.
 
 - Connection pool reuse possible
@@ -68,21 +75,21 @@ Maintain one persistent loop in a separate thread per worker process, calling vi
 - Loop error handling and shutdown logic must be implemented manually
 - Complex lifecycle management for DI container async providers
 
-### 2. celery-aio-pool
+### B. celery-aio-pool
 A library that replaces the Celery worker pool with an asyncio-based one.
 
 - Minimal code changes, direct `async def` task support
 - 0.1.0rc8 (2024-12) — RC stage, production risk
 - Compatibility with SQS broker unverified
 
-### 3. worker_process_init Signal
+### C. worker_process_init Signal
 Use a Celery signal to set up an event loop when a worker process starts.
 
 - Solves the "new loop every time" problem of `asyncio.run()`
 - `run_until_complete()` cannot be nested
 - Unstable loop state after fork in prefork pool
 
-### 4. Taskiq
+### D. Taskiq (chosen)
 A Python asyncio-native task queue. Task handlers are defined as `async def`.
 
 - Async business logic can be called directly with await
@@ -125,3 +132,9 @@ async def consume_task(
 - Projects where business logic is sync
 - Environments where monitoring tools like Flower are essential
 - Large teams with extensive Celery operational experience
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?

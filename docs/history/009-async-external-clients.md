@@ -6,7 +6,14 @@
 - Related PRs: #39, #40, #44
 - Related Commits: `199f9c2`, `fbf2a3c`, `d70ee0e`
 
+## Summary
+
+To prevent synchronous I/O from blocking the async event loop, we replaced httpx (sync) and minio with aiohttp and aioboto3 — unifying the entire stack as async.
+
 ## Background
+
+- **Trigger**: Synchronous HTTP and S3 clients were blocking the event loop inside `async def` handlers, preventing other requests from being processed during I/O waits.
+- **Decision type**: Experience-based correction — the event loop blocking was observed as concurrent requests increased.
 
 The entire project stack is async-based:
 - FastAPI router handlers use `async def`
@@ -72,21 +79,23 @@ src/_core/infrastructure/storage/
 src/_core/domain/services/file_storage_service.py  # Storage abstraction
 ```
 
-## Alternatives Considered (HTTP Client)
+## Alternatives Considered
 
-### httpx (AsyncClient)
+### HTTP Client
+
+#### A. httpx (AsyncClient)
 - Recommended by FastAPI official docs for testing
 - Supports async via `httpx.AsyncClient`
 - Identical sync/async interface makes transition easy
 - HTTP/2 support, requests-compatible interface
+- Overhead from dual sync/async design reduces pure async performance
 
-### aiohttp
+#### B. aiohttp (chosen)
 - The de facto standard for Python async HTTP (the oldest and most proven library)
 - Mature connection pool management
-- **Superior pure async performance compared to httpx** -- aiohttp was designed exclusively for async from the start, resulting in less overhead
+- **Superior pure async performance compared to httpx** -- designed exclusively for async from the start
 - Also supports WebSocket clients
-
-### Choice: aiohttp
+- No HTTP/2 support (not needed currently)
 
 | Criterion | httpx | aiohttp |
 |-----------|-------|---------|
@@ -96,10 +105,19 @@ src/_core/domain/services/file_storage_service.py  # Storage abstraction
 | Interface | requests-compatible | Custom API |
 | Ecosystem | Primarily used in FastAPI testing | Most widely used production async HTTP client |
 
-This project's entire stack is async, and the HTTP client needs high concurrency for production workloads.
-httpx was designed for dual sync/async use, introducing internal overhead even on the async path,
-while aiohttp was designed exclusively for async from the start, delivering higher pure async performance.
-Since HTTP/2 is not immediately needed, performance takes priority, so aiohttp was chosen.
+This project's entire stack is async, and the HTTP client needs high concurrency for production workloads. Since HTTP/2 is not immediately needed, performance takes priority, so aiohttp was chosen.
+
+### S3 Client
+
+#### A. Keep minio (sync)
+- Already integrated and working
+- Designed for self-hosted MinIO servers, not AWS-native
+- Synchronous — blocks the event loop in async handlers
+
+#### B. aioboto3 (chosen)
+- AWS-native async client
+- Unifies with other AWS services (SQS, etc.)
+- Non-blocking I/O consistent with the rest of the stack
 
 ## Rationale
 
@@ -113,3 +131,9 @@ Since HTTP/2 is not immediately needed, performance takes priority, so aiohttp w
 1. Synchronous I/O calls in async FastAPI block the event loop, degrading concurrent processing performance
 2. Unifying the entire stack as async reduces the likelihood of event-loop-related bugs
 3. The minio to aioboto3 transition enables unifying clients with other AWS services like AWS SQS
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?

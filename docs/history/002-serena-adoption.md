@@ -4,7 +4,14 @@
 - Date: 2026-03-18
 - Related issue: #57
 
+## Summary
+
+To overcome Claude Code's text-based search limitations for structural code navigation and enable team-shared knowledge, we adopted Serena MCP Server in parallel with Claude Code — each tool covering the other's gaps.
+
 ## Background
+
+- **Trigger**: As the project grew into a DDD-based modular layered architecture, Protocol-based dependencies across domains, BaseRepository inheritance chains, and refactoring impact analysis required AST-level understanding that text-based Grep/Glob could not provide. Additionally, Claude Code's auto-memory was machine-local, making team knowledge sharing impossible.
+- **Decision type**: Upfront design — addressed proactively as the architecture grew, before navigation failures caused costly mistakes.
 
 As the project grew into a DDD-based modular layered architecture, the accuracy of AI coding tools' code navigation became critical.
 Text-based search using Claude Code's Grep/Glob alone made it difficult to structurally understand class hierarchies, method signatures, and reference relationships.
@@ -37,17 +44,17 @@ There was no means to store team-shared knowledge such as refactoring progress s
 
 ## Alternatives Considered
 
-### 1. Claude Code Standalone (Grep/Glob + auto-memory)
+### A. Claude Code Standalone (Grep/Glob + auto-memory)
 - Most tasks achievable with text search
 - No symbol-level navigation -> weak for refactoring and impact analysis
 - Memory is machine-local -> team sharing impossible
 
-### 2. Serena Standalone
+### B. Serena Standalone
 - Provides LSP-based symbol navigation + memory system
 - No skill system or hook system -> unable to build automated workflows
 - File-level editing tools more limited than Claude Code
 
-### 3. Claude Code + Serena Parallel Use
+### C. Claude Code + Serena Parallel Use (chosen)
 - Claude Code: skill system, hook system, Grep/Glob text search, auto-memory
 - Serena: LSP symbol navigation, team-shared memory (.serena/ git commit)
 - Combines the strengths of each tool
@@ -101,7 +108,7 @@ Memory:
 
 ```
 On code changes:
-  Stop hook -> git diff로 변경 파일 감지 -> Foundation/Structure 분류 -> /sync-guidelines 권고
+  Stop hook -> detect changed files via git diff -> classify as Foundation/Structure -> recommend /sync-guidelines
   /sync-guidelines -> Regenerates project-dna.md + Updates Serena memories
 ```
 
@@ -125,6 +132,12 @@ On code changes:
 - Add `domain_dependencies` memory (Protocol dependency map across domains)
 - Add `active_work` memory (work status tracking for 5+ team members)
 - Keep total memories at 10 or fewer (tool call cost management)
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?
 
 ### Cases Where Serena Would Become Unnecessary
 - When Claude Code natively supports LSP-based symbol navigation

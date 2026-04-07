@@ -5,7 +5,14 @@
 - Related Issues: #21
 - Related ADRs: 007-di-container-and-app-separation.md (supplementary)
 
+## Summary
+
+To achieve layer separation, testability, and Server/Worker code sharing, we introduced an IoC Container (`dependency-injector`) instead of relying on inheritance, direct instantiation, or FastAPI's `Depends()`.
+
 ## Background
+
+- **Trigger**: FastAPI's built-in `Depends()` only works at the Router level — it cannot inject dependencies into Worker tasks, making Server/Worker business logic sharing impossible without a framework-independent DI mechanism.
+- **Decision type**: Upfront design — the IoC Container was introduced to support the architectural goal of enterprise-scale extensibility (10+ domains) and Server/Worker code sharing.
 
 The simplest way to manage dependencies in Python is inheritance:
 
@@ -25,9 +32,18 @@ class BaseService(UserRepository):  # Include Repository functionality via inher
 FastAPI also has a built-in `Depends()` that enables simple DI.
 So why was a separate IoC Container library (`dependency-injector`) introduced?
 
-## Problem: Limitations of Inheritance and Direct Instantiation
+## Problem
 
-### 1. Inheritance Is Coupling
+Managing dependencies between layers (Router -> Service -> Repository) requires a mechanism that supports:
+- Testability (mock replacement without real DB)
+- Resource sharing (singleton connection pools)
+- Multi-interface reuse (same Service in both Server and Worker)
+
+The existing Python approaches each fall short of these requirements.
+
+## Alternatives Considered
+
+### A. Inheritance
 
 ```python
 class UserService(UserRepository):
@@ -41,7 +57,7 @@ When Service **inherits** from Repository:
 
 **Inheritance is an "is-a" relationship**. Service is not a Repository; it **uses** a Repository ("has-a").
 
-### 2. Direct Instantiation Prevents Replacement
+### B. Direct Instantiation
 
 ```python
 class UserService:
@@ -53,7 +69,7 @@ class UserService:
 - Creates a new Database instance every time (cannot reuse connection pool)
 - Changing the Repository implementation requires modifying Service code
 
-### 3. FastAPI Depends() Alone Is Not Sufficient
+### C. FastAPI Depends()
 
 ```python
 @router.post("/user")
@@ -67,6 +83,13 @@ FastAPI's `Depends()` **only works at the Router level**:
 - Cannot use `Depends()` in Worker tasks
 - Hard to express inter-Service dependencies (Service A uses Service B)
 - No singleton guarantee (new instance possible per request)
+
+### D. IoC Container via dependency-injector (chosen)
+
+- Service depends only on Protocol (interface), not the implementation
+- Container declares wiring: which implementation backs which Protocol
+- Singleton provider ensures expensive resources (DB pool, HTTP client) are created once
+- Same `@inject` + `Provide[]` pattern works in both Server Routers and Worker Tasks
 
 ## Decision
 
@@ -190,6 +213,35 @@ Admin:  CoreContainer + UserContainer (user management only)
 ```
 
 The "rigid structure" limitation of layered architecture is overcome through the Container's **declarative composition**.
+
+### Self-check
+- [x] Does this decision address the root cause, not just the symptom?
+- [x] Is this the right approach for the current project scale and team situation?
+- [x] Will a reader understand "why" 6 months from now without additional context?
+- [x] Am I recording the decision process, or justifying a conclusion I already reached?
+
+## Supplementary: Why Protocol over ABC for Cross-Domain DIP
+
+The project uses `typing.Protocol` (structural subtyping) instead of `abc.ABC` (nominal subtyping) for dependency inversion between layers:
+
+```python
+# domain/protocols/user_repository_protocol.py
+class UserRepositoryProtocol(BaseRepositoryProtocol[UserDTO], Protocol):
+    ...
+```
+
+**Why Protocol over ABC?**
+
+| Criterion | `abc.ABC` | `typing.Protocol` |
+|-----------|-----------|-------------------|
+| Subtyping | Nominal — must explicitly inherit | Structural — any class with matching methods qualifies |
+| Import direction | Implementation must import the ABC | Implementation does not need to import Protocol |
+| Domain layer purity | ABC definition in Domain, but implementation in Infrastructure must `import` it — creating a reverse dependency | Protocol in Domain is never imported by Infrastructure. Container wires them at runtime |
+| Duck typing alignment | Requires explicit `register()` or inheritance | Natural fit for Python's duck typing philosophy |
+
+The key benefit is **import direction**: with ABC, `UserRepository(UserRepositoryABC)` in the Infrastructure layer must import from the Domain layer, creating a dependency from Infrastructure → Domain. With Protocol, `UserRepository` simply implements the same method signatures — no import needed. The Container handles the wiring, keeping the dependency graph clean: Domain ← Infrastructure (via Container), never Domain → Infrastructure.
+
+This is why the pre-commit hook (`no-domain-infra-import`) can enforce "no Infrastructure imports in Domain" without exceptions for interface imports — Protocol-based DIP requires no such imports.
 
 ## Trade-offs
 
