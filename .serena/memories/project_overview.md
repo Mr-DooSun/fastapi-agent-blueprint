@@ -13,3 +13,6 @@ AI Agent Backend Platform built on FastAPI with DDD modular layered architecture
 
 ## Dependency Direction
 Interface → Application → Domain ← Infrastructure
+
+## Key Value Objects
+- QueryFilter: Immutable filter for paginated queries (sort/search). Used in BaseRepository.select_datas_with_count() and BaseService.get_datas().

@@ -3,7 +3,7 @@
 > This file is auto-extracted/updated from `src/user/` (reference domain) and `src/_core/` (Base classes)
 > when `/sync-guidelines` is run. **Run `/sync-guidelines` instead of editing manually.**
 >
-> Last updated: 2026-04-02
+> Last updated: 2026-04-08
 
 ## Section Index
 §0 Project Scale and Design Philosophy |
@@ -100,6 +100,7 @@ src/{name}/
 | ApiConfig | `src._core.application.dtos.base_config.ApiConfig` |
 | BaseCustomException | `src._core.exceptions.base_exception.BaseCustomException` |
 | ValueObject | `src._core.domain.value_objects.value_object.ValueObject` |
+| QueryFilter | `src._core.domain.value_objects.query_filter.QueryFilter` |
 | make_pagination | `src._core.common.pagination.make_pagination` |
 | CoreContainer | `src._core.infrastructure.di.core_container.CoreContainer` |
 
@@ -154,7 +155,7 @@ def __init__(
 | select_datas | `async (page: int, page_size: int) -> list[ReturnDTO]` |
 | select_data_by_id | `async (data_id: int) -> ReturnDTO` |
 | select_datas_by_ids | `async (data_ids: list[int]) -> list[ReturnDTO]` |
-| select_datas_with_count | `async (page: int, page_size: int) -> tuple[list[ReturnDTO], int]` |
+| select_datas_with_count | `async (page: int, page_size: int, query_filter: QueryFilter \| None = None) -> tuple[list[ReturnDTO], int]` |
 | update_data_by_data_id | `async (data_id: int, entity: BaseModel) -> ReturnDTO` |
 | delete_data_by_data_id | `async (data_id: int) -> bool` |
 | count_datas | `async () -> int` |
@@ -168,7 +169,7 @@ def __init__(
 |-------------------|----------------|------|
 | create_data(entity) | insert_data(entity=entity) | |
 | create_datas(entities) | insert_datas(entities=entities) | |
-| get_datas(page, page_size) | select_datas_with_count(page, page_size) | Returns `(list[ReturnDTO], PaginationInfo)` |
+| get_datas(page, page_size, query_filter) | select_datas_with_count(page, page_size, query_filter) | Returns `(list[ReturnDTO], PaginationInfo)` |
 | get_data_by_data_id(data_id) | select_data_by_id(data_id=data_id) | |
 | get_datas_by_data_ids(data_ids) | select_datas_by_ids(data_ids=data_ids) | |
 | update_data_by_data_id(data_id, entity) | update_data_by_data_id(data_id, entity) | |
