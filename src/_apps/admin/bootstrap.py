@@ -3,7 +3,6 @@ import importlib
 from fastapi import FastAPI
 from nicegui import ui
 
-from src._apps.admin.app import admin_app
 from src._apps.admin.di.container import create_admin_container
 from src._core.config import settings
 from src._core.infrastructure.admin.auth import AdminAuthProvider, require_auth
@@ -24,8 +23,7 @@ def bootstrap_admin(fastapi_app: FastAPI) -> None:
     for page_config in page_configs:
         _register_domain_page(page_config, page_configs, admin_container)
 
-    fastapi_app.mount("/admin", admin_app)
-    ui.run_with(admin_app, storage_secret=settings.admin_storage_secret)
+    ui.run_with(fastapi_app, storage_secret=settings.admin_storage_secret)
 
 
 def _discover_admin_pages() -> list[BaseAdminPage]:
@@ -43,7 +41,7 @@ def _discover_admin_pages() -> list[BaseAdminPage]:
 
 
 def _register_login_page() -> None:
-    @ui.page("/login")
+    @ui.page("/admin/login")
     def login_page():
         with ui.card().classes("absolute-center w-80"):
             ui.label("Admin Login").classes("text-h5 q-mb-md")
@@ -55,7 +53,7 @@ def _register_login_page() -> None:
             async def try_login():
                 if AdminAuthProvider.authenticate(username.value, password.value):
                     AdminAuthProvider.login(username.value)
-                    ui.navigate.to("/")
+                    ui.navigate.to("/admin/")
                 else:
                     ui.notify("Invalid credentials", type="negative")
 
@@ -64,7 +62,7 @@ def _register_login_page() -> None:
 
 
 def _register_dashboard_page(page_configs: list[BaseAdminPage]) -> None:
-    @ui.page("/")
+    @ui.page("/admin/")
     async def dashboard_page():
         if not require_auth():
             return
@@ -77,7 +75,10 @@ def _register_dashboard_page(page_configs: list[BaseAdminPage]) -> None:
                 with (
                     ui.card()
                     .classes("cursor-pointer")
-                    .on("click", lambda p=pc: ui.navigate.to(f"/{p.domain_name}"))
+                    .on(
+                        "click",
+                        lambda p=pc: ui.navigate.to(f"/admin/{p.domain_name}"),
+                    )
                 ):
                     with ui.row().classes("items-center q-pa-sm"):
                         ui.icon(pc.icon).classes("text-h4 text-blue-800")
@@ -91,7 +92,7 @@ def _register_domain_page(
 ) -> None:
     domain_name = page_config.domain_name
 
-    @ui.page(f"/{domain_name}")
+    @ui.page(f"/admin/{domain_name}")
     async def domain_list_page():
         if not require_auth():
             return
