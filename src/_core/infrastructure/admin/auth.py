@@ -1,3 +1,5 @@
+import hmac
+
 from nicegui import app, ui
 
 from src._core.config import settings
@@ -11,7 +13,9 @@ class AdminAuthProvider:
 
     @staticmethod
     def authenticate(username: str, password: str) -> bool:
-        return username == settings.admin_id and password == settings.admin_password
+        return hmac.compare_digest(username, settings.admin_id) and hmac.compare_digest(
+            password, settings.admin_password
+        )
 
     @staticmethod
     def is_authenticated() -> bool:

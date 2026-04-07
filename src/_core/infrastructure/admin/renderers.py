@@ -19,7 +19,8 @@ async def render_list_page(
     )
 
     column_defs = _build_column_defs(page_config)
-    row_data = _build_row_data(dtos)
+    masked_fields = page_config.get_masked_field_names()
+    row_data = _build_row_data(dtos, masked_fields)
 
     ui.label(f"{page_config.display_name} Management").classes("text-h5 q-mb-md")
 
@@ -71,13 +72,15 @@ def _build_column_defs(page_config: BaseAdminPage) -> list[dict]:
     return column_defs
 
 
-def _build_row_data(dtos: list) -> list[dict]:
-    """Build row data from DTOs, converting datetime fields to strings."""
+def _build_row_data(dtos: list, masked_fields: set[str]) -> list[dict]:
+    """Build row data from DTOs, masking sensitive fields server-side."""
     rows = []
     for dto in dtos:
         row = dto.model_dump()
         for key, value in row.items():
-            if hasattr(value, "isoformat"):
+            if key in masked_fields:
+                row[key] = "****" if value else ""
+            elif hasattr(value, "isoformat"):
                 row[key] = value.isoformat()
         rows.append(row)
     return rows
