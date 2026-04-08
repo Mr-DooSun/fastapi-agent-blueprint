@@ -71,6 +71,33 @@ def make_update_{name}_request(
     return Update{Name}Request(
         # ... fields
     )
+
+def make_{name}_test_payload(
+    id: int = 1,
+    # ... worker-relevant fields (exclude sensitive fields like password)
+    created_at: datetime | None = None,
+    updated_at: datetime | None = None,
+) -> {Name}TestPayload:
+    now = datetime.now()
+    return {Name}TestPayload(
+        id=id,
+        # ... fields
+        created_at=created_at or now,
+        updated_at=updated_at or now,
+    )
+```
+
+### Password Assertion Pattern
+
+When the domain Service hashes passwords (via `hash_password`), test assertions must use `verify_password` instead of direct comparison:
+
+```python
+from src._core.common.security import verify_password
+
+async def test_create_data_hashes_password(service):
+    request = make_create_{name}_request(password="plain_text")
+    result = await service.create_data(entity=request)
+    assert verify_password("plain_text", result.password)
 ```
 
 ### Admin Config Tests — `tests/unit/{name}/interface/admin/test_{name}_admin_config.py`

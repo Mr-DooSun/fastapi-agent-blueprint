@@ -48,7 +48,7 @@ All proposals and designs must consider scalability, maintainability, and team c
 ## Conversion Patterns
 ### Write Direction (Request → DB)
 - Router → Service: `entity=item` (pass Request directly)
-- Service → Repository: pass entity as-is
+- Service → Repository: pass entity as-is, or transform via `entity.model_copy(update={...})` when domain logic requires it (e.g., password hashing)
 - Repository → DB: `Model(**entity.model_dump(exclude_none=True))`
 
 ### Read Direction (DB → Response)

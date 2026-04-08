@@ -3,7 +3,7 @@
 > This file is auto-extracted/updated from `src/user/` (reference domain) and `src/_core/` (Base classes)
 > when `/sync-guidelines` is run. **Run `/sync-guidelines` instead of editing manually.**
 >
-> Last updated: 2026-04-08
+> Last updated: 2026-04-09
 
 ## Section Index
 §0 Project Scale and Design Philosophy |
@@ -103,6 +103,8 @@ src/{name}/
 | ValueObject | `src._core.domain.value_objects.value_object.ValueObject` |
 | QueryFilter | `src._core.domain.value_objects.query_filter.QueryFilter` |
 | make_pagination | `src._core.common.pagination.make_pagination` |
+| hash_password | `src._core.common.security.hash_password` |
+| verify_password | `src._core.common.security.verify_password` |
 | CoreContainer | `src._core.infrastructure.di.core_container.CoreContainer` |
 
 ### Inheritance Chain
@@ -291,6 +293,7 @@ def create_server_container() -> containers.DynamicContainer:
 | AWS S3 (aioboto3) | Active | ObjectStorage + ObjectStorageClient |
 | NiceGUI (BaseAdminPage) | Active | Admin dashboard (AG Grid, auto-discovery, Template Method rendering) |
 | alembic (migrations) | Active | DB migrations |
+| Password hashing (bcrypt) | Active | hash_password(), verify_password() in src._core.common.security |
 | JWT/Authentication | Not implemented | |
 | File Upload (UploadFile) | Not implemented | |
 | RBAC/Permissions | Not implemented | |
