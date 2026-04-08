@@ -30,22 +30,26 @@ def bootstrap_admin(fastapi_app: FastAPI) -> None:
 def _discover_and_register_pages(
     page_configs: list[BaseAdminPage], admin_container
 ) -> None:
-    """Auto-discover admin pages: import registers @ui.page routes, then wire DI."""
+    """Auto-discover admin pages: import config, register routes, wire DI."""
     for name in discover_domains():
         try:
-            module_path = f"src.{name}.interface.admin.pages.{name}_page"
-            module = importlib.import_module(module_path)
-
-            page_config = getattr(module, f"{name}_admin_page")
+            # 1) Config: BaseAdminPage 선언 가져오기
+            config_module_path = (
+                f"src.{name}.interface.admin.configs.{name}_admin_config"
+            )
+            config_module = importlib.import_module(config_module_path)
+            page_config = getattr(config_module, f"{name}_admin_page")
             page_configs.append(page_config)
 
-            # Inject service provider so BaseAdminPage can resolve service internally
+            # 2) DI: 서비스 프로바이더 주입
             domain_container = getattr(admin_container, f"{name}_container")
             page_config._service_provider = getattr(
                 domain_container, f"{name}_service"
             )
 
-            # Module variable injection for navigation (same as dashboard pattern)
-            module.page_configs = page_configs
+            # 3) Routes: 모듈 import로 @ui.page 등록 트리거 + page_configs 주입
+            page_module_path = f"src.{name}.interface.admin.pages.{name}_page"
+            page_module = importlib.import_module(page_module_path)
+            page_module.page_configs = page_configs
         except (ModuleNotFoundError, AttributeError):
             continue
