@@ -34,6 +34,8 @@ Each document captures the context and decision criteria for "why this technolog
 | [024](024-session-lifecycle-management.md) | Session Lifecycle Management: Context Manager over Factory | Accepted | Done | 2025-08 ~ 2025-10 |
 | [025](025-oss-preparation-strategy.md) | OSS Preparation and Internationalization Strategy | Accepted | Done | 2026-03 ~ 2026-04 |
 | [026](026-nicegui-admin-dashboard.md) | NiceGUI Adoption for Admin Dashboard | Accepted | Done | 2026-04-08 |
+| [027](027-flexible-rdb-configuration.md) | Flexible RDB Configuration with Multi-Engine Support | Accepted | Done | 2026-04-08 |
+| [028](028-environment-config-validation.md) | Environment-Aware Configuration Validation | Accepted | Done | 2026-04-08 |
 
 ## Future Considerations (Open Issues)
 

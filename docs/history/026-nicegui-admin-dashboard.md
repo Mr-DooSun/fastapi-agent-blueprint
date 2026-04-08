@@ -126,3 +126,72 @@ NiceGUI bundles its frontend (Vue.js + Quasar) inside the pip package. From the 
 - [x] Is this the right approach for the current project scale and team situation?
 - [x] Will a reader understand "why" 6 months from now without additional context?
 - [x] Am I recording the decision process, or justifying a conclusion I already reached?
+
+## Post-decision Update (2026-04-08): Admin Page Architecture Patterns
+
+### Context
+
+The original ADR covered *why* NiceGUI was chosen (technology selection). During implementation, several architectural pattern decisions emerged that define *how* admin pages are structured, wired, and secured. These patterns became the standard for all domain admin pages.
+
+### 1. Template Method Pattern for BaseAdminPage
+
+Rather than each domain building its own admin UI from scratch, we introduced `BaseAdminPage` as a dataclass-based Template Method:
+
+- **Config declaration**: Domains declare a `BaseAdminPage` instance with `ColumnConfig` entries — pure data, no code
+- **Hook methods**: `render_list()` and `render_detail()` define the algorithm structure. Subclasses can override `render_list_header()`, `render_search_bar()`, `render_grid()` for customization
+- **Field masking**: `ColumnConfig.masked=True` renders sensitive fields as `"****"` server-side — the actual value never reaches the browser
+
+**Why Template Method over composition**: Admin pages follow a rigid structure (list → detail → back). The variation is in *what columns to show* and *how to render them*, not in the page flow itself. Template Method captures this fixed-algorithm-with-variable-steps pattern directly.
+
+### 2. DI Pattern Unification Across All Interfaces
+
+Admin pages initially used a closure-based `register_pages(service)` pattern, where the bootstrap function passed services as closure variables. This was replaced with `@inject` + `Provide[Container.service]` — the same pattern used by Server routers and Worker tasks.
+
+```python
+# Before (closure-based — admin-specific, hard to test)
+def register_pages(user_service: UserService):
+    @ui.page("/admin/user")
+    async def user_list():
+        data = await user_service.get_datas(...)
+
+# After (unified with server/worker — testable, consistent)
+@ui.page("/admin/user")
+@inject
+async def user_list(
+    user_service: UserService = Provide[UserContainer.user_service],
+):
+    data = await user_service.get_datas(...)
+```
+
+**Why**: Three interfaces (Server, Worker, Admin) sharing one DI pattern means one mental model for the team. Onboarding cost drops because the pattern is learned once.
+
+### 3. Service Resolution Internalization in BaseAdminPage
+
+Initially, the bootstrap function resolved services and passed them to each page handler. This was refactored so that `BaseAdminPage` resolves its own service via an injected `_service_provider` callable:
+
+```python
+# bootstrap.py — injects provider once
+page_config._service_provider = getattr(admin_container, f"{domain}_service")
+
+# BaseAdminPage — resolves on demand
+def _get_service(self):
+    return self._service_provider()
+```
+
+**Why**: Aligns with the "thin interface" convention where routers and tasks don't manage service construction. The admin interface follows the same principle — page handlers are thin, service resolution is infrastructure's job.
+
+### 4. Security Hardening
+
+- **Server-side field masking**: `ColumnConfig.masked` fields are replaced with `"****"` before data reaches the browser. This is distinct from client-side masking (CSS `password` input), which still sends the real value over the network.
+- **Timing-safe authentication**: `hmac.compare_digest()` used for both username and password comparison in `AdminAuthProvider`. Using it for username too (unusual) prevents a timing side-channel that could reveal valid usernames.
+- **Session storage**: NiceGUI's `app.storage.user` with `storage_secret` for session management — simple, no external session store dependency.
+
+### 5. Auto-Discovery Integration
+
+Admin bootstrap follows the same `discover_domains()` pattern as Server and Worker. Per domain, it:
+1. Imports `{domain}_admin_page` from `interface/admin/configs/`
+2. Injects the service provider from the admin DI container
+3. Imports page routes (triggering `@ui.page` registration)
+4. Silently skips domains without admin pages (`ModuleNotFoundError`)
+
+**Why silent skip**: Not all domains need admin pages. Forcing every domain to have an admin stub would create empty boilerplate — contrary to the project's YAGNI principle.
