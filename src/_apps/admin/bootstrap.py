@@ -30,7 +30,7 @@ def bootstrap_admin(fastapi_app: FastAPI) -> None:
 def _discover_and_register_pages(
     page_configs: list[BaseAdminPage], admin_container
 ) -> None:
-    """Auto-discover admin page configs and let each domain register its routes."""
+    """Auto-discover admin pages: import registers @ui.page routes, then wire DI."""
     for name in discover_domains():
         try:
             module_path = f"src.{name}.interface.admin.pages.{name}_page"
@@ -39,7 +39,11 @@ def _discover_and_register_pages(
             page_config = getattr(module, f"{name}_admin_page")
             page_configs.append(page_config)
 
-            register_fn = module.register_pages
-            register_fn(all_page_configs=page_configs, admin_container=admin_container)
+            # Wire DI container (enables @inject + Provide[...])
+            domain_container = getattr(admin_container, f"{name}_container")
+            domain_container.wire(modules=[module])
+
+            # Module variable injection for navigation (same as dashboard pattern)
+            module.page_configs = page_configs
         except (ModuleNotFoundError, AttributeError):
             continue

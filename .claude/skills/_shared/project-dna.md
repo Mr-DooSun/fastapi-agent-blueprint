@@ -234,6 +234,17 @@ def create_server_container() -> containers.DynamicContainer:
     return container
 ```
 
+### Interface-Specific DI Pattern
+
+| Interface | Outer decorator | Inner decorator | Service default | Wiring |
+|-----------|----------------|-----------------|-----------------|--------|
+| Server router | `@router.verb(...)` | `@inject` | `Depends(Provide[...])` | `wire(packages=[...routers])` |
+| Admin page | `@ui.page(...)` | `@inject` | `Provide[...]` | `wire(modules=[...page])` |
+| Worker task | `@broker.task(...)` | `@inject` | `Provide[...]` | `wire(modules=[...task])` |
+
+- `Depends()` 래퍼는 FastAPI Router 전용 (FastAPI가 파라미터를 query/body로 해석하는 것을 방지)
+- Admin/Worker는 bare `Provide[...]` 사용 (프레임워크가 자체적으로 DI 파라미터를 해석하지 않음)
+
 ## §6. Conversion Patterns
 
 | Conversion | Pattern | Example |

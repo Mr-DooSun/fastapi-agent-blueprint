@@ -158,9 +158,11 @@ src/{name}/
     - `setup_{name}_routes(app)` — `app.include_router(prefix="/v1", tags=["{name}"])`
     - `bootstrap_{name}_domain(app, database, {name}_container)`
 13. `src/{name}/interface/admin/pages/{name}_page.py`
+    - `from dependency_injector.wiring import Provide, inject`
     - `from src._core.infrastructure.admin.base_admin_page import BaseAdminPage, ColumnConfig`
     - `{name}_admin_page = BaseAdminPage(domain_name="{name}", display_name="{Name}", ...)`
-    - `register_pages(all_page_configs, admin_container)` — registers `@ui.page("/admin/{name}")` with `page: int = 1, search: str = ""` params
+    - `page_configs: list[BaseAdminPage] = []` — injected by bootstrap_admin()
+    - Module-level `@ui.page` + `@inject` + `Provide[{Name}Container.{name}_service]` (Worker DI pattern)
     - Passes `search` to `render_list_page()` for server-side filtering
 14. `src/{name}/interface/worker/payloads/{name}_payload.py`
     - `from src._core.application.dtos.base_payload import BasePayload`
