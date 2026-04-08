@@ -33,6 +33,7 @@ Read each skill's SKILL.md and compare against reference code:
 - [ ] **`/test-domain`**: Verify test patterns match actual test code
 - [ ] **`/add-cross-domain`**: Verify Protocol-based dependency patterns match current implementation
 - [ ] **`/onboard`**: Verify the recommended Skills list in role-tracks.md matches the actual skill list
+- [ ] **`/onboard`**: Verify format options (Guided, Q&A, Explore) are consistent between SKILL.md and role-tracks.md
 
 ## 3. Serena Memory ↔ Current State Check
 

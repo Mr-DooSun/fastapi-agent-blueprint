@@ -171,16 +171,17 @@ This template works great on its own. **With [Claude Code](https://docs.anthropi
 
 Complex architecture? Type `/onboard` -- it explains everything at your level.
 
-The `/onboard` skill adapts to your experience:
-- **Beginner**: Explains DDD concepts with simple analogies
-- **Intermediate**: Focuses on this project's specific patterns
-- **Advanced**: Jumps straight to architecture rules and conventions
+The `/onboard` skill adapts to your experience and learning style:
+- **Beginner / Intermediate / Advanced** -- depth adjusts to your level
+- **Guided** -- structured Phase-by-Phase walkthrough
+- **Q&A** -- topic maps provided, explore by asking questions
+- **Explore** -- point at any code freely, uncovered essentials flagged at the end
 
 ### 13 Built-in Skills
 
 | Command | What it does |
 |---------|------------|
-| `/onboard` | Interactive onboarding -- adapts to your experience level |
+| `/onboard` | Interactive onboarding -- adapts to your experience level and learning style |
 | `/new-domain {name}` | Scaffold an entire domain (21+ source files + tests) |
 | `/add-api {description}` | Add API endpoint to existing domain |
 | `/add-worker-task {domain} {task}` | Add async Taskiq background task |

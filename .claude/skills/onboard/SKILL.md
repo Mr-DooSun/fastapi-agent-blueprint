@@ -44,6 +44,7 @@ After receiving the experience level, ask about the preferred format:
 > **How would you like to proceed?**
 > - **(A) Guided** -- Structured walkthrough, Phase by Phase
 > - **(B) Q&A** -- Topic map provided, you explore by asking questions
+> - **(C) Explore** -- Point at any code/file/directory and ask freely, uncovered essentials flagged at the end
 
 After receiving both responses, refer to the level-specific adjustment criteria in `${CLAUDE_SKILL_DIR}/references/role-tracks.md`
 to adjust the depth of each Phase. Track overview:
@@ -51,7 +52,7 @@ to adjust the depth of each Phase. Track overview:
 ```
 === Onboarding Track ===
 Experience: {selected level}
-Format: {Guided | Q&A}
+Format: {Guided | Q&A | Explore}
 Phase: 1(Methodology) -> 2(Project Overview) -> 3(Architecture Rules) -> 4(Data Flow) -> 5(Skills) -> 6(Next Steps)
 Depth Adjustment: {adjustment summary based on level}
 ```
@@ -72,6 +73,26 @@ When the user selects **Q&A** format, apply the following rules to **all Phases 
    If all critical topics are covered, move on immediately.
 5. **Depth Adjustment**: Experience-level depth adjustments from `role-tracks.md` still apply.
    For example, Advanced + Q&A skips DDD basics but still offers project-specific ADR topics to ask about.
+
+### Explore Mode Rules
+
+When the user selects **Explore** format, Phase 1-5 boundaries are removed. The user freely navigates the codebase:
+
+1. **Entry Point**: Show the project directory tree (`src/` top-level structure) as a starting point.
+   The user points at any file, directory, class, or function to ask about.
+2. **On-Demand Explanation**: When the user points at code, explain it using the same sources as Guided mode
+   (ADR, Serena memory, project-dna.md, CLAUDE.md, live code reading, etc.).
+   Connect to design decisions and architecture context where relevant.
+3. **Coverage Tracking**: Internally map the user's questions to the critical topics across all Phases:
+   - Phase 1 critical: structural evolution (ADR 006), Entity→DTO (ADR 004), 3-Tier Hybrid (ADR 011), IoC Container (ADR 013)
+   - Phase 2 critical: domain directory structure, tech stack
+   - Phase 3 critical: Absolute Prohibitions (4 rules)
+   - Phase 4 critical: Write/Read conversion patterns
+   - Phase 5 critical: Skills overview
+4. **Gap Check**: When the user says 'done' (or equivalent), review uncovered critical topics.
+   If found, briefly present them grouped by theme (1-2 sentences each).
+   If all covered, skip directly to Phase 6 (Next Steps).
+5. **Depth Adjustment**: Experience-level adjustments from `role-tracks.md` still apply to explanations.
 
 ## Phase 1: Methodology and Architecture Evolution History
 

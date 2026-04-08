@@ -8,6 +8,16 @@
 | Intermediate | Has FastAPI experience, first time with DDD/layered architecture | Standard track |
 | Advanced | Has DDD + DI Container experience | Shortened track, highlight only project-specific aspects |
 
+### Format Comparison
+
+| Aspect | Guided | Q&A | Explore |
+|--------|--------|-----|---------|
+| Flow | Phase-by-Phase sequential | Phase-by-Phase, topic map per Phase | No Phase boundaries |
+| User action | Listen, ask questions | Pick topics from map | Point at code freely |
+| Entry point | Phase 1 starts automatically | Phase 1 topic map | Project directory tree |
+| Critical topic check | Built into each Phase | On 'next' per Phase | On 'done' (all at once) |
+| Best for | First-timers wanting full context | Users who know what they want to learn | Experienced devs who prefer reading code |
+
 ## 2. Phase Depth by Level
 
 ### Phase 1: Methodology and Evolution History
