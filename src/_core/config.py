@@ -88,6 +88,18 @@ class Settings(BaseSettings):
     aws_sqs_url: str = Field(validation_alias="AWS_SQS_URL")
 
     # ----------------------------------------------------------------
+    # Network Policy
+    # ----------------------------------------------------------------
+    allowed_hosts: list[str] = Field(
+        default=["localhost", "127.0.0.1"],
+        validation_alias="ALLOWED_HOSTS",
+    )
+    allow_origins: list[str] = Field(
+        default=["*"],
+        validation_alias="ALLOW_ORIGINS",
+    )
+
+    # ----------------------------------------------------------------
 
     @model_validator(mode="after")
     def _validate_environment_safety(self) -> Self:
@@ -175,19 +187,6 @@ class Settings(BaseSettings):
         if self.minio_host and self.minio_port:
             return f"{self.minio_host}:{self.minio_port}"
         return None
-
-    @property
-    def allowed_hosts(self) -> list[str]:
-        """Allowed host list for TrustedHostMiddleware."""
-        if self.is_dev:
-            return ["localhost", "127.0.0.1"]
-        return ["api.example.com"]  # TODO: set production domain
-
-    @property
-    def allow_origins(self) -> list[str]:
-        if self.is_dev:
-            return ["*"]
-        return ["https://example.com"]  # TODO: set production frontend domain
 
 
 settings = Settings()
