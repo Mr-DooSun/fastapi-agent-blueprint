@@ -1,3 +1,5 @@
+import pytest
+
 from src._core.infrastructure.admin.base_admin_page import BaseAdminPage, ColumnConfig
 
 
@@ -49,3 +51,17 @@ def test_default_values():
     assert config.readonly is True
     assert config.default_sort_field == "id"
     assert config.default_sort_order == "desc"
+
+
+def test_get_service_raises_when_provider_not_set():
+    config = _make_page_config()
+    with pytest.raises(RuntimeError, match="service_provider not set"):
+        config._get_service()
+
+
+def test_get_service_calls_provider():
+    sentinel = object()
+    config = _make_page_config()
+    config._service_provider = lambda: sentinel
+
+    assert config._get_service() is sentinel

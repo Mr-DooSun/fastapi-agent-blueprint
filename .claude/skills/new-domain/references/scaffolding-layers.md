@@ -158,12 +158,13 @@ src/{name}/
     - `setup_{name}_routes(app)` — `app.include_router(prefix="/v1", tags=["{name}"])`
     - `bootstrap_{name}_domain(app, database, {name}_container)`
 13. `src/{name}/interface/admin/pages/{name}_page.py`
-    - `from dependency_injector.wiring import Provide, inject`
     - `from src._core.infrastructure.admin.base_admin_page import BaseAdminPage, ColumnConfig`
     - `{name}_admin_page = BaseAdminPage(domain_name="{name}", display_name="{Name}", ...)`
     - `page_configs: list[BaseAdminPage] = []` — injected by bootstrap_admin()
-    - Module-level `@ui.page` + `@inject` + `Provide[{Name}Container.{name}_service]` (Worker DI pattern)
-    - Passes `search` to `render_list_page()` for server-side filtering
+    - Module-level `@ui.page` routes — no `@inject`/`Provide` needed (service is resolved internally by `BaseAdminPage`)
+    - `bootstrap_admin()` injects `_service_provider` into `{name}_admin_page` at startup
+    - Calls `{name}_admin_page.render_list(page=..., search=...)` — Template Method pattern
+    - For custom rendering: subclass `BaseAdminPage` and override hook methods (e.g., `render_grid`, `render_detail_card`)
 14. `src/{name}/interface/worker/payloads/{name}_payload.py`
     - `from src._core.application.dtos.base_payload import BasePayload`
     - `class {Name}TestPayload(BasePayload)` — worker message contract

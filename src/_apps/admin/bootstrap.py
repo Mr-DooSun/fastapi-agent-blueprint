@@ -39,9 +39,11 @@ def _discover_and_register_pages(
             page_config = getattr(module, f"{name}_admin_page")
             page_configs.append(page_config)
 
-            # Wire DI container (enables @inject + Provide[...])
+            # Inject service provider so BaseAdminPage can resolve service internally
             domain_container = getattr(admin_container, f"{name}_container")
-            domain_container.wire(modules=[module])
+            page_config._service_provider = getattr(
+                domain_container, f"{name}_service"
+            )
 
             # Module variable injection for navigation (same as dashboard pattern)
             module.page_configs = page_configs

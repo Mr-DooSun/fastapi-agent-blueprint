@@ -1,4 +1,3 @@
-from dependency_injector.wiring import Provide, inject
 from nicegui import ui
 
 from src._core.infrastructure.admin.auth import require_auth
@@ -7,12 +6,6 @@ from src._core.infrastructure.admin.base_admin_page import (
     ColumnConfig,
 )
 from src._core.infrastructure.admin.layout import admin_layout
-from src._core.infrastructure.admin.renderers import (
-    render_detail_page,
-    render_list_page,
-)
-from src.user.domain.services.user_service import UserService
-from src.user.infrastructure.di.user_container import UserContainer
 
 user_admin_page = BaseAdminPage(
     domain_name="user",
@@ -37,29 +30,16 @@ page_configs: list[BaseAdminPage] = []
 
 
 @ui.page("/admin/user")
-@inject
-async def user_list_page(
-    page: int = 1,
-    search: str = "",
-    user_service: UserService = Provide[UserContainer.user_service],
-):
+async def user_list_page(page: int = 1, search: str = ""):
     if not require_auth():
         return
     admin_layout(page_configs, current_domain="user")
-    await render_list_page(
-        page_config=user_admin_page, service=user_service, page=page, search=search
-    )
+    await user_admin_page.render_list(page=page, search=search)
 
 
 @ui.page("/admin/user/{record_id}")
-@inject
-async def user_detail_page(
-    record_id: int,
-    user_service: UserService = Provide[UserContainer.user_service],
-):
+async def user_detail_page(record_id: int):
     if not require_auth():
         return
     admin_layout(page_configs, current_domain="user")
-    await render_detail_page(
-        page_config=user_admin_page, service=user_service, record_id=record_id
-    )
+    await user_admin_page.render_detail(record_id=record_id)

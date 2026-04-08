@@ -239,11 +239,12 @@ def create_server_container() -> containers.DynamicContainer:
 | Interface | Outer decorator | Inner decorator | Service default | Wiring |
 |-----------|----------------|-----------------|-----------------|--------|
 | Server router | `@router.verb(...)` | `@inject` | `Depends(Provide[...])` | `wire(packages=[...routers])` |
-| Admin page | `@ui.page(...)` | `@inject` | `Provide[...]` | `wire(modules=[...page])` |
+| Admin page | `@ui.page(...)` | — | — | `bootstrap` injects `_service_provider` into `BaseAdminPage` |
 | Worker task | `@broker.task(...)` | `@inject` | `Provide[...]` | `wire(modules=[...task])` |
 
 - `Depends()` 래퍼는 FastAPI Router 전용 (FastAPI가 파라미터를 query/body로 해석하는 것을 방지)
-- Admin/Worker는 bare `Provide[...]` 사용 (프레임워크가 자체적으로 DI 파라미터를 해석하지 않음)
+- Worker는 bare `Provide[...]` 사용 (프레임워크가 자체적으로 DI 파라미터를 해석하지 않음)
+- Admin은 `BaseAdminPage._service_provider`에 provider를 주입하여 내부에서 service를 resolve
 
 ## §6. Conversion Patterns
 
@@ -287,7 +288,7 @@ def create_server_container() -> containers.DynamicContainer:
 | Pydantic 2.x | Active | model_validate, model_dump, ConfigDict |
 | dependency-injector | Active | DeclarativeContainer, @inject + Provide |
 | AWS S3 (aioboto3) | Active | ObjectStorage + ObjectStorageClient |
-| NiceGUI (BaseAdminPage) | Active | Admin dashboard (AG Grid, auto-discovery) |
+| NiceGUI (BaseAdminPage) | Active | Admin dashboard (AG Grid, auto-discovery, Template Method rendering) |
 | alembic (migrations) | Active | DB migrations |
 | JWT/Authentication | Not implemented | |
 | File Upload (UploadFile) | Not implemented | |
