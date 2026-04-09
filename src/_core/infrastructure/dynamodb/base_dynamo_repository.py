@@ -83,7 +83,7 @@ class BaseDynamoRepository(Generic[ReturnDTO], ABC):
             )
         raw = response.get("Item")
         if not raw:
-            raise DynamoDBNotFoundException(key=key, table=self.table_name)
+            raise DynamoDBNotFoundException()
         return self._deserialize_item(raw)
 
     async def query_items(

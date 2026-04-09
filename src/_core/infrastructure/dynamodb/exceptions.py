@@ -1,11 +1,4 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from src._core.exceptions.base_exception import BaseCustomException
-
-if TYPE_CHECKING:
-    from src._core.domain.value_objects.dynamo_key import DynamoKey
 
 
 class DynamoDBException(BaseCustomException):
@@ -15,10 +8,10 @@ class DynamoDBException(BaseCustomException):
 
 
 class DynamoDBNotFoundException(DynamoDBException):
-    def __init__(self, *, key: DynamoKey, table: str) -> None:
+    def __init__(self) -> None:
         super().__init__(
             status_code=404,
-            message=f"Item not found in '{table}' with key {key}",
+            message="Requested item not found",
             error_code="DYNAMODB_NOT_FOUND",
         )
 
