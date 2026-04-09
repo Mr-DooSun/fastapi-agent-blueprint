@@ -1,5 +1,6 @@
 # Project Overview
 
+> Last synced: 2026-04-09 via /sync-guidelines
 > For tech stack, refer to project-dna.md §8; for layer structure, refer to §1.
 > This memory only contains **project-level context** not covered in project-dna.md.
 
@@ -14,5 +15,16 @@ AI Agent Backend Platform built on FastAPI with DDD modular layered architecture
 ## Dependency Direction
 Interface → Application → Domain ← Infrastructure
 
+## Infrastructure Options
+- RDB: PostgreSQL, MySQL, SQLite (DATABASE_ENGINE env var)
+- DynamoDB: Optional (DYNAMODB_* env vars, BaseDynamoRepository)
+- Object Storage: S3/MinIO (S3_*/MINIO_* env vars)
+- Message Broker: SQS/RabbitMQ/InMemory (BROKER_TYPE env var)
+
+## Environment Config Validation
+- Settings (pydantic-settings) with model_validator
+- stg/prod: unsafe defaults blocked, broker required, partial config groups rejected
+
 ## Key Value Objects
 - QueryFilter: Immutable filter for paginated queries (sort/search). Used in BaseRepository.select_datas_with_count() and BaseService.get_datas().
+- DynamoKey: Composite key for DynamoDB (partition_key + optional sort_key). Used in BaseDynamoRepository operations.

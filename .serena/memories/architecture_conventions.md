@@ -1,5 +1,6 @@
 # Architecture Conventions
 
+> Last synced: 2026-04-09 via /sync-guidelines
 > For Absolute Prohibitions (including CLAUDE.md modification rules), Conversion Patterns, and Write DTO criteria, refer to CLAUDE.md.
 > This memory only contains **structural context** not covered in CLAUDE.md.
 
@@ -16,11 +17,28 @@ Complex logic:
 > UseCase is added only when combining multiple Services or crossing transaction boundaries
 > For detailed Conversion Patterns: refer to the "Conversion Patterns" section in CLAUDE.md
 
+## DynamoDB Data Flow
+```
+  Write: Request → Service(BaseDynamoService) → Repository(BaseDynamoRepository) → DynamoModel → DynamoDB
+  Read:  CursorPage[DTO] ← Service ← Repository ← DTO ← DynamoModel
+```
+Key differences from RDB:
+- Composite keys via DynamoKey(partition_key, sort_key?)
+- Cursor-based pagination via CursorPage (not offset-based)
+- BaseDynamoService/BaseDynamoRepository — mirrors RDB counterparts
+
 ## BaseService Generic Structure
 - `BaseService(Generic[CreateDTO, UpdateDTO, ReturnDTO])` — 3 TypeVars (ADR 011 update, 2026-04-09)
 - `BaseRepositoryProtocol(Generic[ReturnDTO])` / `BaseRepository(Generic[ReturnDTO])` — 1 TypeVar (Repository only calls model_dump, no field-specific access)
+- `BaseDynamoService(Generic[CreateDTO, UpdateDTO, ReturnDTO])` — mirrors BaseService
+- `BaseDynamoRepositoryProtocol(Generic[ReturnDTO])` / `BaseDynamoRepository(Generic[ReturnDTO])` — mirrors BaseRepository
 - Domain Service example: `UserService(BaseService[CreateUserRequest, UpdateUserRequest, UserDTO])`
 - DO NOT simplify back to 1 TypeVar — this was tried and reverted (see ADR 011 Post-decision Update)
+
+## Broker Selection
+- providers.Selector in CoreContainer: SQS/RabbitMQ/InMemory by BROKER_TYPE env var
+- Task code: `from src._apps.worker.broker import broker` — no conditional logic
+- stg/prod require explicit BROKER_TYPE setting
 
 ## Object Roles
 
@@ -42,3 +60,14 @@ Complex logic:
 - Must never leave the Repository layer
 - Conversion: `DTO → Model: Model(**dto.model_dump())`
 - Conversion: `Model → DTO: DTO.model_validate(model, from_attributes=True)`
+
+### DynamoModel
+- Location: `src/{domain}/infrastructure/dynamodb/models/{domain}_model.py`
+- Uses `DynamoModelMeta` + `__dynamo_meta__` for table schema declaration
+- Must never leave the Repository layer (same rule as ORM Model)
+
+### Admin Page Config (BaseAdminPage)
+- Config: `src/{domain}/interface/admin/configs/{domain}_admin_config.py`
+- Page: `src/{domain}/interface/admin/pages/{domain}_page.py`
+- Config-only declaration (no ui import); route handlers in separate page file
+- DI: _service_provider internal resolve (no @inject/Provide)
