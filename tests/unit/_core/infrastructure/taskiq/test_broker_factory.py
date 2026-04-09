@@ -1,3 +1,5 @@
+import importlib
+
 import pytest
 from taskiq import AsyncBroker, InMemoryBroker
 
@@ -6,7 +8,10 @@ from src._core.infrastructure.taskiq.broker import (
     create_sqs_broker,
 )
 
+_has_taskiq_aws = importlib.util.find_spec("taskiq_aws") is not None
 
+
+@pytest.mark.skipif(not _has_taskiq_aws, reason="taskiq-aws not installed")
 class TestCreateSqsBroker:
     def test_creates_async_broker(self):
         broker = create_sqs_broker(
