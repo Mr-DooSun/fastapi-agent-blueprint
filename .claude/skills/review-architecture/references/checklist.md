@@ -76,3 +76,14 @@ Check app-level files and auto-discovery mechanism:
 - [ ] `src/{name}/__init__.py` exists (auto-discovery condition)
 - [ ] `wire(packages=[...])` call targets the correct packages
 - [ ] **Note**: `discover_domains()` handles auto-detection, so manual registration in App-level `container.py`/`bootstrap.py` is not needed (project-dna.md section 5)
+
+## 9. DynamoDB Domain Compliance
+Check only when a domain uses DynamoDB (has `infrastructure/dynamodb/` directory):
+
+- [ ] DynamoDB models stored in `infrastructure/dynamodb/models/` (not `infrastructure/database/`)
+- [ ] Model inherits from `DynamoModel` (not SQLAlchemy `Base`)
+- [ ] Repository inherits from `BaseDynamoRepository[{Name}DTO]` (not `BaseRepository`)
+- [ ] Service inherits from `BaseDynamoService[Create{Name}Request, Update{Name}Request, {Name}DTO]` (not `BaseService`)
+- [ ] DI Container uses `dynamodb_client=core_container.dynamodb_client` (not `database=core_container.database`)
+- [ ] No `from sqlalchemy` imports in DynamoDB domain files
+- [ ] Protocol inherits from `BaseDynamoRepositoryProtocol[{Name}DTO]` (not `BaseRepositoryProtocol`)

@@ -82,6 +82,20 @@ src/{name}/
         └── bootstrap/{name}_bootstrap.py
 ```
 
+### DynamoDB Domain Variant
+
+DynamoDB를 사용하는 도메인은 `infrastructure/database/` 대신 `infrastructure/dynamodb/`를 사용:
+
+```
+src/{name}/
+├── infrastructure/
+│   ├── dynamodb/
+│   │   └── models/{name}_model.py    # extends DynamoModel
+│   ├── repositories/{name}_repository.py  # extends BaseDynamoRepository
+│   └── di/{name}_container.py        # dynamodb_client=core_container.dynamodb_client
+└── (나머지 동일)
+```
+
 ## §2. Base Class Import Path
 
 | Class | Import Path |
@@ -91,6 +105,17 @@ src/{name}/
 | BaseRepository | `src._core.infrastructure.database.base_repository.BaseRepository` |
 | Base (ORM DeclarativeBase) | `src._core.infrastructure.database.database.Base` |
 | Database | `src._core.infrastructure.database.database.Database` |
+| BaseDynamoRepositoryProtocol | `src._core.domain.protocols.dynamo_repository_protocol.BaseDynamoRepositoryProtocol` |
+| BaseDynamoService | `src._core.domain.services.base_dynamo_service.BaseDynamoService` |
+| BaseDynamoRepository | `src._core.infrastructure.dynamodb.base_dynamo_repository.BaseDynamoRepository` |
+| DynamoModel | `src._core.infrastructure.dynamodb.dynamodb_model.DynamoModel` |
+| DynamoModelMeta | `src._core.infrastructure.dynamodb.dynamodb_model.DynamoModelMeta` |
+| GSIDefinition | `src._core.infrastructure.dynamodb.dynamodb_model.GSIDefinition` |
+| DynamoDBClient | `src._core.infrastructure.dynamodb.dynamodb_client.DynamoDBClient` |
+| DynamoKey | `src._core.domain.value_objects.dynamo_key.DynamoKey` |
+| SortKeyCondition | `src._core.domain.value_objects.dynamo_key.SortKeyCondition` |
+| CursorPage | `src._core.domain.value_objects.cursor_page.CursorPage` |
+| CursorPaginationInfo | `src._core.application.dtos.base_response.CursorPaginationInfo` |
 | BaseRequest | `src._core.application.dtos.base_request.BaseRequest` |
 | BaseResponse | `src._core.application.dtos.base_response.BaseResponse` |
 | SuccessResponse | `src._core.application.dtos.base_response.SuccessResponse` |
@@ -143,6 +168,22 @@ class UserRepository(BaseRepository[UserDTO]): ...
 class UserService(BaseService[CreateUserRequest, UpdateUserRequest, UserDTO]): ...
 ```
 
+### DynamoDB Generic Type Signatures
+
+```python
+# BaseDynamoRepositoryProtocol / BaseDynamoRepository — 1 TypeVar (ReturnDTO only)
+class BaseDynamoRepositoryProtocol(Generic[ReturnDTO]): ...
+class BaseDynamoRepository(Generic[ReturnDTO], ABC): ...
+
+# BaseDynamoService — 3 TypeVars (CreateDTO, UpdateDTO, ReturnDTO)
+class BaseDynamoService(Generic[CreateDTO, UpdateDTO, ReturnDTO]): ...
+
+# DynamoDB domain usage example:
+class ChatRoomRepositoryProtocol(BaseDynamoRepositoryProtocol[ChatRoomDTO]): pass
+class ChatRoomRepository(BaseDynamoRepository[ChatRoomDTO]): ...
+class ChatRoomService(BaseDynamoService[CreateChatRoomRequest, UpdateChatRoomRequest, ChatRoomDTO]): ...
+```
+
 ### BaseRepository.__init__ Signature
 
 ```python
@@ -186,6 +227,43 @@ def __init__(
 | update_data_by_data_id | `(data_id: int, entity: UpdateDTO) -> ReturnDTO` | update_data_by_data_id(data_id, entity) |
 | delete_data_by_data_id | `(data_id: int) -> bool` | delete_data_by_data_id(data_id=data_id) |
 | count_datas | `() -> int` | count_datas() |
+
+### BaseDynamoRepositoryProtocol Methods
+
+| Method | Signature |
+|--------|---------|
+| put_item | `async (entity: BaseModel) -> ReturnDTO` |
+| get_item | `async (key: DynamoKey) -> ReturnDTO` |
+| query_items | `async (partition_key_value: str, sort_key_condition?, index_name?, filter_expression?, limit?, cursor?, scan_forward?) -> CursorPage[ReturnDTO]` |
+| update_item | `async (key: DynamoKey, entity: BaseModel) -> ReturnDTO` |
+| delete_item | `async (key: DynamoKey) -> bool` |
+
+### BaseDynamoService Methods
+
+| Method | Signature | Repository Call |
+|--------|-----------|----------------|
+| create_item | `(entity: CreateDTO) -> ReturnDTO` | put_item(entity=entity) |
+| get_item | `(key: DynamoKey) -> ReturnDTO` | get_item(key=key) |
+| query_items | `(partition_key_value, ...) -> CursorPage[ReturnDTO]` | query_items(...) |
+| update_item | `(key: DynamoKey, entity: UpdateDTO) -> ReturnDTO` | update_item(key, entity) |
+| delete_item | `(key: DynamoKey) -> bool` | delete_item(key=key) |
+
+### DynamoDB DI Pattern
+
+```python
+class {Name}Container(containers.DeclarativeContainer):
+    core_container = providers.DependenciesContainer()
+
+    {name}_repository = providers.Singleton(
+        {Name}Repository,
+        dynamodb_client=core_container.dynamodb_client,  # ← DynamoDB
+    )
+
+    {name}_service = providers.Factory(
+        {Name}Service,
+        {name}_repository={name}_repository,
+    )
+```
 
 ## §5. DI Pattern
 
@@ -299,6 +377,7 @@ def create_server_container() -> containers.DynamicContainer:
 | Pydantic 2.x | Active | model_validate, model_dump, ConfigDict |
 | dependency-injector | Active | DeclarativeContainer, @inject + Provide |
 | AWS S3 (aioboto3) | Active | ObjectStorage + ObjectStorageClient |
+| AWS DynamoDB (aioboto3) | Active | BaseDynamoRepository + DynamoDBClient (optional infra) |
 | NiceGUI (BaseAdminPage) | Active | Admin dashboard (AG Grid, auto-discovery, Template Method rendering) |
 | alembic (migrations) | Active | DB migrations |
 | Password hashing (bcrypt) | Active | hash_password(), verify_password() in src._core.common.security |

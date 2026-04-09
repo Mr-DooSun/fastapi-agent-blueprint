@@ -7,6 +7,7 @@
 - What are the main fields for each entity? (e.g., name, price, status)
 - Are there relationships between entities? (1:N, N:M, etc.)
 - Are there unique constraints? (unique fields, composite keys, etc.)
+- Should this data use RDB (relational, ACID) or DynamoDB (NoSQL, key-value, auto-scaling)?
 
 ### Business Rules
 - Are there mandatory validation conditions when creating data?
@@ -92,6 +93,7 @@
 | New member onboarding | `/onboard` | (none) | Experience-level adaptive (Beginner/Intermediate/Advanced) |
 | Sub-feature design | `/plan-feature` | `"{description}"` | Recursive use when splitting large features |
 | PR review | `/review-pr` | `{number\|URL}` | Architecture-aware review against project rules |
+| DynamoDB migration | `python -m migrations.dynamodb.cli --env {env}` | — | DynamoDB table/GSI creation (manual CLI) |
 | **Unmappable** items | Manual implementation | — | External API integrations, middleware, etc. |
 
 ## 4. Supervision Level Definitions

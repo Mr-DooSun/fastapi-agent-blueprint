@@ -211,3 +211,21 @@ Check storage client and related configuration files:
 - [ ] [When applicable][MEDIUM] S3 server-side encryption enabled (SSE-S3 or SSE-KMS)
   - Detection condition: Same as above
   - Grep: `ServerSideEncryption|SSECustomerAlgorithm` in S3 client configuration or put_object calls
+
+## 9. DynamoDB Security
+
+Check DynamoDB client, model, and configuration files:
+
+### Error Information Exposure
+- [ ] [When applicable][HIGH] DynamoDB error responses do not expose internal key structure (PK/SK patterns)
+  - Detection condition: Check **project-dna.md section 8** "AWS DynamoDB (aioboto3)" status -> [SKIP] if "not implemented"
+  - Grep: `DynamoDBNotFoundException` message does not contain composite key format details in production
+
+### Environment Isolation
+- [ ] [When applicable][MEDIUM] DynamoDB `endpoint_url` is not `localhost` in production
+  - Detection condition: Same as above
+  - Grep: `endpoint_url` in Settings -> verify `DYNAMODB_ENDPOINT_URL` is None or AWS endpoint in stg/prod
+### Access Control
+- [ ] [When applicable][MEDIUM] DynamoDB IAM credentials managed via environment variables (not hardcoded)
+  - Detection condition: Same as above
+  - Grep: `dynamodb_access_key|dynamodb_secret_key` loaded from `Settings` (not hardcoded strings)

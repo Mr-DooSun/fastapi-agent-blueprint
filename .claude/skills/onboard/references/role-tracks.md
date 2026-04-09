@@ -35,7 +35,7 @@
 |------|----------|-------------|----------|
 | Project scale/purpose | Explain | Explain | Summary |
 | Directory structure | Detailed | Detailed | List only |
-| Tech stack | Explain role of each technology | List | List |
+| Tech stack | Explain role of each technology (incl. DynamoDB as optional NoSQL) | List (incl. DynamoDB) | List |
 | Additional concepts | Explain DI Container, Protocol, Pydantic | - | - |
 
 ### Phase 3: Architecture Rules

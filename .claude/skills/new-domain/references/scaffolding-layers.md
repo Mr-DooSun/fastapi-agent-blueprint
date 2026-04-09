@@ -107,6 +107,30 @@ src/{name}/
     - Repository = `providers.Singleton`, Service = `providers.Factory`
     - Do not create UseCase provider by default (add only when complex logic is needed)
 
+### DynamoDB Variant (Layer 3)
+
+When the domain uses DynamoDB instead of RDB, replace `infrastructure/database/` with `infrastructure/dynamodb/`:
+
+```
+└── infrastructure/
+    ├── dynamodb/
+    │   ├── __init__.py
+    │   └── models/
+    │       ├── __init__.py
+    │       └── {name}_model.py            ← DynamoModel subclass
+    ├── repositories/
+    │   ├── __init__.py
+    │   └── {name}_repository.py           ← BaseDynamoRepository[{Name}DTO]
+    └── di/
+        ├── __init__.py
+        └── {name}_container.py            ← dynamodb_client injection
+```
+
+- Model: `from src._core.infrastructure.dynamodb.dynamodb_model import DynamoModel, DynamoModelMeta`
+- Repository: `from src._core.infrastructure.dynamodb.base_dynamo_repository import BaseDynamoRepository`
+- DI: `dynamodb_client=core_container.dynamodb_client` (not `database=core_container.database`)
+- Refer to **project-dna.md "DynamoDB Generic Type Signatures"** and **"DynamoDB DI Pattern"** for details
+
 ## Layer 4: Interface
 
 ```

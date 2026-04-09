@@ -18,6 +18,14 @@ class ExistsData(ApiConfig):
     exists: bool
 
 
+class CursorPaginationInfo(ApiConfig):
+    """Cursor-based pagination metadata for DynamoDB-backed endpoints."""
+
+    next_cursor: str | None = None
+    page_size: int
+    has_next: bool
+
+
 ReturnType = TypeVar("ReturnType")
 
 

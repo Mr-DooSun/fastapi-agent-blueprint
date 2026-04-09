@@ -20,6 +20,17 @@
   - `test_get_datas` — verify PaginationInfo is correctly generated
   - `test_get_data_by_data_id` — verify single item retrieval delegation
 
+### DynamoDB Service Tests (`tests/unit/{name}/domain/test_{name}_service.py`)
+- MockDynamoRepository class: implement all `BaseDynamoRepositoryProtocol` methods with in-memory dict
+- Key storage uses `DynamoKey(partition_key, sort_key)` as dict key
+- Test items:
+  - `test_create_item` — verify DTO returned after put_item
+  - `test_get_item` — verify retrieval by DynamoKey
+  - `test_query_items` — verify CursorPage returned with correct count
+  - `test_update_item` — verify changed DTO after update
+  - `test_delete_item` — verify True returned after deletion
+- Reference implementation: `tests/unit/_core/infrastructure/dynamodb/test_base_dynamo_repository.py`
+
 ### Integration Tests — `tests/integration/{name}/`
 
 #### Repository Tests (`tests/integration/{name}/infrastructure/test_{name}_repository.py`)

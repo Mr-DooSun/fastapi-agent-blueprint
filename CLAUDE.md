@@ -20,6 +20,7 @@ All proposals and designs must consider scalability, maintainability, and team c
 
 ## Layer Architecture (3-Tier Hybrid)
 - Default: Router → Service (extends BaseService) → Repository (extends BaseRepository)
+- DynamoDB domain: Router → Service (extends BaseDynamoService) → Repository (extends BaseDynamoRepository)
 - Complex logic: Router → UseCase (manually written) → Service → Repository
 - UseCase criteria: multiple Service composition, cross-transaction boundaries, etc.
 - When in doubt: start without UseCase, add when complexity grows
@@ -29,6 +30,7 @@ All proposals and designs must consider scalability, maintainability, and team c
 - **Payload**: Worker message contract schema (`interface/worker/payloads/`) — background: [ADR 016](docs/history/016-worker-payload-schema.md)
 - **DTO**: Internal data carrier between layers — Repository→Router (`domain/dtos/`)
 - **Model**: DB table mapping, never exposed outside Repository (`infrastructure/database/models/`)
+- **DynamoModel**: DynamoDB table mapping, never exposed outside Repository (`infrastructure/dynamodb/models/`)
 
 ## Claude Collaboration Rules
 - If diagnosis/review result is "adequate", do not force improvement suggestions

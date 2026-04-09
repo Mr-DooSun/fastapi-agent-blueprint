@@ -87,6 +87,22 @@ class Settings(BaseSettings):
     )
 
     # ----------------------------------------------------------------
+    # DynamoDB (Optional)
+    # ----------------------------------------------------------------
+    dynamodb_region: str | None = Field(
+        default=None, validation_alias="DYNAMODB_REGION"
+    )
+    dynamodb_access_key: str | None = Field(
+        default=None, validation_alias="DYNAMODB_ACCESS_KEY"
+    )
+    dynamodb_secret_key: str | None = Field(
+        default=None, validation_alias="DYNAMODB_SECRET_KEY"
+    )
+    dynamodb_endpoint_url: str | None = Field(
+        default=None, validation_alias="DYNAMODB_ENDPOINT_URL"
+    )
+
+    # ----------------------------------------------------------------
     # Messaging (AWS SQS)
     # ----------------------------------------------------------------
     aws_sqs_region: str | None = Field(default=None, validation_alias="AWS_SQS_REGION")
@@ -168,6 +184,20 @@ class Settings(BaseSettings):
             missing = sorted(set(minio_fields) - minio_set)
             errors.append(
                 f"[MinIO] Partial configuration: {', '.join(sorted(minio_set))} "
+                f"set but {', '.join(missing)} missing"
+            )
+
+        dynamodb_fields = {
+            "dynamodb_region": self.dynamodb_region,
+            "dynamodb_access_key": self.dynamodb_access_key,
+            "dynamodb_secret_key": self.dynamodb_secret_key,
+        }
+        dynamodb_set = {k for k, v in dynamodb_fields.items() if v is not None}
+        if dynamodb_set and dynamodb_set != set(dynamodb_fields):
+            missing = sorted(set(dynamodb_fields) - dynamodb_set)
+            errors.append(
+                f"[DynamoDB] Partial configuration: "
+                f"{', '.join(sorted(dynamodb_set))} "
                 f"set but {', '.join(missing)} missing"
             )
 
