@@ -1,10 +1,18 @@
 from collections.abc import Callable
+from enum import StrEnum
 from typing import TypeVar
 
+from taskiq import AsyncBroker
 from taskiq.abc.result_backend import AsyncResultBackend
 from taskiq_aws import SQSBroker
 
 _T = TypeVar("_T")
+
+
+class BrokerType(StrEnum):
+    SQS = "sqs"
+    RABBITMQ = "rabbitmq"
+    INMEMORY = "inmemory"
 
 
 class CustomSQSBroker(SQSBroker):
@@ -39,3 +47,15 @@ class CustomSQSBroker(SQSBroker):
                 access_key=aws_access_key_id,
                 secret_key=aws_secret_access_key,
             )
+
+
+def create_rabbitmq_broker(url: str) -> AsyncBroker:
+    """Create a RabbitMQ broker via lazy import (optional dependency)."""
+    try:
+        from taskiq_aio_pika import AioPikaBroker
+    except ImportError:
+        raise ImportError(
+            "taskiq-aio-pika is required for RabbitMQ broker. "
+            "Install it with: pip install taskiq-aio-pika"
+        )
+    return AioPikaBroker(url=url)
