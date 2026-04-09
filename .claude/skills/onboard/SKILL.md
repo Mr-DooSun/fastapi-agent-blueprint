@@ -19,7 +19,7 @@ description: |
 Execute the following to understand the current project state (do not output to the user):
 
 1. Read Serena `project_overview` memory -- tech stack and app structure
-2. Read Serena `refactoring_status` memory -- confirm work in progress
+2. Read Serena `project_status` memory -- confirm work in progress
 3. Read Serena `architecture_conventions` memory -- current DO/DON'T rules
 4. Glob `src/*/` to identify current domain list (excluding `_core`, `_apps`)
 5. `git log --oneline -5` to check recent activity

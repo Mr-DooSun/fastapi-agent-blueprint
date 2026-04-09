@@ -18,7 +18,7 @@ Bug description: $ARGUMENTS
 4. If no reproduction test exists, write one first (confirm red state)
 
 ## Phase 2: Trace
-1. Read Serena `refactoring_status` memory — verify current architecture state
+1. Read Serena `project_status` memory — verify current architecture state
 2. Use Serena `find_symbol` to locate the relevant code
 2. Trace the call path: Router → UseCase → Service → Repository
 3. Inspect conversion boundaries:
