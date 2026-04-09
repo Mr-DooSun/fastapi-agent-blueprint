@@ -1,5 +1,22 @@
-from pydantic import AliasChoices, Field
+import warnings
+from typing import Self
+
+from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+KNOWN_ENVS = ("local", "dev", "test", "stg", "prod")
+STRICT_ENVS = frozenset({"stg", "prod"})
+
+_UNSAFE_DEFAULTS: dict[str, str] = {
+    "admin_password": "admin",  # noqa: S105
+    "admin_storage_secret": "change-me-in-production",  # noqa: S105
+    "database_password": "postgres",  # noqa: S105
+    "database_host": "localhost",
+}
+
+_WARN_DEFAULTS: dict[str, str] = {
+    "task_name_prefix": "my-project",
+}
 
 
 class Settings(BaseSettings):
@@ -71,6 +88,83 @@ class Settings(BaseSettings):
     aws_sqs_url: str = Field(validation_alias="AWS_SQS_URL")
 
     # ----------------------------------------------------------------
+    # Network Policy
+    # ----------------------------------------------------------------
+    allowed_hosts: list[str] = Field(
+        default=["localhost", "127.0.0.1"],
+        validation_alias="ALLOWED_HOSTS",
+    )
+    allow_origins: list[str] = Field(
+        default=["*"],
+        validation_alias="ALLOW_ORIGINS",
+    )
+
+    # ----------------------------------------------------------------
+
+    @model_validator(mode="after")
+    def _validate_environment_safety(self) -> Self:
+        errors: list[str] = []
+        env = self.env.lower()
+
+        if env not in KNOWN_ENVS:
+            errors.append(
+                f"[env] Unknown environment '{self.env}'. "
+                f"Expected one of: {', '.join(KNOWN_ENVS)}"
+            )
+
+        if env in STRICT_ENVS:
+            for field_name, unsafe_value in _UNSAFE_DEFAULTS.items():
+                if getattr(self, field_name) == unsafe_value:
+                    errors.append(
+                        f"[{field_name}] Using unsafe default "
+                        f"'{unsafe_value}' in '{self.env}' environment"
+                    )
+
+            for field_name, default_value in _WARN_DEFAULTS.items():
+                if getattr(self, field_name) == default_value:
+                    warnings.warn(
+                        f"Settings: [{field_name}] still uses default "
+                        f"'{default_value}' in '{self.env}' environment",
+                        stacklevel=2,
+                    )
+
+        s3_fields = {
+            "s3_access_key": self.s3_access_key,
+            "s3_secret_key": self.s3_secret_key,
+            "s3_region": self.s3_region,
+            "s3_bucket_name": self.s3_bucket_name,
+        }
+        s3_set = {k for k, v in s3_fields.items() if v is not None}
+        if s3_set and s3_set != set(s3_fields):
+            missing = sorted(set(s3_fields) - s3_set)
+            errors.append(
+                f"[S3] Partial configuration: {', '.join(sorted(s3_set))} "
+                f"set but {', '.join(missing)} missing"
+            )
+
+        minio_fields = {
+            "minio_host": self.minio_host,
+            "minio_port": self.minio_port,
+            "minio_access_key": self.minio_access_key,
+            "minio_secret_key": self.minio_secret_key,
+            "minio_bucket_name": self.minio_bucket_name,
+        }
+        minio_set = {k for k, v in minio_fields.items() if v is not None}
+        if minio_set and minio_set != set(minio_fields):
+            missing = sorted(set(minio_fields) - minio_set)
+            errors.append(
+                f"[MinIO] Partial configuration: {', '.join(sorted(minio_set))} "
+                f"set but {', '.join(missing)} missing"
+            )
+
+        if errors:
+            bullet_list = "\n  - ".join(errors)
+            raise ValueError(
+                f"Settings validation failed for env='{self.env}' "
+                f"({len(errors)} error(s)):\n  - {bullet_list}"
+            )
+
+        return self
 
     @property
     def is_dev(self) -> bool:
@@ -93,19 +187,6 @@ class Settings(BaseSettings):
         if self.minio_host and self.minio_port:
             return f"{self.minio_host}:{self.minio_port}"
         return None
-
-    @property
-    def allowed_hosts(self) -> list[str]:
-        """Allowed host list for TrustedHostMiddleware."""
-        if self.is_dev:
-            return ["localhost", "127.0.0.1"]
-        return ["api.example.com"]  # TODO: set production domain
-
-    @property
-    def allow_origins(self) -> list[str]:
-        if self.is_dev:
-            return ["*"]
-        return ["https://example.com"]  # TODO: set production frontend domain
 
 
 settings = Settings()
