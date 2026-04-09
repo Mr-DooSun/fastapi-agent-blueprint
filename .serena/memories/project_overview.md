@@ -8,7 +8,7 @@ AI Agent Backend Platform built on FastAPI with DDD modular layered architecture
 
 ## App Entrypoints
 - Server: `src/_apps/server/` — FastAPI (uvicorn)
-- Worker: `src/_apps/worker/` — Taskiq (SQS broker)
+- Worker: `src/_apps/worker/` — Taskiq (broker abstraction: SQS/RabbitMQ/InMemory)
 - Admin: `src/_apps/admin/` — NiceGUI (mounted on server via ui.run_with)
 
 ## Dependency Direction

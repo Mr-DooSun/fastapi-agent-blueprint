@@ -301,6 +301,7 @@ class {Name}Container(containers.DeclarativeContainer):
 | App Container (Server/Worker) | `containers.DynamicContainer` (factory function) |
 | Domain auto-discovery | `src._core.infrastructure.discovery.discover_domains()` |
 | Dynamic Container loading | `src._core.infrastructure.discovery.load_domain_container()` |
+| Broker (multi-backend) | `providers.Selector` | Selects SQS/RabbitMQ/InMemory by config |
 
 ### App-level Container (Auto-discovery)
 
@@ -322,6 +323,31 @@ def create_server_container() -> containers.DynamicContainer:
                 providers.Container(cls, core_container=container.core_container))
     return container
 ```
+
+### Broker Selection Pattern (Runtime Configuration)
+
+The message broker uses `providers.Selector` to dynamically select between broker backends
+based on the `BROKER_TYPE` environment variable:
+
+```python
+# src/_core/infrastructure/di/core_container.py
+broker = providers.Selector(
+    lambda: (settings.broker_type or "inmemory").lower().strip(),
+    sqs=providers.Singleton(CustomSQSBroker, queue_url=..., ...),
+    rabbitmq=providers.Singleton(create_rabbitmq_broker, url=...),
+    inmemory=providers.Singleton(InMemoryBroker),
+)
+```
+
+| BROKER_TYPE | Broker Class | Dependency |
+|-------------|-------------|------------|
+| `sqs` | `CustomSQSBroker` | `taskiq-aws` (main) |
+| `rabbitmq` | `AioPikaBroker` | `taskiq-aio-pika` (optional) |
+| `inmemory` (default) | `InMemoryBroker` | `taskiq` (main) |
+
+- Selector evaluates at container creation time; selected Singleton is cached
+- Task code always uses `from src._apps.worker.broker import broker` — no conditional logic needed
+- stg/prod environments require explicit `BROKER_TYPE` setting
 
 ### Interface-Specific DI Pattern
 
@@ -372,7 +398,7 @@ def create_server_container() -> containers.DynamicContainer:
 
 | Feature | Status | Notes |
 |------|------|------|
-| Taskiq async tasks | Active | SQS broker, @broker.task decorator |
+| Taskiq async tasks | Active | Broker abstraction (SQS/RabbitMQ/InMemory), @broker.task decorator |
 | SQLAlchemy 2.0+ | Active | Mapped[T] + mapped_column() |
 | Pydantic 2.x | Active | model_validate, model_dump, ConfigDict |
 | dependency-injector | Active | DeclarativeContainer, @inject + Provide |
