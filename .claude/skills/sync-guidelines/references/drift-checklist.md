@@ -41,11 +41,31 @@ Read each skill's SKILL.md and compare against reference code:
 
 ## 3. Serena Memory ↔ Current State Check
 
-Read Serena memory and compare against current code:
+Read each Serena memory and compare against current code:
 
-- [ ] **`architecture_conventions`**: Verify DO/DON'T rules match CLAUDE.md and actual code
-- [ ] **`refactoring_status`**: Verify current progress is accurate
-- [ ] **`project_overview`**: Verify tech stack, entry points, etc. are up to date
+### architecture_conventions
+- [ ] Data flow: RDB + DynamoDB 양쪽 variant 포함?
+- [ ] BaseService/BaseDynamoService generic signature가 실제 코드와 일치?
+- [ ] Object Roles: DTO, Schema, Model, DynamoModel, Admin Page 모두 포함?
+- [ ] Broker Selection 섹션이 core_container.py Selector 설정과 일치?
+
+### project_status
+- [ ] Recent Major Changes: "Last synced" 이후 머지된 주요 PR/feature 포함?
+- [ ] Architecture Violation Status: grep 체크 실행 결과와 일치?
+- [ ] Not Yet Implemented: project-dna.md §8 "Not implemented" 항목과 일치?
+
+### project_overview
+- [ ] Infrastructure Options: `src/_core/infrastructure/` 하위 디렉터리와 일치?
+- [ ] App Entrypoints: `src/_apps/` 하위 디렉터리와 일치?
+- [ ] Environment Config: `src/_core/config.py` Settings validators와 일치?
+
+### suggested_commands
+- [ ] Run 명령: 현재 entrypoint 파일과 일치?
+- [ ] Architecture 검증 grep: 현행 위반 규칙 탐지 (구시대 패턴 아님)?
+- [ ] Test 명령: 인프라 variant별 커버 (RDB, DynamoDB, Broker)?
+
+### All memories
+- [ ] 각 메모리의 "Last synced" 날짜가 2주 이내?
 
 ## 4. project-dna.md ↔ Code Consistency Check
 

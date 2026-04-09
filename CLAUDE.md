@@ -5,7 +5,7 @@ This project is an AI Agent Backend Platform targeting enterprise-grade services
 All proposals and designs must consider scalability, maintainability, and team collaboration at this scale.
 
 ## Pre-work Checklist
-1. Check current Phase via Serena `refactoring_status` memory
+1. Check current project status via Serena `project_status` memory
 2. Check DO/DON'T via Serena `architecture_conventions` memory
 
 ## Absolute Prohibitions

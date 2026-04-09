@@ -14,7 +14,7 @@ Description: $ARGUMENTS
 ## Preparation
 
 1. Read Serena `architecture_conventions` memory -- confirm current DO/DON'T rules
-2. Read Serena `refactoring_status` memory -- confirm work currently in progress
+2. Read Serena `project_status` memory -- confirm work currently in progress
 3. Read Serena `project_overview` memory -- confirm tech stack and structure
 4. Identify current domain list: use Glob pattern `src/*/` and exclude `_core`, `_apps` prefixes
 

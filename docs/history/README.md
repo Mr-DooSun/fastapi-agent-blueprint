@@ -36,6 +36,7 @@ Each document captures the context and decision criteria for "why this technolog
 | [026](026-nicegui-admin-dashboard.md) | NiceGUI Adoption for Admin Dashboard | Accepted | Done | 2026-04-08 |
 | [027](027-flexible-rdb-configuration.md) | Flexible RDB Configuration with Multi-Engine Support | Accepted | Done | 2026-04-08 |
 | [028](028-environment-config-validation.md) | Environment-Aware Configuration Validation | Accepted | Done | 2026-04-08 |
+| [029](029-broker-abstraction-selector.md) | Broker Abstraction with providers.Selector for Multi-Backend Selection | Accepted | Done | 2026-04-09 |
 
 ## Future Considerations (Open Issues)
 

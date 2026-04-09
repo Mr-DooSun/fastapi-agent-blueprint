@@ -23,7 +23,7 @@ Read `src/user/` as the reference domain to identify current actual patterns:
 ## Inspection Targets (3 Categories)
 1. **CLAUDE.md <-> Code** -- Absolute Prohibitions, Conversion Patterns, Write DTO criteria
 2. **Skills <-> Code** -- Whether each skill's SKILL.md matches the current state (references are checked separately in Phase 5)
-3. **Serena Memory <-> Code** -- architecture_conventions, refactoring_status, project_overview
+3. **Serena Memory <-> Code** -- architecture_conventions, project_status, project_overview
 
 Refer to `${CLAUDE_SKILL_DIR}/references/drift-checklist.md` for detailed inspection items.
 
@@ -63,7 +63,18 @@ Regenerate `.claude/skills/_shared/project-dna.md` when DRIFT is found or the us
 5. Scan active features: check whether `jwt`, `UploadFile`, `RBAC`, `slowapi`, `websocket` imports exist in the codebase
 6. Regenerate `.claude/skills/_shared/project-dna.md` with the latest information (update date)
 7. Compare each Skill's references/ files with project-dna.md -> report mismatches
-8. Update Serena `architecture_conventions` memory (reflect changes)
+8. Update Serena `architecture_conventions` memory
+   (data flow, object roles, generic signatures 변경 반영)
+9. Update Serena `project_status` memory
+   (Recent Major Changes 테이블, 버전 컨텍스트, violation status 갱신)
+   - `git log --oneline --since="{last_synced_date}"` 로 주요 변경 식별
+   - project-dna.md §8 "Not implemented" 항목으로 Not Yet Implemented 갱신
+10. Update Serena `project_overview` memory
+    (인프라 옵션, 환경 설정, app entrypoint 변경 반영)
+11. Update Serena `suggested_commands` memory
+    (신규 CLI 명령, env vars, 테스트 명령, 검증 명령 반영)
+
+All memories: update "Last synced" date line to current date.
 
 ## Phase 5: References Drift Inspection
 

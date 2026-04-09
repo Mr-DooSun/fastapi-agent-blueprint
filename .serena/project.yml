@@ -132,7 +132,7 @@ initial_prompt: |
   - No separate Mapper classes (inline conversion is sufficient)
   - No Entity pattern — unified to DTO (background: ADR 004)
 
-  Check the refactoring_status memory before starting work.
+  Check the project_status memory before starting work.
 # time budget (seconds) per tool call for the retrieval of additional symbol information
 # such as docstrings or parameter information.
 # This overrides the corresponding setting in the global configuration; see the documentation there.
