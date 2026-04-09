@@ -161,6 +161,32 @@ class TestPartialConfigGroups:
             assert s.s3_access_key is None
             assert s.minio_host is None
 
+    def test_partial_dynamodb_rejected(self):
+        env = {"ENV": "local", "DYNAMODB_REGION": "ap-northeast-2", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(
+                ValidationError, match=r"DynamoDB.*Partial configuration"
+            ):
+                _create_settings()
+
+    def test_complete_dynamodb_accepted(self):
+        env = {
+            "ENV": "local",
+            "DYNAMODB_REGION": "ap-northeast-2",
+            "DYNAMODB_ACCESS_KEY": "key",
+            "DYNAMODB_SECRET_KEY": "secret",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.dynamodb_region == "ap-northeast-2"
+
+    def test_no_dynamodb_accepted(self):
+        env = {"ENV": "local", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.dynamodb_region is None
+
 
 class TestWarnDefaults:
     def test_task_name_prefix_warns_in_strict_env(self):
