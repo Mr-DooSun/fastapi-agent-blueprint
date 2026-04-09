@@ -1,6 +1,6 @@
 [project]
 name = "fastapi-agent-blueprint"
-version = "0.1.0"
+version = "0.3.0"
 description = "AI Agent Backend Platform — MCP server, AI orchestration, and async DDD architecture on FastAPI"
 readme = "README.md"
 requires-python = ">=3.12.9"
