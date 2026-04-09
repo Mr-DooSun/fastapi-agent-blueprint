@@ -27,11 +27,14 @@ dependencies = [
     "nicegui>=3.5.0",
     "sqlalchemy>=2.0.40",
     "taskiq[reload]>=0.12.1",
-    "taskiq-aws>=0.4.0",
     "types-aiobotocore-dynamodb>=2.25.0",
     "types-aiobotocore-s3>=2.25.0",
     "uvicorn>=0.34.1",
 ]
+
+[project.optional-dependencies]
+sqs = ["taskiq-aws>=0.4.0"]
+rabbitmq = ["taskiq-aio-pika>=0.4.0"]
 
 [dependency-groups]
 dev = [

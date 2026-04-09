@@ -14,9 +14,6 @@ _REQUIRED_VARS = {
     "DATABASE_HOST": "localhost",
     "DATABASE_PORT": "5432",
     "DATABASE_NAME": "postgres",
-    "AWS_SQS_ACCESS_KEY": "test-key",
-    "AWS_SQS_SECRET_KEY": "test-secret",
-    "AWS_SQS_URL": "https://sqs.ap-northeast-2.amazonaws.com/123/test",
 }
 
 
@@ -32,6 +29,10 @@ def _make_safe_env(env_name: str = "prod") -> dict[str, str]:
         "DATABASE_HOST": "db.internal.example.com",
         "DATABASE_NAME": "myapp_db",
         "TASK_NAME_PREFIX": "myapp",
+        "BROKER_TYPE": "sqs",
+        "AWS_SQS_ACCESS_KEY": "test-key",
+        "AWS_SQS_SECRET_KEY": "test-secret",
+        "AWS_SQS_URL": "https://sqs.ap-northeast-2.amazonaws.com/123/test",
     }
 
 
@@ -95,7 +96,7 @@ class TestStrictEnvRejectsUnsafeDefaults:
             with pytest.raises(ValidationError) as exc_info:
                 _create_settings()
             error_message = str(exc_info.value)
-            assert "4 error(s)" in error_message
+            assert "5 error(s)" in error_message
 
 
 class TestUnknownEnv:
@@ -186,6 +187,75 @@ class TestPartialConfigGroups:
         with patch.dict(os.environ, env, clear=True):
             s = _create_settings()
             assert s.dynamodb_region is None
+
+
+class TestBrokerConfig:
+    def test_local_no_broker_type_accepted(self):
+        env = {"ENV": "local", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.broker_type is None
+
+    @pytest.mark.parametrize("env_name", ["prod", "stg"])
+    def test_strict_env_requires_broker_type(self, env_name):
+        safe = _make_safe_env(env_name)
+        del safe["BROKER_TYPE"]
+        with patch.dict(os.environ, safe, clear=True):
+            with pytest.raises(ValidationError, match="broker_type.*required"):
+                _create_settings()
+
+    def test_unknown_broker_type_rejected(self):
+        env = {"ENV": "local", "BROKER_TYPE": "kafka", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match="Unknown broker type"):
+                _create_settings()
+
+    def test_sqs_partial_config_rejected(self):
+        env = {
+            "ENV": "local",
+            "BROKER_TYPE": "sqs",
+            "AWS_SQS_ACCESS_KEY": "key",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match=r"SQS.*missing"):
+                _create_settings()
+
+    def test_sqs_complete_config_accepted(self):
+        env = {
+            "ENV": "local",
+            "BROKER_TYPE": "sqs",
+            "AWS_SQS_ACCESS_KEY": "key",
+            "AWS_SQS_SECRET_KEY": "secret",
+            "AWS_SQS_URL": "https://sqs.ap-northeast-2.amazonaws.com/123/test",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.broker_type == "sqs"
+
+    def test_rabbitmq_without_url_rejected(self):
+        env = {"ENV": "local", "BROKER_TYPE": "rabbitmq", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match=r"RabbitMQ.*missing"):
+                _create_settings()
+
+    def test_rabbitmq_with_url_accepted(self):
+        env = {
+            "ENV": "local",
+            "BROKER_TYPE": "rabbitmq",
+            "RABBITMQ_URL": "amqp://guest:guest@localhost:5672/",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.broker_type == "rabbitmq"
+
+    def test_inmemory_accepted(self):
+        env = {"ENV": "local", "BROKER_TYPE": "inmemory", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.broker_type == "inmemory"
 
 
 class TestWarnDefaults:

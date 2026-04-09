@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 KNOWN_ENVS = ("local", "dev", "stg", "prod")
 KNOWN_ENGINES = ("postgresql", "mysql", "sqlite")
+KNOWN_BROKER_TYPES = ("sqs", "rabbitmq", "inmemory")
 STRICT_ENVS = frozenset({"stg", "prod"})
 
 _UNSAFE_DEFAULTS: dict[str, str] = {
@@ -103,12 +104,26 @@ class Settings(BaseSettings):
     )
 
     # ----------------------------------------------------------------
-    # Messaging (AWS SQS)
+    # Message Broker
+    # ----------------------------------------------------------------
+    broker_type: str | None = Field(default=None, validation_alias="BROKER_TYPE")
+
+    # ----------------------------------------------------------------
+    # Messaging (AWS SQS) — required when BROKER_TYPE=sqs
     # ----------------------------------------------------------------
     aws_sqs_region: str | None = Field(default=None, validation_alias="AWS_SQS_REGION")
-    aws_sqs_access_key: str = Field(validation_alias="AWS_SQS_ACCESS_KEY")
-    aws_sqs_secret_key: str = Field(validation_alias="AWS_SQS_SECRET_KEY")
-    aws_sqs_url: str = Field(validation_alias="AWS_SQS_URL")
+    aws_sqs_access_key: str | None = Field(
+        default=None, validation_alias="AWS_SQS_ACCESS_KEY"
+    )
+    aws_sqs_secret_key: str | None = Field(
+        default=None, validation_alias="AWS_SQS_SECRET_KEY"
+    )
+    aws_sqs_url: str | None = Field(default=None, validation_alias="AWS_SQS_URL")
+
+    # ----------------------------------------------------------------
+    # Messaging (RabbitMQ) — required when BROKER_TYPE=rabbitmq
+    # ----------------------------------------------------------------
+    rabbitmq_url: str | None = Field(default=None, validation_alias="RABBITMQ_URL")
 
     # ----------------------------------------------------------------
     # Network Policy
@@ -199,6 +214,35 @@ class Settings(BaseSettings):
                 f"[DynamoDB] Partial configuration: "
                 f"{', '.join(sorted(dynamodb_set))} "
                 f"set but {', '.join(missing)} missing"
+            )
+
+        broker = (self.broker_type or "").lower().strip()
+        if env in STRICT_ENVS and not broker:
+            errors.append(
+                f"[broker_type] BROKER_TYPE is required in '{self.env}' environment"
+            )
+        if broker and broker not in KNOWN_BROKER_TYPES:
+            errors.append(
+                f"[broker_type] Unknown broker type '{self.broker_type}'. "
+                f"Expected one of: {', '.join(KNOWN_BROKER_TYPES)}"
+            )
+
+        if broker == "sqs":
+            sqs_fields = {
+                "aws_sqs_access_key": self.aws_sqs_access_key,
+                "aws_sqs_secret_key": self.aws_sqs_secret_key,
+                "aws_sqs_url": self.aws_sqs_url,
+            }
+            sqs_set = {k for k, v in sqs_fields.items() if v is not None}
+            if sqs_set != set(sqs_fields):
+                missing = sorted(set(sqs_fields) - sqs_set)
+                errors.append(
+                    f"[SQS] BROKER_TYPE=sqs requires: {', '.join(missing)} missing"
+                )
+
+        if broker == "rabbitmq" and not self.rabbitmq_url:
+            errors.append(
+                "[RabbitMQ] BROKER_TYPE=rabbitmq requires: rabbitmq_url missing"
             )
 
         if errors:

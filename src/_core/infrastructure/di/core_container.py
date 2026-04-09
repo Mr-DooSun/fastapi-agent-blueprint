@@ -1,4 +1,5 @@
 from dependency_injector import containers, providers
+from taskiq import InMemoryBroker
 
 from src._core.config import settings
 from src._core.infrastructure.database.config import DatabaseConfig
@@ -7,7 +8,10 @@ from src._core.infrastructure.dynamodb.dynamodb_client import DynamoDBClient
 from src._core.infrastructure.http.http_client import HttpClient
 from src._core.infrastructure.storage.object_storage import ObjectStorage
 from src._core.infrastructure.storage.object_storage_client import ObjectStorageClient
-from src._core.infrastructure.taskiq.broker import CustomSQSBroker
+from src._core.infrastructure.taskiq.broker import (
+    create_rabbitmq_broker,
+    create_sqs_broker,
+)
 from src._core.infrastructure.taskiq.manager import TaskiqManager
 
 
@@ -88,12 +92,20 @@ class CoreContainer(containers.DeclarativeContainer):
     # Message Queue (Taskiq)
     #########################################################
 
-    broker = providers.Singleton(
-        CustomSQSBroker,
-        queue_url=settings.aws_sqs_url,
-        aws_region=settings.aws_sqs_region,
-        aws_access_key_id=settings.aws_sqs_access_key,
-        aws_secret_access_key=settings.aws_sqs_secret_key,
+    broker = providers.Selector(
+        lambda: (settings.broker_type or "inmemory").lower().strip(),
+        sqs=providers.Singleton(
+            create_sqs_broker,
+            queue_url=settings.aws_sqs_url,
+            aws_region=settings.aws_sqs_region,
+            aws_access_key_id=settings.aws_sqs_access_key,
+            aws_secret_access_key=settings.aws_sqs_secret_key,
+        ),
+        rabbitmq=providers.Singleton(
+            create_rabbitmq_broker,
+            url=settings.rabbitmq_url,
+        ),
+        inmemory=providers.Singleton(InMemoryBroker),
     )
 
     taskiq_manager = providers.Singleton(
