@@ -33,6 +33,9 @@ dependencies = [
     "uvicorn>=0.34.1",
 ]
 
+[project.optional-dependencies]
+rabbitmq = ["taskiq-aio-pika>=0.4.0"]
+
 [dependency-groups]
 dev = [
     "aiosqlite>=0.21.0",
