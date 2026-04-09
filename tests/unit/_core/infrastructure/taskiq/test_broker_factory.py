@@ -1,21 +1,21 @@
 import pytest
-from taskiq import InMemoryBroker
+from taskiq import AsyncBroker, InMemoryBroker
 
 from src._core.infrastructure.taskiq.broker import (
-    CustomSQSBroker,
     create_rabbitmq_broker,
+    create_sqs_broker,
 )
 
 
-class TestCustomSQSBroker:
-    def test_creates_instance(self):
-        broker = CustomSQSBroker(
+class TestCreateSqsBroker:
+    def test_creates_async_broker(self):
+        broker = create_sqs_broker(
             queue_url="https://sqs.ap-northeast-2.amazonaws.com/123/test",
             aws_region="ap-northeast-2",
             aws_access_key_id="key",
             aws_secret_access_key="secret",
         )
-        assert isinstance(broker, CustomSQSBroker)
+        assert isinstance(broker, AsyncBroker)
 
 
 class TestInMemoryBroker:

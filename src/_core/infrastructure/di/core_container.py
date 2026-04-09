@@ -9,8 +9,8 @@ from src._core.infrastructure.http.http_client import HttpClient
 from src._core.infrastructure.storage.object_storage import ObjectStorage
 from src._core.infrastructure.storage.object_storage_client import ObjectStorageClient
 from src._core.infrastructure.taskiq.broker import (
-    CustomSQSBroker,
     create_rabbitmq_broker,
+    create_sqs_broker,
 )
 from src._core.infrastructure.taskiq.manager import TaskiqManager
 
@@ -95,7 +95,7 @@ class CoreContainer(containers.DeclarativeContainer):
     broker = providers.Selector(
         lambda: (settings.broker_type or "inmemory").lower().strip(),
         sqs=providers.Singleton(
-            CustomSQSBroker,
+            create_sqs_broker,
             queue_url=settings.aws_sqs_url,
             aws_region=settings.aws_sqs_region,
             aws_access_key_id=settings.aws_sqs_access_key,
