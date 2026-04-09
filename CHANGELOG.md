@@ -7,20 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-09
+
 ### Added
 
 - NiceGUI admin dashboard with auto-discovery, env-var auth, AG Grid CRUD, and field masking ([#14](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/14))
-- ADR 026: NiceGUI adoption for admin dashboard
+- DynamoDB support with `BaseDynamoRepository`, `DynamoModel`, and `DynamoDBClient` ([#13](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/13))
+- Broker abstraction with `providers.Selector` for SQS/RabbitMQ/InMemory multi-backend ([#8](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/8))
+- Flexible RDB configuration with multi-engine and per-environment support ([#7](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/7))
+- Environment-aware config validation in Settings — strict mode for stg/prod ([#53](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/53))
+- Password hashing (`hash_password`, `verify_password`) and input validation in `_core.common.security`
+- `QueryFilter` value object for paginated query params with sort/search
+- DynamoDB Local service in CI for integration tests ([#13](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/13))
 - Branch name validation in CI for pull requests (`{type}/{description}` format enforcement)
+- `/add-admin-page` skill for NiceGUI admin page scaffolding
+- ADR 026 (NiceGUI Admin), ADR 027 (Flexible RDB), ADR 028 (Config Validation), ADR 029 (Broker Abstraction)
 
 ### Changed
 
 - Replace SQLAdmin with NiceGUI for admin interface ([#14](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/14))
+- Restore `CreateDTO`/`UpdateDTO` generics to `BaseService` (3 TypeVars) — reverts prior simplification (ADR 011 post-decision update)
+- Rename Serena memory `refactoring_status` → `project_status` for clarity ([#60](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/60))
+- Expand `sync-guidelines` to update all 4 Serena memories (was only 1) ([#60](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/60))
+- Make `taskiq-aws` an optional dependency with lazy import ([#8](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/8))
 - Admin views moved from `interface/admin/views/` to `interface/admin/pages/`
 
 ### Removed
 
 - `/create-pr` skill — branch name validation moved to CI; PR creation handled by Claude Code built-in capability
+
+### Fixed
+
+- Add missing `__init__.py` in `_core/domain/protocols/` and `_core/domain/value_objects/` ([#60](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/60))
+- Mount NiceGUI directly on main app instead of sub-app
+- Harden admin security with server-side masking and timing-safe auth
+- Skip SQS broker test when `taskiq-aws` not installed ([#8](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/8))
 
 ## [0.2.0] - 2026-04-07
 
@@ -74,6 +95,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ADR documentation (001-013)
 - CONTRIBUTING guide and issue templates
 
-[Unreleased]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/releases/tag/v0.1.0
