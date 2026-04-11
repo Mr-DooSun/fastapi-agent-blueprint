@@ -25,7 +25,6 @@ __pycache__/
 # ============================================
 # Tool caches
 # ============================================
-.serena/cache/
 .pytest_cache/
 .ruff_cache/
 .nicegui/
