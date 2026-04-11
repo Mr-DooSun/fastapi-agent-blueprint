@@ -78,7 +78,7 @@ Compare each section of `.claude/skills/_shared/project-dna.md` against actual c
 - [ ] **Generic types**: Verify signatures in §3 match current Base class definitions
   - Check `BaseRepositoryProtocol`, `BaseRepository`, `SuccessResponse` class definitions
 - [ ] **CRUD methods**: Verify the `BaseRepositoryProtocol` method list in §4 is up to date
-  - Grep/Read → compare method lists
+  - Compare method lists against actual code
 - [ ] **DI patterns**: Verify Singleton/Factory mappings in §5 match current `UserContainer` code
 - [ ] **Conversion Patterns**: Verify `model_validate`/`model_dump` usage in §6 matches current implementation
 - [ ] **Security tools**: Verify the tool list in §7 matches `pyproject.toml` and `.pre-commit-config.yaml`

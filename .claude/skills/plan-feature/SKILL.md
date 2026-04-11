@@ -47,7 +47,7 @@ Determine whether changes/additions are needed for each layer:
 ### 1.2 Domain Impact Analysis
 - Is modifying existing domains sufficient? -> Which layer of which domain?
 - Is a new domain needed? -> Suggest domain name with rationale
-- Search related existing code with Grep/Glob
+- Search related existing code
 
 ### 1.3 DTO Decision
 Decide based on the Write DTO criteria in CLAUDE.md:

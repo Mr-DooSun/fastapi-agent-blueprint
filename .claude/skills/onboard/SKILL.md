@@ -257,7 +257,7 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 2. Read the actual code from the `src/user/` domain live and show concrete examples:
 
    **Write Path (Create):**
-   - Read the Request DTO with Grep/Read and show the field structure
+   - Read the Request DTO and show the field structure
    - Read the Router's create method and show the Request -> Service passing pattern
    - Read the Repository's insert method and show the `Model(**entity.model_dump())` conversion
 

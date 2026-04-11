@@ -55,7 +55,7 @@ Rule sources to load:
   - `interface/` files → Response field exposure, Router patterns
   - `application/` files → UseCase patterns
   - `migrations/` files → upgrade/downgrade existence
-- When surrounding context is needed, use Grep/Read to read related code
+- When surrounding context is needed, examine related code
   (e.g., cross-reference DTO fields with Response exclude set)
 - Assign severity from the checklist source's own categorization
 

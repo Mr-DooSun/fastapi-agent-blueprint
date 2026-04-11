@@ -19,7 +19,7 @@ Bug description: $ARGUMENTS
 
 ## Phase 2: Trace
 1. Read `.claude/rules/project-status.md` — verify current architecture state
-2. Use Grep/Read to locate the relevant code
+2. Locate the relevant code
 2. Trace the call path: Router → UseCase → Service → Repository
 3. Inspect conversion boundaries:
    - Is there data loss when passing Request → UseCase?

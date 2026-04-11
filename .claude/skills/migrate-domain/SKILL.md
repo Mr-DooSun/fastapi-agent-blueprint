@@ -58,7 +58,7 @@ alembic history         # Full history
 6. After approval, apply with `alembic upgrade head`
 
 ### Migration after modifying an existing domain model
-1. Verify Model changes (compare before/after using Grep/Read)
+1. Verify Model changes (compare before/after)
 2. `alembic revision --autogenerate -m "{name}: {change description}"`
 3. Review the generated file
 4. After user approval, `alembic upgrade head`

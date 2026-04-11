@@ -17,7 +17,7 @@ Request: $ARGUMENTS (format: "from:{consumer} to:{provider}", e.g.: "from:order 
 1. Identify the consumer domain and the provider domain
 2. Read `.claude/rules/architecture-conventions.md` — verify object roles and data flow
 3. Determine what functionality the consumer needs from the provider
-4. Explore the current structure of both domains (using Grep/Read)
+4. Explore the current structure of both domains
 
 ## Core Rules
 - The consumer's Service depends only on the provider's **Protocol** (direct import of implementation is prohibited)

@@ -98,13 +98,14 @@ All proposals and designs must consider scalability, maintainability, and team c
 > pyright-lsp plugin provides native LSP code intelligence.
 
 ### Code Exploration / Reading (by priority)
-1. **Grep/Glob** (primary): locate files, search string patterns, explore config files
-2. **Read** (detailed): non-code files, config files, or when full file content is needed
-3. **pyright-lsp** (automatic): symbol navigation, go-to-definition, find-references, diagnostics
-   - Available natively; no explicit tool calls needed for most operations
+1. **pyright-lsp** (symbol navigation): goToDefinition, findReferences, documentSymbol, getDiagnostics
+   - Most token-efficient for symbol definition, reference tracking, file structure
+   - Required plugin — registered via `enabledPlugins` in settings.json
+2. **Grep/Glob** (pattern search): string patterns, config files, non-code files
+3. **Read** (full content): when full file content is needed
 
 ### Impact Analysis
-- For refactoring/signature changes: Grep + pyright-lsp diagnostics
+- For refactoring/signature changes: pyright-lsp `findReferences`
 - For simple string search: Grep
 
 ### Editing

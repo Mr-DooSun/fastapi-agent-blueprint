@@ -14,7 +14,7 @@ Request: $ARGUMENTS
 ## Analysis
 
 1. Identify from the request: domain name, HTTP method, path, purpose
-2. Use Grep/Read to explore the domain's existing Router, Service, Repository (also check UseCase if present)
+2. Explore the domain's existing Router, Service, Repository (also check UseCase if present)
 3. Determine what is needed:
    - Is a new Request/Response DTO required? (Or are existing ones sufficient?)
    - Is a new Service method required? (Or are BaseService methods sufficient?)
