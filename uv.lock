@@ -803,17 +803,13 @@ dependencies = [
     { name = "greenlet" },
     { name = "gunicorn" },
     { name = "httpx" },
-    { name = "locust" },
     { name = "nicegui" },
-    { name = "pre-commit" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic-settings" },
     { name = "pymysql" },
     { name = "python-dotenv" },
     { name = "sqlalchemy" },
     { name = "taskiq", extra = ["reload"] },
-    { name = "types-aiobotocore-dynamodb" },
-    { name = "types-aiobotocore-s3" },
     { name = "uvicorn" },
 ]
 
@@ -829,11 +825,15 @@ sqs = [
 dev = [
     { name = "aiosqlite" },
     { name = "anyio" },
+    { name = "locust" },
+    { name = "pre-commit" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "ruff" },
+    { name = "types-aiobotocore-dynamodb" },
+    { name = "types-aiobotocore-s3" },
 ]
 
 [package.metadata]
@@ -851,9 +851,7 @@ requires-dist = [
     { name = "greenlet", specifier = ">=3.2.0" },
     { name = "gunicorn", specifier = ">=23.0.0" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "locust", specifier = ">=2.37.11" },
     { name = "nicegui", specifier = ">=3.5.0" },
-    { name = "pre-commit", specifier = ">=4.2.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.12" },
     { name = "pydantic-settings", specifier = ">=2.10.1" },
     { name = "pymysql", specifier = ">=1.1.1" },
@@ -862,8 +860,6 @@ requires-dist = [
     { name = "taskiq", extras = ["reload"], specifier = ">=0.12.1" },
     { name = "taskiq-aio-pika", marker = "extra == 'rabbitmq'", specifier = ">=0.4.0" },
     { name = "taskiq-aws", marker = "extra == 'sqs'", specifier = ">=0.4.0" },
-    { name = "types-aiobotocore-dynamodb", specifier = ">=2.25.0" },
-    { name = "types-aiobotocore-s3", specifier = ">=2.25.0" },
     { name = "uvicorn", specifier = ">=0.34.1" },
 ]
 provides-extras = ["sqs", "rabbitmq"]
@@ -872,11 +868,15 @@ provides-extras = ["sqs", "rabbitmq"]
 dev = [
     { name = "aiosqlite", specifier = ">=0.21.0" },
     { name = "anyio", extras = ["asyncio"], specifier = ">=4.0.0" },
+    { name = "locust", specifier = ">=2.37.11" },
+    { name = "pre-commit", specifier = ">=4.2.0" },
     { name = "pyright", specifier = ">=1.1.408" },
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.23.0" },
     { name = "pytest-cov", specifier = ">=5.0.0" },
     { name = "ruff", specifier = ">=0.15.7" },
+    { name = "types-aiobotocore-dynamodb", specifier = ">=2.25.0" },
+    { name = "types-aiobotocore-s3", specifier = ">=2.25.0" },
 ]
 
 [[package]]
