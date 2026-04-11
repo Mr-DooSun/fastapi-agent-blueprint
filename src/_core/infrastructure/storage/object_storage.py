@@ -28,7 +28,10 @@ class ObjectStorage:
                     Fileobj=file_obj,
                     Bucket=self.bucket_name,
                     Key=key,
-                    ExtraArgs={"ContentType": content_type},
+                    ExtraArgs={
+                        "ContentType": content_type,
+                        "ServerSideEncryption": "AES256",
+                    },
                 )
                 return key
         except ClientError as e:
