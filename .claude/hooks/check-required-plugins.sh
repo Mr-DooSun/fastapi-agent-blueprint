@@ -17,4 +17,14 @@ if ! command -v pyright-langserver &>/dev/null; then
     echo "======================================================="
 fi
 
+if [ -z "${CONTEXT7_API_KEY:-}" ]; then
+    echo ""
+    echo "=== [WARNING] CONTEXT7_API_KEY not set ==="
+    echo "This project uses context7 MCP for library documentation lookup."
+    echo ""
+    echo "Get your API key: https://context7.com/docs/howto/api-keys"
+    echo "Then set: export CONTEXT7_API_KEY=ctx7sk-xxxx"
+    echo "================================================"
+fi
+
 exit 0
