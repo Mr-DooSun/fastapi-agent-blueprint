@@ -9,7 +9,7 @@ Each document captures the context and decision criteria for "why this technolog
 |---|-------|--------|---------|------|
 | [000](000-rabbitmq-to-celery.md) | Migration from RabbitMQ to Celery | Superseded by 001 | Done | 2025-09-10 |
 | [001](001-celery-to-taskiq.md) | Migration from Celery to Taskiq | Accepted | Done | 2025-12-24 |
-| [002](002-serena-adoption.md) | Serena MCP Server Adoption and Claude Code Parallel Strategy | Accepted | Done | 2026-03-18 |
+| [002](002-serena-adoption.md) | Serena MCP Server Adoption and Claude Code Parallel Strategy | Superseded by 030 | Done | 2026-03-18 |
 | [003](003-response-request-pattern.md) | Response/Request Pattern Design | Accepted | Done | 2025-03 ~ 2025-09 |
 | [004](004-dto-entity-responsibility.md) | DTO/Entity Responsibility Redefinition | Accepted | Done | 2025-07-15 |
 | [005](005-poetry-to-uv.md) | Migration from Poetry to uv | Accepted | Done | 2025-04 |
@@ -37,6 +37,7 @@ Each document captures the context and decision criteria for "why this technolog
 | [027](027-flexible-rdb-configuration.md) | Flexible RDB Configuration with Multi-Engine Support | Accepted | Done | 2026-04-08 |
 | [028](028-environment-config-validation.md) | Environment-Aware Configuration Validation | Accepted | Done | 2026-04-08 |
 | [029](029-broker-abstraction-selector.md) | Broker Abstraction with providers.Selector for Multi-Backend Selection | Accepted | Done | 2026-04-09 |
+| [030](030-serena-removal-pyright-rules.md) | Serena Removal: Migration to pyright-lsp and .claude/rules/ | Accepted | Done | 2026-04-11 |
 
 ## Future Considerations (Open Issues)
 
