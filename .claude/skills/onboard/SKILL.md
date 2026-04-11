@@ -11,16 +11,16 @@ description: |
 # Interactive Onboarding for New Team Members
 
 > **Design Principle**: This skill does not have its own architecture documentation.
-> All information is read at runtime from existing sources (README.md, ADR, project-dna.md, CLAUDE.md, Serena memory, src/user/ code).
+> All information is read at runtime from existing sources (README.md, ADR, project-dna.md, CLAUDE.md, .claude/rules/, src/user/ code).
 > When the structure changes, the source is updated, and onboarding automatically reflects the latest content.
 
 ## Pre-check: Collect Project State
 
 Execute the following to understand the current project state (do not output to the user):
 
-1. Read Serena `project_overview` memory -- tech stack and app structure
-2. Read Serena `project_status` memory -- confirm work in progress
-3. Read Serena `architecture_conventions` memory -- current DO/DON'T rules
+1. Read `.claude/rules/project-overview.md` -- tech stack and app structure
+2. Read `.claude/rules/project-status.md` -- confirm work in progress
+3. Read `.claude/rules/architecture-conventions.md` -- current DO/DON'T rules
 4. Glob `src/*/` to identify current domain list (excluding `_core`, `_apps`)
 5. `git log --oneline -5` to check recent activity
 
@@ -66,7 +66,7 @@ When the user selects **Q&A** format, apply the following rules to **all Phases 
 1. **Topic Map**: At the start of each Phase, present a brief overview with a numbered list of explorable topics.
    Each topic should include a one-line description so the user can judge what to ask about.
 2. **User-Driven**: Wait for the user's questions. Answer by referencing the same sources as Guided mode
-   (ADR, code, Serena memory, project-dna.md, CLAUDE.md, etc.).
+   (ADR, code, .claude/rules/, project-dna.md, CLAUDE.md, etc.).
 3. **Coverage Tracking**: Internally track which topics have been addressed by the user's questions.
 4. **Gap Check**: When the user says 'next' (or equivalent), check for any **critical uncovered topics**.
    If found, briefly mention them: "Before moving on, these are worth knowing: ..." (1-2 sentences each).
@@ -81,7 +81,7 @@ When the user selects **Explore** format, Phase 1-5 boundaries are removed. The 
 1. **Entry Point**: Show the project directory tree (`src/` top-level structure) as a starting point.
    The user points at any file, directory, class, or function to ask about.
 2. **On-Demand Explanation**: When the user points at code, explain it using the same sources as Guided mode
-   (ADR, Serena memory, project-dna.md, CLAUDE.md, live code reading, etc.).
+   (ADR, .claude/rules/, project-dna.md, CLAUDE.md, live code reading, etc.).
    Connect to design decisions and architecture context where relevant.
 3. **Coverage Tracking**: Internally map the user's questions to the critical topics across all Phases:
    - Phase 1 critical: structural evolution (ADR 006), Entity→DTO (ADR 004), 3-Tier Hybrid (ADR 011), IoC Container (ADR 013)
@@ -161,14 +161,14 @@ Reference the ADRs in `docs/history/` directory and convey in narrative form wha
 Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the following:
 - This project is designed for pair programming with Claude Code
 - 14 Skills (slash commands) automate domain creation, API addition, architecture verification, etc.
-- MCP servers (Serena, context7) support symbolic code exploration and library documentation lookup
+- pyright-lsp plugin provides native code intelligence; context7 MCP provides library documentation lookup
 - Skills reference project-dna.md and CLAUDE.md to automatically follow project rules
 
 > "If you have any questions, feel free to ask. Otherwise, say 'next'."
 
 ## Phase 2: Project Overview
 
-**Information Source**: `project-dna.md sections 0-1`, Serena `project_overview` memory
+**Information Source**: `project-dna.md sections 0-1`, `.claude/rules/project-overview.md`
 
 **Q&A Mode**: Present the following topic map and wait for questions.
 > **Phase 2 Topics -- Project Structure**
@@ -197,7 +197,7 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 
 4. Show the current domain list and recent git activity collected during Pre-check.
 
-5. Present the tech stack read from Serena `project_overview` memory.
+5. Present the tech stack read from `.claude/rules/project-overview.md`.
 
 **Experience level adjustment** (refer to `role-tracks.md` section 2):
 - **Beginner**: Additional explanation of DI Container, Protocol, Pydantic BaseModel
@@ -257,7 +257,7 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 2. Read the actual code from the `src/user/` domain live and show concrete examples:
 
    **Write Path (Create):**
-   - Read the Request DTO with Serena `find_symbol` and show the field structure
+   - Read the Request DTO with Grep/Read and show the field structure
    - Read the Router's create method and show the Request -> Service passing pattern
    - Read the Repository's insert method and show the `Model(**entity.model_dump())` conversion
 
@@ -272,7 +272,7 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 
 ## Phase 5: Development Workflow and Skills
 
-**Information Source**: `CLAUDE.md` Skills section, Serena `suggested_commands` memory
+**Information Source**: `CLAUDE.md` Skills section, `.claude/rules/commands.md`
 
 **Q&A Mode**: Present the following topic map and wait for questions.
 > **Phase 5 Topics -- Workflow & Skills**
@@ -289,7 +289,7 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
    > "When developing a new feature, use Skills in this order:"
    > Design(`/plan-feature`) -> Create(`/new-domain`, `/add-api`) -> Verify(`/review-architecture`, `/test-domain`) -> Fix(`/fix-bug`)
 
-2. Read Serena `suggested_commands` memory and present frequently used commands (server start, tests, lint, etc.).
+2. Read `.claude/rules/commands.md` and present frequently used commands (server start, tests, lint, etc.).
 
 **Experience level adjustment**:
 - **Advanced**: Present Skills list only

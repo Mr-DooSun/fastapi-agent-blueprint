@@ -20,7 +20,7 @@ Rule sources to load:
 - `${CLAUDE_SKILL_DIR}/../review-architecture/references/checklist.md` — 20+ architecture checklist items
 - `${CLAUDE_SKILL_DIR}/../security-review/references/security-checklist.md` — OWASP security items
 - `${CLAUDE_SKILL_DIR}/../_shared/project-dna.md` — conversion patterns, DI rules, base classes
-- Serena `architecture_conventions` memory — DO/DON'T rules
+- `.claude/rules/architecture-conventions.md` — DO/DON'T rules
 - `CLAUDE.md` — Absolute Prohibitions
 
 ## Difference from `/review-architecture`
@@ -55,7 +55,7 @@ Rule sources to load:
   - `interface/` files → Response field exposure, Router patterns
   - `application/` files → UseCase patterns
   - `migrations/` files → upgrade/downgrade existence
-- When surrounding context is needed, use Serena `find_symbol` to read related code
+- When surrounding context is needed, use Grep/Read to read related code
   (e.g., cross-reference DTO fields with Response exclude set)
 - Assign severity from the checklist source's own categorization
 

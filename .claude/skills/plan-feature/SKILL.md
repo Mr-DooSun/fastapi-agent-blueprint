@@ -13,9 +13,9 @@ Description: $ARGUMENTS
 
 ## Preparation
 
-1. Read Serena `architecture_conventions` memory -- confirm current DO/DON'T rules
-2. Read Serena `project_status` memory -- confirm work currently in progress
-3. Read Serena `project_overview` memory -- confirm tech stack and structure
+1. Read `.claude/rules/architecture-conventions.md` -- confirm current DO/DON'T rules
+2. Read `.claude/rules/project-status.md` -- confirm work currently in progress
+3. Read `.claude/rules/project-overview.md` -- confirm tech stack and structure
 4. Identify current domain list: use Glob pattern `src/*/` and exclude `_core`, `_apps` prefixes
 
 ## Phase 0: Requirements Interview
@@ -47,7 +47,7 @@ Determine whether changes/additions are needed for each layer:
 ### 1.2 Domain Impact Analysis
 - Is modifying existing domains sufficient? -> Which layer of which domain?
 - Is a new domain needed? -> Suggest domain name with rationale
-- Search related existing code with Serena `find_symbol`
+- Search related existing code with Grep/Glob
 
 ### 1.3 DTO Decision
 Decide based on the Write DTO criteria in CLAUDE.md:

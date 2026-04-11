@@ -39,9 +39,9 @@ Read each skill's SKILL.md and compare against reference code:
 - [ ] **`/onboard`**: Verify the recommended Skills list in role-tracks.md matches the actual skill list
 - [ ] **`/onboard`**: Verify format options (Guided, Q&A, Explore) are consistent between SKILL.md and role-tracks.md
 
-## 3. Serena Memory ↔ Current State Check
+## 3. `.claude/rules/` ↔ Current State Check
 
-Read each Serena memory and compare against current code:
+Read each `.claude/rules/` file and compare against current code:
 
 ### architecture_conventions
 - [ ] Data flow: RDB + DynamoDB 양쪽 variant 포함?
@@ -64,21 +64,21 @@ Read each Serena memory and compare against current code:
 - [ ] Architecture 검증 grep: 현행 위반 규칙 탐지 (구시대 패턴 아님)?
 - [ ] Test 명령: 인프라 variant별 커버 (RDB, DynamoDB, Broker)?
 
-### All memories
-- [ ] 각 메모리의 "Last synced" 날짜가 2주 이내?
+### All rules files
+- [ ] 각 rules 파일의 "Last synced" 날짜가 2주 이내?
 
 ## 4. project-dna.md ↔ Code Consistency Check
 
 Compare each section of `.claude/skills/_shared/project-dna.md` against actual code:
 
 - [ ] **Layer structure**: Verify the directory structure in project-dna.md §1 matches the actual `src/user/` structure
-  - Compare against Serena `get_symbols_overview` or Glob `src/user/**/*.py` results
+  - Compare against Glob `src/user/**/*.py` results
 - [ ] **Base class paths**: Verify all import paths in §2 match actual file locations
   - Confirm each path can import the class from the corresponding module
 - [ ] **Generic types**: Verify signatures in §3 match current Base class definitions
   - Check `BaseRepositoryProtocol`, `BaseRepository`, `SuccessResponse` class definitions
 - [ ] **CRUD methods**: Verify the `BaseRepositoryProtocol` method list in §4 is up to date
-  - Serena `get_symbols_overview` → compare method lists
+  - Grep/Read → compare method lists
 - [ ] **DI patterns**: Verify Singleton/Factory mappings in §5 match current `UserContainer` code
 - [ ] **Conversion Patterns**: Verify `model_validate`/`model_dump` usage in §6 matches current implementation
 - [ ] **Security tools**: Verify the tool list in §7 matches `pyproject.toml` and `.pre-commit-config.yaml`

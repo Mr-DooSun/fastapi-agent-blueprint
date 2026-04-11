@@ -15,9 +15,9 @@ Request: $ARGUMENTS (format: "from:{consumer} to:{provider}", e.g.: "from:order 
 ## Analysis
 
 1. Identify the consumer domain and the provider domain
-2. Read Serena `architecture_conventions` memory — verify object roles and data flow
+2. Read `.claude/rules/architecture-conventions.md` — verify object roles and data flow
 3. Determine what functionality the consumer needs from the provider
-4. Explore the current structure of both domains (using Serena `find_symbol`)
+4. Explore the current structure of both domains (using Grep/Read)
 
 ## Core Rules
 - The consumer's Service depends only on the provider's **Protocol** (direct import of implementation is prohibited)
