@@ -80,6 +80,7 @@ Advanced users are already familiar with DDD/DI, so deliver only what differenti
 10. `/fix-bug` -> Bug fixes
 11. `/sync-guidelines` -> Guideline synchronization
 12. `/migrate-domain` -> DB migration
+13. `/review-pr` -> PR review
 
 ## 4. Recommended Next Steps (by Experience Level)
 

@@ -1,6 +1,6 @@
 # Architecture Conventions
 
-> Last synced: 2026-04-09 via /sync-guidelines
+> Last synced: 2026-04-10 via /sync-guidelines
 > For Absolute Prohibitions (including CLAUDE.md modification rules), Conversion Patterns, and Write DTO criteria, refer to CLAUDE.md.
 > This memory only contains **structural context** not covered in CLAUDE.md.
 

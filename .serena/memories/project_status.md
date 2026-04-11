@@ -1,13 +1,13 @@
 # Project Status
 
-> Last synced: 2026-04-09 via /sync-guidelines
+> Last synced: 2026-04-10 via /sync-guidelines
 
 ## Current Version Context
-- Latest release: v0.2.0 (2026-04-07)
+- Latest release: v0.3.0 (2026-04-10)
 - Active domains: user (reference domain)
 - Infrastructure: RDB (PostgreSQL/MySQL/SQLite), DynamoDB, S3, Broker (SQS/RabbitMQ/InMemory)
 
-## Recent Major Changes (since v0.2.0)
+## Recent Major Changes (since v0.3.0)
 | Feature | Issue | Impact |
 |---------|-------|--------|
 | NiceGUI Admin Dashboard | #14 | New interface layer: admin/ (configs + pages) |

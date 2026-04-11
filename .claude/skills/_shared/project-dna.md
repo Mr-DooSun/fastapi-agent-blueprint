@@ -3,7 +3,7 @@
 > This file is auto-extracted/updated from `src/user/` (reference domain) and `src/_core/` (Base classes)
 > when `/sync-guidelines` is run. **Run `/sync-guidelines` instead of editing manually.**
 >
-> Last updated: 2026-04-09
+> Last updated: 2026-04-10
 
 ## Section Index
 §0 Project Scale and Design Philosophy |
@@ -377,12 +377,17 @@ broker = providers.Selector(
 ### Pre-commit (Auto-run)
 
 - trailing-whitespace, end-of-file-fixer, check-yaml/json/toml
+- check-added-large-files (1MB), check-merge-conflict, debug-statements, mixed-line-ending (LF)
 - ruff check --fix (Unified rules for E, W, F, UP, I, B, C4, SIM, S -- replaces pyupgrade, autoflake, isort, flake8, bandit)
 - ruff format (Black-compatible formatting)
 
 ### Pre-commit (Manual Stage)
 
 - mypy (--ignore-missing-imports, --check-untyped-defs)
+
+### Commit Message
+
+- conventional-pre-commit (feat, fix, refactor, docs, chore, test, ci, perf, style, i18n)
 
 ### Architecture Violation Check (Auto-run)
 
