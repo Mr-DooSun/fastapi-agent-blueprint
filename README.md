@@ -197,19 +197,7 @@ The `/onboard` skill adapts to your experience and learning style:
 
 ### MCP Server Setup
 
-To use AIDD features, configure these MCP servers:
-
-**Serena** -- Symbolic code navigation/editing (LSP-level rename, reference analysis)
-```json
-{
-  "mcpServers": {
-    "serena": {
-      "command": "uvx",
-      "args": ["--from", "serena-mcp", "serena", "--project-root", "."]
-    }
-  }
-}
-```
+To use AIDD features, configure the context7 MCP server. Code intelligence is provided natively by the pyright-lsp plugin.
 
 **context7** -- Up-to-date library documentation
 ```json

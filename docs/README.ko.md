@@ -195,19 +195,7 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 
 ### MCP 서버 설정
 
-AIDD 기능을 사용하려면 다음 MCP 서버를 설정하세요:
-
-**Serena** -- 심볼릭 코드 탐색/편집 (LSP 수준의 rename, reference 분석)
-```json
-{
-  "mcpServers": {
-    "serena": {
-      "command": "uvx",
-      "args": ["--from", "serena-mcp", "serena", "--project-root", "."]
-    }
-  }
-}
-```
+AIDD 기능을 사용하려면 context7 MCP 서버를 설정하세요. 코드 인텔리전스는 pyright-lsp 플러그인이 네이티브로 제공합니다.
 
 **context7** -- 라이브러리 최신 문서 조회
 ```json

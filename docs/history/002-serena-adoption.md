@@ -1,6 +1,6 @@
 # 002. Serena MCP Server Adoption and Claude Code Parallel Strategy
 
-- Status: Accepted
+- Status: Superseded by 030
 - Date: 2026-03-18
 - Related issue: #57
 
