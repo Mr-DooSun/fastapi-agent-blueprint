@@ -54,6 +54,7 @@ from src.{name}.interface.server.schemas.{name}_schema import (
     Create{Name}Request,
     Update{Name}Request,
 )
+from src.{name}.interface.worker.payloads.{name}_payload import {Name}TestPayload
 
 def make_{name}_dto(
     id: int = 1,

@@ -1,8 +1,8 @@
 # Domain Scaffolding Layer Details
 
 ## File Count Summary
-- **Default (no UseCase)**: 15 content + 23 `__init__.py` + 3 tests = **41 files**
-- **With UseCase**: 16 content + 25 `__init__.py` + 4 tests = **45 files**
+- **Default (no UseCase)**: 15 content + 25 `__init__.py` + 4 tests = **44 files**
+- **With UseCase**: 16 content + 25 `__init__.py` + 5 tests = **46 files**
 
 > Every Python package directory gets an empty `__init__.py`.
 > The numbered items below are **content files only** — `__init__.py` files are created automatically
@@ -227,3 +227,4 @@ When the domain uses DynamoDB instead of RDB, replace `infrastructure/database/`
 19. `tests/unit/{name}/domain/test_{name}_service.py` — MockRepository + CRUD tests
 20. `tests/unit/{name}/application/test_{name}_use_case.py` — **only when UseCase exists** MockService + tests
 21. `tests/integration/{name}/infrastructure/test_{name}_repository.py` — uses test_db fixture
+22. `tests/e2e/{name}/test_{name}_router.py` — TestClient HTTP 요청 테스트

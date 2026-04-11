@@ -17,6 +17,7 @@
 | Broker Abstraction | #8 | providers.Selector for SQS/RabbitMQ/InMemory |
 | BaseService 3-TypeVar | ADR 011 | Generic[CreateDTO, UpdateDTO, ReturnDTO] restoration |
 | Password Hashing | - | hash_password/verify_password in _core.common.security |
+| Serena Removal & Pyright Adoption | #63 | pyright-lsp 기본 코드 인텔리전스, PostToolUse 포맷팅 훅, tool-agnostic 스킬 전환 |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN
