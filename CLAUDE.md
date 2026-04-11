@@ -5,8 +5,8 @@ This project is an AI Agent Backend Platform targeting enterprise-grade services
 All proposals and designs must consider scalability, maintainability, and team collaboration at this scale.
 
 ## Pre-work Checklist
-1. Check current project status via Serena `project_status` memory
-2. Check DO/DON'T via Serena `architecture_conventions` memory
+1. Check current project status via `.claude/rules/project-status.md` (auto-loaded)
+2. Check DO/DON'T via `.claude/rules/architecture-conventions.md` (auto-loaded)
 
 ## Absolute Prohibitions
 - No Infrastructure imports from the Domain layer
@@ -42,7 +42,7 @@ All proposals and designs must consider scalability, maintainability, and team c
 - **Update related documentation when changing code** — before committing, check:
   1. Skills SKILL.md and references/ that reference the changed patterns
   2. Relevant sections of project-dna.md
-  3. Serena memories (architecture_conventions, etc.)
+  3. `.claude/rules/` files (architecture-conventions, project-status, etc.)
   4. When delegating to agents, explicitly pass the list of changed files
 
 ## Security Principles
@@ -94,23 +94,22 @@ All proposals and designs must consider scalability, maintainability, and team c
 
 ## Tool Selection Guidelines
 
-> Serena and context7 are project-required MCP servers (configured via `.mcp.json`).
+> context7 is a project-required MCP server (configured via `.mcp.json`).
+> pyright-lsp plugin provides native LSP code intelligence.
 
 ### Code Exploration / Reading (by priority)
-1. **Serena symbol tools** (default): `get_symbols_overview` → `find_symbol(include_body=True)`
-   - Understand file structure, read specific methods, navigate class hierarchy
-   - Token-efficient, essential for large codebases
-2. **Grep/Glob** (auxiliary): locate files, search string patterns, explore config files
-3. **Read** (last resort): non-code files, config files, or when symbol exploration is insufficient
+1. **Grep/Glob** (primary): locate files, search string patterns, explore config files
+2. **Read** (detailed): non-code files, config files, or when full file content is needed
+3. **pyright-lsp** (automatic): symbol navigation, go-to-definition, find-references, diagnostics
+   - Available natively; no explicit tool calls needed for most operations
 
 ### Impact Analysis
-- For refactoring/signature changes: prioritize Serena `find_referencing_symbols`
+- For refactoring/signature changes: Grep + pyright-lsp diagnostics
 - For simple string search: Grep
 
 ### Editing
-- Full symbol replacement (methods, classes): Serena `replace_symbol_body`
-- Partial modification (few lines): Claude Code `Edit`
-- New code insertion: Serena `insert_before/after_symbol` or `Edit`
+- All edits: Claude Code `Edit` tool
+- PostToolUse hook auto-formats `.py` files after edits (ruff format + check)
 
 ### Routine Tasks
 - Domain creation/API addition/tests/etc.: Skills (`/new-domain`, `/add-api`, etc.)
