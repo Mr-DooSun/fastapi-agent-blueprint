@@ -73,7 +73,7 @@ Read each `.claude/rules/` file and compare against current code:
 - [ ] App Entrypoints: `src/_apps/` 하위 디렉터리와 일치?
 - [ ] Environment Config: `src/_core/config.py` Settings validators와 일치?
 
-### suggested_commands
+### commands (`.claude/rules/commands.md`)
 - [ ] Run 명령: 현재 entrypoint 파일과 일치?
 - [ ] Architecture 검증 grep: 현행 위반 규칙 탐지 (구시대 패턴 아님)?
 - [ ] Test 명령: 인프라 variant별 커버 (RDB, DynamoDB, Broker)?
