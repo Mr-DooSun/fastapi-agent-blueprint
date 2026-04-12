@@ -9,7 +9,6 @@ Tool-specific harness files must reference this document instead of duplicating 
 - `.codex/config.toml` — Codex CLI project settings, profiles, feature flags, and MCP configuration
 - `.codex/hooks.json` — Codex command-hook configuration
 - `.agents/skills/` — repo-local Codex workflow skills
-- `.agents/plugins/` — repo-local Codex plugin marketplace and plugin package
 - `docs/ai/shared/` — shared workflow references consumed by both Claude and Codex
 - `.mcp.json` — Claude-only MCP server configuration
 
@@ -124,7 +123,7 @@ uv run alembic current
   - `CLAUDE.md`
   - `docs/ai/shared/`
   - `.claude/rules/` and `.claude/skills/` references when relevant
-  - `.codex/hooks.json`, `.codex/rules/`, `.agents/skills/`, and `.agents/plugins/` when relevant
+  - `.codex/hooks.json`, `.codex/rules/`, and `.agents/skills/` when relevant
 - If architecture or shared patterns change, inspect drift before closing the work
   - Claude workflow entry point: `/sync-guidelines`
   - Codex workflow: use `$sync-guidelines` or follow the documented verification steps in `README.md` / `CONTRIBUTING.md`

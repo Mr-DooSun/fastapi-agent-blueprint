@@ -17,7 +17,6 @@ metadata:
    - `.codex/config.toml`
    - `.codex/hooks.json`
    - `.agents/skills/`
-   - `.agents/plugins/`
 3. Use `src/user/` as the reference domain for current patterns.
 4. Report drift clearly, then update the affected docs or workflow assets.
 5. After updates, re-run the inspection until major drift is gone.

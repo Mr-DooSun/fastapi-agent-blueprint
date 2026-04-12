@@ -7,7 +7,7 @@
 
 ## Summary
 
-After completing the thin Codex harness from ADR 031, we now adopt Codex-native workflow assets: repo-local skills, command hooks, plugin packaging, and shared workflow references that both Claude and Codex can consume.
+After completing the thin Codex harness from ADR 031, we now adopt Codex-native workflow assets: repo-local skills, command hooks, and shared workflow references that both Claude and Codex can consume.
 
 ## Background
 
@@ -57,7 +57,6 @@ Adopt a layered Codex operating model:
 
 - `.agents/skills/` provides repo-local Codex workflows with names aligned to Claude skills.
 - `.codex/hooks.json` plus `.codex/hooks/` provides command-focused Codex hooks.
-- `.agents/plugins/marketplace.json` and a repo-local plugin package provide discoverability and packaging.
 - `.codex/config.toml` remains the Codex base config and now adds a dedicated `research` profile for live web search.
 
 ### Layer 3: Context management rules
@@ -75,7 +74,6 @@ Adopt a layered Codex operating model:
 | Extract shared references to `docs/ai/shared/` | Lets Claude and Codex read the same workflow knowledge |
 | Add repo-local Codex skills | Restores repeatable workflows without bloating root instructions |
 | Add Codex hooks | Gives Codex command-time enforcement and reminders similar in outcome to Claude hooks |
-| Add plugin packaging | Makes Codex workflow assets discoverable and installable as a unit |
 | Use a `research` profile for web search | Keeps default sessions repo-first while still supporting deliberate live research |
 | Keep memories non-canonical | Avoids hidden, user-local rule drift |
 
@@ -83,7 +81,7 @@ Adopt a layered Codex operating model:
 
 - Codex now has a first-class repository workflow layer instead of only a bootstrap config.
 - Claude and Codex share the same governance references, which reduces drift.
-- Verification expands from MCP and prompt-doc checks to skills, hooks, and plugin discoverability.
+- Verification expands from MCP and prompt-doc checks to skills and hooks.
 - Future workflow additions should update `docs/ai/shared/` first, then the Claude/Codex entrypoints that reference it.
 
 ### Self-check

@@ -175,7 +175,6 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 | `.codex/config.toml` | Codex CLI 전용 프로젝트 설정, profile, feature, MCP 구성 |
 | `.codex/hooks.json` | Codex 명령 훅 설정 |
 | `.agents/skills/` | repo-local Codex workflow skill |
-| `.agents/plugins/` | repo-local Codex marketplace 및 plugin package |
 
 ### 공통 규칙 우선
 
@@ -270,7 +269,6 @@ Codex의 레포 workflow layer는 다음으로 나뉩니다:
 - `.codex/config.toml` — base config와 profile
 - `.codex/hooks.json` + `.codex/hooks/` — command hook
 - `.agents/skills/` — `$onboard`, `$plan-feature`, `$review-pr` 같은 repo-local workflow
-- `.agents/plugins/` — repo-local marketplace와 plugin package
 - `docs/ai/shared/` — Claude/Codex 공통 reference
 
 권장 검증 흐름:
@@ -568,7 +566,7 @@ src/
 - [x] 도메인 자동 발견
 - [x] 아키텍처 강제 (pre-commit)
 - [x] 14개 Claude Code 스킬
-- [x] Codex CLI workflow layer (`.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`, `.agents/plugins/`)
+- [x] Codex CLI workflow layer (`.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`)
 
 스타를 눌러 진행 상황을 팔로우하세요!
 

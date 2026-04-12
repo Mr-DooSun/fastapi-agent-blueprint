@@ -50,7 +50,7 @@ Start from [AGENTS.md](AGENTS.md), which is the canonical source for shared rule
 
 Tool-specific harness files:
 - Claude: [CLAUDE.md](CLAUDE.md), [.mcp.json](.mcp.json), [.claude/settings.json](.claude/settings.json)
-- Codex: [.codex/config.toml](.codex/config.toml), [.codex/hooks.json](.codex/hooks.json), [.agents/skills](.agents/skills), [.agents/plugins](.agents/plugins)
+- Codex: [.codex/config.toml](.codex/config.toml), [.codex/hooks.json](.codex/hooks.json), [.agents/skills](.agents/skills)
 
 Do not duplicate shared architecture rules into tool-specific docs. Update `AGENTS.md` first, then adjust the harness docs that reference it.
 Shared workflow references that both tools consume live under [docs/ai/shared](docs/ai/shared).
@@ -71,7 +71,7 @@ Verification:
 
 1. Trust the project in Codex.
 2. Confirm `.codex/config.toml` is present and committed.
-3. Confirm `.codex/hooks.json`, `.agents/skills/`, and `.agents/plugins/marketplace.json` are present and committed.
+3. Confirm `.codex/hooks.json` and `.agents/skills/` are present and committed.
 4. Run the following from the repository root:
 
 ```bash

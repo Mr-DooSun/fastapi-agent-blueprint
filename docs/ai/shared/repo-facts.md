@@ -7,7 +7,7 @@ This file contains stable repository facts for both Claude and Codex workflows.
 - Shared rules: `AGENTS.md`
 - Shared workflow references: `docs/ai/shared/`
 - Claude harness: `CLAUDE.md`, `.claude/`
-- Codex harness: `.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`, `.agents/plugins/`
+- Codex harness: `.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`
 
 ## Reference Code
 

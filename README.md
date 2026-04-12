@@ -176,7 +176,6 @@ This template works great on its own. For AI-native development, the repository 
 | `.codex/config.toml` | Codex CLI project settings, profiles, features, and MCP configuration |
 | `.codex/hooks.json` | Codex command-hook configuration |
 | `.agents/skills/` | Repo-local Codex workflow skills |
-| `.agents/plugins/` | Repo-local Codex marketplace and plugin package |
 
 ### Shared Rules First
 
@@ -272,7 +271,6 @@ Codex's repository workflow layer is split across:
 - `.codex/config.toml` for base config and profiles
 - `.codex/hooks.json` plus `.codex/hooks/` for command hooks
 - `.agents/skills/` for repo-local workflows such as `$onboard`, `$plan-feature`, `$review-pr`
-- `.agents/plugins/` for the repo-local marketplace and plugin package
 - `docs/ai/shared/` for shared references that both Claude and Codex consume
 
 Recommended verification flow:
@@ -570,7 +568,7 @@ Every technical choice in this project is documented as an ADR (Architecture Dec
 - [x] Auto domain discovery
 - [x] Architecture enforcement (pre-commit)
 - [x] 14 Claude Code skills
-- [x] Codex CLI workflow layer (`.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`, `.agents/plugins/`)
+- [x] Codex CLI workflow layer (`.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`)
 
 Star this repo to follow our progress!
 
