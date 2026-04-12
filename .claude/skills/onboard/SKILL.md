@@ -160,7 +160,7 @@ Reference the ADRs in `docs/history/` directory and convey in narrative form wha
 
 Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the following:
 - This project is designed for pair programming with Claude Code
-- 13 Claude Skills (slash commands) automate domain creation, API addition, architecture verification, etc.
+- 14 Claude Skills (slash commands) automate domain creation, API addition, architecture verification, etc.
 - pyright-lsp plugin provides native code intelligence; context7 MCP provides library documentation lookup
 - Skills reference `AGENTS.md`, project-dna.md, and Claude rules to automatically follow project rules
 
