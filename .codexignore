@@ -31,9 +31,9 @@ __pycache__/
 .nicegui/
 
 # ============================================
-# Cross-tool config (not relevant to Claude)
+# Cross-tool config (not relevant to Codex)
 # ============================================
-.codex/
+.claude/
 
 # ============================================
 # Binary assets
