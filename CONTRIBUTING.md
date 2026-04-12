@@ -50,9 +50,10 @@ Start from [AGENTS.md](AGENTS.md), which is the canonical source for shared rule
 
 Tool-specific harness files:
 - Claude: [CLAUDE.md](CLAUDE.md), [.mcp.json](.mcp.json), [.claude/settings.json](.claude/settings.json)
-- Codex: [.codex/config.toml](.codex/config.toml)
+- Codex: [.codex/config.toml](.codex/config.toml), [.codex/hooks.json](.codex/hooks.json), [.agents/skills](.agents/skills), [.agents/plugins](.agents/plugins)
 
 Do not duplicate shared architecture rules into tool-specific docs. Update `AGENTS.md` first, then adjust the harness docs that reference it.
+Shared workflow references that both tools consume live under [docs/ai/shared](docs/ai/shared).
 
 ## Claude Minimum Setup
 
@@ -70,18 +71,25 @@ Verification:
 
 1. Trust the project in Codex.
 2. Confirm `.codex/config.toml` is present and committed.
-3. Run the following from the repository root:
+3. Confirm `.codex/hooks.json`, `.agents/skills/`, and `.agents/plugins/marketplace.json` are present and committed.
+4. Run the following from the repository root:
 
 ```bash
 codex mcp list
 codex mcp get context7
 codex debug prompt-input -c 'project_doc_max_bytes=400' "healthcheck" | rg "Shared Collaboration Rules|AGENTS\\.md"
+codex execpolicy check --rules .codex/rules/fastapi-agent-blueprint.rules git push origin main
 ```
 
 Verification targets:
 - `context7` appears in `codex mcp list`
 - `codex mcp get context7` resolves the configured server
 - `codex debug prompt-input` includes `AGENTS.md` content when the project is trusted
+- `codex execpolicy check` returns a non-`allow` decision for protected commands
+
+Operational notes:
+- Web search stays off by default. Use `codex -p research` or `codex --search` only for live external research.
+- Codex memories are personal/session-local optimization and are not part of repository governance.
 
 ### Codex Local Exception: `~/.codex/sessions` Permission Issue
 

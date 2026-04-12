@@ -164,14 +164,18 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 
 ## AI 네이티브 개발 (AIDD)
 
-이 템플릿은 단독으로도 충분히 사용할 수 있습니다. 이제 AI 협업 구조는 **공통 규칙 + 도구별 하네스**로 정리되어 있습니다.
+이 템플릿은 단독으로도 충분히 사용할 수 있습니다. 이제 AI 협업 구조는 **공통 규칙 + 공통 레퍼런스 + 도구별 하네스**로 정리되어 있습니다.
 
 | 파일 | 역할 |
 |------|------|
 | `AGENTS.md` | 모든 AI 도구가 따라야 하는 공통 규칙의 canonical source |
+| `docs/ai/shared/` | Claude와 Codex가 함께 읽는 공통 workflow 레퍼런스와 체크리스트 |
 | `CLAUDE.md` | Claude 전용 hooks, plugins, slash skills, workflow 안내 |
 | `.mcp.json` | Claude 전용 MCP 설정 |
-| `.codex/config.toml` | Codex CLI 전용 프로젝트 설정 및 MCP 구성 |
+| `.codex/config.toml` | Codex CLI 전용 프로젝트 설정, profile, feature, MCP 구성 |
+| `.codex/hooks.json` | Codex 명령 훅 설정 |
+| `.agents/skills/` | repo-local Codex workflow skill |
+| `.agents/plugins/` | repo-local Codex marketplace 및 plugin package |
 
 ### 공통 규칙 우선
 
@@ -182,6 +186,8 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 - DTO 생성 기준
 - 기본 run/test/lint/migration 명령
 - 문서와 규칙 drift 관리 원칙
+
+루트 `AGENTS.md`에 다 담기 어려운 workflow 세부사항은 `docs/ai/shared/`에 둡니다. 예: `project-dna.md`, planning/security/review checklist, test pattern.
 
 ### Claude Code
 
@@ -194,7 +200,7 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 - **중급**: 이 프로젝트 고유의 패턴에 집중
 - **고급**: 아키텍처 규칙과 컨벤션으로 바로 이동
 
-#### 13개 내장 스킬
+#### 14개 내장 스킬
 
 | 명령어 | 기능 |
 |--------|------|
@@ -202,6 +208,7 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 | `/new-domain {name}` | 도메인 전체 스캐폴딩 (21개 이상 소스 파일 + 테스트) |
 | `/add-api {description}` | 기존 도메인에 API 엔드포인트 추가 |
 | `/add-worker-task {domain} {task}` | 비동기 Taskiq 백그라운드 태스크 추가 |
+| `/add-admin-page {domain}` | 기존 도메인에 NiceGUI admin 페이지 추가 |
 | `/add-cross-domain from:{a} to:{b}` | Protocol DIP를 통한 도메인 간 의존성 연결 |
 | `/plan-feature {description}` | 요구사항 인터뷰 -> 아키텍처 -> 보안 -> 태스크 분해 |
 | `/review-architecture {domain}` | 아키텍처 컴플라이언스 감사 (20개 이상 검사) |
@@ -247,16 +254,31 @@ sandbox_mode = "workspace-write"
 approval_policy = "on-request"
 web_search = "disabled"
 
+[features]
+codex_hooks = true
+
+[profiles.research]
+web_search = "live"
+
 [mcp_servers.context7]
 url = "https://mcp.context7.com/mcp"
 ```
 
 > Codex는 원격 Context7 MCP 엔드포인트를 사용합니다. 로컬 stdio 서버(npx) 방식은 샌드박스 네트워크 제한에 의해 차단되므로, HTTP 전송 방식을 사용합니다.
 
+Codex의 레포 workflow layer는 다음으로 나뉩니다:
+- `.codex/config.toml` — base config와 profile
+- `.codex/hooks.json` + `.codex/hooks/` — command hook
+- `.agents/skills/` — `$onboard`, `$plan-feature`, `$review-pr` 같은 repo-local workflow
+- `.agents/plugins/` — repo-local marketplace와 plugin package
+- `docs/ai/shared/` — Claude/Codex 공통 reference
+
 권장 검증 흐름:
 1. Codex에서 이 프로젝트를 trusted 상태로 만든다.
 2. `codex mcp list`, `codex mcp get context7`를 실행한다.
 3. `codex debug prompt-input -c 'project_doc_max_bytes=400' "healthcheck" | rg "Shared Collaboration Rules|AGENTS\\.md"`로 `AGENTS.md`가 실제 prompt input에 포함되는지 확인한다.
+4. 최신 외부 정보가 정말 필요할 때만 `codex -p research` 또는 `codex --search`를 사용한다.
+5. Codex memories는 개인/세션 최적화용으로만 보고, 팀 규칙 저장소로 쓰지 않는다.
 
 > `.codex/config.toml`은 Codex 측 하네스 진입점입니다. 웹 검색은 기본 비활성화되어 있으므로, 최신 외부 정보가 필요할 때만 명시적으로 활성화하세요.
 
@@ -493,10 +515,10 @@ src/
 | 보일러플레이트 제로 CRUD (7개 메서드) | **Yes** | No | No | No |
 | 도메인 자동 발견 | **Yes** | No | No | No |
 | 아키텍처 자동 강제 (pre-commit) | **Yes** | No | No | No |
-| AI 개발 스킬 | **13** | 0 | 0 | 0 |
+| AI 개발 스킬 | **14** | 0 | 0 | 0 |
 | 적응형 온보딩 (`/onboard`) | **Yes** | No | No | No |
 | 멀티 인터페이스 (API+Worker+Admin+MCP) | **4종** | 2 | 1 | 1 |
-| Architecture Decision Records | **14** | 0 | 0 | 0 |
+| Architecture Decision Records | **32** | 0 | 0 | 0 |
 | 전 계층 타입 안전 제네릭 | **Yes** | 부분 | 부분 | No |
 | IoC Container DI | **Yes** | No | No | No |
 
@@ -545,8 +567,8 @@ src/
 - [x] 헬스 체크 엔드포인트
 - [x] 도메인 자동 발견
 - [x] 아키텍처 강제 (pre-commit)
-- [x] 13개 Claude Code 스킬
-- [x] Codex CLI 하네스 (`.codex/config.toml`)
+- [x] 14개 Claude Code 스킬
+- [x] Codex CLI workflow layer (`.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`, `.agents/plugins/`)
 
 스타를 눌러 진행 상황을 팔로우하세요!
 

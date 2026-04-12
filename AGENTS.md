@@ -6,7 +6,11 @@ Tool-specific harness files must reference this document instead of duplicating 
 ## Tool-Specific Harnesses
 
 - `CLAUDE.md` — Claude-specific hooks, plugins, slash skills, and tool usage guidance
-- `.codex/config.toml` — Codex CLI project settings and MCP configuration
+- `.codex/config.toml` — Codex CLI project settings, profiles, feature flags, and MCP configuration
+- `.codex/hooks.json` — Codex command-hook configuration
+- `.agents/skills/` — repo-local Codex workflow skills
+- `.agents/plugins/` — repo-local Codex plugin marketplace and plugin package
+- `docs/ai/shared/` — shared workflow references consumed by both Claude and Codex
 - `.mcp.json` — Claude-only MCP server configuration
 
 ## Project Scale
@@ -21,7 +25,7 @@ All proposals and designs must consider scalability, maintainability, and team c
 - No separate Mapper classes (inline conversion is sufficient)
 - No Entity pattern — unified to DTO (background: [ADR 004](docs/history/004-dto-entity-responsibility.md))
 - No modifying or deleting shared rule sources without cross-reference verification
-  - Shared rule sources: `AGENTS.md` and tool-specific rule/skill directories
+  - Shared rule sources: `AGENTS.md`, `docs/ai/shared/`, `.claude/`, `.codex/`, and `.agents/`
   - Before changing them, verify no dependent tool configs or skills reference the changed content
 
 Note: Domain → Interface **schema** imports (Request/Response types) are permitted.
@@ -111,12 +115,16 @@ uv run alembic current
 ## Drift Management
 
 - `AGENTS.md` is the canonical source for shared rules; tool-specific harness docs must point here instead of re-copying rules
+- Keep root `AGENTS.md` short and stable; when local context needs more detail, prefer `AGENTS.override.md` or named skills instead of expanding the root doc
+- Codex memories are personal/session optimization only; do not treat them as a shared rule source
 - Update related documentation in the same change when shared rules or harness behavior changes
   - `README.md`
   - `docs/README.ko.md`
   - `CONTRIBUTING.md`
   - `CLAUDE.md`
+  - `docs/ai/shared/`
   - `.claude/rules/` and `.claude/skills/` references when relevant
+  - `.codex/hooks.json`, `.codex/rules/`, `.agents/skills/`, and `.agents/plugins/` when relevant
 - If architecture or shared patterns change, inspect drift before closing the work
   - Claude workflow entry point: `/sync-guidelines`
-  - Codex workflow: follow the documented verification steps in `README.md` / `CONTRIBUTING.md`
+  - Codex workflow: use `$sync-guidelines` or follow the documented verification steps in `README.md` / `CONTRIBUTING.md`

@@ -1,0 +1,20 @@
+{
+  "name": "fastapi-agent-blueprint",
+  "interface": {
+    "displayName": "FastAPI Agent Blueprint"
+  },
+  "plugins": [
+    {
+      "name": "fastapi-agent-blueprint-codex",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/fastapi-agent-blueprint-codex"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Development"
+    }
+  ]
+}

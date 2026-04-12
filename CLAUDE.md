@@ -5,14 +5,16 @@ This file intentionally keeps only Claude-specific setup and workflow guidance.
 
 ## Pre-work Checklist
 1. Read shared project rules from `AGENTS.md` (not auto-loaded — read explicitly)
-2. Check current project status via `.claude/rules/project-status.md` (auto-loaded)
-3. Check DO/DON'T via `.claude/rules/architecture-conventions.md` (auto-loaded)
+2. Read shared workflow references from `docs/ai/shared/` when the task needs deeper context (`project-dna.md`, checklists, onboarding tracks)
+3. Check current project status via `.claude/rules/project-status.md` (auto-loaded)
+4. Check DO/DON'T via `.claude/rules/architecture-conventions.md` (auto-loaded)
 
 ## Claude Collaboration Rules
 - If diagnosis/review result is "adequate", do not force improvement suggestions
 - Only propose modifying or deleting existing Claude-specific structures when the benefit is clear
 - Skill `SKILL.md` frontmatter supported attributes: `name`, `argument-hint`, `description`, `disable-model-invocation`, `compatibility`
 - Before changing shared rules or structure, follow the drift management rules in `AGENTS.md`
+- Shared workflow references now live under `docs/ai/shared/`; Claude skills should point there instead of keeping private copies
 - When delegating to agents, explicitly pass the list of changed files
 
 ## Skills (slash commands)
@@ -40,6 +42,7 @@ This file intentionally keeps only Claude-specific setup and workflow guidance.
 ## Tool Selection Guidelines
 
 > Shared architecture rules, terminology, conversion patterns, and DTO criteria are defined in `AGENTS.md`.
+> Shared workflow references live in `docs/ai/shared/`.
 > Detailed shell commands are in `.claude/rules/commands.md` (auto-loaded); Makefile shortcuts are in `AGENTS.md`.
 > context7 is a project-required MCP server for Claude (configured via `.mcp.json`).
 > pyright-lsp plugin provides native LSP code intelligence.

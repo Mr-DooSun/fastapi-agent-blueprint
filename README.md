@@ -165,14 +165,18 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 
 ## AI-Native Development (AIDD)
 
-This template works great on its own. For AI-native development, the repository uses a **shared rules + tool-specific harness** structure:
+This template works great on its own. For AI-native development, the repository uses a **shared rules + shared references + tool-specific harness** structure:
 
 | File | Role |
 |------|------|
 | `AGENTS.md` | Canonical shared rules for all AI tools |
+| `docs/ai/shared/` | Shared workflow references and checklists used by Claude and Codex |
 | `CLAUDE.md` | Claude-specific hooks, plugins, slash skills, and workflow notes |
 | `.mcp.json` | Claude-only MCP server configuration |
-| `.codex/config.toml` | Codex CLI project settings and MCP configuration |
+| `.codex/config.toml` | Codex CLI project settings, profiles, features, and MCP configuration |
+| `.codex/hooks.json` | Codex command-hook configuration |
+| `.agents/skills/` | Repo-local Codex workflow skills |
+| `.agents/plugins/` | Repo-local Codex marketplace and plugin package |
 
 ### Shared Rules First
 
@@ -183,6 +187,8 @@ All tools should follow `AGENTS.md` for:
 - DTO creation criteria
 - baseline run/test/lint/migration commands
 - documentation drift management principles
+
+Use `docs/ai/shared/` for the deeper workflow references that are too detailed for root `AGENTS.md`, such as `project-dna.md`, planning checklists, review checklists, and test patterns.
 
 ### Claude Code
 
@@ -196,7 +202,7 @@ The `/onboard` skill adapts to your experience and learning style:
 - **Q&A** -- topic maps provided, explore by asking questions
 - **Explore** -- point at any code freely, uncovered essentials flagged at the end
 
-#### 13 Built-in Skills
+#### 14 Built-in Skills
 
 | Command | What it does |
 |---------|------------|
@@ -204,6 +210,7 @@ The `/onboard` skill adapts to your experience and learning style:
 | `/new-domain {name}` | Scaffold an entire domain (21+ source files + tests) |
 | `/add-api {description}` | Add API endpoint to existing domain |
 | `/add-worker-task {domain} {task}` | Add async Taskiq background task |
+| `/add-admin-page {domain}` | Add a NiceGUI admin page to an existing domain |
 | `/add-cross-domain from:{a} to:{b}` | Wire cross-domain dependency via Protocol DIP |
 | `/plan-feature {description}` | Requirements interview -> architecture -> security -> task breakdown |
 | `/review-architecture {domain}` | Architecture compliance audit (20+ checks) |
@@ -248,7 +255,12 @@ Codex uses the committed project config in `.codex/config.toml`:
 sandbox_mode = "workspace-write"
 approval_policy = "on-request"
 web_search = "disabled"
-project_doc_fallback_filenames = ["AGENTS.md"]
+
+[features]
+codex_hooks = true
+
+[profiles.research]
+web_search = "live"
 
 [mcp_servers.context7]
 url = "https://mcp.context7.com/mcp"
@@ -256,10 +268,19 @@ url = "https://mcp.context7.com/mcp"
 
 > Codex uses the remote Context7 MCP endpoint so documentation lookups are not blocked by the sandboxed network restrictions that apply to locally spawned stdio servers.
 
+Codex's repository workflow layer is split across:
+- `.codex/config.toml` for base config and profiles
+- `.codex/hooks.json` plus `.codex/hooks/` for command hooks
+- `.agents/skills/` for repo-local workflows such as `$onboard`, `$plan-feature`, `$review-pr`
+- `.agents/plugins/` for the repo-local marketplace and plugin package
+- `docs/ai/shared/` for shared references that both Claude and Codex consume
+
 Recommended verification flow:
 1. Trust the project in Codex.
 2. Run `codex mcp list` and `codex mcp get context7`.
 3. Run `codex debug prompt-input -c 'project_doc_max_bytes=400' "healthcheck" | rg "Shared Collaboration Rules|AGENTS\\.md"` and confirm `AGENTS.md` is included in the prompt input.
+4. Use `codex -p research` or `codex --search` only when live web search is actually required.
+5. Treat Codex memories as personal/session optimization only, not as team-shared governance.
 
 > `.codex/config.toml` is the Codex-side harness entrypoint. Web search is disabled by default; enable it explicitly only when you need live external information.
 
@@ -496,10 +517,10 @@ src/
 | Zero-boilerplate CRUD (7 methods) | **Yes** | No | No | No |
 | Auto domain discovery | **Yes** | No | No | No |
 | Architecture enforcement (pre-commit) | **Yes** | No | No | No |
-| AI development skills | **13** | 0 | 0 | 0 |
+| AI workflow skills | **14** | 0 | 0 | 0 |
 | Adaptive onboarding (`/onboard`) | **Yes** | No | No | No |
 | Multi-interface (API+Worker+Admin+MCP) | **4 types** | 2 | 1 | 1 |
-| Architecture Decision Records | **14** | 0 | 0 | 0 |
+| Architecture Decision Records | **32** | 0 | 0 | 0 |
 | Type-safe generics across layers | **Yes** | Partial | Partial | No |
 | DI with IoC Container | **Yes** | No | No | No |
 
@@ -548,8 +569,8 @@ Every technical choice in this project is documented as an ADR (Architecture Dec
 - [x] Health check endpoint
 - [x] Auto domain discovery
 - [x] Architecture enforcement (pre-commit)
-- [x] 13 Claude Code skills
-- [x] Codex CLI harness (`.codex/config.toml`)
+- [x] 14 Claude Code skills
+- [x] Codex CLI workflow layer (`.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`, `.agents/plugins/`)
 
 Star this repo to follow our progress!
 
