@@ -1,6 +1,6 @@
 # Project Status
 
-> Last synced: 2026-04-11 via /sync-guidelines
+> Last synced: 2026-04-13 via /sync-guidelines
 
 ## Current Version Context
 - Latest release: v0.3.0 (2026-04-10)
@@ -18,6 +18,7 @@
 | BaseService 3-TypeVar | ADR 011 | Generic[CreateDTO, UpdateDTO, ReturnDTO] restoration |
 | Password Hashing | - | hash_password/verify_password in _core.common.security |
 | Serena Removal & Pyright Adoption | #63 | pyright-lsp 기본 코드 인텔리전스, PostToolUse 포맷팅 훅, tool-agnostic 스킬 전환 |
+| Codex CLI Harness & Hybrid C Skills | #66 | Shared AGENTS.md, docs/ai/shared/ reference layer, 14 Hybrid C skill migrations |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN
