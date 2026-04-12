@@ -19,10 +19,10 @@ fi
 
 if [ -z "${CONTEXT7_API_KEY:-}" ]; then
     echo ""
-    echo "=== [WARNING] CONTEXT7_API_KEY not set ==="
-    echo "This project uses context7 MCP for library documentation lookup."
+    echo "=== [INFO] CONTEXT7_API_KEY not set ==="
+    echo "context7 works without an API key, but anonymous requests have lower rate limits."
     echo ""
-    echo "Get your API key: https://context7.com/docs/howto/api-keys"
+    echo "Get your API key: https://context7.com/dashboard"
     echo "Then set: export CONTEXT7_API_KEY=ctx7sk-xxxx"
     echo "================================================"
 fi

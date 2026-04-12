@@ -3,7 +3,5 @@ approval_policy = "on-request"
 web_search = "disabled"
 
 [mcp_servers.context7]
-command = "npx"
-args = ["-y", "@upstash/context7-mcp@latest"]
+url = "https://mcp.context7.com/mcp"
 required = true
-startup_timeout_sec = 30

@@ -230,8 +230,7 @@ claude plugin install pyright-lsp    # Claude Code 플러그인 설치
 {
   "mcpServers": {
     "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"]
+      "url": "https://mcp.context7.com/mcp"
     }
   }
 }
@@ -247,12 +246,12 @@ Codex는 `.codex/config.toml`의 project-shared 설정을 사용합니다:
 sandbox_mode = "workspace-write"
 approval_policy = "on-request"
 web_search = "disabled"
-project_doc_fallback_filenames = ["AGENTS.md"]
 
 [mcp_servers.context7]
-command = "npx"
-args = ["-y", "@upstash/context7-mcp@latest"]
+url = "https://mcp.context7.com/mcp"
 ```
+
+> Codex는 원격 Context7 MCP 엔드포인트를 사용합니다. 로컬 stdio 서버(npx) 방식은 샌드박스 네트워크 제한에 의해 차단되므로, HTTP 전송 방식을 사용합니다.
 
 권장 검증 흐름:
 1. Codex에서 이 프로젝트를 trusted 상태로 만든다.

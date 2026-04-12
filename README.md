@@ -232,8 +232,7 @@ claude plugin install pyright-lsp    # installs Claude Code plugin
 {
   "mcpServers": {
     "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"]
+      "url": "https://mcp.context7.com/mcp"
     }
   }
 }
@@ -252,9 +251,10 @@ web_search = "disabled"
 project_doc_fallback_filenames = ["AGENTS.md"]
 
 [mcp_servers.context7]
-command = "npx"
-args = ["-y", "@upstash/context7-mcp@latest"]
+url = "https://mcp.context7.com/mcp"
 ```
+
+> Codex uses the remote Context7 MCP endpoint so documentation lookups are not blocked by the sandboxed network restrictions that apply to locally spawned stdio servers.
 
 Recommended verification flow:
 1. Trust the project in Codex.
