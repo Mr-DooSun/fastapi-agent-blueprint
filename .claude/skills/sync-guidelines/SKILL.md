@@ -10,7 +10,7 @@ description: |
 
 # Guideline Synchronization Inspection
 
-After design changes, inspect whether `AGENTS.md`, `CLAUDE.md`, Skills, and `.claude/rules/` are consistent with the actual code.
+After design changes, inspect whether `AGENTS.md`, `CLAUDE.md`, shared workflow references, Codex workflow assets, Claude skills, and `.claude/rules/` are consistent with the actual code.
 
 ## Reference Code Analysis
 Read `src/user/` as the reference domain to identify current actual patterns:
@@ -22,11 +22,12 @@ Read `src/user/` as the reference domain to identify current actual patterns:
 
 ## Inspection Targets (3 Categories)
 1. **AGENTS.md <-> Code** -- Absolute Prohibitions, Conversion Patterns, Write DTO criteria
-2. **CLAUDE.md <-> Claude Harness** -- hooks, skills, MCP/plugin guidance
-3. **Skills <-> Code** -- Whether each skill's SKILL.md matches the current state (references are checked separately in Phase 5)
-4. **`.claude/rules/` <-> Code** -- architecture-conventions, project-status, project-overview
+2. **Shared references <-> Code** -- `docs/ai/shared/` content and the current implementation
+3. **Harness docs <-> Workflow layers** -- `CLAUDE.md`, `.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`, `.agents/plugins/`
+4. **Skills <-> Code** -- Whether each skill's `SKILL.md` matches the current state (references are checked separately in Phase 5)
+5. **`.claude/rules/` <-> Code** -- architecture-conventions, project-status, project-overview
 
-Refer to `${CLAUDE_SKILL_DIR}/references/drift-checklist.md` for detailed inspection items.
+Refer to `docs/ai/shared/drift-checklist.md` for detailed inspection items.
 
 ## Output Format
 
@@ -37,7 +38,7 @@ Refer to `${CLAUDE_SKILL_DIR}/references/drift-checklist.md` for detailed inspec
 [DRIFT] /new-domain: Base class import -- Path change detected
   -> Previous: src._core.infrastructure.database.base_repository
   -> Actual: src._core.database.base_repository
-  -> Action: Update .claude/skills/new-domain/references/scaffolding-layers.md required
+  -> Action: Update `docs/ai/shared/scaffolding-layers.md` and any dependent skill entry points
 
 Sync required: X items / Total: Y items
 ```
@@ -50,7 +51,7 @@ Sync required: X items / Total: Y items
 
 ## Phase 4: project-dna.md Regeneration
 
-Regenerate `.claude/skills/_shared/project-dna.md` when DRIFT is found or the user requests it.
+Regenerate `docs/ai/shared/project-dna.md` when DRIFT is found or the user requests it.
 
 ### Regeneration Procedure
 1. Scan `src/user/` as the reference domain using Glob/Read
@@ -62,8 +63,8 @@ Regenerate `.claude/skills/_shared/project-dna.md` when DRIFT is found or the us
 3. Extract DI patterns: check `providers.Singleton` / `providers.Factory` mappings in each Container
 4. Scan security tools: extract active tool list from `pyproject.toml` and `.pre-commit-config.yaml`
 5. Scan active features: check whether `jwt`, `UploadFile`, `RBAC`, `slowapi`, `websocket` imports exist in the codebase
-6. Regenerate `.claude/skills/_shared/project-dna.md` with the latest information (update date)
-7. Compare each Skill's references/ files with project-dna.md -> report mismatches
+6. Regenerate `docs/ai/shared/project-dna.md` with the latest information (update date)
+7. Compare each Skill's references with `docs/ai/shared/project-dna.md` -> report mismatches
 8. Update `.claude/rules/architecture-conventions.md`
    (data flow, object roles, generic signatures 변경 반영)
 9. Update `.claude/rules/project-status.md`
@@ -79,33 +80,33 @@ All rules files: update "Last synced" date line to current date.
 
 ## Phase 5: References Drift Inspection
 
-After project-dna.md regeneration is complete, inspect whether each Skill's references/ files are consistent with the current code.
-Follow the "5. References <-> Code" section in `${CLAUDE_SKILL_DIR}/references/drift-checklist.md` for detailed inspection items.
+After project-dna.md regeneration is complete, inspect whether `docs/ai/shared/` documents are consistent with the current code.
+Follow the "5. References <-> Code" section in `docs/ai/shared/drift-checklist.md` for detailed inspection items.
 
 ### Automated Verification ([AUTO-FIX] Targets)
 Items that can be mechanically extracted from code. When drift is found, generate a fix diff and present it to the user.
 
-1. **File List** (`new-domain/references/scaffolding-layers.md`)
-   - Compare `Glob src/user/**/*.py` results with the file list (items 1-26) in scaffolding-layers.md
+1. **File List** (`docs/ai/shared/scaffolding-layers.md`)
+   - Compare `Glob src/user/**/*.py` results with the file list (items 1-26) in `docs/ai/shared/scaffolding-layers.md`
    - Detect missing/deleted files
 
-2. **Factory Pattern** (`test-domain/references/test-patterns.md`)
-   - Read `tests/factories/user_factory.py` and compare with code blocks in test-patterns.md
+2. **Factory Pattern** (`docs/ai/shared/test-patterns.md`)
+   - Read `tests/factories/user_factory.py` and compare with code blocks in `docs/ai/shared/test-patterns.md`
    - Detect function signature and import path changes
 
-3. **Skill Mapping** (`plan-feature/references/planning-checklists.md`)
-   - Collect `name:` fields from `.claude/skills/*/SKILL.md`
-   - Compare with the Skill column in the "Skill Mapping Table" of planning-checklists.md
+3. **Skill Mapping** (`docs/ai/shared/planning-checklists.md`)
+   - Collect `name:` fields from `.claude/skills/*/SKILL.md` and `.agents/skills/*/SKILL.md`
+   - Compare with the Skill column in the "Skill Mapping Table" of `docs/ai/shared/planning-checklists.md`
 
 ### Manual Check ([REVIEW] Targets)
 Policy/standard-based content. Only detect whether related sources have changed and request user review.
 
-4. **Architecture Checklist** (`review-architecture/references/checklist.md`)
-   - Compare the number of Absolute Prohibitions in AGENTS.md vs. the number of check items in checklist.md
+4. **Architecture Checklist** (`docs/ai/shared/architecture-review-checklist.md`)
+   - Compare the number of Absolute Prohibitions in AGENTS.md vs. the number of check items in `docs/ai/shared/architecture-review-checklist.md`
    - On mismatch, request confirmation on whether to add Grep patterns for the new rules
 
-5. **Security Checklist** (`security-review/references/security-checklist.md`)
-   - Compare project-dna.md section 8 active feature status with `[when applicable]` items
+5. **Security Checklist** (`docs/ai/shared/security-checklist.md`)
+   - Compare `docs/ai/shared/project-dna.md` section 8 active feature status with `[when applicable]` items
    - Request confirmation on whether security check items exist for newly activated features
 
 ### Phase 5 Output Format

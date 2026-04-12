@@ -11,7 +11,7 @@ description: |
 # Interactive Onboarding for New Team Members
 
 > **Design Principle**: This skill does not have its own architecture documentation.
-> All information is read at runtime from existing sources (README.md, ADR, AGENTS.md, project-dna.md, CLAUDE.md, .claude/rules/, src/user/ code).
+> All information is read at runtime from existing sources (README.md, ADR, AGENTS.md, `docs/ai/shared/project-dna.md`, CLAUDE.md, `.claude/rules/`, `docs/ai/shared/`, `src/user/` code).
 > When the structure changes, the source is updated, and onboarding automatically reflects the latest content.
 
 ## Pre-check: Collect Project State
@@ -46,7 +46,7 @@ After receiving the experience level, ask about the preferred format:
 > - **(B) Q&A** -- Topic map provided, you explore by asking questions
 > - **(C) Explore** -- Point at any code/file/directory and ask freely, uncovered essentials flagged at the end
 
-After receiving both responses, refer to the level-specific adjustment criteria in `${CLAUDE_SKILL_DIR}/references/role-tracks.md`
+After receiving both responses, refer to the level-specific adjustment criteria in `docs/ai/shared/onboarding-role-tracks.md`
 to adjust the depth of each Phase. Track overview:
 
 ```
@@ -66,12 +66,12 @@ When the user selects **Q&A** format, apply the following rules to **all Phases 
 1. **Topic Map**: At the start of each Phase, present a brief overview with a numbered list of explorable topics.
    Each topic should include a one-line description so the user can judge what to ask about.
 2. **User-Driven**: Wait for the user's questions. Answer by referencing the same sources as Guided mode
-   (ADR, code, .claude/rules/, AGENTS.md, project-dna.md, CLAUDE.md, etc.).
+   (ADR, code, `.claude/rules/`, `docs/ai/shared/`, AGENTS.md, CLAUDE.md, etc.).
 3. **Coverage Tracking**: Internally track which topics have been addressed by the user's questions.
 4. **Gap Check**: When the user says 'next' (or equivalent), check for any **critical uncovered topics**.
    If found, briefly mention them: "Before moving on, these are worth knowing: ..." (1-2 sentences each).
    If all critical topics are covered, move on immediately.
-5. **Depth Adjustment**: Experience-level depth adjustments from `role-tracks.md` still apply.
+5. **Depth Adjustment**: Experience-level depth adjustments from `docs/ai/shared/onboarding-role-tracks.md` still apply.
    For example, Advanced + Q&A skips DDD basics but still offers project-specific ADR topics to ask about.
 
 ### Explore Mode Rules
@@ -81,7 +81,7 @@ When the user selects **Explore** format, Phase 1-5 boundaries are removed. The 
 1. **Entry Point**: Show the project directory tree (`src/` top-level structure) as a starting point.
    The user points at any file, directory, class, or function to ask about.
 2. **On-Demand Explanation**: When the user points at code, explain it using the same sources as Guided mode
-   (ADR, .claude/rules/, AGENTS.md, project-dna.md, CLAUDE.md, live code reading, etc.).
+   (ADR, `.claude/rules/`, `docs/ai/shared/`, AGENTS.md, CLAUDE.md, live code reading, etc.).
    Connect to design decisions and architecture context where relevant.
 3. **Coverage Tracking**: Internally map the user's questions to the critical topics across all Phases:
    - Phase 1 critical: structural evolution (ADR 006), Entity→DTO (ADR 004), 3-Tier Hybrid (ADR 011), IoC Container (ADR 013)
@@ -92,7 +92,7 @@ When the user selects **Explore** format, Phase 1-5 boundaries are removed. The 
 4. **Gap Check**: When the user says 'done' (or equivalent), review uncovered critical topics.
    If found, briefly present them grouped by theme (1-2 sentences each).
    If all covered, skip directly to Phase 6 (Next Steps).
-5. **Depth Adjustment**: Experience-level adjustments from `role-tracks.md` still apply to explanations.
+5. **Depth Adjustment**: Experience-level adjustments from `docs/ai/shared/onboarding-role-tracks.md` still apply to explanations.
 
 ## Phase 1: Methodology and Architecture Evolution History
 
@@ -162,13 +162,13 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 - This project is designed for pair programming with Claude Code
 - 14 Claude Skills (slash commands) automate domain creation, API addition, architecture verification, etc.
 - pyright-lsp plugin provides native code intelligence; context7 MCP provides library documentation lookup
-- Skills reference `AGENTS.md`, project-dna.md, and Claude rules to automatically follow project rules
+- Skills reference `AGENTS.md`, `docs/ai/shared/project-dna.md`, shared checklists, and Claude rules to automatically follow project rules
 
 > "If you have any questions, feel free to ask. Otherwise, say 'next'."
 
 ## Phase 2: Project Overview
 
-**Information Source**: `project-dna.md sections 0-1`, `.claude/rules/project-overview.md`
+**Information Source**: `docs/ai/shared/project-dna.md` sections 0-1, `.claude/rules/project-overview.md`
 
 **Q&A Mode**: Present the following topic map and wait for questions.
 > **Phase 2 Topics -- Project Structure**
@@ -184,7 +184,7 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 
 **Guided Mode**:
 
-1. Read the **section 0 Project Scale** of `.claude/skills/_shared/project-dna.md`
+1. Read the **section 0 Project Scale** of `docs/ai/shared/project-dna.md`
    and explain the project's purpose and scale.
 
 2. Show the architecture core as a diagram (keep it concise since context is already known from Phase 1):
@@ -193,13 +193,13 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
    Complex: Router -> UseCase -> Service -> Repository (when combining multiple Services)
    ```
 
-3. Read **section 1 Domain Directory Structure** of `project-dna.md` and show the file composition of a single domain.
+3. Read **section 1 Domain Directory Structure** of `docs/ai/shared/project-dna.md` and show the file composition of a single domain.
 
 4. Show the current domain list and recent git activity collected during Pre-check.
 
 5. Present the tech stack read from `.claude/rules/project-overview.md`.
 
-**Experience level adjustment** (refer to `role-tracks.md` section 2):
+**Experience level adjustment** (refer to `docs/ai/shared/onboarding-role-tracks.md` section 2):
 - **Beginner**: Additional explanation of DI Container, Protocol, Pydantic BaseModel
 - **Advanced**: Present only domain list + tech stack summary
 
@@ -276,7 +276,7 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 
 **Q&A Mode**: Present the following topic map and wait for questions.
 > **Phase 5 Topics -- Workflow & Skills**
-> 1. Skills overview -- 11 slash commands and their workflow order
+> 1. Skills overview -- 14 slash commands and their workflow order
 > 2. Frequently used CLI commands (server start, tests, lint)
 >
 > Ask about any topic, or say 'next' to move on.
@@ -298,9 +298,9 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 
 ## Phase 6: Personalized Next Steps
 
-**Information Source**: `role-tracks.md` section 4 Next Step Recommendations
+**Information Source**: `docs/ai/shared/onboarding-role-tracks.md` section 4 Next Step Recommendations
 
-Read the "first 3 tasks" for the user's experience level from `${CLAUDE_SKILL_DIR}/references/role-tracks.md` section 4.
+Read the "first 3 tasks" for the user's experience level from `docs/ai/shared/onboarding-role-tracks.md` section 4.
 
 Wrap-up:
 ```
@@ -310,7 +310,7 @@ Feel free to ask any additional questions at any time.
 Key reference materials:
 - AGENTS.md -- Shared project rules
 - CLAUDE.md -- Claude-specific harness rules
-- .claude/skills/_shared/project-dna.md -- Code pattern Reference
+- docs/ai/shared/project-dna.md -- Code pattern Reference
 - docs/history/ -- Architecture Decision Records (ADR)
 - src/user/ -- Reference domain implementation
 ```

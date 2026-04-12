@@ -17,9 +17,9 @@ This skill does NOT define its own review criteria.
 It applies existing rules from the project's rule sources to the PR diff scope.
 
 Rule sources to load:
-- `${CLAUDE_SKILL_DIR}/../review-architecture/references/checklist.md` — 20+ architecture checklist items
-- `${CLAUDE_SKILL_DIR}/../security-review/references/security-checklist.md` — OWASP security items
-- `${CLAUDE_SKILL_DIR}/../_shared/project-dna.md` — conversion patterns, DI rules, base classes
+- `docs/ai/shared/architecture-review-checklist.md` — 20+ architecture checklist items
+- `docs/ai/shared/security-checklist.md` — OWASP security items
+- `docs/ai/shared/project-dna.md` — conversion patterns, DI rules, base classes
 - `.claude/rules/architecture-conventions.md` — DO/DON'T rules
 - `AGENTS.md` — shared absolute prohibitions and DTO rules
 

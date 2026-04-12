@@ -23,7 +23,7 @@ If neither is present, ask the user which mode they want.
 - `tests/integration/{name}/infrastructure/test_{name}_repository.py`
 - `tests/unit/{name}/interface/admin/test_{name}_admin_config.py` **(only when admin exists)**
 
-Refer to `${CLAUDE_SKILL_DIR}/references/test-patterns.md` for detailed test patterns and Factory code examples.
+Refer to `docs/ai/shared/test-patterns.md` for detailed test patterns and Factory code examples.
 
 ## Generate Mode Procedure
 1. Read `src/{name}/` to identify all Service/UseCase methods

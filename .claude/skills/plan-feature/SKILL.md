@@ -21,7 +21,7 @@ Description: $ARGUMENTS
 ## Phase 0: Requirements Interview
 
 Ask the user 3-5 questions from the following categories.
-Refer to the "Question Bank" in `${CLAUDE_SKILL_DIR}/references/planning-checklists.md`, but select questions appropriate for the feature.
+Refer to the "Question Bank" in `docs/ai/shared/planning-checklists.md`, but select questions appropriate for the feature.
 
 **Required question categories**:
 1. **Data Model** -- What are the core entities and fields?
@@ -60,7 +60,7 @@ Decide based on the Write DTO criteria in `AGENTS.md`:
 
 ## Phase 2: Security Checkpoint
 
-Evaluate 6 items according to the "Security Assessment Matrix" in `${CLAUDE_SKILL_DIR}/references/planning-checklists.md`:
+Evaluate 6 items according to the "Security Assessment Matrix" in `docs/ai/shared/planning-checklists.md`:
 
 | Item | Applicable | Required Action |
 |------|-----------|----------------|
@@ -78,7 +78,7 @@ Derive specific security requirements for any applicable items.
 
 ### 3.1 Task Identification
 Break down Phase 1 analysis results into actionable task units.
-Map each task to an existing Skill (refer to the "Skill Mapping Table" in `${CLAUDE_SKILL_DIR}/references/planning-checklists.md`):
+Map each task to an existing Skill (refer to the "Skill Mapping Table" in `docs/ai/shared/planning-checklists.md`):
 
 | Task Type | Mapped Skill | Example |
 |-----------|-------------|---------|
@@ -91,7 +91,7 @@ Map each task to an existing Skill (refer to the "Skill Mapping Table" in `${CLA
 | **Not mappable** | Manual implementation | External API integration, custom middleware, etc. |
 
 ### 3.2 Supervision Level Determination
-For each task (refer to "Supervision Level Definitions" in `${CLAUDE_SKILL_DIR}/references/planning-checklists.md`):
+For each task (refer to "Supervision Level Definitions" in `docs/ai/shared/planning-checklists.md`):
 - **L1 (AI Delegation)**: 100% mapped to existing Skill, pattern is clear
 - **L2 (Confirm then Delegate)**: Business logic decisions, new domain field composition, etc.
 - **L3 (Supervision Required)**: Security-related, payment processing, external API integration, DB design decisions
@@ -104,7 +104,7 @@ For each task (refer to "Supervision Level Definitions" in `${CLAUDE_SKILL_DIR}/
 ## Output: Feature Implementation Plan
 
 Organize the results of Phases 0-3 above in the following format and present to the user
-(refer to the "Output Plan Template" in `${CLAUDE_SKILL_DIR}/references/planning-checklists.md`):
+(refer to the "Output Plan Template" in `docs/ai/shared/planning-checklists.md`):
 
 ```
 # Feature Implementation Plan: {Feature Name}

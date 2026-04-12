@@ -21,7 +21,7 @@ Identify domains using Glob pattern `src/*/` and exclude `_core`, `_apps` prefix
 ## Audit Procedure
 
 Inspect 8 categories with 28+ items using Grep-based checks.
-Refer to `${CLAUDE_SKILL_DIR}/references/checklist.md` for the detailed checklist.
+Refer to `docs/ai/shared/architecture-review-checklist.md` for the detailed checklist.
 
 **Category Summary**:
 1. **Layer Dependency Rules** — domain -> infrastructure/interface import violations

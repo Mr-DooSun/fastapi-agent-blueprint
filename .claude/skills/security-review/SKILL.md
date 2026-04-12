@@ -22,7 +22,7 @@ Identify domains using Glob pattern `src/*/` (include all directories)
 ## Audit Procedure
 
 Inspect 8 security categories with 32+ items using Grep-based checks.
-Refer to `${CLAUDE_SKILL_DIR}/references/security-checklist.md` for the detailed checklist.
+Refer to `docs/ai/shared/security-checklist.md` for the detailed checklist.
 
 **Category Summary**:
 1. **Injection Prevention** — SQL, Command, Template injection patterns

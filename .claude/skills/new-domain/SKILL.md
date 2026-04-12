@@ -25,7 +25,7 @@ Identify domains using Glob pattern `src/*/` and exclude `_core`, `_apps` prefix
 Use `src/user/` as the Reference and create 6 Layers in order.
 Read the corresponding user file before creating each file and replicate the pattern.
 
-Refer to `${CLAUDE_SKILL_DIR}/references/scaffolding-layers.md` for the detailed file list and import paths.
+Refer to `docs/ai/shared/scaffolding-layers.md` for the detailed file list and import paths.
 
 **Layer order**: Domain -> Application -> Infrastructure -> Interface -> App Wiring -> Tests
 
