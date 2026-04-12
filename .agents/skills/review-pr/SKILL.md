@@ -7,15 +7,9 @@ metadata:
 
 # Review PR
 
-1. Read `AGENTS.md`, `docs/ai/shared/project-dna.md`, `docs/ai/shared/architecture-review-checklist.md`, and `docs/ai/shared/security-checklist.md`.
-2. Resolve the review target:
-   - PR number or URL when provided
-   - current branch diff otherwise
-3. Limit the review to changed files, but inspect surrounding context when needed to confirm behavior.
-4. Prioritize findings:
-   - blocking bugs or regressions
-   - architecture violations
-   - security risks
-   - missing tests
-5. Output findings first with file and line references.
-6. Only summarize after the findings list, or state explicitly when no findings were found.
+1. Read `AGENTS.md` and `docs/ai/shared/skills/review-pr.md` for the full procedure.
+2. Read `docs/ai/shared/architecture-review-checklist.md` and `docs/ai/shared/security-checklist.md`.
+3. Resolve the review target (PR number, URL, or current branch diff).
+4. Limit the review to changed files, inspecting surrounding context when needed.
+5. Prioritize: blocking bugs > architecture violations > security risks > missing tests.
+6. Output findings with file/line references, then summarize.

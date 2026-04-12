@@ -7,13 +7,10 @@ metadata:
 
 # Add Cross Domain
 
-1. Read `AGENTS.md` and `docs/ai/shared/project-dna.md`.
-2. Identify the consumer and provider domains plus the exact provider capability needed.
-3. Verify or extend the provider Protocol and Repository implementation first.
-4. Inject the provider Protocol into the consumer Service.
-5. Perform concrete implementation wiring only inside DI Container code.
-6. Reject these anti-patterns:
-   - consumer Domain importing provider Infrastructure
-   - Service-to-Service direct dependency
-   - new Mapper or Adapter layers for simple DTO movement
+1. Read `AGENTS.md` and `docs/ai/shared/skills/add-cross-domain.md` for the full procedure.
+2. Read `docs/ai/shared/project-dna.md` for DI patterns and base class paths.
+3. Identify the consumer and provider domains plus the exact capability needed.
+4. Verify or extend the provider Protocol and Repository first.
+5. Inject the provider Protocol into the consumer Service via DI Container.
+6. Reject anti-patterns: Domain importing Infrastructure, Service-to-Service deps, Mapper layers.
 7. Verify the final dependency direction with grep or tests.

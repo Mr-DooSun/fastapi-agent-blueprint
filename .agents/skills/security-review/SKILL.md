@@ -7,15 +7,8 @@ metadata:
 
 # Security Review
 
-1. Read `AGENTS.md`, `docs/ai/shared/project-dna.md`, and `docs/ai/shared/security-checklist.md`.
-2. Choose the scope: file, domain, or all.
-3. Run the shared checklist with conditional checks only when the related feature is actually in use.
-4. Focus on:
-   - injection risk
-   - auth and authorization gaps
-   - sensitive data exposure
-   - input validation
-   - config and dependency safety
-   - error handling and logging
-   - worker and object storage security where applicable
-5. Report file and line references, severity, and concrete mitigations.
+1. Read `AGENTS.md` and `docs/ai/shared/skills/security-review.md` for the full procedure.
+2. Read `docs/ai/shared/security-checklist.md` for the detailed checklist.
+3. Choose the scope: file, domain, or all.
+4. Run the checklist with conditional checks only when the related feature is in use.
+5. Report file/line references, severity, and concrete mitigations.

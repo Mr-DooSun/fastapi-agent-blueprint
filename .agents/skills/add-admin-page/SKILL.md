@@ -7,12 +7,9 @@ metadata:
 
 # Add Admin Page
 
-1. Read `AGENTS.md` and `docs/ai/shared/project-dna.md`.
-2. Inspect the target domain DTO and the reference admin implementation under `src/user/interface/admin/`.
-3. Create or update:
-   - `interface/admin/configs/{name}_admin_config.py`
-   - `interface/admin/pages/{name}_page.py`
-4. Keep `BaseAdminPage` construction in the config file only.
-5. Keep `@ui.page` routes in the page file only.
-6. Mask fields such as `password`, `secret`, `token`, and `key`.
-7. Do not add manual bootstrap registration when auto-discovery already covers it.
+1. Read `AGENTS.md` and `docs/ai/shared/skills/add-admin-page.md` for the full procedure.
+2. Read `docs/ai/shared/project-dna.md` §11 for admin page pattern.
+3. Inspect the target domain DTO and the reference admin under `src/user/interface/admin/`.
+4. Create config file and page route file in separate directories.
+5. Keep `BaseAdminPage` in config only; keep `@ui.page` in page only.
+6. Mask sensitive fields and do not add manual bootstrap registration.

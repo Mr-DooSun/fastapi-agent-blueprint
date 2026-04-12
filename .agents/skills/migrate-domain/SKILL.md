@@ -7,11 +7,9 @@ metadata:
 
 # Migrate Domain
 
-1. Confirm the requested action: `generate`, `upgrade`, `downgrade`, or `status`.
-2. Verify the target model change and environment configuration first.
-3. For `generate`, create the revision with a domain-scoped message and review the generated migration before applying it.
-4. For `upgrade` or `downgrade`, explain the exact command and resulting schema movement.
-5. Treat autogenerate output as a draft:
-   - renames often require manual edits
-   - destructive schema changes need deliberate review
-6. Verify the resulting revision state and recommend the relevant integration tests.
+1. Read `docs/ai/shared/skills/migrate-domain.md` for the full procedure.
+2. Confirm the requested action: `generate`, `upgrade`, `downgrade`, or `status`.
+3. Verify the target model change and environment configuration first.
+4. For `generate`, create the revision and review before applying.
+5. Treat autogenerate output as a draft: renames and destructive changes need manual review.
+6. Verify the resulting revision state and recommend integration tests.

@@ -7,11 +7,9 @@ metadata:
 
 # Test Domain
 
-1. Read `docs/ai/shared/project-dna.md` and `docs/ai/shared/test-patterns.md`.
-2. Decide whether the request is generate mode or run mode.
-3. In generate mode:
-   - inspect the domain's Service, UseCase, Router, and worker/admin surfaces
-   - compare existing tests to the shared required file set
-   - generate only missing tests following the reference patterns
-4. In run mode, execute the relevant pytest scope and analyze failures.
-5. Keep factories and test names aligned with the shared test pattern file.
+1. Read `docs/ai/shared/skills/test-domain.md` for the full procedure.
+2. Read `docs/ai/shared/test-patterns.md` for factory patterns and test examples.
+3. Decide whether the request is generate mode or run mode.
+4. In generate mode: inspect the domain, compare existing tests to required file set, generate missing ones.
+5. In run mode: execute the relevant pytest scope and analyze failures.
+6. Keep factories and test names aligned with the shared test pattern file.

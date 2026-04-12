@@ -12,39 +12,11 @@ description: |
 
 Target: $ARGUMENTS (domain name + "generate" or "run")
 
-If the argument contains "generate", generate missing test files.
-If the argument contains "run", execute existing tests.
-If neither is present, ask the user which mode they want.
+## Procedure Overview
+1. Determine mode — generate or run (ask if unclear)
+2. Generate mode — identify Service/UseCase methods, check existing tests, generate missing files
+3. Run mode — execute pytest with appropriate scope, analyze failures
+4. Verification — verify imports, run tests, run pre-commit
 
-## Required Test Files (5)
-- `tests/factories/{name}_factory.py`
-- `tests/unit/{name}/domain/test_{name}_service.py`
-- `tests/unit/{name}/application/test_{name}_use_case.py`
-- `tests/integration/{name}/infrastructure/test_{name}_repository.py`
-- `tests/unit/{name}/interface/admin/test_{name}_admin_config.py` **(only when admin exists)**
-
-Refer to `docs/ai/shared/test-patterns.md` for detailed test patterns and Factory code examples.
-
-## Generate Mode Procedure
-1. Read `src/{name}/` to identify all Service/UseCase methods
-2. Check existing test files in `tests/` directory
-3. Generate missing files (the 4 above + necessary `__init__.py`)
-
-## Run Mode Procedure
-```bash
-# Unit tests
-pytest tests/unit/{name}/ -v
-
-# Integration tests
-pytest tests/integration/{name}/ -v
-
-# All
-pytest tests/unit/{name}/ tests/integration/{name}/ tests/e2e/{name}/ -v
-```
-
-If any tests fail, analyze the cause and suggest fixes.
-
-## Verification After Generation
-1. Verify generated test file imports: `python -c "from tests.unit.{name}.domain.test_{name}_service import *; print('OK')"`
-2. Run tests: `pytest tests/unit/{name}/ tests/integration/{name}/ -v`
-3. Run pre-commit: `pre-commit run --files tests/**/{name}/**/*.py`
+Read `docs/ai/shared/skills/test-domain.md` for detailed steps and required test file list.
+Also refer to `docs/ai/shared/test-patterns.md` for factory patterns and test examples.

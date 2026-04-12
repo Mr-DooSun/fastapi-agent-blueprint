@@ -7,12 +7,9 @@ metadata:
 
 # Add Worker Task
 
-1. Read `AGENTS.md` and `docs/ai/shared/project-dna.md`.
-2. Confirm the target Service method exists; add it first if needed.
-3. Add:
-   - payload schema under `interface/worker/payloads/`
-   - task under `interface/worker/tasks/`
-   - bootstrap wiring under `interface/worker/bootstrap/`
-4. Keep the task thin: validate payload, then call the Service.
-5. Use Payload when the worker message contract differs from HTTP Request/Response.
+1. Read `AGENTS.md` and `docs/ai/shared/skills/add-worker-task.md` for the full procedure.
+2. Read `docs/ai/shared/project-dna.md` for DI and conversion patterns.
+3. Confirm the target Service method exists; add it first if needed.
+4. Create payload schema, task function, and bootstrap wiring.
+5. Keep the task thin: validate payload, then call the Service.
 6. Verify imports and run targeted checks on the new worker files.
