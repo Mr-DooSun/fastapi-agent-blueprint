@@ -90,7 +90,7 @@ Advanced users are already familiar with DDD/DI, so deliver only what differenti
 3. Practice adding an API with `/add-api "add GET /items to practice"`
 
 ### Intermediate
-1. Familiarize yourself with the Absolute Prohibitions in CLAUDE.md
+1. Familiarize yourself with the Absolute Prohibitions in AGENTS.md
 2. Once assigned a domain, start with `/plan-feature` for design
 3. Run `/review-architecture {domain}` before your first PR
 

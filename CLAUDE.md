@@ -1,74 +1,19 @@
-# FastAPI Agent Blueprint — Claude Work Guide
+# FastAPI Agent Blueprint — Claude Harness Guide
 
-## Project Scale
-This project is an AI Agent Backend Platform targeting enterprise-grade services with 10+ domains and 5+ team members.
-All proposals and designs must consider scalability, maintainability, and team collaboration at this scale.
+Shared project rules live in [AGENTS.md](AGENTS.md).
+This file intentionally keeps only Claude-specific setup and workflow guidance.
 
 ## Pre-work Checklist
-1. Check current project status via `.claude/rules/project-status.md` (auto-loaded)
-2. Check DO/DON'T via `.claude/rules/architecture-conventions.md` (auto-loaded)
-
-## Absolute Prohibitions
-- No Infrastructure imports from the Domain layer
-- No exposing Model objects outside the Repository
-- No separate Mapper classes (inline conversion is sufficient)
-- No Entity pattern — unified to DTO (background: [ADR 004](docs/history/004-dto-entity-responsibility.md))
-- No modifying/deleting CLAUDE.md or project-dna.md rules without cross-reference verification
-  (Run: `grep -rl "KEYWORD" .claude/skills/` to check skill dependencies before any change)
-- Note: Domain → Interface **schema** imports (Request/Response types) are permitted
-  (When fields match, Request is passed directly to Service — creating a separate DTO is prohibited per ADR 004)
-
-## Layer Architecture (3-Tier Hybrid)
-- Default: Router → Service (extends BaseService) → Repository (extends BaseRepository)
-- DynamoDB domain: Router → Service (extends BaseDynamoService) → Repository (extends BaseDynamoRepository)
-- Complex logic: Router → UseCase (manually written) → Service → Repository
-- UseCase criteria: multiple Service composition, cross-transaction boundaries, etc.
-- When in doubt: start without UseCase, add when complexity grows
-
-## Terminology
-- **Request/Response**: API communication schema (`interface/server/schemas/`)
-- **Payload**: Worker message contract schema (`interface/worker/payloads/`) — background: [ADR 016](docs/history/016-worker-payload-schema.md)
-- **DTO**: Internal data carrier between layers — Repository→Router (`domain/dtos/`)
-- **Model**: DB table mapping, never exposed outside Repository (`infrastructure/database/models/`)
-- **DynamoModel**: DynamoDB table mapping, never exposed outside Repository (`infrastructure/dynamodb/models/`)
+1. Read shared project rules from `AGENTS.md` (not auto-loaded — read explicitly)
+2. Check current project status via `.claude/rules/project-status.md` (auto-loaded)
+3. Check DO/DON'T via `.claude/rules/architecture-conventions.md` (auto-loaded)
 
 ## Claude Collaboration Rules
 - If diagnosis/review result is "adequate", do not force improvement suggestions
-- Before proposing changes to project rules or structure:
-  1. Grep `.claude/skills/` for keywords from the rule being changed
-  2. If any skill references the rule, it is project-level — do not relocate or weaken
-- Only propose modifying/deleting existing structures when benefits of the new structure are clear
-- Skill SKILL.md frontmatter supported attributes: name, argument-hint, description, disable-model-invocation, compatibility (allowed-tools not supported)
-- **Update related documentation when changing code** — before committing, check:
-  1. Skills SKILL.md and references/ that reference the changed patterns
-  2. Relevant sections of project-dna.md
-  3. `.claude/rules/` files (architecture-conventions, project-status, etc.)
-  4. When delegating to agents, explicitly pass the list of changed files
-
-## Security Principles
-- Do not expose internal details (traceback, DB schema, query) in production error responses
-- Prevent OWASP Top 10 violations when writing code (detailed checklist: `/security-review`)
-
-## Conversion Patterns
-### Write Direction (Request → DB)
-- Router → Service: `entity=item` (pass Request directly)
-- Service → Repository: pass entity as-is, or transform via `entity.model_copy(update={...})` when domain logic requires it (e.g., password hashing)
-- Repository → DB: `Model(**entity.model_dump(exclude_none=True))`
-
-### Read Direction (DB → Response)
-- DB → Repository: `DTO.model_validate(model, from_attributes=True)`
-- Repository → Service → Router: pass DTO as-is
-- Router → Client: `Response(**dto.model_dump(exclude={'password'}))`
-
-### Worker Direction (Message → Service)
-- Message → Task: `Payload.model_validate(kwargs)`
-- Task → Service: pass payload as-is (when fields match)
-- Task → Service: `DTO(**payload.model_dump(), extra=...)` (when fields differ)
-
-## Write DTO Creation Criteria
-- When fields match Request: pass Request directly, no separate Create/Update DTO needed
-- When fields differ (auth context injection, derived fields, etc.): create separate DTO in `domain/dtos/`
-  - Example: `CreateUserDTO(**item.model_dump(), created_by=current_user.id)`
+- Only propose modifying or deleting existing Claude-specific structures when the benefit is clear
+- Skill `SKILL.md` frontmatter supported attributes: `name`, `argument-hint`, `description`, `disable-model-invocation`, `compatibility`
+- Before changing shared rules or structure, follow the drift management rules in `AGENTS.md`
+- When delegating to agents, explicitly pass the list of changed files
 
 ## Skills (slash commands)
 - `/plan-feature {description}` — Feature implementation planning (requirements interview → architecture analysis → security check → task decomposition)
@@ -94,7 +39,9 @@ All proposals and designs must consider scalability, maintainability, and team c
 
 ## Tool Selection Guidelines
 
-> context7 is a project-required MCP server (configured via `.mcp.json`).
+> Shared architecture rules, terminology, conversion patterns, and DTO criteria are defined in `AGENTS.md`.
+> Detailed shell commands are in `.claude/rules/commands.md` (auto-loaded); Makefile shortcuts are in `AGENTS.md`.
+> context7 is a project-required MCP server for Claude (configured via `.mcp.json`).
 > pyright-lsp plugin provides native LSP code intelligence.
 
 ### Code Exploration / Reading (by priority)

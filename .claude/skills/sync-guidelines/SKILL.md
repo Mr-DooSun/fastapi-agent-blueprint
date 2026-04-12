@@ -5,12 +5,12 @@ description: |
   This skill should be used when the user asks to "sync guidelines",
   "document inspection", "check skill updates",
   "update project-dna", "sync patterns", "verify code-document consistency",
-  or after architecture changes to verify Skills/CLAUDE.md match the actual code.
+  or after architecture changes to verify Skills/AGENTS.md/CLAUDE.md match the actual code.
 ---
 
 # Guideline Synchronization Inspection
 
-After design changes, inspect whether CLAUDE.md, Skills, and `.claude/rules/` are consistent with the actual code.
+After design changes, inspect whether `AGENTS.md`, `CLAUDE.md`, Skills, and `.claude/rules/` are consistent with the actual code.
 
 ## Reference Code Analysis
 Read `src/user/` as the reference domain to identify current actual patterns:
@@ -21,9 +21,10 @@ Read `src/user/` as the reference domain to identify current actual patterns:
 - File structure
 
 ## Inspection Targets (3 Categories)
-1. **CLAUDE.md <-> Code** -- Absolute Prohibitions, Conversion Patterns, Write DTO criteria
-2. **Skills <-> Code** -- Whether each skill's SKILL.md matches the current state (references are checked separately in Phase 5)
-3. **`.claude/rules/` <-> Code** -- architecture-conventions, project-status, project-overview
+1. **AGENTS.md <-> Code** -- Absolute Prohibitions, Conversion Patterns, Write DTO criteria
+2. **CLAUDE.md <-> Claude Harness** -- hooks, skills, MCP/plugin guidance
+3. **Skills <-> Code** -- Whether each skill's SKILL.md matches the current state (references are checked separately in Phase 5)
+4. **`.claude/rules/` <-> Code** -- architecture-conventions, project-status, project-overview
 
 Refer to `${CLAUDE_SKILL_DIR}/references/drift-checklist.md` for detailed inspection items.
 
@@ -32,7 +33,7 @@ Refer to `${CLAUDE_SKILL_DIR}/references/drift-checklist.md` for detailed inspec
 ```
 === Guideline Synchronization Inspection Results ===
 
-[OK] CLAUDE.md: Absolute Prohibitions -- No violations found
+[OK] AGENTS.md: Absolute Prohibitions -- No violations found
 [DRIFT] /new-domain: Base class import -- Path change detected
   -> Previous: src._core.infrastructure.database.base_repository
   -> Actual: src._core.database.base_repository
@@ -100,7 +101,7 @@ Items that can be mechanically extracted from code. When drift is found, generat
 Policy/standard-based content. Only detect whether related sources have changed and request user review.
 
 4. **Architecture Checklist** (`review-architecture/references/checklist.md`)
-   - Compare the number of Absolute Prohibitions in CLAUDE.md vs. the number of check items in checklist.md
+   - Compare the number of Absolute Prohibitions in AGENTS.md vs. the number of check items in checklist.md
    - On mismatch, request confirmation on whether to add Grep patterns for the new rules
 
 5. **Security Checklist** (`security-review/references/security-checklist.md`)

@@ -1,8 +1,8 @@
 # Architecture Conventions
 
 > Last synced: 2026-04-11 via /sync-guidelines
-> For Absolute Prohibitions (including CLAUDE.md modification rules), Conversion Patterns, and Write DTO criteria, refer to CLAUDE.md.
-> This file only contains **structural context** not covered in CLAUDE.md.
+> For Absolute Prohibitions, Conversion Patterns, Write DTO criteria, and common commands, refer to AGENTS.md.
+> This file only contains **structural context** that supplements AGENTS.md for Claude.
 
 ## Data Flow (3-Tier Hybrid)
 ```
@@ -15,7 +15,7 @@ Complex logic:
   Read:  Response ← UseCase ← Service ← Repository ← DTO ← Model
 ```
 > UseCase is added only when combining multiple Services or crossing transaction boundaries
-> For detailed Conversion Patterns: refer to the "Conversion Patterns" section in CLAUDE.md
+> For detailed Conversion Patterns: refer to the "Conversion Patterns" section in AGENTS.md
 
 ## DynamoDB Data Flow
 ```

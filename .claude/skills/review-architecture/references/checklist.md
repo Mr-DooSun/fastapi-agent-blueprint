@@ -6,7 +6,7 @@
 Grep-check Python files in each domain:
 
 - [ ] No `from src.{name}.infrastructure` imports in `src/{name}/domain/` files
-- [ ] No `from src.{name}.interface` imports in `src/{name}/domain/` files — **except** `schemas/` (Request types are passed directly when fields match, per CLAUDE.md Write DTO criteria)
+- [ ] No `from src.{name}.interface` imports in `src/{name}/domain/` files — **except** `schemas/` (Request types are passed directly when fields match, per AGENTS.md Write DTO criteria)
 - [ ] No `from src.{name}.infrastructure` imports in `src/{name}/application/` files (excluding DI)
 - [ ] No `from sqlalchemy` imports in `src/{name}/domain/` files
 - [ ] No `from dependency_injector` imports in `src/{name}/domain/` files

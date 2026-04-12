@@ -99,7 +99,7 @@ async def insert_data(self, entity: BaseModel) -> ReturnDTO:
 - **DatabaseException wrapping**: Raw SQLAlchemy exceptions are wrapped in domain-specific exceptions, preventing infrastructure details from leaking to upper layers
 
 **Implication for cross-method transactions:**
-When multiple repository methods need to run in a single transaction, the UseCase layer (ADR 011) is the designated coordination point. This is one of the criteria for introducing a UseCase — "cross-transaction boundaries" as stated in CLAUDE.md.
+When multiple repository methods need to run in a single transaction, the UseCase layer (ADR 011) is the designated coordination point. This is one of the criteria for introducing a UseCase — "cross-transaction boundaries" as stated in AGENTS.md.
 
 ## Rationale
 

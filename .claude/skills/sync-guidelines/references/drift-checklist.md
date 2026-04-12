@@ -1,18 +1,32 @@
 # Guideline Synchronization Inspection Items (Detailed)
 
-## 1. CLAUDE.md ↔ Code Consistency Check
+## 1. AGENTS.md ↔ Code Consistency Check
 
-Read CLAUDE.md and compare each section against the actual code:
+Read AGENTS.md and compare each section against the actual code:
 
 - [ ] **Absolute Prohibitions**: Verify no violations exist using Grep
   - `from src.*.infrastructure` in domain/ files
   - `class.*Mapper` definitions
   - Remaining Entity patterns (`to_entity(`, `from_entity(`, `class.*Entity`)
-- [ ] **Conversion Patterns**: Verify the 4 patterns described in CLAUDE.md are used identically in actual code
+- [ ] **Conversion Patterns**: Verify the patterns described in AGENTS.md are used identically in actual code
   - Request → Service: direct pass-through via `entity=item`
   - Model → DTO: `model_validate(model, from_attributes=True)`
   - DTO → Response: `model_dump(exclude={...})`
 - [ ] **Write DTO criteria**: Verify current Request/DTO usage matches the defined criteria
+
+## 1A. CLAUDE.md ↔ Claude Harness Consistency Check
+
+Read CLAUDE.md and verify Claude-only guidance still matches the harness:
+
+- [ ] `.mcp.json` role is described as Claude-only MCP configuration
+- [ ] `.claude/settings.json` hooks and `pyright-lsp` guidance still match current files
+- [ ] Slash skill list matches the actual `.claude/skills/` directory
+
+## 1B. `.claude/rules/absolute-prohibitions.md` ↔ AGENTS.md Sync Check
+
+- [ ] Compare the 5 prohibition rules in `.claude/rules/absolute-prohibitions.md` against `AGENTS.md` "Absolute Prohibitions" section
+- [ ] Verify the Note line (Domain → Interface schema imports) is identical in both files
+- [ ] If mismatch found: update `.claude/rules/absolute-prohibitions.md` to match `AGENTS.md` (AGENTS.md is canonical)
 
 ## 2. Skills ↔ Code Consistency Check
 
@@ -126,7 +140,7 @@ Inspect whether the content of each Skill's references/ files matches the curren
 ### Manual Inspection (Change-history-based — [REVIEW] targets)
 
 - [ ] **`review-architecture` checklist** (`checklist.md`):
-  - Count the items in CLAUDE.md's "Absolute Prohibitions" section (expected: 5) and compare against the number of related inspection items in checklist.md
+  - Count the items in AGENTS.md's "Absolute Prohibitions" section (expected: 5) and compare against the number of related inspection items in checklist.md
   - On mismatch: confirm with the user whether Grep patterns need to be added for new rules
 
 - [ ] **`security-review` security checklist** (`security-checklist.md`):

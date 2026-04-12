@@ -32,7 +32,7 @@ Bug description: $ARGUMENTS
 ## Phase 3: Fix
 1. Fix at the lowest possible layer (prefer domain > infrastructure)
 2. Follow existing patterns when fixing — do not introduce new patterns (Conversion Patterns: **project-dna.md §6**, Router: **§9**)
-3. Confirm compliance with CLAUDE.md Absolute Prohibitions
+3. Confirm compliance with `AGENTS.md` Absolute Prohibitions
 
 ## Phase 4: Verify
 1. Confirm the reproduction test from Phase 1 now passes (green)

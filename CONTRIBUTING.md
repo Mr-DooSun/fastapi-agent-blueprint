@@ -44,6 +44,72 @@ uv run python run_server_local.py --env local
 ```
 </details>
 
+## AI Collaboration Entry Points
+
+Start from [AGENTS.md](AGENTS.md), which is the canonical source for shared rules.
+
+Tool-specific harness files:
+- Claude: [CLAUDE.md](CLAUDE.md), [.mcp.json](.mcp.json), [.claude/settings.json](.claude/settings.json)
+- Codex: [.codex/config.toml](.codex/config.toml)
+
+Do not duplicate shared architecture rules into tool-specific docs. Update `AGENTS.md` first, then adjust the harness docs that reference it.
+
+## Claude Minimum Setup
+
+```bash
+uv sync --group dev
+claude plugin install pyright-lsp
+```
+
+Verification:
+- Confirm `.claude/settings.json` enables `pyright-lsp`
+- Confirm `.mcp.json` contains `context7`
+- Run Claude in the repo and verify hooks/plugins load normally
+
+## Codex Minimum Setup
+
+1. Trust the project in Codex.
+2. Confirm `.codex/config.toml` is present and committed.
+3. Run the following from the repository root:
+
+```bash
+codex mcp list
+codex mcp get context7
+codex debug prompt-input -c 'project_doc_max_bytes=400' "healthcheck" | rg "Shared Collaboration Rules|AGENTS\\.md"
+```
+
+Verification targets:
+- `context7` appears in `codex mcp list`
+- `codex mcp get context7` resolves the configured server
+- `codex debug prompt-input` includes `AGENTS.md` content when the project is trusted
+
+### Codex Local Exception: `~/.codex/sessions` Permission Issue
+
+If `codex debug prompt-input` fails with a sessions permission error, use a temporary `CODEX_HOME` plus a minimal trust bootstrap:
+
+```bash
+TMP_CODEX_HOME="$(mktemp -d /tmp/codex-home.XXXXXX)"
+printf '[projects."%s"]\ntrust_level = "trusted"\n' "$PWD" > "$TMP_CODEX_HOME/config.toml"
+CODEX_HOME="$TMP_CODEX_HOME" codex mcp list
+CODEX_HOME="$TMP_CODEX_HOME" codex mcp get context7
+CODEX_HOME="$TMP_CODEX_HOME" codex debug prompt-input \
+  -c "projects.\"$PWD\".trust_level=\"trusted\"" \
+  -c 'project_doc_max_bytes=400' \
+  "healthcheck" | rg "Shared Collaboration Rules|AGENTS\\.md"
+```
+
+`CODEX_HOME` alone is not enough. Without the temporary `config.toml` trust entry, Codex will ignore the repo's `.codex/config.toml`.
+
+### Codex `context7` Real-Use Check
+
+Run one interactive Codex session in the trusted repo and explicitly ask it to use `context7`, for example:
+
+```text
+Use context7 to look up the latest FastAPI lifespan guidance and summarize the result.
+```
+
+Confirm that the session shows a `context7` MCP startup or tool call before treating Codex MCP setup as complete.
+
 ## Project Structure
 
 See [README.md](README.md#project-structure) for the full project structure.
@@ -89,7 +155,7 @@ make pre-commit  # Run all pre-commit hooks
 
 ## Architecture Rules
 
-These rules are enforced by pre-commit hooks:
+Shared rules live in [AGENTS.md](AGENTS.md). These rules are additionally enforced by pre-commit hooks:
 
 - **Domain layer cannot import from Infrastructure** -- dependency inversion via Protocol
 - **Model objects never leave the Repository** -- convert to DTO using `model_validate()`
@@ -123,7 +189,7 @@ This is enforced by a pre-commit hook (`commitlint`). Invalid messages will be r
 ## Pull Request Process
 
 1. Create a feature branch from `main`
-2. Make your changes following the architecture rules above
+2. Make your changes following `AGENTS.md` and any relevant tool-specific harness docs
 3. Run `make check` (lint + format check + tests)
 4. Submit a PR using the [PR template](.github/pull_request_template.md)
 

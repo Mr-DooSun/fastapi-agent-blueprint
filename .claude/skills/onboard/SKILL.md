@@ -11,7 +11,7 @@ description: |
 # Interactive Onboarding for New Team Members
 
 > **Design Principle**: This skill does not have its own architecture documentation.
-> All information is read at runtime from existing sources (README.md, ADR, project-dna.md, CLAUDE.md, .claude/rules/, src/user/ code).
+> All information is read at runtime from existing sources (README.md, ADR, AGENTS.md, project-dna.md, CLAUDE.md, .claude/rules/, src/user/ code).
 > When the structure changes, the source is updated, and onboarding automatically reflects the latest content.
 
 ## Pre-check: Collect Project State
@@ -66,7 +66,7 @@ When the user selects **Q&A** format, apply the following rules to **all Phases 
 1. **Topic Map**: At the start of each Phase, present a brief overview with a numbered list of explorable topics.
    Each topic should include a one-line description so the user can judge what to ask about.
 2. **User-Driven**: Wait for the user's questions. Answer by referencing the same sources as Guided mode
-   (ADR, code, .claude/rules/, project-dna.md, CLAUDE.md, etc.).
+   (ADR, code, .claude/rules/, AGENTS.md, project-dna.md, CLAUDE.md, etc.).
 3. **Coverage Tracking**: Internally track which topics have been addressed by the user's questions.
 4. **Gap Check**: When the user says 'next' (or equivalent), check for any **critical uncovered topics**.
    If found, briefly mention them: "Before moving on, these are worth knowing: ..." (1-2 sentences each).
@@ -81,7 +81,7 @@ When the user selects **Explore** format, Phase 1-5 boundaries are removed. The 
 1. **Entry Point**: Show the project directory tree (`src/` top-level structure) as a starting point.
    The user points at any file, directory, class, or function to ask about.
 2. **On-Demand Explanation**: When the user points at code, explain it using the same sources as Guided mode
-   (ADR, .claude/rules/, project-dna.md, CLAUDE.md, live code reading, etc.).
+   (ADR, .claude/rules/, AGENTS.md, project-dna.md, CLAUDE.md, live code reading, etc.).
    Connect to design decisions and architecture context where relevant.
 3. **Coverage Tracking**: Internally map the user's questions to the critical topics across all Phases:
    - Phase 1 critical: structural evolution (ADR 006), Entity→DTO (ADR 004), 3-Tier Hybrid (ADR 011), IoC Container (ADR 013)
@@ -160,9 +160,9 @@ Reference the ADRs in `docs/history/` directory and convey in narrative form wha
 
 Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the following:
 - This project is designed for pair programming with Claude Code
-- 14 Skills (slash commands) automate domain creation, API addition, architecture verification, etc.
+- 13 Claude Skills (slash commands) automate domain creation, API addition, architecture verification, etc.
 - pyright-lsp plugin provides native code intelligence; context7 MCP provides library documentation lookup
-- Skills reference project-dna.md and CLAUDE.md to automatically follow project rules
+- Skills reference `AGENTS.md`, project-dna.md, and Claude rules to automatically follow project rules
 
 > "If you have any questions, feel free to ask. Otherwise, say 'next'."
 
@@ -207,7 +207,7 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 
 ## Phase 3: Architecture Rules
 
-**Information Source**: `CLAUDE.md` Absolute Prohibitions section
+**Information Source**: `AGENTS.md` Absolute Prohibitions section
 
 **Q&A Mode**: Present the following topic map and wait for questions.
 > **Phase 3 Topics -- Rules & Terminology**
@@ -220,15 +220,15 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 
 **Guided Mode**:
 
-1. Read the **Absolute Prohibitions** section of `CLAUDE.md` and present the 5 rules.
+1. Read the **Absolute Prohibitions** section of `AGENTS.md` and present the 5 rules.
    Since the history was already conveyed in Phase 1, connect each rule to **which story it originated from**:
    - "No Infrastructure import in Domain" <- Story 4 (IoC Container enables this)
    - "No Model exposure outside Repository" <- Story 2 (DTO handles inter-layer data transfer)
    - "No Mapper class" <- Inline conversion is sufficient (Story 2)
    - "No Entity pattern, DTO unification" <- Story 2 (ADR 004)
-   - "No modifying/deleting CLAUDE.md or project-dna.md rules without cross-reference verification" <- Meta-rule for consistency maintenance across Skills and guidelines
+   - "No modifying/deleting shared rule sources without cross-reference verification" <- Meta-rule for consistency maintenance across Skills and guidelines
 
-2. Read the **Terminology Definitions** section of `CLAUDE.md` and explain the roles and locations of Request/Response, DTO, and Model.
+2. Read the **Terminology** section of `AGENTS.md` and explain the roles and locations of Request/Response, DTO, and Model.
 
 **Experience level adjustment**:
 - **Advanced**: Just the rule list + story connections, kept concise
@@ -237,7 +237,7 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 
 ## Phase 4: Data Flow Walkthrough
 
-**Information Source**: `CLAUDE.md` Conversion Patterns section, `src/user/` live code
+**Information Source**: `AGENTS.md` Conversion Patterns section, `src/user/` live code
 
 **Q&A Mode**: Present the following topic map and wait for questions.
 > **Phase 4 Topics -- Data Flow**
@@ -252,7 +252,7 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 
 **Guided Mode**:
 
-1. Read the **Conversion Patterns** section of `CLAUDE.md` (Write direction, Read direction) and show the overall flow.
+1. Read the **Conversion Patterns** section of `AGENTS.md` (Write direction, Read direction) and show the overall flow.
 
 2. Read the actual code from the `src/user/` domain live and show concrete examples:
 
@@ -308,7 +308,8 @@ Wrap-up:
 Feel free to ask any additional questions at any time.
 
 Key reference materials:
-- CLAUDE.md -- Full project rules
+- AGENTS.md -- Shared project rules
+- CLAUDE.md -- Claude-specific harness rules
 - .claude/skills/_shared/project-dna.md -- Code pattern Reference
 - docs/history/ -- Architecture Decision Records (ADR)
 - src/user/ -- Reference domain implementation

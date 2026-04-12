@@ -49,11 +49,11 @@
 
 ### 개발자 경험
 
-- **13개 AI 개발 스킬** — 스캐폴딩, 테스트, 아키텍처 리뷰 등을 위한 Claude Code 슬래시 커맨드
+- **공통 규칙 + 도구별 하네스** — `AGENTS.md`, Claude 스킬, Codex CLI 설정으로 AI 협업 구조화
 - **아키텍처 자동 강제** — Pre-commit hook이 커밋 시점에 `Domain -> Infrastructure` import를 차단
 - **타입 안전 제네릭** — `BaseRepository[ProductDTO]`, `BaseService[ProductDTO]`, `SuccessResponse[ProductResponse]`
 - **DDD 레이어드 구조** — 각 도메인이 완전히 독립된 계층 보유 (Domain / Infrastructure / Interface / Application)
-- **14개 Architecture Decision Records** — 모든 주요 설계 결정을 근거와 함께 문서화
+- **Architecture Decision Records** — 주요 설계 결정을 근거와 함께 문서화
 
 ---
 
@@ -164,9 +164,28 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 
 ## AI 네이티브 개발 (AIDD)
 
-이 템플릿은 단독으로도 충분히 사용할 수 있습니다. **[Claude Code](https://docs.anthropic.com/en/docs/claude-code)와 함께라면 마법이 됩니다.**
+이 템플릿은 단독으로도 충분히 사용할 수 있습니다. 이제 AI 협업 구조는 **공통 규칙 + 도구별 하네스**로 정리되어 있습니다.
 
-### 러닝 커브 제로
+| 파일 | 역할 |
+|------|------|
+| `AGENTS.md` | 모든 AI 도구가 따라야 하는 공통 규칙의 canonical source |
+| `CLAUDE.md` | Claude 전용 hooks, plugins, slash skills, workflow 안내 |
+| `.mcp.json` | Claude 전용 MCP 설정 |
+| `.codex/config.toml` | Codex CLI 전용 프로젝트 설정 및 MCP 구성 |
+
+### 공통 규칙 우선
+
+모든 도구는 먼저 `AGENTS.md`를 기준으로 다음을 따른다:
+- 프로젝트 규모 전제
+- 절대 금지 규칙
+- 레이어 용어와 conversion pattern
+- DTO 생성 기준
+- 기본 run/test/lint/migration 명령
+- 문서와 규칙 drift 관리 원칙
+
+### Claude Code
+
+#### 러닝 커브 제로
 
 복잡한 아키텍처? `/onboard`를 입력하세요 -- 당신의 수준에 맞춰 모든 것을 설명해줍니다.
 
@@ -175,7 +194,7 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 - **중급**: 이 프로젝트 고유의 패턴에 집중
 - **고급**: 아키텍처 규칙과 컨벤션으로 바로 이동
 
-### 13개 내장 스킬
+#### 13개 내장 스킬
 
 | 명령어 | 기능 |
 |--------|------|
@@ -193,7 +212,7 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 | `/sync-guidelines` | 설계 변경 후 문서 동기화 |
 | `/migrate-domain {command}` | Alembic 마이그레이션 관리 |
 
-### 플러그인 설정 (필수)
+#### 플러그인 설정 (필수)
 
 코드 인텔리전스(심볼 탐색, 참조 추적, 진단)를 위해 pyright-lsp 플러그인을 설치하세요:
 
@@ -204,7 +223,7 @@ claude plugin install pyright-lsp    # Claude Code 플러그인 설치
 
 > `.claude/settings.json`의 `enabledPlugins`가 첫 실행 시 자동으로 설치를 안내합니다.
 
-### MCP 서버 설정
+#### MCP 서버 설정 (`.mcp.json`)
 
 **context7** -- 라이브러리 최신 문서 조회
 ```json
@@ -218,7 +237,29 @@ claude plugin install pyright-lsp    # Claude Code 플러그인 설치
 }
 ```
 
-> MCP 서버 없이도 프로젝트 자체는 정상 동작합니다. AIDD 스킬을 활용하려면 MCP 서버 설정이 필요합니다.
+> `.mcp.json`은 Claude 측 MCP 진입점입니다. MCP 서버 없이도 프로젝트 자체는 정상 동작하지만, Claude 스킬은 이 설정을 기대합니다.
+
+### Codex CLI
+
+Codex는 `.codex/config.toml`의 project-shared 설정을 사용합니다:
+
+```toml
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+web_search = "disabled"
+project_doc_fallback_filenames = ["AGENTS.md"]
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp@latest"]
+```
+
+권장 검증 흐름:
+1. Codex에서 이 프로젝트를 trusted 상태로 만든다.
+2. `codex mcp list`, `codex mcp get context7`를 실행한다.
+3. `codex debug prompt-input -c 'project_doc_max_bytes=400' "healthcheck" | rg "Shared Collaboration Rules|AGENTS\\.md"`로 `AGENTS.md`가 실제 prompt input에 포함되는지 확인한다.
+
+> `.codex/config.toml`은 Codex 측 하네스 진입점입니다. 웹 검색은 기본 비활성화되어 있으므로, 최신 외부 정보가 필요할 때만 명시적으로 활성화하세요.
 
 ---
 
@@ -475,7 +516,7 @@ src/
 | [012](../docs/history/012-ruff-migration.md) | Ruff 도입 |
 | [013](../docs/history/013-why-ioc-container.md) | 상속 대신 IoC Container를 선택한 이유 |
 
-[전체 14개 ADR 보기](../docs/history/README.md)
+[ADR 인덱스 보기](../docs/history/README.md)
 
 ---
 
@@ -505,7 +546,8 @@ src/
 - [x] 헬스 체크 엔드포인트
 - [x] 도메인 자동 발견
 - [x] 아키텍처 강제 (pre-commit)
-- [x] 13개 AI 개발 스킬
+- [x] 13개 Claude Code 스킬
+- [x] Codex CLI 하네스 (`.codex/config.toml`)
 
 스타를 눌러 진행 상황을 팔로우하세요!
 

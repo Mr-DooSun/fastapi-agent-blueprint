@@ -21,7 +21,7 @@ Rule sources to load:
 - `${CLAUDE_SKILL_DIR}/../security-review/references/security-checklist.md` — OWASP security items
 - `${CLAUDE_SKILL_DIR}/../_shared/project-dna.md` — conversion patterns, DI rules, base classes
 - `.claude/rules/architecture-conventions.md` — DO/DON'T rules
-- `CLAUDE.md` — Absolute Prohibitions
+- `AGENTS.md` — shared absolute prohibitions and DTO rules
 
 ## Difference from `/review-architecture`
 ```

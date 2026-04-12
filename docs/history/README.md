@@ -38,6 +38,7 @@ Each document captures the context and decision criteria for "why this technolog
 | [028](028-environment-config-validation.md) | Environment-Aware Configuration Validation | Accepted | Done | 2026-04-08 |
 | [029](029-broker-abstraction-selector.md) | Broker Abstraction with providers.Selector for Multi-Backend Selection | Accepted | Done | 2026-04-09 |
 | [030](030-serena-removal-pyright-rules.md) | Serena Removal: Migration to pyright-lsp and .claude/rules/ | Accepted | Done | 2026-04-11 |
+| [031](031-shared-rules-tool-harness.md) | Shared Rules and Tool-Specific Harnesses | Accepted | Done | 2026-04-12 |
 
 ## Future Considerations (Open Issues)
 

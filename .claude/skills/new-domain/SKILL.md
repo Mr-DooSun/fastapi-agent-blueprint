@@ -32,7 +32,7 @@ Refer to `${CLAUDE_SKILL_DIR}/references/scaffolding-layers.md` for the detailed
 Default 44 files (15 content + 25 `__init__.py` + 4 tests), with UseCase 46 files.
 
 ## Architecture Rules
-Follow the "Absolute Prohibitions" and "Conversion Patterns" from CLAUDE.md.
+Follow the shared rules in `AGENTS.md`, especially "Absolute Prohibitions" and "Conversion Patterns".
 
 ## Verification after Completion
 1. `python -c "from src.{name}.domain.dtos.{name}_dto import {Name}DTO; print('OK')"` -- verify import

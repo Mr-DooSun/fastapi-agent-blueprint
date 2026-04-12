@@ -50,7 +50,7 @@ Determine whether changes/additions are needed for each layer:
 - Search related existing code
 
 ### 1.3 DTO Decision
-Decide based on the Write DTO criteria in CLAUDE.md:
+Decide based on the Write DTO criteria in `AGENTS.md`:
 - Request fields == Domain fields? -> No separate DTO needed, pass Request directly
 - Request fields != Domain fields? -> Separate Create/Update DTO needed, location: `application/` or `domain/dtos/`
 

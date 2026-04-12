@@ -84,7 +84,7 @@ await user_service.process_user(dto=dto)
 
 Rejected after review: this introduced an inconsistency with the Router pattern.
 Routers pass Request objects directly to Service (`entity=item`) without converting to DTO
-when fields match (see CLAUDE.md "Write DTO Creation Criteria").
+when fields match (see AGENTS.md "Write DTO Creation Criteria").
 Since `BaseService` methods accept `entity: BaseModel`, both Request and Payload
 can be passed directly — the Service never imports either type; it simply receives a BaseModel.
 Forcing Payload → DTO conversion only in the worker created an unnecessary asymmetry.

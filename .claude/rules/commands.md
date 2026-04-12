@@ -3,6 +3,7 @@
 > Last synced: 2026-04-11 via /sync-guidelines
 > Purpose: Quick reference for Claude Code when executing shell commands.
 > Also referenced when running Skills.
+> Makefile targets (`make dev`, `make test`, etc.) are available as shortcuts — see `AGENTS.md` Common Commands.
 
 ## Run
 ```bash

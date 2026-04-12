@@ -50,11 +50,11 @@
 
 ### Developer Experience
 
-- **13 AI development skills** — Claude Code slash commands for scaffolding, testing, architecture review, and more
+- **Shared AI rules + tool-specific harnesses** — `AGENTS.md` for common rules, plus Claude and Codex entrypoints
 - **Architecture enforcement** — Pre-commit hooks block `Domain -> Infrastructure` imports at commit time
 - **Type-safe generics** — `BaseRepository[ProductDTO]`, `BaseService[ProductDTO]`, `SuccessResponse[ProductResponse]`
 - **DDD layered structure** — Each domain is fully independent with its own layers (Domain / Infrastructure / Interface / Application)
-- **14 Architecture Decision Records** — Every major design choice documented with rationale
+- **Architecture Decision Records** — Major design choices documented with rationale
 
 ---
 
@@ -165,9 +165,28 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 
 ## AI-Native Development (AIDD)
 
-This template works great on its own. **With [Claude Code](https://docs.anthropic.com/en/docs/claude-code), it's magic.**
+This template works great on its own. For AI-native development, the repository uses a **shared rules + tool-specific harness** structure:
 
-### Zero Learning Curve
+| File | Role |
+|------|------|
+| `AGENTS.md` | Canonical shared rules for all AI tools |
+| `CLAUDE.md` | Claude-specific hooks, plugins, slash skills, and workflow notes |
+| `.mcp.json` | Claude-only MCP server configuration |
+| `.codex/config.toml` | Codex CLI project settings and MCP configuration |
+
+### Shared Rules First
+
+All tools should follow `AGENTS.md` for:
+- project scale assumptions
+- absolute prohibitions
+- layer terminology and conversion patterns
+- DTO creation criteria
+- baseline run/test/lint/migration commands
+- documentation drift management principles
+
+### Claude Code
+
+#### Zero Learning Curve
 
 Complex architecture? Type `/onboard` -- it explains everything at your level.
 
@@ -177,7 +196,7 @@ The `/onboard` skill adapts to your experience and learning style:
 - **Q&A** -- topic maps provided, explore by asking questions
 - **Explore** -- point at any code freely, uncovered essentials flagged at the end
 
-### 13 Built-in Skills
+#### 13 Built-in Skills
 
 | Command | What it does |
 |---------|------------|
@@ -195,7 +214,7 @@ The `/onboard` skill adapts to your experience and learning style:
 | `/sync-guidelines` | Sync docs after design changes |
 | `/migrate-domain {command}` | Alembic migration management |
 
-### Plugin Setup (Required)
+#### Plugin Setup (Required)
 
 Install the pyright-lsp plugin for code intelligence (symbol navigation, references, diagnostics):
 
@@ -206,7 +225,7 @@ claude plugin install pyright-lsp    # installs Claude Code plugin
 
 > `enabledPlugins` in `.claude/settings.json` will prompt installation automatically on first run.
 
-### MCP Server Setup
+#### MCP Server Setup (`.mcp.json`)
 
 **context7** -- Up-to-date library documentation
 ```json
@@ -220,7 +239,29 @@ claude plugin install pyright-lsp    # installs Claude Code plugin
 }
 ```
 
-> The project works without MCP servers. AIDD skills require MCP server configuration.
+> `.mcp.json` is the Claude-side MCP entrypoint. The project works without MCP servers, but Claude skills expect this configuration.
+
+### Codex CLI
+
+Codex uses the committed project config in `.codex/config.toml`:
+
+```toml
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+web_search = "disabled"
+project_doc_fallback_filenames = ["AGENTS.md"]
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp@latest"]
+```
+
+Recommended verification flow:
+1. Trust the project in Codex.
+2. Run `codex mcp list` and `codex mcp get context7`.
+3. Run `codex debug prompt-input -c 'project_doc_max_bytes=400' "healthcheck" | rg "Shared Collaboration Rules|AGENTS\\.md"` and confirm `AGENTS.md` is included in the prompt input.
+
+> `.codex/config.toml` is the Codex-side harness entrypoint. Web search is disabled by default; enable it explicitly only when you need live external information.
 
 ---
 
@@ -477,7 +518,7 @@ Every technical choice in this project is documented as an ADR (Architecture Dec
 | [012](docs/history/012-ruff-migration.md) | Ruff adoption |
 | [013](docs/history/013-why-ioc-container.md) | Why IoC Container over inheritance |
 
-[View all 14 ADRs](docs/history/README.md)
+[View ADR index](docs/history/README.md)
 
 ---
 
@@ -507,7 +548,8 @@ Every technical choice in this project is documented as an ADR (Architecture Dec
 - [x] Health check endpoint
 - [x] Auto domain discovery
 - [x] Architecture enforcement (pre-commit)
-- [x] 13 AI development skills
+- [x] 13 Claude Code skills
+- [x] Codex CLI harness (`.codex/config.toml`)
 
 Star this repo to follow our progress!
 
