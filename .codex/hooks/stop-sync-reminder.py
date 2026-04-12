@@ -13,6 +13,7 @@ FOUNDATION_PREFIXES = (
     ".claude/rules/",
     ".claude/settings.json",
     "docs/ai/shared/",
+    "docs/ai/shared/skills/",
     "src/_apps/",
     "src/_core/",
     "pyproject.toml",
@@ -43,7 +44,8 @@ if foundation:
             "Guideline sync strongly recommended.",
             "Foundation files changed:",
             *[f"- {path}" for path in foundation[:12]],
-            "Check AGENTS.md, Claude/Codex harness docs, and shared references before closing the work.",
+            "Codex: run $sync-guidelines",
+            "Claude Code: run /sync-guidelines as well",
         ]
     )
     print(json.dumps({"systemMessage": message}))

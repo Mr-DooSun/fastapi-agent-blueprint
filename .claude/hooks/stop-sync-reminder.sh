@@ -22,7 +22,7 @@ fi
 [ -z "$CHANGED" ] && exit 0
 
 # Foundation: project-wide impact
-FOUNDATION=$(echo "$CHANGED" | grep -E '^(src/_core/|src/_apps/|pyproject\.toml$|\.pre-commit-config\.yaml$|AGENTS\.md$|CLAUDE\.md$|\.codex/|\.agents/|\.claude/rules/|\.claude/hooks/|\.claude/settings\.json$|docs/ai/shared/)' || true)
+FOUNDATION=$(echo "$CHANGED" | grep -E '^(src/_core/|src/_apps/|pyproject\.toml$|\.pre-commit-config\.yaml$|AGENTS\.md$|CLAUDE\.md$|\.codex/|\.agents/|\.claude/rules/|\.claude/hooks/|\.claude/settings\.json$|docs/ai/shared/|docs/ai/shared/skills/)' || true)
 
 # Domain Structure: domain-level architectural impact (exclude _core/_apps)
 STRUCTURE=$(echo "$CHANGED" | grep -E '^src/[^_].*/((infrastructure/di/|interface/server/routers/|domain/protocols/|domain/dtos/))' || true)
@@ -32,7 +32,8 @@ if [ -n "$FOUNDATION" ]; then
     echo "=== /sync-guidelines 강력 권고 ==="
     echo "프로젝트 기반 파일이 변경되었습니다:"
     echo "$FOUNDATION" | sed 's/^/  - /'
-    echo "Skills, project-dna.md 동기화가 필요할 수 있습니다."
+    echo "Claude: /sync-guidelines 실행"
+    echo "Codex 사용 시: \$sync-guidelines도 실행 필요"
     echo "================================="
 elif [ -n "$STRUCTURE" ]; then
     echo ""

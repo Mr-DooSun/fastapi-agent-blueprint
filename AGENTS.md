@@ -116,14 +116,35 @@ uv run alembic current
 - `AGENTS.md` is the canonical source for shared rules; tool-specific harness docs must point here instead of re-copying rules
 - Keep root `AGENTS.md` short and stable; when local context needs more detail, prefer `AGENTS.override.md` or named skills instead of expanding the root doc
 - Codex memories are personal/session optimization only; do not treat them as a shared rule source
+- Shared rule sources: `AGENTS.md`, `docs/ai/shared/`, `docs/ai/shared/skills/`, `.claude/`, `.codex/`, and `.agents/`
 - Update related documentation in the same change when shared rules or harness behavior changes
   - `README.md`
   - `docs/README.ko.md`
   - `CONTRIBUTING.md`
   - `CLAUDE.md`
-  - `docs/ai/shared/`
+  - `docs/ai/shared/` and `docs/ai/shared/skills/`
   - `.claude/rules/` and `.claude/skills/` references when relevant
   - `.codex/hooks.json`, `.codex/rules/`, and `.agents/skills/` when relevant
+- When modifying a skill procedure, verify both `.claude/skills/` and `.agents/skills/` wrappers reference the same shared procedure
+  - For Hybrid C skills: `docs/ai/shared/skills/{name}.md` is the canonical source for the procedure
+  - Claude and Codex wrappers must stay in sync with the shared procedure's Phase/Step structure
 - If architecture or shared patterns change, inspect drift before closing the work
   - Claude workflow entry point: `/sync-guidelines`
   - Codex workflow: use `$sync-guidelines` or follow the documented verification steps in `README.md` / `CONTRIBUTING.md`
+  - Both tools should run sync after architecture changes — not just the active tool
+
+### Skill Split Convention (Hybrid C)
+
+When extracting shared skill procedures to `docs/ai/shared/skills/`:
+
+**Wrapper keeps** (`.claude/skills/`, `.agents/skills/`):
+- Tool-specific frontmatter (name, description, argument-hint, metadata, etc.)
+- Phase/Step overview (1-2 line summary per phase — agent sees the full flow before reading external file)
+- Tool-specific post-steps (e.g., Claude's `.claude/rules/*` update)
+- User interaction flow when it differs between tools
+
+**Shared procedure contains** (`docs/ai/shared/skills/{name}.md`):
+- Detailed steps per phase (inspection targets, conditions, branching logic)
+- Output format examples
+- Checklists, file lists, grep patterns
+- Cross-references to other `docs/ai/shared/` documents

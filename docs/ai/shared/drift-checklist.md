@@ -137,6 +137,27 @@ Inspect whether `docs/ai/shared/` documents match the current code.
   - Compare both sets (additions/deletions/renames)
   - On drift: suggest adding/removing rows in the table
 
+### Hybrid C Skill Structure Verification
+
+- [ ] **Shared procedure existence** (`docs/ai/shared/skills/`):
+  - For each Hybrid C skill, verify `docs/ai/shared/skills/{name}.md` exists and is non-empty
+  - Compare the list against skills known to be migrated (check AGENTS.md Skill Split Convention)
+
+- [ ] **Wrapper ↔ Shared procedure reference consistency**:
+  - For each Hybrid C skill, verify `.claude/skills/{name}/SKILL.md` references `docs/ai/shared/skills/{name}.md`
+  - For each Hybrid C skill, verify `.agents/skills/{name}/SKILL.md` references `docs/ai/shared/skills/{name}.md`
+  - On missing reference: flag as [DRIFT] and suggest adding the reference
+
+- [ ] **Phase count consistency**:
+  - Count Phase/Step headings in `docs/ai/shared/skills/{name}.md`
+  - Count Phase/Step overview items in `.claude/skills/{name}/SKILL.md` wrapper
+  - On mismatch: flag as [DRIFT] — shared procedure may have been updated without updating the wrapper overview
+
+- [ ] **No tool-specific instructions in shared procedure**:
+  - Grep `docs/ai/shared/skills/*.md` for `.claude/rules/`, `.claude/skills/`, `.agents/skills/`
+  - Shared procedures must not contain tool-specific file paths or instructions
+  - On violation: move tool-specific content to the appropriate wrapper
+
 ### Manual Inspection (Change-history-based — [REVIEW] targets)
 
 - [ ] **`review-architecture` checklist** (`docs/ai/shared/architecture-review-checklist.md`):

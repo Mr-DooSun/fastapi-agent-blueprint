@@ -7,8 +7,9 @@ metadata:
 
 # Sync Guidelines
 
-1. Read `AGENTS.md`, `docs/ai/shared/project-dna.md`, and `docs/ai/shared/drift-checklist.md`.
-2. Compare code against:
+1. Read `AGENTS.md` and `docs/ai/shared/skills/sync-guidelines.md` for the full procedure.
+2. Read `docs/ai/shared/drift-checklist.md` for detailed inspection items.
+3. Compare code against:
    - `AGENTS.md`
    - `README.md`
    - `docs/README.ko.md`
@@ -17,6 +18,6 @@ metadata:
    - `.codex/config.toml`
    - `.codex/hooks.json`
    - `.agents/skills/`
-3. Use `src/user/` as the reference domain for current patterns.
-4. Report drift clearly, then update the affected docs or workflow assets.
-5. After updates, re-run the inspection until major drift is gone.
+4. Use `src/user/` as the reference domain for current patterns.
+5. Report drift clearly, then update the affected docs or workflow assets.
+6. After updates, re-run the inspection until major drift is gone.
