@@ -113,3 +113,18 @@ The `/sync-guidelines` skill detects drift between code, documentation, and skil
 - [x] Is this the right approach for the current project scale and team situation?
 - [x] Will a reader understand "why" 6 months from now without additional context?
 - [x] Am I recording the decision process, or justifying a conclusion I already reached?
+
+## Post-decision Update (2026-04-13)
+
+The governance system evolved from Claude-only to multi-tool (Claude Code + Codex CLI):
+
+- `project-dna.md` moved: `.claude/skills/_shared/` → `docs/ai/shared/` ([ADR 032](032-codex-native-workflow-assets.md))
+- Skills split into shared procedures + tool-specific wrappers ([ADR 033](033-hybrid-c-skill-split-convention.md))
+- Skill count: 13 → 14 (`/onboard` added)
+- Layer 2 path: `project-dna.md` + shared checklists now in `docs/ai/shared/`
+- Layer 3 enforcement: Claude hooks + Codex hooks (both detect same foundation file changes)
+- Canonical shared rules extracted to `AGENTS.md` ([ADR 031](031-shared-rules-tool-harness.md))
+
+The three-layer model (Skills → Architecture Truth → Enforcement) remains intact.
+What changed is that each layer now serves two tools instead of one.
+See ADR [031](031-shared-rules-tool-harness.md), [032](032-codex-native-workflow-assets.md), [033](033-hybrid-c-skill-split-convention.md) for the detailed evolution.
