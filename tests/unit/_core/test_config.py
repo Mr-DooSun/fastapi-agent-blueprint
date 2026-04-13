@@ -188,6 +188,33 @@ class TestPartialConfigGroups:
             s = _create_settings()
             assert s.dynamodb_region is None
 
+    def test_partial_s3vectors_rejected(self):
+        env = {"ENV": "local", "S3VECTORS_REGION": "us-east-2", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(
+                ValidationError, match=r"S3Vectors.*Partial configuration"
+            ):
+                _create_settings()
+
+    def test_complete_s3vectors_accepted(self):
+        env = {
+            "ENV": "local",
+            "S3VECTORS_REGION": "us-east-2",
+            "S3VECTORS_ACCESS_KEY": "key",
+            "S3VECTORS_SECRET_KEY": "secret",
+            "S3VECTORS_BUCKET_NAME": "my-vectors",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.s3vectors_region == "us-east-2"
+
+    def test_no_s3vectors_accepted(self):
+        env = {"ENV": "local", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.s3vectors_region is None
+
 
 class TestBrokerConfig:
     def test_local_no_broker_type_accepted(self):
