@@ -11,3 +11,4 @@ web_search = "live"
 [mcp_servers.context7]
 url = "https://mcp.context7.com/mcp"
 required = true
+env_http_headers = { Authorization = "CONTEXT7_API_KEY" }
