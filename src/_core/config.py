@@ -104,6 +104,22 @@ class Settings(BaseSettings):
     )
 
     # ----------------------------------------------------------------
+    # S3 Vectors (Optional)
+    # ----------------------------------------------------------------
+    s3vectors_region: str | None = Field(
+        default=None, validation_alias="S3VECTORS_REGION"
+    )
+    s3vectors_access_key: str | None = Field(
+        default=None, validation_alias="S3VECTORS_ACCESS_KEY"
+    )
+    s3vectors_secret_key: str | None = Field(
+        default=None, validation_alias="S3VECTORS_SECRET_KEY"
+    )
+    s3vectors_bucket_name: str | None = Field(
+        default=None, validation_alias="S3VECTORS_BUCKET_NAME"
+    )
+
+    # ----------------------------------------------------------------
     # Message Broker
     # ----------------------------------------------------------------
     broker_type: str | None = Field(default=None, validation_alias="BROKER_TYPE")
@@ -213,6 +229,21 @@ class Settings(BaseSettings):
             errors.append(
                 f"[DynamoDB] Partial configuration: "
                 f"{', '.join(sorted(dynamodb_set))} "
+                f"set but {', '.join(missing)} missing"
+            )
+
+        s3vectors_fields = {
+            "s3vectors_region": self.s3vectors_region,
+            "s3vectors_access_key": self.s3vectors_access_key,
+            "s3vectors_secret_key": self.s3vectors_secret_key,
+            "s3vectors_bucket_name": self.s3vectors_bucket_name,
+        }
+        s3vectors_set = {k for k, v in s3vectors_fields.items() if v is not None}
+        if s3vectors_set and s3vectors_set != set(s3vectors_fields):
+            missing = sorted(set(s3vectors_fields) - s3vectors_set)
+            errors.append(
+                f"[S3Vectors] Partial configuration: "
+                f"{', '.join(sorted(s3vectors_set))} "
                 f"set but {', '.join(missing)} missing"
             )
 
