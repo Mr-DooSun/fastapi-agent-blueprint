@@ -42,6 +42,8 @@ Each document captures the context and decision criteria for "why this technolog
 | [032](032-codex-native-workflow-assets.md) | Codex Native Workflow Assets After the Thin Harness Phase | Accepted | Done | 2026-04-13 |
 | [033](033-hybrid-c-skill-split-convention.md) | Hybrid C Skill Split Convention | Accepted | Done | 2026-04-13 |
 | [034](034-s3vectors-vectorstore-pattern.md) | S3 Vectors Integration with VectorStore Pattern | Accepted | Done | 2026-04-14 |
+| [035](035-embedding-service-abstraction.md) | Embedding Service Abstraction with Selector Pattern | Accepted | Done | 2026-04-14 |
+| [036](036-text-chunking-semantic-text-splitter.md) | Text Chunking with semantic-text-splitter | Accepted | Done | 2026-04-14 |
 
 ## Future Considerations (Open Issues)
 
