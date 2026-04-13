@@ -285,6 +285,99 @@ class TestBrokerConfig:
             assert s.broker_type == "inmemory"
 
 
+class TestEmbeddingConfig:
+    def test_no_embedding_provider_accepted(self):
+        env = {"ENV": "local", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_provider is None
+
+    def test_unknown_embedding_provider_rejected(self):
+        env = {"ENV": "local", "EMBEDDING_PROVIDER": "cohere", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match="Unknown embedding provider"):
+                _create_settings()
+
+    def test_openai_without_api_key_rejected(self):
+        env = {"ENV": "local", "EMBEDDING_PROVIDER": "openai", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match=r"Embedding/OpenAI.*missing"):
+                _create_settings()
+
+    def test_openai_with_api_key_accepted(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "openai",
+            "EMBEDDING_OPENAI_API_KEY": "sk-test",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_provider == "openai"
+            assert s.embedding_openai_api_key == "sk-test"
+
+    def test_embedding_dimension_property_openai_default(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "openai",
+            "EMBEDDING_OPENAI_API_KEY": "sk-test",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_dimension == 1536
+
+    def test_embedding_dimension_property_openai_large_model(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "openai",
+            "EMBEDDING_OPENAI_API_KEY": "sk-test",
+            "EMBEDDING_MODEL": "text-embedding-3-large",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_dimension == 3072
+
+    def test_embedding_dimension_property_bedrock_default(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "bedrock",
+            "EMBEDDING_BEDROCK_ACCESS_KEY": "key",
+            "EMBEDDING_BEDROCK_SECRET_KEY": "secret",
+            "EMBEDDING_BEDROCK_REGION": "us-east-1",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_dimension == 1024
+
+    def test_bedrock_partial_config_rejected(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "bedrock",
+            "EMBEDDING_BEDROCK_ACCESS_KEY": "key",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match=r"Embedding/Bedrock.*missing"):
+                _create_settings()
+
+    def test_bedrock_complete_config_accepted(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "bedrock",
+            "EMBEDDING_BEDROCK_ACCESS_KEY": "key",
+            "EMBEDDING_BEDROCK_SECRET_KEY": "secret",
+            "EMBEDDING_BEDROCK_REGION": "us-east-1",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_provider == "bedrock"
+            assert s.embedding_bedrock_region == "us-east-1"
+
+
 class TestWarnDefaults:
     def test_task_name_prefix_warns_in_strict_env(self):
         safe = _make_safe_env("prod")
