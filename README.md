@@ -43,8 +43,8 @@
 
 ### Production-Ready Architecture
 
-- **4 interface types** — HTTP API (FastAPI) + Async Worker (Taskiq) + Admin UI (SQLAdmin) + MCP Server (planned)
-- **Zero-boilerplate CRUD** — Inherit `BaseRepository[DTO]` + `BaseService[DTO]`, get 7 async CRUD methods instantly
+- **4 interface types** — HTTP API (FastAPI) + Async Worker (Taskiq) + Admin UI (NiceGUI) + MCP Server (planned)
+- **Zero-boilerplate CRUD** — Inherit `BaseRepository[DTO]` + `BaseService[CreateRequest, UpdateRequest, DTO]` for core async CRUD and pagination helpers
 - **Auto domain discovery** — Add a domain folder, it auto-registers. No container or bootstrap changes needed
 - **Async-first** — Genuine async from DB (asyncpg) to HTTP (aiohttp) to task queue (Taskiq)
 
@@ -52,7 +52,7 @@
 
 - **Shared AI rules + tool-specific harnesses** — `AGENTS.md` for common rules, plus Claude and Codex entrypoints
 - **Architecture enforcement** — Pre-commit hooks block `Domain -> Infrastructure` imports at commit time
-- **Type-safe generics** — `BaseRepository[ProductDTO]`, `BaseService[ProductDTO]`, `SuccessResponse[ProductResponse]`
+- **Type-safe generics** — `BaseRepository[ProductDTO]`, `BaseService[CreateProductRequest, UpdateProductRequest, ProductDTO]`, `SuccessResponse[ProductResponse]`
 - **DDD layered structure** — Each domain is fully independent with its own layers (Domain / Infrastructure / Interface / Application)
 - **Architecture Decision Records** — Major design choices documented with rationale
 
@@ -66,7 +66,9 @@ Write business logic once. Expose it as a REST API, background job, admin view, 
 
 ```python
 # 1. Define your service
-class DocumentService(BaseService[DocumentDTO]):
+class DocumentService(
+    BaseService[CreateDocumentRequest, UpdateDocumentRequest, DocumentDTO]
+):
     async def analyze(self, document_id: int) -> AnalysisDTO:
         ...  # your business logic
 
@@ -114,11 +116,11 @@ class ProductRepository(BaseRepository[ProductDTO]):
     def __init__(self, database: Database):
         super().__init__(database=database, model=ProductModel, return_entity=ProductDTO)
 
-class ProductService(BaseService[ProductDTO]):
+class ProductService(BaseService[CreateProductRequest, UpdateProductRequest, ProductDTO]):
     def __init__(self, product_repository: ProductRepositoryProtocol):
         super().__init__(repository=product_repository)
 
-# 7 CRUD methods provided automatically -- just add your custom logic
+# Core CRUD methods and pagination helpers are provided automatically
 ```
 
 ---
@@ -138,7 +140,7 @@ Router -> UseCase -> Service -> Repository -> DB
 | Layer | Role | Base Class |
 |-------|------|-----------|
 | **Interface** | Router, Request/Response, Admin, Worker Task, MCP Tool | - |
-| **Domain** | Service (business logic), Protocol, DTO, Event | `BaseService[ReturnDTO]` |
+| **Domain** | Service (business logic), Protocol, DTO, Exceptions | `BaseService[CreateDTO, UpdateDTO, ReturnDTO]` |
 | **Infrastructure** | Repository (DB access), Model, DI Container | `BaseRepository[ReturnDTO]` |
 | **Application** | UseCase (orchestration) -- **optional** | - |
 
@@ -346,7 +348,9 @@ class ProductRepositoryProtocol(BaseRepositoryProtocol[ProductDTO]):
     pass
 
 # src/product/domain/services/product_service.py
-class ProductService(BaseService[ProductDTO]):
+class ProductService(
+    BaseService[CreateProductRequest, UpdateProductRequest, ProductDTO]
+):
     def __init__(self, product_repository: ProductRepositoryProtocol):
         super().__init__(repository=product_repository)
     # CRUD provided automatically. Just add custom logic.
@@ -410,8 +414,8 @@ Each domain can expose functionality through multiple interfaces:
 | Interface | Technology | Status | Purpose |
 |-----------|-----------|--------|---------|
 | **HTTP API** | FastAPI | Stable | REST API endpoints |
-| **Async Worker** | Taskiq + SQS | Stable | Background task processing |
-| **Admin UI** | SQLAdmin | Stable | Database management dashboard |
+| **Async Worker** | Taskiq + SQS/RabbitMQ/InMemory | Stable | Background task processing |
+| **Admin UI** | NiceGUI | Stable | Auto-discovered admin CRUD dashboard |
 | **MCP Server** | FastMCP | Planned | AI agent tool interface |
 
 All interfaces share the same Domain and Infrastructure layers -- write your business logic once, expose it everywhere.
@@ -454,7 +458,7 @@ All interfaces share the same Domain and Infrastructure layers -- write your bus
 | **Ruff** | Linting + formatting ([replaces 6 tools](docs/history/012-ruff-migration.md)) |
 | **pre-commit** | Git hook automation + architecture enforcement |
 | **UV** | Python package management ([why not Poetry?](docs/history/005-poetry-to-uv.md)) |
-| **SQLAdmin** | DB admin UI |
+| **NiceGUI** | Admin dashboard UI |
 
 ---
 
@@ -465,16 +469,16 @@ src/
 ├── _apps/                        # App entry points
 │   ├── server/                  # FastAPI HTTP server
 │   ├── worker/                  # Taskiq async worker
-│   └── admin/                   # SQLAdmin dashboard
+│   └── admin/                   # NiceGUI admin app
 │
 ├── _core/                        # Shared infrastructure
 │   ├── domain/
 │   │   ├── protocols/           # BaseRepositoryProtocol[ReturnDTO]
-│   │   └── services/            # BaseService[ReturnDTO]
+│   │   └── services/            # BaseService[CreateDTO, UpdateDTO, ReturnDTO]
 │   ├── infrastructure/
 │   │   ├── database/            # Database, BaseRepository[ReturnDTO]
 │   │   ├── http/                # HttpClient, BaseHttpGateway
-│   │   ├── taskiq/              # SQS Broker, TaskiqManager
+│   │   ├── taskiq/              # Broker adapters, TaskiqManager
 │   │   ├── storage/             # S3/MinIO
 │   │   ├── di/                  # CoreContainer
 │   │   └── discovery.py         # Auto domain discovery
@@ -486,17 +490,16 @@ src/
 │   ├── domain/
 │   │   ├── dtos/                # UserDTO
 │   │   ├── protocols/           # UserRepositoryProtocol
-│   │   ├── services/            # UserService(BaseService[UserDTO])
+│   │   ├── services/            # UserService(BaseService[CreateUserRequest, UpdateUserRequest, UserDTO])
 │   │   ├── exceptions/          # UserNotFoundException
-│   │   └── events/              # UserCreated, UserUpdated
 │   ├── infrastructure/
 │   │   ├── database/models/     # UserModel
 │   │   ├── repositories/        # UserRepository(BaseRepository[UserDTO])
 │   │   └── di/                  # UserContainer
 │   └── interface/
 │       ├── server/              # routers/, schemas/, bootstrap/
-│       ├── worker/              # tasks/, bootstrap/
-│       └── admin/               # SQLAdmin views
+│       ├── worker/              # payloads/, tasks/, bootstrap/
+│       └── admin/               # configs/, pages/ (NiceGUI)
 │
 ├── migrations/                   # Alembic
 ├── _env/                         # Environment variables

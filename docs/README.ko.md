@@ -42,8 +42,8 @@
 
 ### 프로덕션 레디 아키텍처
 
-- **4가지 인터페이스** — HTTP API (FastAPI) + 비동기 Worker (Taskiq) + Admin UI (SQLAdmin) + MCP Server (예정)
-- **보일러플레이트 제로 CRUD** — `BaseRepository[DTO]` + `BaseService[DTO]` 상속으로 7개 비동기 CRUD 메서드 즉시 제공
+- **4가지 인터페이스** — HTTP API (FastAPI) + 비동기 Worker (Taskiq) + Admin UI (NiceGUI) + MCP Server (예정)
+- **보일러플레이트 제로 CRUD** — `BaseRepository[DTO]` + `BaseService[CreateRequest, UpdateRequest, DTO]` 상속으로 핵심 비동기 CRUD와 pagination helper 즉시 제공
 - **도메인 자동 발견** — 도메인 폴더를 추가하면 자동 등록. Container나 bootstrap 수정 불필요
 - **비동기 우선** — DB(asyncpg)부터 HTTP(aiohttp), 태스크 큐(Taskiq)까지 진정한 async
 
@@ -51,7 +51,7 @@
 
 - **공통 규칙 + 도구별 하네스** — `AGENTS.md`, Claude 스킬, Codex CLI 설정으로 AI 협업 구조화
 - **아키텍처 자동 강제** — Pre-commit hook이 커밋 시점에 `Domain -> Infrastructure` import를 차단
-- **타입 안전 제네릭** — `BaseRepository[ProductDTO]`, `BaseService[ProductDTO]`, `SuccessResponse[ProductResponse]`
+- **타입 안전 제네릭** — `BaseRepository[ProductDTO]`, `BaseService[CreateProductRequest, UpdateProductRequest, ProductDTO]`, `SuccessResponse[ProductResponse]`
 - **DDD 레이어드 구조** — 각 도메인이 완전히 독립된 계층 보유 (Domain / Infrastructure / Interface / Application)
 - **Architecture Decision Records** — 주요 설계 결정을 근거와 함께 문서화
 
@@ -65,7 +65,9 @@
 
 ```python
 # 1. 서비스 정의
-class DocumentService(BaseService[DocumentDTO]):
+class DocumentService(
+    BaseService[CreateDocumentRequest, UpdateDocumentRequest, DocumentDTO]
+):
     async def analyze(self, document_id: int) -> AnalysisDTO:
         ...  # 비즈니스 로직
 
@@ -113,11 +115,11 @@ class ProductRepository(BaseRepository[ProductDTO]):
     def __init__(self, database: Database):
         super().__init__(database=database, model=ProductModel, return_entity=ProductDTO)
 
-class ProductService(BaseService[ProductDTO]):
+class ProductService(BaseService[CreateProductRequest, UpdateProductRequest, ProductDTO]):
     def __init__(self, product_repository: ProductRepositoryProtocol):
         super().__init__(repository=product_repository)
 
-# 7개 CRUD 메서드 자동 제공 — 커스텀 로직만 추가하면 됨
+# 핵심 CRUD 메서드와 pagination helper 자동 제공 — 커스텀 로직만 추가하면 됨
 ```
 
 ---
@@ -137,7 +139,7 @@ Router -> UseCase -> Service -> Repository -> DB
 | 계층 | 역할 | Base 클래스 |
 |------|------|------------|
 | **Interface** | Router, Request/Response, Admin, Worker Task, MCP Tool | - |
-| **Domain** | Service (비즈니스 로직), Protocol, DTO, Event | `BaseService[ReturnDTO]` |
+| **Domain** | Service (비즈니스 로직), Protocol, DTO, Exception | `BaseService[CreateDTO, UpdateDTO, ReturnDTO]` |
 | **Infrastructure** | Repository (DB 접근), Model, DI Container | `BaseRepository[ReturnDTO]` |
 | **Application** | UseCase (복합 로직 조율) -- **선택적** | - |
 
@@ -344,7 +346,9 @@ class ProductRepositoryProtocol(BaseRepositoryProtocol[ProductDTO]):
     pass
 
 # src/product/domain/services/product_service.py
-class ProductService(BaseService[ProductDTO]):
+class ProductService(
+    BaseService[CreateProductRequest, UpdateProductRequest, ProductDTO]
+):
     def __init__(self, product_repository: ProductRepositoryProtocol):
         super().__init__(repository=product_repository)
     # CRUD 자동 제공. 커스텀 로직만 추가.
@@ -408,8 +412,8 @@ async def create_product(
 | 인터페이스 | 기술 | 상태 | 용도 |
 |-----------|------|------|------|
 | **HTTP API** | FastAPI | Stable | REST API 엔드포인트 |
-| **비동기 Worker** | Taskiq + SQS | Stable | 백그라운드 태스크 처리 |
-| **Admin UI** | SQLAdmin | Stable | 데이터베이스 관리 대시보드 |
+| **비동기 Worker** | Taskiq + SQS/RabbitMQ/InMemory | Stable | 백그라운드 태스크 처리 |
+| **Admin UI** | NiceGUI | Stable | 자동 발견 기반 admin CRUD 대시보드 |
 | **MCP Server** | FastMCP | Planned | AI 에이전트 도구 인터페이스 |
 
 모든 인터페이스는 동일한 Domain/Infrastructure 계층을 공유합니다 -- 비즈니스 로직을 한 번 작성하고, 어디서든 노출하세요.
@@ -452,7 +456,7 @@ async def create_product(
 | **Ruff** | 린팅 + 포맷팅 ([6개 도구 통합](../docs/history/012-ruff-migration.md)) |
 | **pre-commit** | Git hook 자동화 + 아키텍처 강제 |
 | **UV** | Python 패키지 관리 ([왜 Poetry가 아닌가?](../docs/history/005-poetry-to-uv.md)) |
-| **SQLAdmin** | DB 관리 UI |
+| **NiceGUI** | Admin 대시보드 UI |
 
 ---
 
@@ -463,16 +467,16 @@ src/
 ├── _apps/                        # App-level 진입점
 │   ├── server/                  # FastAPI HTTP 서버
 │   ├── worker/                  # Taskiq 비동기 워커
-│   └── admin/                   # SQLAdmin 대시보드
+│   └── admin/                   # NiceGUI admin 앱
 │
 ├── _core/                        # 공통 인프라
 │   ├── domain/
 │   │   ├── protocols/           # BaseRepositoryProtocol[ReturnDTO]
-│   │   └── services/            # BaseService[ReturnDTO]
+│   │   └── services/            # BaseService[CreateDTO, UpdateDTO, ReturnDTO]
 │   ├── infrastructure/
 │   │   ├── database/            # Database, BaseRepository[ReturnDTO]
 │   │   ├── http/                # HttpClient, BaseHttpGateway
-│   │   ├── taskiq/              # SQS Broker, TaskiqManager
+│   │   ├── taskiq/              # Broker adapter, TaskiqManager
 │   │   ├── storage/             # S3/MinIO
 │   │   ├── di/                  # CoreContainer
 │   │   └── discovery.py         # 도메인 자동 발견
@@ -484,17 +488,16 @@ src/
 │   ├── domain/
 │   │   ├── dtos/                # UserDTO
 │   │   ├── protocols/           # UserRepositoryProtocol
-│   │   ├── services/            # UserService(BaseService[UserDTO])
+│   │   ├── services/            # UserService(BaseService[CreateUserRequest, UpdateUserRequest, UserDTO])
 │   │   ├── exceptions/          # UserNotFoundException
-│   │   └── events/              # UserCreated, UserUpdated
 │   ├── infrastructure/
 │   │   ├── database/models/     # UserModel
 │   │   ├── repositories/        # UserRepository(BaseRepository[UserDTO])
 │   │   └── di/                  # UserContainer
 │   └── interface/
 │       ├── server/              # routers/, schemas/, bootstrap/
-│       ├── worker/              # tasks/, bootstrap/
-│       └── admin/               # SQLAdmin views
+│       ├── worker/              # payloads/, tasks/, bootstrap/
+│       └── admin/               # configs/, pages/ (NiceGUI)
 │
 ├── migrations/                   # Alembic
 ├── _env/                         # 환경변수
