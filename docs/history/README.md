@@ -39,6 +39,9 @@ Each document captures the context and decision criteria for "why this technolog
 | [029](029-broker-abstraction-selector.md) | Broker Abstraction with providers.Selector for Multi-Backend Selection | Accepted | Done | 2026-04-09 |
 | [030](030-serena-removal-pyright-rules.md) | Serena Removal: Migration to pyright-lsp and .claude/rules/ | Accepted | Done | 2026-04-11 |
 | [031](031-shared-rules-tool-harness.md) | Shared Rules and Tool-Specific Harnesses | Accepted | Done | 2026-04-12 |
+| [032](032-codex-native-workflow-assets.md) | Codex Native Workflow Assets After the Thin Harness Phase | Accepted | Done | 2026-04-13 |
+| [033](033-hybrid-c-skill-split-convention.md) | Hybrid C Skill Split Convention | Accepted | Done | 2026-04-13 |
+| [034](034-s3vectors-vectorstore-pattern.md) | S3 Vectors Integration with VectorStore Pattern | Accepted | Done | 2026-04-14 |
 
 ## Future Considerations (Open Issues)
 
@@ -54,7 +57,6 @@ Each document captures the context and decision criteria for "why this technolog
 | #31 | Per-message-broker environment separation | enhancement, refactor |
 | #32 | Logging | enhancement |
 | #35 | Add data CRUD validation | - |
-| #36 | Add vector DB | enhancement |
 | #45 | Add Vercel | enhancement |
 | #46 | Improve ADR template for clearer intent communication | enhancement |
 | #14 | Implement admin dashboard with NiceGUI | enhancement |

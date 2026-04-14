@@ -6,6 +6,7 @@ from src._core.infrastructure.database.config import DatabaseConfig
 from src._core.infrastructure.database.database import Database
 from src._core.infrastructure.dynamodb.dynamodb_client import DynamoDBClient
 from src._core.infrastructure.http.http_client import HttpClient
+from src._core.infrastructure.s3vectors.s3vector_client import S3VectorClient
 from src._core.infrastructure.storage.object_storage import ObjectStorage
 from src._core.infrastructure.storage.object_storage_client import ObjectStorageClient
 from src._core.infrastructure.taskiq.broker import (
@@ -86,6 +87,17 @@ class CoreContainer(containers.DeclarativeContainer):
         secret_access_key=settings.dynamodb_secret_key,
         region_name=settings.dynamodb_region,
         endpoint_url=settings.dynamodb_endpoint_url,
+    )
+
+    #########################################################
+    # S3 Vectors
+    #########################################################
+
+    s3vector_client = providers.Singleton(
+        S3VectorClient,
+        access_key=settings.s3vectors_access_key,
+        secret_access_key=settings.s3vectors_secret_key,
+        region_name=settings.s3vectors_region,
     )
 
     #########################################################

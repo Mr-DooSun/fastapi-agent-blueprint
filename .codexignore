@@ -39,3 +39,12 @@ __pycache__/
 # Binary assets
 # ============================================
 docs/assets/*.png
+
+# ============================================
+# Non-development documents
+# ============================================
+CHANGELOG.md
+LICENSE
+CODE_OF_CONDUCT.md
+SECURITY.md
+.github/ISSUE_TEMPLATE/
