@@ -1,9 +1,16 @@
 [project]
 name = "fastapi-agent-blueprint"
 version = "0.3.0"
-description = "AI Agent Backend Platform — MCP server, AI orchestration, and async DDD architecture on FastAPI"
+description = "FastAPI DDD template, built for AI agent backends — zero-boilerplate CRUD, auto domain discovery, async architecture"
 readme = "README.md"
 requires-python = ">=3.12.9"
+
+[project.urls]
+Homepage = "https://github.com/Mr-DooSun/fastapi-agent-blueprint"
+Repository = "https://github.com/Mr-DooSun/fastapi-agent-blueprint"
+Issues = "https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues"
+Changelog = "https://github.com/Mr-DooSun/fastapi-agent-blueprint/blob/main/CHANGELOG.md"
+
 dependencies = [
     "aioboto3>=15.4.0",
     "aiohttp>=3.13.0",

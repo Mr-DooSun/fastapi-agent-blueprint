@@ -18,43 +18,95 @@
 </p>
 
 <p align="center">
-  <b>AI Agent Backend Platform on FastAPI.</b><br>
-  MCP server + AI orchestration + async DDD — from CRUD to agent tools in one codebase.<br>
-  Build AI-powered backends that serve both users and agents.
+  <b>FastAPI DDD template, built for AI agent backends.</b><br>
+  Zero-boilerplate CRUD + auto discovery + vector search today. MCP server + AI orchestration coming soon.<br>
+  14+ AI development skills for Claude Code &amp; Codex CLI.
 </p>
 
 <p align="center">
-  <a href="#quick-start">Quick Start</a> · <a href="#architecture">Architecture</a> · <a href="#ai-native-development-aidd">AI-Native Development</a> · <a href="#comparison">Comparison</a> · <a href="docs/README.ko.md">한국어</a>
+  <a href="#quick-start">Quick Start</a> · <a href="#who-is-this-for">Who is this for?</a> · <a href="#architecture">Architecture</a> · <a href="#comparison">Comparison</a> · <a href="docs/README.ko.md">한국어</a>
 </p>
 
-<!-- TODO: Add demo GIF here
-![Demo](docs/assets/demo.gif)
--->
+<p align="center">
+  <a href="https://github.com/Mr-DooSun/fastapi-agent-blueprint/generate">
+    <img src="https://img.shields.io/badge/-Use%20this%20template-2ea44f?style=for-the-badge" alt="Use this template">
+  </a>
+</p>
 
 ---
 
-## Key Features
+## Who is this for?
 
-### AI Agent Platform
+- **FastAPI developers** who need a production-ready project structure beyond the tutorial stage — DDD layers, DI container, async throughout, architecture enforcement
+- **Backend teams** building systems that need multiple interfaces (REST API + background workers + admin UI) sharing the same domain logic
+- **AI agent builders** who need vector search and embedding infrastructure ready out of the box, with MCP server and PydanticAI orchestration coming soon
+- **AI-augmented developers** who use Claude Code or Codex CLI and want a codebase with 14+ built-in AI development skills that work in both tools
 
-- **MCP Server interface** `planned` — Expose domain services as AI agent tools via FastMCP
-- **AI agent orchestration** `planned` — PydanticAI integration for structured LLM workflows
-- **Vector infrastructure** `available` — AWS S3 Vectors + OpenAI/Bedrock embeddings + chunking utilities for semantic search foundations
+---
 
-### Production-Ready Architecture
+## What You Get
 
-- **4 interface types** — HTTP API (FastAPI) + Async Worker (Taskiq) + Admin UI (NiceGUI) + MCP Server (planned)
-- **Zero-boilerplate CRUD** — Inherit `BaseRepository[DTO]` + `BaseService[CreateRequest, UpdateRequest, DTO]` for core async CRUD and pagination helpers
-- **Auto domain discovery** — Add a domain folder, it auto-registers. No container or bootstrap changes needed
-- **Async-first** — Genuine async from DB (asyncpg) to HTTP (aiohttp) to task queue (Taskiq)
-
-### Developer Experience
-
-- **Shared AI rules + tool-specific harnesses** — `AGENTS.md` for common rules, plus Claude and Codex entrypoints
-- **Architecture enforcement** — Pre-commit hooks block `Domain -> Infrastructure` imports at commit time
+- **Zero-boilerplate CRUD** — Inherit `BaseRepository[DTO]` + `BaseService[Create, Update, DTO]`, get 7 async methods instantly
+- **Auto domain discovery** — Add a domain folder, it auto-registers. No container or bootstrap changes
+- **3 interface types** — HTTP API (FastAPI) + Async Worker (Taskiq) + Admin UI (NiceGUI), all sharing one domain layer
+- **Vector infrastructure** — S3 Vectors + OpenAI/Bedrock embeddings + semantic chunking utilities
 - **Type-safe generics** — `BaseRepository[ProductDTO]`, `BaseService[CreateProductRequest, UpdateProductRequest, ProductDTO]`, `SuccessResponse[ProductResponse]`
-- **DDD layered structure** — Each domain is fully independent with its own layers (Domain / Infrastructure / Interface / Application)
-- **Architecture Decision Records** — Major design choices documented with rationale
+- **Architecture enforcement** — Pre-commit hooks block `Domain → Infrastructure` imports at commit time
+- **DynamoDB support** — `BaseDynamoRepository` with cursor-based pagination alongside PostgreSQL
+- **14+ AI development skills** — Works in both Claude Code and Codex CLI: `new-domain`, `add-api`, `onboard`, `review-architecture`, and more ([details](#ai-native-development))
+- **Async-first** — From DB (asyncpg) to HTTP (aiohttp) to task queue (Taskiq)
+- **37 ADRs** — Every technical choice documented with rationale ([view index](docs/history/README.md))
+
+<details>
+<summary><b>Coming soon</b></summary>
+
+- **MCP Server interface** — Expose domain services as AI agent tools via FastMCP ([#18](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/18))
+- **PydanticAI integration** — Structured LLM orchestration with Pydantic-native outputs ([#15](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/15))
+- **pgvector** — Additional vector backend ([#11](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/11))
+
+</details>
+
+---
+
+## Quick Start
+
+```bash
+# 1. Clone
+git clone https://github.com/Mr-DooSun/fastapi-agent-blueprint.git
+cd fastapi-agent-blueprint
+
+# 2. Setup (requires uv)
+make setup
+
+# 3. Set up environment variables
+cp _env/local.env.example _env/local.env
+
+# 4. Start PostgreSQL + run migrations + start server
+make dev
+```
+
+Open http://localhost:8000/docs-swagger to explore the API.
+
+<details>
+<summary>Manual setup (without Make)</summary>
+
+```bash
+# 2. Create virtual environment + install dependencies
+uv venv --python 3.12
+source .venv/bin/activate
+uv sync --group dev
+
+# 3. Set up environment variables
+cp _env/local.env.example _env/local.env
+
+# 4. Start PostgreSQL (Docker)
+docker compose -f docker-compose.local.yml up -d postgres
+
+# 5. Run migrations + start server
+alembic upgrade head
+python run_server_local.py --env local
+```
+</details>
 
 ---
 
@@ -77,7 +129,7 @@ class DocumentService(
 async def analyze_document(document_id: int, service=Depends(...)):
     return await service.analyze(document_id)
 
-# 3. MCP Tool — for AI agents (planned)
+# 3. MCP Tool — for AI agents (coming soon)
 @mcp.tool()
 async def analyze_document(document_id: int) -> AnalysisResult:
     return await document_service.analyze(document_id)
@@ -165,172 +217,93 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 
 ---
 
-## AI-Native Development (AIDD)
+## Interface Types
 
-This template works great on its own. For AI-native development, the repository uses a **shared rules + shared references + tool-specific harness** structure:
+Each domain can expose functionality through multiple interfaces:
 
-| File | Role |
-|------|------|
-| `AGENTS.md` | Canonical shared rules for all AI tools |
-| `docs/ai/shared/` | Shared workflow references and checklists used by Claude and Codex |
-| `CLAUDE.md` | Claude-specific hooks, plugins, slash skills, and workflow notes |
-| `.mcp.json` | Claude-only MCP server configuration |
-| `.codex/config.toml` | Codex CLI project settings, profiles, features, and MCP configuration |
-| `.codex/hooks.json` | Codex command-hook configuration |
-| `.agents/skills/` | Repo-local Codex workflow skills |
+| Interface | Technology | Status | Purpose |
+|-----------|-----------|--------|---------|
+| **HTTP API** | FastAPI | Stable | REST API endpoints |
+| **Async Worker** | Taskiq + SQS/RabbitMQ/InMemory | Stable | Background task processing |
+| **Admin UI** | NiceGUI | Stable | Auto-discovered admin CRUD dashboard |
+| **MCP Server** | FastMCP | Planned | AI agent tool interface |
 
-### Shared Rules First
+All interfaces share the same Domain and Infrastructure layers -- write your business logic once, expose it everywhere.
 
-All tools should follow `AGENTS.md` for:
-- project scale assumptions
-- absolute prohibitions
-- layer terminology and conversion patterns
-- DTO creation criteria
-- baseline run/test/lint/migration commands
-- documentation drift management principles
+---
 
-Use `docs/ai/shared/` for the deeper workflow references that are too detailed for root `AGENTS.md`, such as `project-dna.md`, planning checklists, review checklists, and test patterns. When running `/sync-guidelines` or `$sync-guidelines`, always close with `project-dna`, `AUTO-FIX`, `REVIEW`, and `Remaining` so manual review items are not silently skipped.
+## AI-Native Development
 
-### Claude Code
+This template includes built-in AI collaboration support for **Claude Code** and **OpenAI Codex CLI**. Both tools share the same architecture rules (`AGENTS.md`) and workflow references (`docs/ai/shared/`), with tool-specific harnesses layered on top.
 
-#### Zero Learning Curve
+| Layer | Claude Code | Codex CLI |
+|-------|------------|-----------|
+| **Shared rules** | `AGENTS.md` | `AGENTS.md` |
+| **Shared references** | `docs/ai/shared/` | `docs/ai/shared/` |
+| **Tool config** | `CLAUDE.md` + `.mcp.json` | `.codex/config.toml` + `.codex/hooks.json` |
+| **Skills** | 14 slash commands (`.claude/skills/`) | 15 workflow skills (`.agents/skills/`) |
+| **Hooks** | PostToolUse auto-format | 6 hooks (format, security, session-start, ...) |
 
-Complex architecture? Type `/onboard` -- it explains everything at your level.
+### Zero Learning Curve
 
-The `/onboard` skill adapts to your experience and learning style:
+Complex architecture? Type `/onboard` (Claude) or `$onboard` (Codex) -- it explains everything at your level.
+
+The onboard skill adapts to your experience and learning style:
 - **Beginner / Intermediate / Advanced** -- depth adjusts to your level
 - **Guided** -- structured Phase-by-Phase walkthrough
 - **Q&A** -- topic maps provided, explore by asking questions
 - **Explore** -- point at any code freely, uncovered essentials flagged at the end
 
-#### 14 Built-in Skills
+### Built-in Skills
 
-| Command | What it does |
-|---------|------------|
-| `/onboard` | Interactive onboarding -- adapts to your experience level and learning style |
-| `/new-domain {name}` | Scaffold an entire domain (21+ source files + tests) |
-| `/add-api {description}` | Add API endpoint to existing domain |
-| `/add-worker-task {domain} {task}` | Add async Taskiq background task |
-| `/add-admin-page {domain}` | Add a NiceGUI admin page to an existing domain |
-| `/add-cross-domain from:{a} to:{b}` | Wire cross-domain dependency via Protocol DIP |
-| `/plan-feature {description}` | Requirements interview -> architecture -> security -> task breakdown |
-| `/review-architecture {domain}` | Architecture compliance audit (20+ checks) |
-| `/security-review {domain}` | OWASP-based security audit |
-| `/test-domain {domain}` | Generate or run domain tests |
-| `/fix-bug {description}` | Structured bug fixing workflow |
-| `/review-pr {number}` | Architecture-aware PR review |
-| `/sync-guidelines` | Sync docs after design changes; report both AUTO-FIX and REVIEW targets before closing |
-| `/migrate-domain {command}` | Alembic migration management |
+All skills work in both Claude Code (`/` prefix) and Codex CLI (`$` prefix):
 
-#### Plugin Setup (Required)
+| Skill | What it does |
+|-------|------------|
+| `onboard` | Interactive onboarding -- adapts to your experience level and learning style |
+| `new-domain {name}` | Scaffold an entire domain (21+ source files + tests) |
+| `add-api {description}` | Add API endpoint to existing domain |
+| `add-worker-task {domain} {task}` | Add async Taskiq background task |
+| `add-admin-page {domain}` | Add a NiceGUI admin page to an existing domain |
+| `add-cross-domain from:{a} to:{b}` | Wire cross-domain dependency via Protocol DIP |
+| `plan-feature {description}` | Requirements interview -> architecture -> security -> task breakdown |
+| `review-architecture {domain}` | Architecture compliance audit (20+ checks) |
+| `security-review {domain}` | OWASP-based security audit |
+| `test-domain {domain}` | Generate or run domain tests |
+| `fix-bug {description}` | Structured bug fixing workflow |
+| `review-pr {number}` | Architecture-aware PR review |
+| `sync-guidelines` | Sync docs after design changes |
+| `migrate-domain {command}` | Alembic migration management |
 
-Install the pyright-lsp plugin for code intelligence (symbol navigation, references, diagnostics):
-
-```bash
-uv sync                              # installs pyright binary as dev dependency
-claude plugin install pyright-lsp    # installs Claude Code plugin
-```
-
-> `enabledPlugins` in `.claude/settings.json` will prompt installation automatically on first run.
-
-#### MCP Server Setup (`.mcp.json`)
-
-**context7** -- Up-to-date library documentation
-```json
-{
-  "mcpServers": {
-    "context7": {
-      "url": "https://mcp.context7.com/mcp"
-    }
-  }
-}
-```
-
-> `.mcp.json` is the Claude-side MCP entrypoint. The project works without MCP servers, but Claude skills expect this configuration.
-
-### Codex CLI
-
-Codex uses the committed project config in `.codex/config.toml`:
-
-```toml
-sandbox_mode = "workspace-write"
-approval_policy = "on-request"
-web_search = "disabled"
-
-[features]
-codex_hooks = true
-
-[profiles.research]
-web_search = "live"
-
-[mcp_servers.context7]
-url = "https://mcp.context7.com/mcp"
-```
-
-> Codex uses the remote Context7 MCP endpoint so documentation lookups are not blocked by the sandboxed network restrictions that apply to locally spawned stdio servers.
-
-Codex's repository workflow layer is split across:
-- `.codex/config.toml` for base config and profiles
-- `.codex/hooks.json` plus `.codex/hooks/` for command hooks
-- `.agents/skills/` for repo-local workflows such as `$onboard`, `$plan-feature`, `$review-pr`
-- `docs/ai/shared/` for shared references that both Claude and Codex consume
-
-Recommended verification flow:
-1. Trust the project in Codex.
-2. Run `codex mcp list` and `codex mcp get context7`.
-3. Run `codex debug prompt-input -c 'project_doc_max_bytes=400' "healthcheck" | rg "Shared Collaboration Rules|AGENTS\\.md"` and confirm `AGENTS.md` is included in the prompt input.
-4. Use `codex -p research` or `codex --search` only when live web search is actually required.
-5. Treat Codex memories as personal/session optimization only, not as team-shared governance.
-
-> `.codex/config.toml` is the Codex-side harness entrypoint. Web search is disabled by default; enable it explicitly only when you need live external information.
+> For plugin setup, MCP server configuration, and Codex CLI details, see the [AI Development Guide](docs/ai-development.md).
 
 ---
 
-## Quick Start
+## Comparison
 
-```bash
-# 1. Clone
-git clone https://github.com/Mr-DooSun/fastapi-agent-blueprint.git
-cd fastapi-agent-blueprint
-
-# 2. Setup (requires uv)
-make setup
-
-# 3. Set up environment variables
-cp _env/local.env.example _env/local.env
-
-# 4. Start PostgreSQL + run migrations + start server
-make dev
-```
-
-Open http://localhost:8000/docs-swagger to explore the API.
-
-<details>
-<summary>Manual setup (without Make)</summary>
-
-```bash
-# 2. Create virtual environment + install dependencies
-uv venv --python 3.12
-source .venv/bin/activate
-uv sync --group dev
-
-# 3. Set up environment variables
-cp _env/local.env.example _env/local.env
-
-# 4. Start PostgreSQL (Docker)
-docker compose -f docker-compose.local.yml up -d postgres
-
-# 5. Run migrations + start server
-alembic upgrade head
-python run_server_local.py --env local
-```
-</details>
+| Feature | FastAPI Agent Blueprint | [tiangolo/full-stack](https://github.com/fastapi/full-stack-fastapi-template) | [s3rius/template](https://github.com/s3rius/FastAPI-template) | [teamhide/boilerplate](https://github.com/teamhide/fastapi-boilerplate) |
+|---------|:-:|:-:|:-:|:-:|
+| Zero-boilerplate CRUD (7 methods) | **Yes** | No | No | No |
+| Auto domain discovery | **Yes** | No | No | No |
+| Architecture enforcement (pre-commit) | **Yes** | No | No | No |
+| AI workflow skills (Claude + Codex) | **14+** | 0 | 0 | 0 |
+| Vector infrastructure (S3 Vectors) | **Yes** | No | No | No |
+| Adaptive onboarding (`/onboard`) | **Yes** | No | No | No |
+| Multi-interface (API+Worker+Admin+MCP) | **3+1 planned** | 2 | 1 | 1 |
+| Architecture Decision Records | **37** | 0 | 0 | 0 |
+| Type-safe generics across layers | **Yes** | Partial | Partial | No |
+| DI with IoC Container | **Yes** | No | No | No |
+| MCP Server interface | **Planned** | No | No | No |
+| AI orchestration (PydanticAI) | **Planned** | No | No | No |
 
 ---
 
 ## Adding a New Domain
 
-Using `Product` domain as an example:
+> With Claude Code, just run `/new-domain product` to scaffold all of this automatically.
+
+<details>
+<summary>Manual steps (Product domain example)</summary>
 
 ### 1. Domain Layer
 
@@ -403,35 +376,25 @@ Discovery conditions:
 - `src/{name}/__init__.py` exists
 - `src/{name}/infrastructure/di/{name}_container.py` exists
 
-> With Claude Code, just run `/new-domain product` to scaffold all of this automatically.
-
----
-
-## 4 Interface Types
-
-Each domain can expose functionality through multiple interfaces:
-
-| Interface | Technology | Status | Purpose |
-|-----------|-----------|--------|---------|
-| **HTTP API** | FastAPI | Stable | REST API endpoints |
-| **Async Worker** | Taskiq + SQS/RabbitMQ/InMemory | Stable | Background task processing |
-| **Admin UI** | NiceGUI | Stable | Auto-discovered admin CRUD dashboard |
-| **MCP Server** | FastMCP | Planned | AI agent tool interface |
-
-All interfaces share the same Domain and Infrastructure layers -- write your business logic once, expose it everywhere.
+</details>
 
 ---
 
 ## Tech Stack
 
-### AI & Agent `planned`
+FastAPI + SQLAlchemy 2.0 + Pydantic 2.x + dependency-injector + Taskiq + NiceGUI + asyncpg + aioboto3
 
-| Technology | Purpose |
-|-----------|---------|
-| **FastMCP** | MCP server — expose domain services as tools for AI agents |
-| **PydanticAI** | Structured LLM orchestration with Pydantic-native outputs |
-| **AWS S3 Vectors** | Managed vector index backend for semantic search infrastructure |
-| **OpenAI / Bedrock Embeddings** | Pluggable embedding backends selected by configuration |
+<details>
+<summary>Full stack details</summary>
+
+### AI & Agent
+
+| Technology | Purpose | Status |
+|-----------|---------|--------|
+| **AWS S3 Vectors** | Managed vector index backend for semantic search infrastructure | Available |
+| **OpenAI / Bedrock Embeddings** | Pluggable embedding backends selected by configuration | Available |
+| **FastMCP** | MCP server — expose domain services as tools for AI agents | Planned |
+| **PydanticAI** | Structured LLM orchestration with Pydantic-native outputs | Planned |
 
 ### Core
 
@@ -462,9 +425,14 @@ All interfaces share the same Domain and Infrastructure layers -- write your bus
 | **UV** | Python package management ([why not Poetry?](docs/history/005-poetry-to-uv.md)) |
 | **NiceGUI** | Admin dashboard UI |
 
+</details>
+
 ---
 
 ## Project Structure
+
+<details>
+<summary>View full project tree</summary>
 
 ```
 src/
@@ -512,30 +480,16 @@ src/
 └── docs/history/                 # Architecture Decision Records
 ```
 
----
-
-## Comparison
-
-| Feature | FastAPI Agent Blueprint | [tiangolo/full-stack](https://github.com/fastapi/full-stack-fastapi-template) | [s3rius/template](https://github.com/s3rius/FastAPI-template) | [teamhide/boilerplate](https://github.com/teamhide/fastapi-boilerplate) |
-|---------|:-:|:-:|:-:|:-:|
-| MCP Server interface | **Planned** | No | No | No |
-| AI orchestration (PydanticAI) | **Planned** | No | No | No |
-| Vector infrastructure (S3 Vectors) | **Yes** | No | No | No |
-| Zero-boilerplate CRUD (7 methods) | **Yes** | No | No | No |
-| Auto domain discovery | **Yes** | No | No | No |
-| Architecture enforcement (pre-commit) | **Yes** | No | No | No |
-| AI workflow skills | **14** | 0 | 0 | 0 |
-| Adaptive onboarding (`/onboard`) | **Yes** | No | No | No |
-| Multi-interface (API+Worker+Admin+MCP) | **4 types** | 2 | 1 | 1 |
-| Architecture Decision Records | **32** | 0 | 0 | 0 |
-| Type-safe generics across layers | **Yes** | Partial | Partial | No |
-| DI with IoC Container | **Yes** | No | No | No |
+</details>
 
 ---
 
 ## Architecture Decisions
 
-Every technical choice in this project is documented as an ADR (Architecture Decision Record).
+Every technical choice in this project is documented as an ADR (Architecture Decision Record). [View all 37 ADRs →](docs/history/README.md)
+
+<details>
+<summary>Key decisions</summary>
 
 | # | Title |
 |---|-------|
@@ -546,7 +500,7 @@ Every technical choice in this project is documented as an ADR (Architecture Dec
 | [012](docs/history/012-ruff-migration.md) | Ruff adoption |
 | [013](docs/history/013-why-ioc-container.md) | Why IoC Container over inheritance |
 
-[View ADR index](docs/history/README.md)
+</details>
 
 ---
 
@@ -576,8 +530,8 @@ Every technical choice in this project is documented as an ADR (Architecture Dec
 - [x] Health check endpoint
 - [x] Auto domain discovery
 - [x] Architecture enforcement (pre-commit)
-- [x] 14 Claude Code skills
-- [x] Codex CLI workflow layer (`.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`)
+- [x] 14+ AI development skills for Claude Code and Codex CLI
+- [x] Codex CLI workflow layer (`.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`, 6 hooks)
 
 Star this repo to follow our progress!
 

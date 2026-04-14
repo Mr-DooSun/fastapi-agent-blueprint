@@ -14,46 +14,99 @@
   <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-0.115+-green.svg" alt="FastAPI"></a>
   <a href="../LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"></a>
   <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
+  <a href="https://github.com/Mr-DooSun/fastapi-agent-blueprint/stargazers"><img src="https://img.shields.io/github/stars/Mr-DooSun/fastapi-agent-blueprint?style=social" alt="GitHub Stars"></a>
 </p>
 
 <p align="center">
-  <b>FastAPI 기반 AI 에이전트 백엔드 플랫폼.</b><br>
-  MCP 서버 + AI 오케스트레이션 + 비동기 DDD — CRUD부터 에이전트 도구까지 하나의 코드베이스로.<br>
-  사용자와 AI 에이전트 모두를 위한 백엔드를 구축하세요.
+  <b>FastAPI DDD 템플릿, AI 에이전트 백엔드를 위해 설계.</b><br>
+  보일러플레이트 제로 CRUD + 자동 도메인 발견 + 벡터 검색 인프라. MCP 서버 + AI 오케스트레이션 곧 출시.<br>
+  Claude Code &amp; Codex CLI용 14+ AI 개발 스킬 내장.
 </p>
 
 <p align="center">
-  <a href="#빠른-시작">빠른 시작</a> · <a href="#아키텍처">아키텍처</a> · <a href="#ai-네이티브-개발-aidd">AI 네이티브 개발</a> · <a href="#비교">비교</a> · <a href="../README.md">English</a>
+  <a href="#빠른-시작">빠른 시작</a> · <a href="#이-프로젝트는-누구를-위한-것인가요">누구를 위한 것?</a> · <a href="#아키텍처">아키텍처</a> · <a href="#비교">비교</a> · <a href="../README.md">English</a>
 </p>
 
-<!-- TODO: 데모 GIF 추가
-![Demo](assets/demo.gif)
--->
+<p align="center">
+  <a href="https://github.com/Mr-DooSun/fastapi-agent-blueprint/generate">
+    <img src="https://img.shields.io/badge/-Use%20this%20template-2ea44f?style=for-the-badge" alt="Use this template">
+  </a>
+</p>
 
 ---
 
-## 주요 기능
+## 이 프로젝트는 누구를 위한 것인가요?
 
-### AI 에이전트 플랫폼
+- **FastAPI 개발자** — 튜토리얼 수준을 넘어 프로덕션 프로젝트 구조가 필요한 분 (DDD 레이어, DI 컨테이너, 전면 async, 아키텍처 자동 강제)
+- **백엔드 팀** — REST API + 백그라운드 워커 + 어드민 UI가 동일한 도메인 로직을 공유해야 하는 시스템을 만드는 분
+- **AI 에이전트 빌더** — 벡터 검색과 임베딩 인프라가 즉시 사용 가능하고, MCP 서버와 PydanticAI 오케스트레이션이 곧 추가될 기반이 필요한 분
+- **AI 기반 개발자** — Claude Code나 Codex CLI를 사용하며 두 도구 모두에서 작동하는 14+개의 내장 AI 개발 스킬이 있는 코드베이스를 원하는 분
 
-- **MCP 서버 인터페이스** `planned` — FastMCP를 통해 도메인 서비스를 AI 에이전트 도구로 노출
-- **AI 에이전트 오케스트레이션** `planned` — 구조화된 LLM 워크플로우를 위한 PydanticAI 통합
-- **벡터 인프라** `available` — AWS S3 Vectors + OpenAI/Bedrock 임베딩 + chunking 유틸리티로 시맨틱 검색 기반 제공
+---
 
-### 프로덕션 레디 아키텍처
+## 제공 기능
 
-- **4가지 인터페이스** — HTTP API (FastAPI) + 비동기 Worker (Taskiq) + Admin UI (NiceGUI) + MCP Server (예정)
-- **보일러플레이트 제로 CRUD** — `BaseRepository[DTO]` + `BaseService[CreateRequest, UpdateRequest, DTO]` 상속으로 핵심 비동기 CRUD와 pagination helper 즉시 제공
+- **보일러플레이트 제로 CRUD** — `BaseRepository[DTO]` + `BaseService[Create, Update, DTO]` 상속으로 7개 비동기 메서드 즉시 제공
 - **도메인 자동 발견** — 도메인 폴더를 추가하면 자동 등록. Container나 bootstrap 수정 불필요
-- **비동기 우선** — DB(asyncpg)부터 HTTP(aiohttp), 태스크 큐(Taskiq)까지 진정한 async
-
-### 개발자 경험
-
-- **공통 규칙 + 도구별 하네스** — `AGENTS.md`, Claude 스킬, Codex CLI 설정으로 AI 협업 구조화
-- **아키텍처 자동 강제** — Pre-commit hook이 커밋 시점에 `Domain -> Infrastructure` import를 차단
+- **3가지 인터페이스** — HTTP API (FastAPI) + 비동기 Worker (Taskiq) + Admin UI (NiceGUI), 하나의 도메인 레이어 공유
+- **벡터 인프라** — S3 Vectors + OpenAI/Bedrock 임베딩 + 시맨틱 chunking 유틸리티
 - **타입 안전 제네릭** — `BaseRepository[ProductDTO]`, `BaseService[CreateProductRequest, UpdateProductRequest, ProductDTO]`, `SuccessResponse[ProductResponse]`
-- **DDD 레이어드 구조** — 각 도메인이 완전히 독립된 계층 보유 (Domain / Infrastructure / Interface / Application)
-- **Architecture Decision Records** — 주요 설계 결정을 근거와 함께 문서화
+- **아키텍처 자동 강제** — Pre-commit hook이 커밋 시점에 `Domain → Infrastructure` import 차단
+- **DynamoDB 지원** — 커서 기반 pagination의 `BaseDynamoRepository`, PostgreSQL과 병행 사용
+- **14+ AI 개발 스킬** — Claude Code와 Codex CLI 모두 지원: `new-domain`, `add-api`, `onboard`, `review-architecture` 등 ([상세](#ai-네이티브-개발))
+- **비동기 우선** — DB(asyncpg)부터 HTTP(aiohttp), 태스크 큐(Taskiq)까지
+- **37개 ADR** — 모든 기술 선택을 근거와 함께 문서화 ([인덱스 보기](../docs/history/README.md))
+
+<details>
+<summary><b>Coming soon</b></summary>
+
+- **MCP 서버 인터페이스** — FastMCP를 통해 도메인 서비스를 AI 에이전트 도구로 노출 ([#18](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/18))
+- **PydanticAI 통합** — Pydantic 네이티브 출력의 구조화된 LLM 오케스트레이션 ([#15](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/15))
+- **pgvector** — 추가 벡터 백엔드 ([#11](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/11))
+
+</details>
+
+---
+
+## 빠른 시작
+
+```bash
+# 1. Clone
+git clone https://github.com/Mr-DooSun/fastapi-agent-blueprint.git
+cd fastapi-agent-blueprint
+
+# 2. 셋업 (uv 필요)
+make setup
+
+# 3. 환경변수 설정
+cp _env/local.env.example _env/local.env
+
+# 4. PostgreSQL 실행 + 마이그레이션 + 서버 시작
+make dev
+```
+
+http://localhost:8000/docs-swagger 에서 API를 확인하세요.
+
+<details>
+<summary>수동 설정 (Make 미사용)</summary>
+
+```bash
+# 2. 가상환경 + 의존성 설치
+uv venv --python 3.12
+source .venv/bin/activate
+uv sync --group dev
+
+# 3. 환경변수 설정
+cp _env/local.env.example _env/local.env
+
+# 4. PostgreSQL 실행 (Docker)
+docker compose -f docker-compose.local.yml up -d postgres
+
+# 5. 마이그레이션 + 서버 실행
+alembic upgrade head
+python run_server_local.py --env local
+```
+</details>
 
 ---
 
@@ -76,7 +129,7 @@ class DocumentService(
 async def analyze_document(document_id: int, service=Depends(...)):
     return await service.analyze(document_id)
 
-# 3. MCP 도구 — AI 에이전트용 (예정)
+# 3. MCP 도구 — AI 에이전트용 (coming soon)
 @mcp.tool()
 async def analyze_document(document_id: int) -> AnalysisResult:
     return await document_service.analyze(document_id)
@@ -164,171 +217,93 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 
 ---
 
-## AI 네이티브 개발 (AIDD)
+## 인터페이스 타입
 
-이 템플릿은 단독으로도 충분히 사용할 수 있습니다. 이제 AI 협업 구조는 **공통 규칙 + 공통 레퍼런스 + 도구별 하네스**로 정리되어 있습니다.
+각 도메인은 여러 인터페이스를 통해 기능을 노출할 수 있습니다:
 
-| 파일 | 역할 |
-|------|------|
-| `AGENTS.md` | 모든 AI 도구가 따라야 하는 공통 규칙의 canonical source |
-| `docs/ai/shared/` | Claude와 Codex가 함께 읽는 공통 workflow 레퍼런스와 체크리스트 |
-| `CLAUDE.md` | Claude 전용 hooks, plugins, slash skills, workflow 안내 |
-| `.mcp.json` | Claude 전용 MCP 설정 |
-| `.codex/config.toml` | Codex CLI 전용 프로젝트 설정, profile, feature, MCP 구성 |
-| `.codex/hooks.json` | Codex 명령 훅 설정 |
-| `.agents/skills/` | repo-local Codex workflow skill |
+| 인터페이스 | 기술 | 상태 | 용도 |
+|-----------|------|------|------|
+| **HTTP API** | FastAPI | Stable | REST API 엔드포인트 |
+| **비동기 Worker** | Taskiq + SQS/RabbitMQ/InMemory | Stable | 백그라운드 태스크 처리 |
+| **Admin UI** | NiceGUI | Stable | 자동 발견 기반 admin CRUD 대시보드 |
+| **MCP Server** | FastMCP | Planned | AI 에이전트 도구 인터페이스 |
 
-### 공통 규칙 우선
-
-모든 도구는 먼저 `AGENTS.md`를 기준으로 다음을 따른다:
-- 프로젝트 규모 전제
-- 절대 금지 규칙
-- 레이어 용어와 conversion pattern
-- DTO 생성 기준
-- 기본 run/test/lint/migration 명령
-- 문서와 규칙 drift 관리 원칙
-
-루트 `AGENTS.md`에 다 담기 어려운 workflow 세부사항은 `docs/ai/shared/`에 둡니다. 예: `project-dna.md`, planning/security/review checklist, test pattern. `/sync-guidelines` 또는 `$sync-guidelines`를 실행할 때는 수동 검토 항목이 빠지지 않도록 최종 결과에 `project-dna`, `AUTO-FIX`, `REVIEW`, `Remaining`를 모두 명시해야 합니다.
-
-### Claude Code
-
-#### 러닝 커브 제로
-
-복잡한 아키텍처? `/onboard`를 입력하세요 -- 당신의 수준에 맞춰 모든 것을 설명해줍니다.
-
-`/onboard` 스킬은 경험 수준에 따라 적응합니다:
-- **초급**: DDD 개념을 쉬운 비유로 설명
-- **중급**: 이 프로젝트 고유의 패턴에 집중
-- **고급**: 아키텍처 규칙과 컨벤션으로 바로 이동
-
-#### 14개 내장 스킬
-
-| 명령어 | 기능 |
-|--------|------|
-| `/onboard` | 대화형 온보딩 -- 경험 수준에 맞춰 적응 |
-| `/new-domain {name}` | 도메인 전체 스캐폴딩 (21개 이상 소스 파일 + 테스트) |
-| `/add-api {description}` | 기존 도메인에 API 엔드포인트 추가 |
-| `/add-worker-task {domain} {task}` | 비동기 Taskiq 백그라운드 태스크 추가 |
-| `/add-admin-page {domain}` | 기존 도메인에 NiceGUI admin 페이지 추가 |
-| `/add-cross-domain from:{a} to:{b}` | Protocol DIP를 통한 도메인 간 의존성 연결 |
-| `/plan-feature {description}` | 요구사항 인터뷰 -> 아키텍처 -> 보안 -> 태스크 분해 |
-| `/review-architecture {domain}` | 아키텍처 컴플라이언스 감사 (20개 이상 검사) |
-| `/security-review {domain}` | OWASP 기반 보안 감사 |
-| `/test-domain {domain}` | 도메인 테스트 생성 또는 실행 |
-| `/fix-bug {description}` | 구조화된 버그 수정 워크플로우 |
-| `/review-pr {number}` | 아키텍처 인식 PR 리뷰 |
-| `/sync-guidelines` | 설계 변경 후 문서 동기화, 종료 전에 AUTO-FIX와 REVIEW를 모두 보고 |
-| `/migrate-domain {command}` | Alembic 마이그레이션 관리 |
-
-#### 플러그인 설정 (필수)
-
-코드 인텔리전스(심볼 탐색, 참조 추적, 진단)를 위해 pyright-lsp 플러그인을 설치하세요:
-
-```bash
-uv sync                              # pyright 바이너리 설치 (dev 의존성)
-claude plugin install pyright-lsp    # Claude Code 플러그인 설치
-```
-
-> `.claude/settings.json`의 `enabledPlugins`가 첫 실행 시 자동으로 설치를 안내합니다.
-
-#### MCP 서버 설정 (`.mcp.json`)
-
-**context7** -- 라이브러리 최신 문서 조회
-```json
-{
-  "mcpServers": {
-    "context7": {
-      "url": "https://mcp.context7.com/mcp"
-    }
-  }
-}
-```
-
-> `.mcp.json`은 Claude 측 MCP 진입점입니다. MCP 서버 없이도 프로젝트 자체는 정상 동작하지만, Claude 스킬은 이 설정을 기대합니다.
-
-### Codex CLI
-
-Codex는 `.codex/config.toml`의 project-shared 설정을 사용합니다:
-
-```toml
-sandbox_mode = "workspace-write"
-approval_policy = "on-request"
-web_search = "disabled"
-
-[features]
-codex_hooks = true
-
-[profiles.research]
-web_search = "live"
-
-[mcp_servers.context7]
-url = "https://mcp.context7.com/mcp"
-```
-
-> Codex는 원격 Context7 MCP 엔드포인트를 사용합니다. 로컬 stdio 서버(npx) 방식은 샌드박스 네트워크 제한에 의해 차단되므로, HTTP 전송 방식을 사용합니다.
-
-Codex의 레포 workflow layer는 다음으로 나뉩니다:
-- `.codex/config.toml` — base config와 profile
-- `.codex/hooks.json` + `.codex/hooks/` — command hook
-- `.agents/skills/` — `$onboard`, `$plan-feature`, `$review-pr` 같은 repo-local workflow
-- `docs/ai/shared/` — Claude/Codex 공통 reference
-
-권장 검증 흐름:
-1. Codex에서 이 프로젝트를 trusted 상태로 만든다.
-2. `codex mcp list`, `codex mcp get context7`를 실행한다.
-3. `codex debug prompt-input -c 'project_doc_max_bytes=400' "healthcheck" | rg "Shared Collaboration Rules|AGENTS\\.md"`로 `AGENTS.md`가 실제 prompt input에 포함되는지 확인한다.
-4. 최신 외부 정보가 정말 필요할 때만 `codex -p research` 또는 `codex --search`를 사용한다.
-5. Codex memories는 개인/세션 최적화용으로만 보고, 팀 규칙 저장소로 쓰지 않는다.
-
-> `.codex/config.toml`은 Codex 측 하네스 진입점입니다. 웹 검색은 기본 비활성화되어 있으므로, 최신 외부 정보가 필요할 때만 명시적으로 활성화하세요.
+모든 인터페이스는 동일한 Domain/Infrastructure 계층을 공유합니다 -- 비즈니스 로직을 한 번 작성하고, 어디서든 노출하세요.
 
 ---
 
-## 빠른 시작
+## AI 네이티브 개발
 
-```bash
-# 1. Clone
-git clone https://github.com/Mr-DooSun/fastapi-agent-blueprint.git
-cd fastapi-agent-blueprint
+이 템플릿은 **Claude Code**와 **OpenAI Codex CLI**를 위한 AI 협업 지원이 내장되어 있습니다. 두 도구 모두 동일한 아키텍처 규칙(`AGENTS.md`)과 workflow 레퍼런스(`docs/ai/shared/`)를 공유하며, 도구별 하네스가 그 위에 레이어됩니다.
 
-# 2. 셋업 (uv 필요)
-make setup
+| 레이어 | Claude Code | Codex CLI |
+|--------|------------|-----------|
+| **공통 규칙** | `AGENTS.md` | `AGENTS.md` |
+| **공통 레퍼런스** | `docs/ai/shared/` | `docs/ai/shared/` |
+| **도구 설정** | `CLAUDE.md` + `.mcp.json` | `.codex/config.toml` + `.codex/hooks.json` |
+| **스킬** | 14개 slash 명령 (`.claude/skills/`) | 15개 workflow 스킬 (`.agents/skills/`) |
+| **훅** | PostToolUse 자동 포맷 | 6개 훅 (format, security, session-start, ...) |
 
-# 3. 환경변수 설정
-cp _env/local.env.example _env/local.env
+### 러닝 커브 제로
 
-# 4. PostgreSQL 실행 + 마이그레이션 + 서버 시작
-make dev
-```
+복잡한 아키텍처? `/onboard` (Claude) 또는 `$onboard` (Codex)를 입력하세요 -- 당신의 수준에 맞춰 모든 것을 설명해줍니다.
 
-http://localhost:8000/docs-swagger 에서 API를 확인하세요.
+onboard 스킬은 경험 수준에 따라 적응합니다:
+- **초급 / 중급 / 고급** -- 수준에 맞게 깊이 조절
+- **가이드** -- Phase별 구조화된 안내
+- **Q&A** -- 토픽 맵 제공, 질문으로 탐색
+- **탐험** -- 자유롭게 코드를 살펴보고, 놓친 핵심은 마지막에 정리
 
-<details>
-<summary>수동 설정 (Make 미사용)</summary>
+### 내장 스킬
 
-```bash
-# 2. 가상환경 + 의존성 설치
-uv venv --python 3.12
-source .venv/bin/activate
-uv sync --group dev
+모든 스킬은 Claude Code (`/` 접두사)와 Codex CLI (`$` 접두사) 모두에서 사용 가능합니다:
 
-# 3. 환경변수 설정
-cp _env/local.env.example _env/local.env
+| 스킬 | 기능 |
+|------|------|
+| `onboard` | 대화형 온보딩 -- 경험 수준에 맞춰 적응 |
+| `new-domain {name}` | 도메인 전체 스캐폴딩 (21개 이상 소스 파일 + 테스트) |
+| `add-api {description}` | 기존 도메인에 API 엔드포인트 추가 |
+| `add-worker-task {domain} {task}` | 비동기 Taskiq 백그라운드 태스크 추가 |
+| `add-admin-page {domain}` | 기존 도메인에 NiceGUI admin 페이지 추가 |
+| `add-cross-domain from:{a} to:{b}` | Protocol DIP를 통한 도메인 간 의존성 연결 |
+| `plan-feature {description}` | 요구사항 인터뷰 -> 아키텍처 -> 보안 -> 태스크 분해 |
+| `review-architecture {domain}` | 아키텍처 컴플라이언스 감사 (20개 이상 검사) |
+| `security-review {domain}` | OWASP 기반 보안 감사 |
+| `test-domain {domain}` | 도메인 테스트 생성 또는 실행 |
+| `fix-bug {description}` | 구조화된 버그 수정 워크플로우 |
+| `review-pr {number}` | 아키텍처 인식 PR 리뷰 |
+| `sync-guidelines` | 설계 변경 후 문서 동기화 |
+| `migrate-domain {command}` | Alembic 마이그레이션 관리 |
 
-# 4. PostgreSQL 실행 (Docker)
-docker compose -f docker-compose.local.yml up -d postgres
+> 플러그인 설정, MCP 서버 구성, Codex CLI 상세는 [AI 개발 가이드](ai-development.ko.md)를 참고하세요.
 
-# 5. 마이그레이션 + 서버 실행
-alembic upgrade head
-python run_server_local.py --env local
-```
-</details>
+---
+
+## 비교
+
+| 기능 | FastAPI Agent Blueprint | [tiangolo/full-stack](https://github.com/fastapi/full-stack-fastapi-template) | [s3rius/template](https://github.com/s3rius/FastAPI-template) | [teamhide/boilerplate](https://github.com/teamhide/fastapi-boilerplate) |
+|------|:-:|:-:|:-:|:-:|
+| 보일러플레이트 제로 CRUD (7개 메서드) | **Yes** | No | No | No |
+| 도메인 자동 발견 | **Yes** | No | No | No |
+| 아키텍처 자동 강제 (pre-commit) | **Yes** | No | No | No |
+| AI 개발 스킬 (Claude + Codex) | **14+** | 0 | 0 | 0 |
+| 벡터 인프라 (S3 Vectors) | **Yes** | No | No | No |
+| 적응형 온보딩 (`/onboard`) | **Yes** | No | No | No |
+| 멀티 인터페이스 (API+Worker+Admin+MCP) | **3+1 예정** | 2 | 1 | 1 |
+| Architecture Decision Records | **37** | 0 | 0 | 0 |
+| 전 계층 타입 안전 제네릭 | **Yes** | 부분 | 부분 | No |
+| IoC Container DI | **Yes** | No | No | No |
+| MCP 서버 인터페이스 | **Planned** | No | No | No |
+| AI 오케스트레이션 (PydanticAI) | **Planned** | No | No | No |
 
 ---
 
 ## 새 도메인 추가하기
 
-Product 도메인을 예로 들면:
+> Claude Code를 사용하면 `/new-domain product` 한 줄로 위 모든 파일을 자동 생성할 수 있습니다.
+
+<details>
+<summary>수동 추가 방법 (Product 도메인 예시)</summary>
 
 ### 1. Domain Layer
 
@@ -401,35 +376,25 @@ async def create_product(
 - `src/{name}/__init__.py` 존재
 - `src/{name}/infrastructure/di/{name}_container.py` 존재
 
-> Claude Code를 사용하면 `/new-domain product` 한 줄로 위 모든 파일을 자동 생성할 수 있습니다.
-
----
-
-## 4가지 인터페이스
-
-각 도메인은 여러 인터페이스를 통해 기능을 노출할 수 있습니다:
-
-| 인터페이스 | 기술 | 상태 | 용도 |
-|-----------|------|------|------|
-| **HTTP API** | FastAPI | Stable | REST API 엔드포인트 |
-| **비동기 Worker** | Taskiq + SQS/RabbitMQ/InMemory | Stable | 백그라운드 태스크 처리 |
-| **Admin UI** | NiceGUI | Stable | 자동 발견 기반 admin CRUD 대시보드 |
-| **MCP Server** | FastMCP | Planned | AI 에이전트 도구 인터페이스 |
-
-모든 인터페이스는 동일한 Domain/Infrastructure 계층을 공유합니다 -- 비즈니스 로직을 한 번 작성하고, 어디서든 노출하세요.
+</details>
 
 ---
 
 ## Tech Stack
 
-### AI & Agent `planned`
+FastAPI + SQLAlchemy 2.0 + Pydantic 2.x + dependency-injector + Taskiq + NiceGUI + asyncpg + aioboto3
 
-| 기술 | 용도 |
-|------|------|
-| **FastMCP** | MCP 서버 — 도메인 서비스를 AI 에이전트 도구로 노출 |
-| **PydanticAI** | Pydantic 네이티브 출력의 구조화된 LLM 오케스트레이션 |
-| **AWS S3 Vectors** | 시맨틱 검색 인프라를 위한 관리형 벡터 인덱스 백엔드 |
-| **OpenAI / Bedrock Embeddings** | 설정으로 선택하는 플러그형 임베딩 백엔드 |
+<details>
+<summary>상세 스택</summary>
+
+### AI & Agent
+
+| 기술 | 용도 | 상태 |
+|------|------|------|
+| **AWS S3 Vectors** | 시맨틱 검색 인프라를 위한 관리형 벡터 인덱스 백엔드 | Available |
+| **OpenAI / Bedrock Embeddings** | 설정으로 선택하는 플러그형 임베딩 백엔드 | Available |
+| **FastMCP** | MCP 서버 — 도메인 서비스를 AI 에이전트 도구로 노출 | Planned |
+| **PydanticAI** | Pydantic 네이티브 출력의 구조화된 LLM 오케스트레이션 | Planned |
 
 ### Core
 
@@ -460,9 +425,14 @@ async def create_product(
 | **UV** | Python 패키지 관리 ([왜 Poetry가 아닌가?](../docs/history/005-poetry-to-uv.md)) |
 | **NiceGUI** | Admin 대시보드 UI |
 
+</details>
+
 ---
 
 ## 프로젝트 구조
+
+<details>
+<summary>전체 프로젝트 트리 보기</summary>
 
 ```
 src/
@@ -510,30 +480,16 @@ src/
 └── docs/history/                 # Architecture Decision Records
 ```
 
----
-
-## 비교
-
-| 기능 | FastAPI Agent Blueprint | [tiangolo/full-stack](https://github.com/fastapi/full-stack-fastapi-template) | [s3rius/template](https://github.com/s3rius/FastAPI-template) | [teamhide/boilerplate](https://github.com/teamhide/fastapi-boilerplate) |
-|------|:-:|:-:|:-:|:-:|
-| MCP 서버 인터페이스 | **Planned** | No | No | No |
-| AI 오케스트레이션 (PydanticAI) | **Planned** | No | No | No |
-| 벡터 인프라 (S3 Vectors) | **Yes** | No | No | No |
-| 보일러플레이트 제로 CRUD (7개 메서드) | **Yes** | No | No | No |
-| 도메인 자동 발견 | **Yes** | No | No | No |
-| 아키텍처 자동 강제 (pre-commit) | **Yes** | No | No | No |
-| AI 개발 스킬 | **14** | 0 | 0 | 0 |
-| 적응형 온보딩 (`/onboard`) | **Yes** | No | No | No |
-| 멀티 인터페이스 (API+Worker+Admin+MCP) | **4종** | 2 | 1 | 1 |
-| Architecture Decision Records | **32** | 0 | 0 | 0 |
-| 전 계층 타입 안전 제네릭 | **Yes** | 부분 | 부분 | No |
-| IoC Container DI | **Yes** | No | No | No |
+</details>
 
 ---
 
 ## Architecture Decisions
 
-이 프로젝트의 모든 기술 선택은 ADR(Architecture Decision Record)로 기록되어 있습니다.
+이 프로젝트의 모든 기술 선택은 ADR(Architecture Decision Record)로 기록되어 있습니다. [37개 전체 ADR 보기 →](../docs/history/README.md)
+
+<details>
+<summary>주요 결정</summary>
 
 | # | 제목 |
 |---|------|
@@ -544,7 +500,7 @@ src/
 | [012](../docs/history/012-ruff-migration.md) | Ruff 도입 |
 | [013](../docs/history/013-why-ioc-container.md) | 상속 대신 IoC Container를 선택한 이유 |
 
-[ADR 인덱스 보기](../docs/history/README.md)
+</details>
 
 ---
 
@@ -574,8 +530,8 @@ src/
 - [x] 헬스 체크 엔드포인트
 - [x] 도메인 자동 발견
 - [x] 아키텍처 강제 (pre-commit)
-- [x] 14개 Claude Code 스킬
-- [x] Codex CLI workflow layer (`.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`)
+- [x] Claude Code + Codex CLI용 14+개 AI 개발 스킬
+- [x] Codex CLI workflow layer (`.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`, 6 hooks)
 
 스타를 눌러 진행 상황을 팔로우하세요!
 
@@ -590,3 +546,15 @@ src/
 ## License
 
 [MIT License](../LICENSE) -- 상업적 사용, 수정, 배포 자유.
+
+---
+
+## Star History
+
+<a href="https://star-history.com/#Mr-DooSun/fastapi-agent-blueprint&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Mr-DooSun/fastapi-agent-blueprint&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Mr-DooSun/fastapi-agent-blueprint&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Mr-DooSun/fastapi-agent-blueprint&type=Date" width="600" />
+ </picture>
+</a>
