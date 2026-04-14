@@ -8,6 +8,7 @@ KNOWN_ENVS = ("local", "dev", "stg", "prod")
 KNOWN_ENGINES = ("postgresql", "mysql", "sqlite")
 KNOWN_BROKER_TYPES = ("sqs", "rabbitmq", "inmemory")
 KNOWN_EMBEDDING_PROVIDERS = ("openai", "bedrock")
+KNOWN_STORAGE_TYPES = ("s3", "minio")
 STRICT_ENVS = frozenset({"stg", "prod"})
 
 _OPENAI_DIMENSIONS: dict[str, int] = {
@@ -97,6 +98,11 @@ class Settings(BaseSettings):
     minio_bucket_name: str | None = Field(
         default=None, validation_alias="MINIO_BUCKET_NAME"
     )
+
+    # ----------------------------------------------------------------
+    # Storage Type Selector (s3 / minio)
+    # ----------------------------------------------------------------
+    storage_type: str | None = Field(default=None, validation_alias="STORAGE_TYPE")
 
     # ----------------------------------------------------------------
     # DynamoDB (Optional)
@@ -255,6 +261,23 @@ class Settings(BaseSettings):
                 f"set but {', '.join(missing)} missing"
             )
 
+        storage = (self.storage_type or "").lower().strip()
+        if storage and storage not in KNOWN_STORAGE_TYPES:
+            errors.append(
+                f"[storage_type] Unknown storage type '{self.storage_type}'. "
+                f"Expected one of: {', '.join(KNOWN_STORAGE_TYPES)}"
+            )
+        if storage == "s3" and s3_set != set(s3_fields):
+            missing = sorted(set(s3_fields) - s3_set)
+            errors.append(
+                f"[Storage] STORAGE_TYPE=s3 requires: {', '.join(missing)} missing"
+            )
+        if storage == "minio" and minio_set != set(minio_fields):
+            missing = sorted(set(minio_fields) - minio_set)
+            errors.append(
+                f"[Storage] STORAGE_TYPE=minio requires: {', '.join(missing)} missing"
+            )
+
         dynamodb_fields = {
             "dynamodb_region": self.dynamodb_region,
             "dynamodb_access_key": self.dynamodb_access_key,
@@ -371,6 +394,49 @@ class Settings(BaseSettings):
     def minio_endpoint_url(self) -> str | None:
         if self.minio_host and self.minio_port:
             return f"{self.minio_host}:{self.minio_port}"
+        return None
+
+    @property
+    def storage_access_key(self) -> str | None:
+        st = (self.storage_type or "").lower()
+        if st == "s3":
+            return self.s3_access_key
+        if st == "minio":
+            return self.minio_access_key
+        return None
+
+    @property
+    def storage_secret_key(self) -> str | None:
+        st = (self.storage_type or "").lower()
+        if st == "s3":
+            return self.s3_secret_key
+        if st == "minio":
+            return self.minio_secret_key
+        return None
+
+    @property
+    def storage_region(self) -> str | None:
+        st = (self.storage_type or "").lower()
+        if st == "s3":
+            return self.s3_region
+        if st == "minio":
+            return "us-east-1"
+        return None
+
+    @property
+    def storage_endpoint_url(self) -> str | None:
+        st = (self.storage_type or "").lower()
+        if st == "minio":
+            return self.minio_endpoint_url
+        return None
+
+    @property
+    def storage_bucket_name(self) -> str | None:
+        st = (self.storage_type or "").lower()
+        if st == "s3":
+            return self.s3_bucket_name
+        if st == "minio":
+            return self.minio_bucket_name
         return None
 
     @property

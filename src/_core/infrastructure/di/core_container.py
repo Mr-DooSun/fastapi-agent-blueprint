@@ -61,26 +61,18 @@ class CoreContainer(containers.DeclarativeContainer):
     # Storage
     #########################################################
 
-    # MinIO configuration (swap in when needed)
-    # minio_client = providers.Singleton(
-    #     ObjectStorageClient,
-    #     access_key=settings.minio_access_key,
-    #     secret_access_key=settings.minio_secret_key,
-    #     endpoint_url=settings.minio_endpoint_url,
-    # )
-
-    # AWS S3 configuration
-    s3_client = providers.Singleton(
+    storage_client = providers.Singleton(
         ObjectStorageClient,
-        access_key=settings.s3_access_key,
-        secret_access_key=settings.s3_secret_key,
-        region_name=settings.s3_region,
+        access_key=settings.storage_access_key,
+        secret_access_key=settings.storage_secret_key,
+        region_name=settings.storage_region,
+        endpoint_url=settings.storage_endpoint_url,
     )
 
-    s3_storage = providers.Factory(
+    storage = providers.Factory(
         ObjectStorage,
-        storage_client=s3_client,
-        bucket_name=settings.s3_bucket_name,
+        storage_client=storage_client,
+        bucket_name=settings.storage_bucket_name,
     )
 
     #########################################################
