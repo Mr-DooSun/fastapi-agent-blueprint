@@ -188,7 +188,7 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 - 기본 run/test/lint/migration 명령
 - 문서와 규칙 drift 관리 원칙
 
-루트 `AGENTS.md`에 다 담기 어려운 workflow 세부사항은 `docs/ai/shared/`에 둡니다. 예: `project-dna.md`, planning/security/review checklist, test pattern.
+루트 `AGENTS.md`에 다 담기 어려운 workflow 세부사항은 `docs/ai/shared/`에 둡니다. 예: `project-dna.md`, planning/security/review checklist, test pattern. `/sync-guidelines` 또는 `$sync-guidelines`를 실행할 때는 수동 검토 항목이 빠지지 않도록 최종 결과에 `project-dna`, `AUTO-FIX`, `REVIEW`, `Remaining`를 모두 명시해야 합니다.
 
 ### Claude Code
 
@@ -217,7 +217,7 @@ Read:  Response <-- Service <-- Repository <-- DTO <-- Model
 | `/test-domain {domain}` | 도메인 테스트 생성 또는 실행 |
 | `/fix-bug {description}` | 구조화된 버그 수정 워크플로우 |
 | `/review-pr {number}` | 아키텍처 인식 PR 리뷰 |
-| `/sync-guidelines` | 설계 변경 후 문서 동기화 |
+| `/sync-guidelines` | 설계 변경 후 문서 동기화, 종료 전에 AUTO-FIX와 REVIEW를 모두 보고 |
 | `/migrate-domain {command}` | Alembic 마이그레이션 관리 |
 
 #### 플러그인 설정 (필수)

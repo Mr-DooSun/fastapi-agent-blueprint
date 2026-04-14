@@ -41,11 +41,13 @@ structure = [
 if foundation:
     message = "\n".join(
         [
-            "Guideline sync strongly recommended.",
+            "Guideline sync required before closing this work.",
             "Foundation files changed:",
             *[f"- {path}" for path in foundation[:12]],
             "Codex: run $sync-guidelines",
             "Claude Code: run /sync-guidelines as well",
+            "Sync is incomplete until project-dna, AUTO-FIX, REVIEW, and Remaining are all reported.",
+            "REVIEW targets must be reported even when no automatic doc edit is needed.",
         ]
     )
     print(json.dumps({"systemMessage": message}))
@@ -55,6 +57,7 @@ elif structure:
             "Guideline sync recommended.",
             "Domain structure files changed:",
             *[f"- {path}" for path in structure[:12]],
+            "When you run sync, report both AUTO-FIX and REVIEW targets before closing.",
         ]
     )
     print(json.dumps({"systemMessage": message}))

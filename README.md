@@ -189,7 +189,7 @@ All tools should follow `AGENTS.md` for:
 - baseline run/test/lint/migration commands
 - documentation drift management principles
 
-Use `docs/ai/shared/` for the deeper workflow references that are too detailed for root `AGENTS.md`, such as `project-dna.md`, planning checklists, review checklists, and test patterns.
+Use `docs/ai/shared/` for the deeper workflow references that are too detailed for root `AGENTS.md`, such as `project-dna.md`, planning checklists, review checklists, and test patterns. When running `/sync-guidelines` or `$sync-guidelines`, always close with `project-dna`, `AUTO-FIX`, `REVIEW`, and `Remaining` so manual review items are not silently skipped.
 
 ### Claude Code
 
@@ -219,7 +219,7 @@ The `/onboard` skill adapts to your experience and learning style:
 | `/test-domain {domain}` | Generate or run domain tests |
 | `/fix-bug {description}` | Structured bug fixing workflow |
 | `/review-pr {number}` | Architecture-aware PR review |
-| `/sync-guidelines` | Sync docs after design changes |
+| `/sync-guidelines` | Sync docs after design changes; report both AUTO-FIX and REVIEW targets before closing |
 | `/migrate-domain {command}` | Alembic migration management |
 
 #### Plugin Setup (Required)
