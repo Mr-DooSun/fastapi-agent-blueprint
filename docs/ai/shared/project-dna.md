@@ -6,13 +6,14 @@
 > This file is auto-extracted/updated from `src/user/` (reference domain) and `src/_core/` (Base classes)
 > when `/sync-guidelines` is run. **Run `/sync-guidelines` instead of editing manually.**
 >
-> Last updated: 2026-04-13
+> Last updated: 2026-04-14
 
 ## Section Index
 §0 Project Scale and Design Philosophy |
 §1 Directory Structure | §2 Base Class Path | §3 Generic Type Signatures | §4 CRUD Methods
 §5 DI Pattern | §6 Conversion Patterns | §7 Security Tools | §8 Active Features
 §9 Router Pattern | §10 Exception Pattern | §11 Admin Page Pattern
+§12 S3 Vector Store Pattern | §13 Embedding Pattern
 
 ---
 
@@ -133,6 +134,20 @@ src/{name}/
 | make_pagination | `src._core.common.pagination.make_pagination` |
 | hash_password | `src._core.common.security.hash_password` |
 | verify_password | `src._core.common.security.verify_password` |
+| BaseVectorStoreProtocol | `src._core.domain.protocols.vector_store_protocol.BaseVectorStoreProtocol` |
+| BaseEmbeddingProtocol | `src._core.domain.protocols.embedding_protocol.BaseEmbeddingProtocol` |
+| BaseS3VectorStore | `src._core.infrastructure.s3vectors.base_s3vector_store.BaseS3VectorStore` |
+| S3VectorModel | `src._core.infrastructure.s3vectors.s3vector_model.S3VectorModel` |
+| S3VectorModelMeta | `src._core.infrastructure.s3vectors.s3vector_model.S3VectorModelMeta` |
+| S3VectorData | `src._core.infrastructure.s3vectors.s3vector_model.S3VectorData` |
+| S3VectorClient | `src._core.infrastructure.s3vectors.s3vector_client.S3VectorClient` |
+| VectorQuery | `src._core.domain.value_objects.vector_query.VectorQuery` |
+| VectorSearchResult | `src._core.domain.value_objects.vector_search_result.VectorSearchResult` |
+| OpenAIEmbeddingClient | `src._core.infrastructure.embedding.openai_embedding_client.OpenAIEmbeddingClient` |
+| BedrockEmbeddingClient | `src._core.infrastructure.embedding.bedrock_embedding_client.BedrockEmbeddingClient` |
+| chunk_text | `src._core.common.text_utils.chunk_text` |
+| chunk_text_by_tokens | `src._core.common.text_utils.chunk_text_by_tokens` |
+| generate_vector_id | `src._core.common.uuid_utils.generate_vector_id` |
 | CoreContainer | `src._core.infrastructure.di.core_container.CoreContainer` |
 
 ### Inheritance Chain
@@ -185,6 +200,31 @@ class BaseDynamoService(Generic[CreateDTO, UpdateDTO, ReturnDTO]): ...
 class ChatRoomRepositoryProtocol(BaseDynamoRepositoryProtocol[ChatRoomDTO]): pass
 class ChatRoomRepository(BaseDynamoRepository[ChatRoomDTO]): ...
 class ChatRoomService(BaseDynamoService[CreateChatRoomRequest, UpdateChatRoomRequest, ChatRoomDTO]): ...
+```
+
+### S3 Vector Store Generic Type Signatures
+
+```python
+# BaseVectorStoreProtocol / BaseS3VectorStore — 1 TypeVar (ReturnDTO only)
+class BaseVectorStoreProtocol(Generic[ReturnDTO]): ...
+class BaseS3VectorStore(Generic[ReturnDTO], ABC): ...
+
+# S3 Vector domain usage example:
+class DocumentVectorStoreProtocol(BaseVectorStoreProtocol[DocumentDTO]): pass
+class DocumentS3VectorStore(BaseS3VectorStore[DocumentDTO]): ...
+```
+
+### BaseS3VectorStore.__init__ Signature
+
+```python
+def __init__(
+    self,
+    s3vector_client: S3VectorClient,
+    *,
+    model: type[S3VectorModel],
+    return_entity: type[ReturnDTO],
+    bucket_name: str,
+) -> None:
 ```
 
 ### BaseRepository.__init__ Signature
@@ -304,6 +344,8 @@ class {Name}Container(containers.DeclarativeContainer):
 | App Container (Server/Worker) | `containers.DynamicContainer` (factory function) |
 | Domain auto-discovery | `src._core.infrastructure.discovery.discover_domains()` |
 | Dynamic Container loading | `src._core.infrastructure.discovery.load_domain_container()` |
+| S3VectorClient | `providers.Singleton` | S3 Vectors API wrapper |
+| Embedding (multi-backend) | `providers.Selector` | Selects OpenAI/Bedrock by config |
 | Broker (multi-backend) | `providers.Selector` | Selects SQS/RabbitMQ/InMemory by config |
 
 ### App-level Container (Auto-discovery)
@@ -351,6 +393,48 @@ broker = providers.Selector(
 - Selector evaluates at container creation time; selected Singleton is cached
 - Task code always uses `from src._apps.worker.broker import broker` — no conditional logic needed
 - stg/prod environments require explicit `BROKER_TYPE` setting
+
+### Embedding Selection Pattern (Runtime Configuration)
+
+The embedding service uses `providers.Selector` to dynamically select between embedding backends
+based on the `EMBEDDING_PROVIDER` environment variable:
+
+```python
+# src/_core/infrastructure/di/core_container.py
+embedding_client = providers.Selector(
+    lambda: (settings.embedding_provider or "openai").lower().strip(),
+    openai=providers.Singleton(OpenAIEmbeddingClient, api_key=..., model=...),
+    bedrock=providers.Singleton(BedrockEmbeddingClient, access_key=..., ...),
+)
+```
+
+| EMBEDDING_PROVIDER | Client Class | Dependency |
+|-------------------|-------------|------------|
+| `openai` (default) | `OpenAIEmbeddingClient` | `openai`, `tiktoken` (optional extra) |
+| `bedrock` | `BedrockEmbeddingClient` | `aioboto3` (main) |
+
+- Both implement `BaseEmbeddingProtocol` (embed_text, embed_batch, dimension)
+- Dimension is auto-derived from model name — not user-configurable
+- `settings.embedding_dimension` is the single source of truth for vector index dimension
+
+### S3 Vector Store DI Pattern
+
+```python
+class {Name}Container(containers.DeclarativeContainer):
+    core_container = providers.DependenciesContainer()
+
+    {name}_vector_store = providers.Singleton(
+        {Name}S3VectorStore,
+        s3vector_client=core_container.s3vector_client,
+        embedding_client=core_container.embedding_client,
+        bucket_name=settings.s3vectors_bucket_name,
+    )
+
+    {name}_service = providers.Factory(
+        {Name}Service,
+        {name}_vector_store={name}_vector_store,
+    )
+```
 
 ### Interface-Specific DI Pattern
 
@@ -417,6 +501,9 @@ broker = providers.Selector(
 | NiceGUI (BaseAdminPage) | Active | Admin dashboard (AG Grid, auto-discovery, Template Method rendering) |
 | alembic (migrations) | Active | DB migrations |
 | Password hashing (bcrypt) | Active | hash_password(), verify_password() in src._core.common.security |
+| AWS S3 Vectors (aioboto3) | Active | BaseS3VectorStore + S3VectorClient (optional infra) |
+| Embedding (OpenAI/Bedrock) | Active | Selector pattern, BaseEmbeddingProtocol, auto-dimension |
+| Text chunking (semantic-text-splitter) | Active | chunk_text(), chunk_text_by_tokens() in src._core.common.text_utils |
 | JWT/Authentication | Not implemented | |
 | File Upload (UploadFile) | Not implemented | |
 | RBAC/Permissions | Not implemented | |
@@ -554,3 +641,125 @@ For domain-specific rendering, subclass `BaseAdminPage` in the config file and o
 - `render_grid(dtos)` — custom AG Grid rendering
 - `render_detail_card(dto)` — custom detail view
 - `_fetch_list_data(page, search)` / `_fetch_detail_data(record_id)` — custom data fetching
+
+## §12. S3 Vector Store Pattern
+
+### S3VectorModel (Data Model)
+
+`DynamoModel` counterpart — subclasses define index schema via `__s3vector_meta__` and declare metadata as Pydantic fields.
+
+```python
+from typing import ClassVar
+from src._core.infrastructure.s3vectors.s3vector_model import (
+    S3VectorModel, S3VectorModelMeta, S3VectorData,
+)
+
+class {Name}S3VectorModel(S3VectorModel):
+    __s3vector_meta__: ClassVar[S3VectorModelMeta] = S3VectorModelMeta(
+        index_name="{name}-search",
+        # dimension defaults to settings.embedding_dimension (auto-derived)
+        distance_metric="cosine",
+        filter_fields=["category", "author_id"],
+        non_filter_fields=["content_preview"],
+    )
+
+    category: str
+    author_id: str
+    content_preview: str
+```
+
+- `key`: auto-generated UUID v4 hex (via `generate_vector_id`)
+- `data`: `S3VectorData(float32=[...])` — embedding vector
+- Remaining fields → metadata (filter/non-filter)
+- `to_s3vector()` serializes to S3 Vectors API format; `from_s3vector()` deserializes
+
+### S3VectorModelMeta Fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `index_name` | `str` | required | S3 Vectors index name |
+| `data_type` | `Literal["float32"]` | `"float32"` | Vector data type |
+| `dimension` | `int` | `settings.embedding_dimension` | Vector dimension (auto-derived) |
+| `distance_metric` | `Literal["cosine", "euclidean"]` | `"cosine"` | Distance metric |
+| `filter_fields` | `list[str]` | `[]` | Filterable metadata fields |
+| `non_filter_fields` | `list[str]` | `[]` | Non-filterable metadata fields |
+
+### BaseS3VectorStore (Repository Counterpart)
+
+Implements `BaseVectorStoreProtocol`. Subclass must implement `_to_model()` for domain-specific conversion.
+
+```python
+from src._core.infrastructure.s3vectors.base_s3vector_store import BaseS3VectorStore
+
+class {Name}S3VectorStore(BaseS3VectorStore[{Name}DTO]):
+    def __init__(self, s3vector_client, *, bucket_name):
+        super().__init__(
+            s3vector_client=s3vector_client,
+            model={Name}S3VectorModel,
+            return_entity={Name}DTO,
+            bucket_name=bucket_name,
+        )
+
+    def _to_model(self, entity: BaseModel) -> {Name}S3VectorModel:
+        return {Name}S3VectorModel(
+            data=S3VectorData(float32=entity.embedding),
+            category=entity.category,
+            # ... map DTO fields to model metadata
+        )
+```
+
+### BaseVectorStoreProtocol Methods
+
+| Method | Signature |
+|--------|---------|
+| upsert | `async (entities: Sequence[BaseModel]) -> int` |
+| search | `async (query: VectorQuery) -> VectorSearchResult[ReturnDTO]` |
+| get | `async (keys: list[str]) -> list[ReturnDTO]` |
+| delete | `async (keys: list[str]) -> bool` |
+
+### S3 Vector Domain Variant (Directory Structure)
+
+```
+src/{name}/
+├── infrastructure/
+│   ├── s3vectors/
+│   │   └── models/{name}_model.py    # extends S3VectorModel
+│   ├── repositories/{name}_vector_store.py  # extends BaseS3VectorStore
+│   └── di/{name}_container.py        # s3vector_client + embedding_client injection
+└── (나머지 동일)
+```
+
+## §13. Embedding Pattern
+
+### BaseEmbeddingProtocol
+
+Backend-agnostic protocol for embedding implementations. Both OpenAI and Bedrock implement this.
+
+```python
+class BaseEmbeddingProtocol:
+    @property
+    def dimension(self) -> int: ...
+    async def embed_text(self, text: str) -> list[float]: ...
+    async def embed_batch(self, texts: list[str]) -> list[list[float]]: ...
+```
+
+### Provider Implementations
+
+| Provider | Client Class | Batching | Dimension Source |
+|----------|-------------|----------|-----------------|
+| OpenAI | `OpenAIEmbeddingClient` | Auto (2048 items / 300K tokens) | Model lookup table |
+| Bedrock | `BedrockEmbeddingClient` | Sequential (per-text invoke) | Model lookup table |
+
+- OpenAI requires optional extras: `uv sync --extra openai` (openai + tiktoken)
+- Bedrock uses aioboto3 (already a main dependency)
+- Both raise domain exceptions: `EmbeddingRateLimitException`, `EmbeddingAuthenticationException`, `EmbeddingInputTooLongException`
+
+### Text Chunking Utilities
+
+| Function | Strategy | Use Case |
+|----------|----------|----------|
+| `chunk_text(text, chunk_size, overlap)` | Character-based (Unicode boundary aware) | General-purpose splitting |
+| `chunk_text_by_tokens(text, model, max_tokens, overlap)` | Token-based (tiktoken-rs) | Embedding preprocessing |
+
+- `semantic-text-splitter` handles Unicode word/sentence boundaries internally
+- Token-based chunking uses tiktoken-rs (built into semantic-text-splitter) — no separate tiktoken install needed

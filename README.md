@@ -39,7 +39,7 @@
 
 - **MCP Server interface** `planned` — Expose domain services as AI agent tools via FastMCP
 - **AI agent orchestration** `planned` — PydanticAI integration for structured LLM workflows
-- **Vector search** `planned` — pgvector for semantic search, RAG, and similarity matching
+- **Vector infrastructure** `available` — AWS S3 Vectors + OpenAI/Bedrock embeddings + chunking utilities for semantic search foundations
 
 ### Production-Ready Architecture
 
@@ -430,7 +430,8 @@ All interfaces share the same Domain and Infrastructure layers -- write your bus
 |-----------|---------|
 | **FastMCP** | MCP server — expose domain services as tools for AI agents |
 | **PydanticAI** | Structured LLM orchestration with Pydantic-native outputs |
-| **pgvector** | Vector similarity search (PostgreSQL extension) |
+| **AWS S3 Vectors** | Managed vector index backend for semantic search infrastructure |
+| **OpenAI / Bedrock Embeddings** | Pluggable embedding backends selected by configuration |
 
 ### Core
 
@@ -448,7 +449,8 @@ All interfaces share the same Domain and Infrastructure layers -- write your bus
 | **PostgreSQL** + asyncpg | Primary RDBMS |
 | **Taskiq** + AWS SQS | Async task queue ([why not Celery?](docs/history/001-celery-to-taskiq.md)) |
 | **aiohttp** | Async HTTP client |
-| **aioboto3** | S3/MinIO storage |
+| **aioboto3** | DynamoDB, S3/MinIO, S3 Vectors, and Bedrock clients |
+| **semantic-text-splitter** | Character/token chunking utilities for embedding preprocessing |
 | **Alembic** | DB migrations |
 
 ### DevOps
@@ -472,12 +474,16 @@ src/
 │   └── admin/                   # NiceGUI admin app
 │
 ├── _core/                        # Shared infrastructure
+│   ├── common/                  # Pagination, security, text utils, UUID helpers
 │   ├── domain/
 │   │   ├── protocols/           # BaseRepositoryProtocol[ReturnDTO]
 │   │   └── services/            # BaseService[CreateDTO, UpdateDTO, ReturnDTO]
 │   ├── infrastructure/
 │   │   ├── database/            # Database, BaseRepository[ReturnDTO]
+│   │   ├── dynamodb/            # DynamoDBClient, BaseDynamoRepository
+│   │   ├── embedding/           # OpenAI/Bedrock embedding clients
 │   │   ├── http/                # HttpClient, BaseHttpGateway
+│   │   ├── s3vectors/           # S3VectorClient, BaseS3VectorStore
 │   │   ├── taskiq/              # Broker adapters, TaskiqManager
 │   │   ├── storage/             # S3/MinIO
 │   │   ├── di/                  # CoreContainer
@@ -514,7 +520,7 @@ src/
 |---------|:-:|:-:|:-:|:-:|
 | MCP Server interface | **Planned** | No | No | No |
 | AI orchestration (PydanticAI) | **Planned** | No | No | No |
-| Vector search (pgvector) | **Planned** | No | No | No |
+| Vector infrastructure (S3 Vectors) | **Yes** | No | No | No |
 | Zero-boilerplate CRUD (7 methods) | **Yes** | No | No | No |
 | Auto domain discovery | **Yes** | No | No | No |
 | Architecture enforcement (pre-commit) | **Yes** | No | No | No |
@@ -549,7 +555,7 @@ Every technical choice in this project is documented as an ADR (Architecture Dec
 ### Phase 1: AI Agent Foundation
 - [ ] FastMCP interface ([#18](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/18))
 - [ ] PydanticAI integration ([#15](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/15))
-- [ ] pgvector support ([#11](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/11))
+- [ ] Additional vector backend: pgvector ([#11](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/11))
 - [ ] JWT authentication ([#4](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/4))
 
 ### Phase 2: Production Readiness

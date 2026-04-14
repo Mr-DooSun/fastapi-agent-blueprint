@@ -229,3 +229,64 @@ Check DynamoDB client, model, and configuration files:
 - [ ] [When applicable][MEDIUM] DynamoDB IAM credentials managed via environment variables (not hardcoded)
   - Detection condition: Same as above
   - Grep: `dynamodb_access_key|dynamodb_secret_key` loaded from `Settings` (not hardcoded strings)
+
+## 10. S3 Vectors Security
+
+Check S3 Vectors client, store, and configuration files:
+
+### Access Control
+- [ ] [When applicable][HIGH] S3 Vectors AWS credentials managed via environment variables (not hardcoded)
+  - Detection condition: Check **project-dna.md section 8** "AWS S3 Vectors (aioboto3)" status -> [SKIP] if "not implemented"
+  - Grep: `s3vectors_access_key|s3vectors_secret_key` loaded from `Settings` (not hardcoded strings)
+
+### Error Information Exposure
+- [ ] [When applicable][HIGH] S3 Vectors error responses do not expose raw AWS error details in production
+  - Detection condition: Same as above
+  - Grep: `S3VectorException` wraps `ClientError` -> verify `error_message` from AWS is not exposed directly in user-facing responses
+  - Known exceptions (`S3VectorIndexNotFoundException`, `S3VectorThrottlingException`) use sanitized messages
+
+### Configuration Validation
+- [ ] [When applicable][MEDIUM] S3 Vectors configuration is complete (no partial credential sets)
+  - Detection condition: Same as above
+  - Grep: Settings `_validate_environment_safety` in `config.py` -> verify `s3vectors_*` fields validated as a group
+
+### Input Validation
+- [ ] [When applicable][MEDIUM] S3 Vectors batch operations respect API limits
+  - Detection condition: Same as above
+  - Grep: `_PUT_BATCH_SIZE|_GET_BATCH_SIZE|_DELETE_BATCH_SIZE` in `base_s3vector_store.py` -> verify batch sizes enforced (500/100/500)
+
+## 11. Embedding API Security
+
+Check Embedding client and configuration files:
+
+### API Key Management
+- [ ] [When applicable][CRITICAL] Embedding API keys (OpenAI/Bedrock) managed via environment variables (not hardcoded)
+  - Detection condition: Check **project-dna.md section 8** "Embedding (OpenAI/Bedrock)" status -> [SKIP] if "not implemented"
+  - Grep: `embedding_openai_api_key|embedding_bedrock_access_key|embedding_bedrock_secret_key` loaded from `Settings`
+  - Verify no API key hardcoded in client constructors
+
+### Input Length Validation
+- [ ] [When applicable][HIGH] Embedding input length validated before API call
+  - Detection condition: Same as above
+  - Grep: `EmbeddingInputTooLongException` raised in both OpenAI and Bedrock clients
+  - OpenAI: per-text limit 8,192 tokens, batch total 300,000 tokens
+  - Bedrock: per-text limit 50,000 characters
+
+### Rate Limit Handling
+- [ ] [When applicable][HIGH] Embedding API rate limit errors caught and wrapped into domain exceptions
+  - Detection condition: Same as above
+  - Grep: OpenAI `RateLimitError` -> `EmbeddingRateLimitException`
+  - Grep: Bedrock `ThrottlingException|TooManyRequestsException` -> `EmbeddingRateLimitException`
+
+### Error Information Exposure
+- [ ] [When applicable][HIGH] Embedding error responses do not expose raw API error details in production
+  - Detection condition: Same as above
+  - Grep: `EmbeddingException` wraps API errors -> verify raw `error_message` is not exposed in user-facing responses
+  - Known exceptions (`EmbeddingRateLimitException`, `EmbeddingAuthenticationException`, etc.) use sanitized messages
+
+### Configuration Validation
+- [ ] [When applicable][MEDIUM] Embedding provider credentials complete (no partial credential sets)
+  - Detection condition: Same as above
+  - Grep: Settings `_validate_environment_safety` in `config.py` -> verify provider-specific validation
+  - OpenAI: requires `embedding_openai_api_key` when `EMBEDDING_PROVIDER=openai`
+  - Bedrock: requires all 3 fields (`access_key`, `secret_key`, `region`) when `EMBEDDING_PROVIDER=bedrock`

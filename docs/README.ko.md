@@ -38,7 +38,7 @@
 
 - **MCP 서버 인터페이스** `planned` — FastMCP를 통해 도메인 서비스를 AI 에이전트 도구로 노출
 - **AI 에이전트 오케스트레이션** `planned` — 구조화된 LLM 워크플로우를 위한 PydanticAI 통합
-- **벡터 검색** `planned` — 시맨틱 검색, RAG, 유사도 매칭을 위한 pgvector
+- **벡터 인프라** `available` — AWS S3 Vectors + OpenAI/Bedrock 임베딩 + chunking 유틸리티로 시맨틱 검색 기반 제공
 
 ### 프로덕션 레디 아키텍처
 
@@ -428,7 +428,8 @@ async def create_product(
 |------|------|
 | **FastMCP** | MCP 서버 — 도메인 서비스를 AI 에이전트 도구로 노출 |
 | **PydanticAI** | Pydantic 네이티브 출력의 구조화된 LLM 오케스트레이션 |
-| **pgvector** | 벡터 유사도 검색 (PostgreSQL 확장) |
+| **AWS S3 Vectors** | 시맨틱 검색 인프라를 위한 관리형 벡터 인덱스 백엔드 |
+| **OpenAI / Bedrock Embeddings** | 설정으로 선택하는 플러그형 임베딩 백엔드 |
 
 ### Core
 
@@ -446,7 +447,8 @@ async def create_product(
 | **PostgreSQL** + asyncpg | 메인 RDBMS |
 | **Taskiq** + AWS SQS | 비동기 태스크 큐 ([왜 Celery가 아닌가?](../docs/history/001-celery-to-taskiq.md)) |
 | **aiohttp** | 비동기 HTTP 클라이언트 |
-| **aioboto3** | S3/MinIO 스토리지 |
+| **aioboto3** | DynamoDB, S3/MinIO, S3 Vectors, Bedrock 클라이언트 |
+| **semantic-text-splitter** | 임베딩 전처리를 위한 문자/토큰 chunking 유틸리티 |
 | **Alembic** | DB 마이그레이션 |
 
 ### DevOps
@@ -470,12 +472,16 @@ src/
 │   └── admin/                   # NiceGUI admin 앱
 │
 ├── _core/                        # 공통 인프라
+│   ├── common/                  # Pagination, security, text utils, UUID helper
 │   ├── domain/
 │   │   ├── protocols/           # BaseRepositoryProtocol[ReturnDTO]
 │   │   └── services/            # BaseService[CreateDTO, UpdateDTO, ReturnDTO]
 │   ├── infrastructure/
 │   │   ├── database/            # Database, BaseRepository[ReturnDTO]
+│   │   ├── dynamodb/            # DynamoDBClient, BaseDynamoRepository
+│   │   ├── embedding/           # OpenAI/Bedrock embedding client
 │   │   ├── http/                # HttpClient, BaseHttpGateway
+│   │   ├── s3vectors/           # S3VectorClient, BaseS3VectorStore
 │   │   ├── taskiq/              # Broker adapter, TaskiqManager
 │   │   ├── storage/             # S3/MinIO
 │   │   ├── di/                  # CoreContainer
@@ -512,7 +518,7 @@ src/
 |------|:-:|:-:|:-:|:-:|
 | MCP 서버 인터페이스 | **Planned** | No | No | No |
 | AI 오케스트레이션 (PydanticAI) | **Planned** | No | No | No |
-| 벡터 검색 (pgvector) | **Planned** | No | No | No |
+| 벡터 인프라 (S3 Vectors) | **Yes** | No | No | No |
 | 보일러플레이트 제로 CRUD (7개 메서드) | **Yes** | No | No | No |
 | 도메인 자동 발견 | **Yes** | No | No | No |
 | 아키텍처 자동 강제 (pre-commit) | **Yes** | No | No | No |
@@ -547,7 +553,7 @@ src/
 ### Phase 1: AI Agent Foundation
 - [ ] FastMCP 인터페이스 ([#18](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/18))
 - [ ] PydanticAI 통합 ([#15](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/15))
-- [ ] pgvector 지원 ([#11](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/11))
+- [ ] 추가 벡터 백엔드: pgvector ([#11](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/11))
 - [ ] JWT 인증 ([#4](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/4))
 
 ### Phase 2: Production Readiness
