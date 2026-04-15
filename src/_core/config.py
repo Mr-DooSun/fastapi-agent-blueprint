@@ -7,7 +7,18 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 KNOWN_ENVS = ("local", "dev", "stg", "prod")
 KNOWN_ENGINES = ("postgresql", "mysql", "sqlite")
 KNOWN_BROKER_TYPES = ("sqs", "rabbitmq", "inmemory")
+KNOWN_EMBEDDING_PROVIDERS = ("openai", "bedrock")
 STRICT_ENVS = frozenset({"stg", "prod"})
+
+_OPENAI_DIMENSIONS: dict[str, int] = {
+    "text-embedding-3-small": 1536,
+    "text-embedding-3-large": 3072,
+    "text-embedding-ada-002": 1536,
+}
+_BEDROCK_DIMENSIONS: dict[str, int] = {
+    "amazon.titan-embed-text-v2:0": 1024,
+    "amazon.titan-embed-text-v1": 1536,
+}
 
 _UNSAFE_DEFAULTS: dict[str, str] = {
     "admin_password": "admin",  # noqa: S105
@@ -140,6 +151,32 @@ class Settings(BaseSettings):
     # Messaging (RabbitMQ) — required when BROKER_TYPE=rabbitmq
     # ----------------------------------------------------------------
     rabbitmq_url: str | None = Field(default=None, validation_alias="RABBITMQ_URL")
+
+    # ----------------------------------------------------------------
+    # Embedding (Optional)
+    # ----------------------------------------------------------------
+    embedding_provider: str | None = Field(
+        default=None, validation_alias="EMBEDDING_PROVIDER"
+    )
+    embedding_model: str | None = Field(
+        default=None, validation_alias="EMBEDDING_MODEL"
+    )
+
+    # OpenAI-specific (required when EMBEDDING_PROVIDER=openai)
+    embedding_openai_api_key: str | None = Field(
+        default=None, validation_alias="EMBEDDING_OPENAI_API_KEY"
+    )
+
+    # Bedrock-specific (required when EMBEDDING_PROVIDER=bedrock)
+    embedding_bedrock_access_key: str | None = Field(
+        default=None, validation_alias="EMBEDDING_BEDROCK_ACCESS_KEY"
+    )
+    embedding_bedrock_secret_key: str | None = Field(
+        default=None, validation_alias="EMBEDDING_BEDROCK_SECRET_KEY"
+    )
+    embedding_bedrock_region: str | None = Field(
+        default=None, validation_alias="EMBEDDING_BEDROCK_REGION"
+    )
 
     # ----------------------------------------------------------------
     # Network Policy
@@ -276,6 +313,35 @@ class Settings(BaseSettings):
                 "[RabbitMQ] BROKER_TYPE=rabbitmq requires: rabbitmq_url missing"
             )
 
+        embedding = (self.embedding_provider or "").lower().strip()
+        if embedding and embedding not in KNOWN_EMBEDDING_PROVIDERS:
+            errors.append(
+                f"[embedding_provider] Unknown embedding provider "
+                f"'{self.embedding_provider}'. "
+                f"Expected one of: {', '.join(KNOWN_EMBEDDING_PROVIDERS)}"
+            )
+
+        if embedding == "openai":
+            if not self.embedding_openai_api_key:
+                errors.append(
+                    "[Embedding/OpenAI] EMBEDDING_PROVIDER=openai requires: "
+                    "embedding_openai_api_key missing"
+                )
+
+        if embedding == "bedrock":
+            bedrock_fields = {
+                "embedding_bedrock_access_key": self.embedding_bedrock_access_key,
+                "embedding_bedrock_secret_key": self.embedding_bedrock_secret_key,
+                "embedding_bedrock_region": self.embedding_bedrock_region,
+            }
+            bedrock_set = {k for k, v in bedrock_fields.items() if v is not None}
+            if bedrock_set != set(bedrock_fields):
+                missing = sorted(set(bedrock_fields) - bedrock_set)
+                errors.append(
+                    f"[Embedding/Bedrock] EMBEDDING_PROVIDER=bedrock requires: "
+                    f"{', '.join(missing)} missing"
+                )
+
         if errors:
             bullet_list = "\n  - ".join(errors)
             raise ValueError(
@@ -306,6 +372,21 @@ class Settings(BaseSettings):
         if self.minio_host and self.minio_port:
             return f"{self.minio_host}:{self.minio_port}"
         return None
+
+    @property
+    def embedding_dimension(self) -> int:
+        """Derive embedding vector dimension from provider and model.
+
+        Not user-configurable — determined by the selected model.
+        Used as the single source of truth for ``S3VectorModelMeta.dimension``.
+        """
+        provider = (self.embedding_provider or "openai").lower()
+        model = self.embedding_model
+        if provider == "bedrock":
+            return _BEDROCK_DIMENSIONS.get(
+                model or "amazon.titan-embed-text-v2:0", 1024
+            )
+        return _OPENAI_DIMENSIONS.get(model or "text-embedding-3-small", 1536)
 
 
 settings = Settings()

@@ -1,6 +1,6 @@
 # Architecture Conventions
 
-> Last synced: 2026-04-13 via /sync-guidelines
+> Last synced: 2026-04-14 via /sync-guidelines
 > For Absolute Prohibitions, Conversion Patterns, Write DTO criteria, and common commands, refer to AGENTS.md.
 > This file only contains **structural context** that supplements AGENTS.md for Claude.
 
@@ -27,11 +27,23 @@ Key differences from RDB:
 - Cursor-based pagination via CursorPage (not offset-based)
 - BaseDynamoService/BaseDynamoRepository — mirrors RDB counterparts
 
+## S3 Vectors Data Flow
+```
+  Write: Entity → VectorStore(BaseS3VectorStore) → S3VectorModel → S3 Vectors API
+  Read:  VectorSearchResult[DTO] ← VectorStore ← DTO ← S3 Vectors API response
+```
+Key differences from RDB/DynamoDB:
+- String keys (UUID v4 hex) via `generate_vector_id`
+- Similarity search via VectorQuery (top_k, filters) → VectorSearchResult
+- Subclass must implement `_to_model()` for domain-specific DTO → S3VectorModel conversion
+- `S3VectorModelMeta.dimension` auto-derived from `settings.embedding_dimension`
+
 ## BaseService Generic Structure
 - `BaseService(Generic[CreateDTO, UpdateDTO, ReturnDTO])` — 3 TypeVars (ADR 011 update, 2026-04-09)
 - `BaseRepositoryProtocol(Generic[ReturnDTO])` / `BaseRepository(Generic[ReturnDTO])` — 1 TypeVar (Repository only calls model_dump, no field-specific access)
 - `BaseDynamoService(Generic[CreateDTO, UpdateDTO, ReturnDTO])` — mirrors BaseService
 - `BaseDynamoRepositoryProtocol(Generic[ReturnDTO])` / `BaseDynamoRepository(Generic[ReturnDTO])` — mirrors BaseRepository
+- `BaseVectorStoreProtocol(Generic[ReturnDTO])` / `BaseS3VectorStore(Generic[ReturnDTO])` — vector store pattern
 - Domain Service example: `UserService(BaseService[CreateUserRequest, UpdateUserRequest, UserDTO])`
 - DO NOT simplify back to 1 TypeVar — this was tried and reverted (see ADR 011 Post-decision Update)
 
@@ -39,6 +51,11 @@ Key differences from RDB:
 - providers.Selector in CoreContainer: SQS/RabbitMQ/InMemory by BROKER_TYPE env var
 - Task code: `from src._apps.worker.broker import broker` — no conditional logic
 - stg/prod require explicit BROKER_TYPE setting
+
+## Embedding Selection
+- providers.Selector in CoreContainer: OpenAI/Bedrock by EMBEDDING_PROVIDER env var
+- Both implement BaseEmbeddingProtocol (embed_text, embed_batch, dimension)
+- Dimension auto-derived from model name — `settings.embedding_dimension` is single source of truth
 
 ## Object Roles
 
@@ -65,6 +82,13 @@ Key differences from RDB:
 - Location: `src/{domain}/infrastructure/dynamodb/models/{domain}_model.py`
 - Uses `DynamoModelMeta` + `__dynamo_meta__` for table schema declaration
 - Must never leave the Repository layer (same rule as ORM Model)
+
+### S3VectorModel
+- Location: `src/{domain}/infrastructure/s3vectors/models/{domain}_model.py`
+- Uses `S3VectorModelMeta` + `__s3vector_meta__` for index schema declaration
+- Must never leave the VectorStore layer (same rule as ORM Model/DynamoModel)
+- Conversion: `Entity → Model: _to_model()` (abstract, subclass implements)
+- Conversion: `API response → DTO: return_entity.model_validate(metadata)`
 
 ### Admin Page Config (BaseAdminPage)
 - Config: `src/{domain}/interface/admin/configs/{domain}_admin_config.py`

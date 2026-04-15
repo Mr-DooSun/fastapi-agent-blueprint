@@ -122,6 +122,33 @@ For skills that have been migrated to Hybrid C:
 References: AUTO-FIX X items | REVIEW X items | OK X items
 ```
 
+## Sync Completion Contract
+
+Do not treat the sync as complete until the closing summary includes all four sections below.
+
+```text
+project-dna: updated | unchanged
+AUTO-FIX: ...
+REVIEW: ...
+Remaining: ...
+```
+
+- **project-dna**: Whether `docs/ai/shared/project-dna.md` was regenerated, updated, or confirmed unchanged.
+- **AUTO-FIX**: Mechanically fixable drift targets and whether each fix was applied. If none: `AUTO-FIX: none`.
+- **REVIEW**: Human-review targets — explain why policy or product judgment is needed. If none: `REVIEW: none`.
+- **Remaining**: Unresolved drift that still remains after updates. If none: `Remaining: none`.
+
+If one or more `REVIEW` items exist, the sync result must not conclude with "nothing to change" or equivalent wording.
+
+Example:
+
+```text
+project-dna: updated (new Base class paths synced)
+AUTO-FIX: 2 items applied (scaffolding-layers, planning-checklists)
+REVIEW: 1 item (security-checklist lacks checks for newly active "Embedding")
+Remaining: none
+```
+
 ## When to Run
 - After architecture refactoring
 - After changes to Base classes or shared modules

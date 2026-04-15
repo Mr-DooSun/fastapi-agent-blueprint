@@ -1,11 +1,11 @@
 # Project Status
 
-> Last synced: 2026-04-13 via /sync-guidelines
+> Last synced: 2026-04-14 via /sync-guidelines
 
 ## Current Version Context
 - Latest release: v0.3.0 (2026-04-10)
 - Active domains: user (reference domain)
-- Infrastructure: RDB (PostgreSQL/MySQL/SQLite), DynamoDB, S3, Broker (SQS/RabbitMQ/InMemory)
+- Infrastructure: RDB (PostgreSQL/MySQL/SQLite), DynamoDB, S3, S3 Vectors, Embedding, Broker (SQS/RabbitMQ/InMemory)
 
 ## Recent Major Changes (since v0.3.0)
 | Feature | Issue | Impact |
@@ -19,6 +19,10 @@
 | Password Hashing | - | hash_password/verify_password in _core.common.security |
 | Serena Removal & Pyright Adoption | #63 | pyright-lsp 기본 코드 인텔리전스, PostToolUse 포맷팅 훅, tool-agnostic 스킬 전환 |
 | Codex CLI Harness & Hybrid C Skills | #66 | Shared AGENTS.md, docs/ai/shared/ reference layer, 14 Hybrid C skill migrations |
+| S3 Vectors Support | #70 | BaseS3VectorStore, S3VectorModel, S3VectorClient, VectorQuery/VectorSearchResult |
+| Embedding Service Abstraction | #69 | Selector pattern (OpenAI/Bedrock), BaseEmbeddingProtocol, auto-dimension |
+| Text Chunking | #69 | semantic-text-splitter, chunk_text/chunk_text_by_tokens |
+| ADR 035/036 | #69 | Embedding abstraction + text chunking design decisions |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN

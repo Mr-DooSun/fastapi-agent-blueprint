@@ -5,6 +5,12 @@ from src._core.config import settings
 from src._core.infrastructure.database.config import DatabaseConfig
 from src._core.infrastructure.database.database import Database
 from src._core.infrastructure.dynamodb.dynamodb_client import DynamoDBClient
+from src._core.infrastructure.embedding.bedrock_embedding_client import (
+    BedrockEmbeddingClient,
+)
+from src._core.infrastructure.embedding.openai_embedding_client import (
+    OpenAIEmbeddingClient,
+)
 from src._core.infrastructure.http.http_client import HttpClient
 from src._core.infrastructure.s3vectors.s3vector_client import S3VectorClient
 from src._core.infrastructure.storage.object_storage import ObjectStorage
@@ -98,6 +104,26 @@ class CoreContainer(containers.DeclarativeContainer):
         access_key=settings.s3vectors_access_key,
         secret_access_key=settings.s3vectors_secret_key,
         region_name=settings.s3vectors_region,
+    )
+
+    #########################################################
+    # Embedding
+    #########################################################
+
+    embedding_client = providers.Selector(
+        lambda: (settings.embedding_provider or "openai").lower().strip(),
+        openai=providers.Singleton(
+            OpenAIEmbeddingClient,
+            api_key=settings.embedding_openai_api_key,
+            model=settings.embedding_model or "text-embedding-3-small",
+        ),
+        bedrock=providers.Singleton(
+            BedrockEmbeddingClient,
+            access_key=settings.embedding_bedrock_access_key,
+            secret_access_key=settings.embedding_bedrock_secret_key,
+            region_name=settings.embedding_bedrock_region,
+            model_id=settings.embedding_model or "amazon.titan-embed-text-v2:0",
+        ),
     )
 
     #########################################################

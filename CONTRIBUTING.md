@@ -54,6 +54,7 @@ Tool-specific harness files:
 
 Do not duplicate shared architecture rules into tool-specific docs. Update `AGENTS.md` first, then adjust the harness docs that reference it.
 Shared workflow references that both tools consume live under [docs/ai/shared](docs/ai/shared).
+When running `/sync-guidelines` or `$sync-guidelines`, do not stop at automatic doc edits. The final result must explicitly include `project-dna`, `AUTO-FIX`, `REVIEW`, and `Remaining`.
 
 ## Claude Minimum Setup
 

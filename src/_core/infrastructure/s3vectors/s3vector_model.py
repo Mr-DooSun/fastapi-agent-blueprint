@@ -7,16 +7,32 @@ from pydantic import BaseModel, Field
 from src._core.common.uuid_utils import generate_vector_id
 
 
+def _default_embedding_dimension() -> int:
+    """Lazy-load settings to derive embedding dimension.
+
+    Avoids module-level ``settings`` import so that test modules
+    importing ``S3VectorModel`` do not trigger ``Settings()`` init.
+    """
+    from src._core.config import settings
+
+    return settings.embedding_dimension
+
+
 class S3VectorModelMeta(BaseModel):
     """S3 Vectors index schema metadata.
 
     ``DynamoModelMeta`` counterpart — declares index configuration
     that the migration CLI reads to create/compare indexes.
+
+    ``dimension`` defaults to ``settings.embedding_dimension``
+    (derived from ``EMBEDDING_PROVIDER`` + ``EMBEDDING_MODEL``).
+    This ensures vector index dimension always matches the
+    embedding model in use without manual synchronization.
     """
 
     index_name: str
     data_type: Literal["float32"] = "float32"
-    dimension: int = 1536
+    dimension: int = Field(default_factory=_default_embedding_dimension)
     distance_metric: Literal["cosine", "euclidean"] = "cosine"
     filter_fields: list[str] = []
     non_filter_fields: list[str] = []

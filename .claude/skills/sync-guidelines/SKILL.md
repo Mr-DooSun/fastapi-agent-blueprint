@@ -19,6 +19,8 @@ description: |
 Read `docs/ai/shared/skills/sync-guidelines.md` for detailed steps.
 Also refer to `docs/ai/shared/drift-checklist.md` for inspection items.
 
+Closing summary must include: `project-dna`, `AUTO-FIX`, `REVIEW`, `Remaining` — see "Sync Completion Contract" in shared procedure.
+
 ## Claude-Specific Post-Steps
 After completing the shared procedure:
 1. Update `.claude/rules/architecture-conventions.md`
