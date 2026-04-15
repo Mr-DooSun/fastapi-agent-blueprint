@@ -49,6 +49,7 @@
 - **Zero-boilerplate CRUD** — Inherit `BaseRepository[DTO]` + `BaseService[Create, Update, DTO]`, get 7 async methods instantly
 - **Auto domain discovery** — Add a domain folder, it auto-registers. No container or bootstrap changes
 - **3 interface types** — HTTP API (FastAPI) + Async Worker (Taskiq) + Admin UI (NiceGUI), all sharing one domain layer
+- **Pluggable infrastructure** — PostgreSQL/MySQL/SQLite, DynamoDB, S3/MinIO, SQS/RabbitMQ, OpenAI/Bedrock — switch by env var
 - **Vector infrastructure** — S3 Vectors + OpenAI/Bedrock embeddings + semantic chunking utilities
 - **Type-safe generics** — `BaseRepository[ProductDTO]`, `BaseService[CreateProductRequest, UpdateProductRequest, ProductDTO]`, `SuccessResponse[ProductResponse]`
 - **Architecture enforcement** — Pre-commit hooks block `Domain → Infrastructure` imports at commit time
@@ -514,9 +515,7 @@ Every technical choice in this project is documented as an ADR (Architecture Dec
 
 ### Phase 2: Production Readiness
 - [ ] Structured logging — structlog ([#9](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/9))
-- [ ] Per-environment config ([#7](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/7), [#8](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/8), [#16](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/16))
 - [ ] Error notifications ([#17](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/17))
-- [ ] Worker payload schemas ([#37](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/37))
 - [ ] CRUD data validation ([#10](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/10))
 
 ### Phase 3: Ecosystem
@@ -524,14 +523,22 @@ Every technical choice in this project is documented as an ADR (Architecture Dec
 - [ ] Performance testing — Locust ([#3](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/3))
 - [ ] Serverless deployment ([#6](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/6))
 - [ ] WebSocket documentation ([#1](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/1))
-- [ ] CHANGELOG ([#41](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/41))
 
 ### Completed
+- [x] Storage abstraction — S3/MinIO switchable via env var ([#58](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/58))
+- [x] Embedding service — OpenAI/Bedrock switchable ([#69](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/69))
+- [x] S3 Vectors support ([#11](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/11))
+- [x] DynamoDB support ([#13](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/13))
+- [x] Broker abstraction — SQS/RabbitMQ/InMemory ([#8](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/8))
+- [x] Admin dashboard — NiceGUI ([#14](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/14))
+- [x] Per-environment config ([#7](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/7), [#16](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/16), [#53](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/53))
+- [x] Worker payload schemas ([#37](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/37))
+- [x] CHANGELOG ([#41](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/41))
+- [x] 14+ AI development skills for Claude Code and Codex CLI
+- [x] Codex CLI workflow layer
 - [x] Health check endpoint
 - [x] Auto domain discovery
 - [x] Architecture enforcement (pre-commit)
-- [x] 14+ AI development skills for Claude Code and Codex CLI
-- [x] Codex CLI workflow layer (`.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`, 6 hooks)
 
 Star this repo to follow our progress!
 

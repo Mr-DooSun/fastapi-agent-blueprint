@@ -49,6 +49,7 @@
 - **보일러플레이트 제로 CRUD** — `BaseRepository[DTO]` + `BaseService[Create, Update, DTO]` 상속으로 7개 비동기 메서드 즉시 제공
 - **도메인 자동 발견** — 도메인 폴더를 추가하면 자동 등록. Container나 bootstrap 수정 불필요
 - **3가지 인터페이스** — HTTP API (FastAPI) + 비동기 Worker (Taskiq) + Admin UI (NiceGUI), 하나의 도메인 레이어 공유
+- **교체 가능한 인프라** — PostgreSQL/MySQL/SQLite, DynamoDB, S3/MinIO, SQS/RabbitMQ, OpenAI/Bedrock — 환경변수로 전환
 - **벡터 인프라** — S3 Vectors + OpenAI/Bedrock 임베딩 + 시맨틱 chunking 유틸리티
 - **타입 안전 제네릭** — `BaseRepository[ProductDTO]`, `BaseService[CreateProductRequest, UpdateProductRequest, ProductDTO]`, `SuccessResponse[ProductResponse]`
 - **아키텍처 자동 강제** — Pre-commit hook이 커밋 시점에 `Domain → Infrastructure` import 차단
@@ -514,9 +515,7 @@ src/
 
 ### Phase 2: Production Readiness
 - [ ] 구조화된 로깅 — structlog ([#9](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/9))
-- [ ] 환경별 설정 분리 ([#7](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/7), [#8](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/8), [#16](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/16))
 - [ ] 에러 알림 ([#17](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/17))
-- [ ] 워커 페이로드 스키마 ([#37](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/37))
 - [ ] CRUD 데이터 검증 ([#10](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/10))
 
 ### Phase 3: Ecosystem
@@ -524,14 +523,22 @@ src/
 - [ ] 성능 테스트 — Locust ([#3](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/3))
 - [ ] 서버리스 배포 ([#6](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/6))
 - [ ] WebSocket 문서 ([#1](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/1))
-- [ ] CHANGELOG ([#41](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/41))
 
 ### Completed
+- [x] Storage 추상화 — S3/MinIO 환경변수 전환 ([#58](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/58))
+- [x] Embedding 서비스 — OpenAI/Bedrock 전환 ([#69](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/69))
+- [x] S3 Vectors 지원 ([#11](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/11))
+- [x] DynamoDB 지원 ([#13](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/13))
+- [x] Broker 추상화 — SQS/RabbitMQ/InMemory ([#8](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/8))
+- [x] Admin 대시보드 — NiceGUI ([#14](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/14))
+- [x] 환경별 설정 분리 ([#7](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/7), [#16](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/16), [#53](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/53))
+- [x] 워커 페이로드 스키마 ([#37](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/37))
+- [x] CHANGELOG ([#41](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/41))
+- [x] Claude Code + Codex CLI용 14+개 AI 개발 스킬
+- [x] Codex CLI workflow layer
 - [x] 헬스 체크 엔드포인트
 - [x] 도메인 자동 발견
 - [x] 아키텍처 강제 (pre-commit)
-- [x] Claude Code + Codex CLI용 14+개 AI 개발 스킬
-- [x] Codex CLI workflow layer (`.codex/config.toml`, `.codex/hooks.json`, `.agents/skills/`, 6 hooks)
 
 스타를 눌러 진행 상황을 팔로우하세요!
 
