@@ -1,7 +1,7 @@
 [project]
 name = "fastapi-agent-blueprint"
 version = "0.3.0"
-description = "AI Agent Backend Platform — MCP server, AI orchestration, and async DDD architecture on FastAPI"
+description = "FastAPI DDD template, built for AI agent backends — zero-boilerplate CRUD, auto domain discovery, async architecture"
 readme = "README.md"
 requires-python = ">=3.12.9"
 dependencies = [
@@ -33,6 +33,12 @@ dependencies = [
 sqs = ["taskiq-aws>=0.4.0"]
 rabbitmq = ["taskiq-aio-pika>=0.4.0"]
 openai = ["openai>=1.0.0", "tiktoken>=0.7.0"]
+
+[project.urls]
+Homepage = "https://github.com/Mr-DooSun/fastapi-agent-blueprint"
+Repository = "https://github.com/Mr-DooSun/fastapi-agent-blueprint"
+Issues = "https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues"
+Changelog = "https://github.com/Mr-DooSun/fastapi-agent-blueprint/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
