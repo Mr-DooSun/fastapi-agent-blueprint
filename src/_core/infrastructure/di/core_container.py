@@ -2,6 +2,7 @@ from dependency_injector import containers, providers
 from taskiq import InMemoryBroker
 
 from src._core.config import settings
+from src._core.domain.value_objects.llm_config import LLMConfig
 from src._core.infrastructure.database.config import DatabaseConfig
 from src._core.infrastructure.database.database import Database
 from src._core.infrastructure.dynamodb.dynamodb_client import DynamoDBClient
@@ -141,4 +142,14 @@ class CoreContainer(containers.DeclarativeContainer):
     taskiq_manager = providers.Singleton(
         TaskiqManager,
         broker=broker,
+    )
+
+    #########################################################
+    # LLM Config (Optional — for PydanticAI agents)
+    #########################################################
+
+    llm_config = providers.Singleton(
+        LLMConfig,
+        model_name=settings.llm_model_name or "",
+        api_key=settings.llm_api_key,
     )

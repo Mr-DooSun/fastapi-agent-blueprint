@@ -9,6 +9,7 @@ KNOWN_ENGINES = ("postgresql", "mysql", "sqlite")
 KNOWN_BROKER_TYPES = ("sqs", "rabbitmq", "inmemory")
 KNOWN_EMBEDDING_PROVIDERS = ("openai", "bedrock")
 KNOWN_STORAGE_TYPES = ("s3", "minio")
+KNOWN_LLM_PROVIDERS = ("openai", "anthropic", "bedrock")
 STRICT_ENVS = frozenset({"stg", "prod"})
 
 _OPENAI_DIMENSIONS: dict[str, int] = {
@@ -185,6 +186,24 @@ class Settings(BaseSettings):
     )
 
     # ----------------------------------------------------------------
+    # LLM (Optional — required when using PydanticAI agents)
+    # ----------------------------------------------------------------
+    llm_provider: str | None = Field(default=None, validation_alias="LLM_PROVIDER")
+    llm_model: str | None = Field(default=None, validation_alias="LLM_MODEL")
+    llm_api_key: str | None = Field(default=None, validation_alias="LLM_API_KEY")
+
+    # Bedrock-specific (required when LLM_PROVIDER=bedrock)
+    llm_bedrock_access_key: str | None = Field(
+        default=None, validation_alias="LLM_BEDROCK_ACCESS_KEY"
+    )
+    llm_bedrock_secret_key: str | None = Field(
+        default=None, validation_alias="LLM_BEDROCK_SECRET_KEY"
+    )
+    llm_bedrock_region: str | None = Field(
+        default=None, validation_alias="LLM_BEDROCK_REGION"
+    )
+
+    # ----------------------------------------------------------------
     # Network Policy
     # ----------------------------------------------------------------
     allowed_hosts: list[str] = Field(
@@ -336,6 +355,32 @@ class Settings(BaseSettings):
                 "[RabbitMQ] BROKER_TYPE=rabbitmq requires: rabbitmq_url missing"
             )
 
+        llm = (self.llm_provider or "").lower().strip()
+        if llm and llm not in KNOWN_LLM_PROVIDERS:
+            errors.append(
+                f"[llm_provider] Unknown LLM provider '{self.llm_provider}'. "
+                f"Expected one of: {', '.join(KNOWN_LLM_PROVIDERS)}"
+            )
+
+        if llm in ("openai", "anthropic") and not self.llm_api_key:
+            errors.append(f"[LLM] LLM_PROVIDER={llm} requires: llm_api_key missing")
+
+        if llm == "bedrock":
+            llm_bedrock_fields = {
+                "llm_bedrock_access_key": self.llm_bedrock_access_key,
+                "llm_bedrock_secret_key": self.llm_bedrock_secret_key,
+                "llm_bedrock_region": self.llm_bedrock_region,
+            }
+            llm_bedrock_set = {
+                k for k, v in llm_bedrock_fields.items() if v is not None
+            }
+            if llm_bedrock_set != set(llm_bedrock_fields):
+                missing = sorted(set(llm_bedrock_fields) - llm_bedrock_set)
+                errors.append(
+                    f"[LLM/Bedrock] LLM_PROVIDER=bedrock requires: "
+                    f"{', '.join(missing)} missing"
+                )
+
         embedding = (self.embedding_provider or "").lower().strip()
         if embedding and embedding not in KNOWN_EMBEDDING_PROVIDERS:
             errors.append(
@@ -453,6 +498,18 @@ class Settings(BaseSettings):
                 model or "amazon.titan-embed-text-v2:0", 1024
             )
         return _OPENAI_DIMENSIONS.get(model or "text-embedding-3-small", 1536)
+
+    @property
+    def llm_model_name(self) -> str | None:
+        """PydanticAI-compatible model string (e.g. ``'openai:gpt-4o'``).
+
+        Returns ``None`` when LLM is not configured.
+        """
+        provider = (self.llm_provider or "").lower().strip()
+        model = self.llm_model
+        if not provider or not model:
+            return None
+        return f"{provider}:{model}"
 
 
 settings = Settings()
