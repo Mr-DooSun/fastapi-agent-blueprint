@@ -500,6 +500,168 @@ class TestEmbeddingConfig:
             assert s.embedding_provider == "bedrock"
             assert s.embedding_bedrock_region == "us-east-1"
 
+    def test_embedding_model_name_property(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "openai",
+            "EMBEDDING_MODEL": "text-embedding-3-small",
+            "EMBEDDING_OPENAI_API_KEY": "sk-test",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_model_name == "openai:text-embedding-3-small"
+
+    def test_embedding_model_name_none_without_provider(self):
+        env = {"ENV": "local", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_model_name is None
+
+    def test_embedding_dimension_google(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "google",
+            "EMBEDDING_MODEL": "gemini-embedding-001",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_dimension == 768
+
+    def test_embedding_dimension_ollama(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "ollama",
+            "EMBEDDING_MODEL": "all-MiniLM-L6-v2",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_dimension == 384
+
+    def test_embedding_dimension_sentence_transformers(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "sentence-transformers",
+            "EMBEDDING_MODEL": "all-mpnet-base-v2",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_dimension == 768
+
+    def test_google_provider_accepted(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "google",
+            "EMBEDDING_MODEL": "gemini-embedding-001",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_provider == "google"
+
+
+class TestLLMConfig:
+    def test_no_llm_provider_accepted(self):
+        env = {"ENV": "local", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.llm_provider is None
+            assert s.llm_model_name is None
+
+    def test_unknown_llm_provider_rejected(self):
+        env = {"ENV": "local", "LLM_PROVIDER": "gemini", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match="Unknown LLM provider"):
+                _create_settings()
+
+    def test_openai_without_api_key_rejected(self):
+        env = {
+            "ENV": "local",
+            "LLM_PROVIDER": "openai",
+            "LLM_MODEL": "gpt-4o",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match=r"LLM.*llm_api_key missing"):
+                _create_settings()
+
+    def test_openai_with_api_key_accepted(self):
+        env = {
+            "ENV": "local",
+            "LLM_PROVIDER": "openai",
+            "LLM_MODEL": "gpt-4o",
+            "LLM_API_KEY": "sk-test",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.llm_provider == "openai"
+            assert s.llm_model == "gpt-4o"
+            assert s.llm_model_name == "openai:gpt-4o"
+
+    def test_anthropic_without_api_key_rejected(self):
+        env = {
+            "ENV": "local",
+            "LLM_PROVIDER": "anthropic",
+            "LLM_MODEL": "claude-sonnet-4-20250514",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match=r"LLM.*llm_api_key missing"):
+                _create_settings()
+
+    def test_anthropic_with_api_key_accepted(self):
+        env = {
+            "ENV": "local",
+            "LLM_PROVIDER": "anthropic",
+            "LLM_MODEL": "claude-sonnet-4-20250514",
+            "LLM_API_KEY": "sk-ant-test",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.llm_model_name == "anthropic:claude-sonnet-4-20250514"
+
+    def test_bedrock_partial_config_rejected(self):
+        env = {
+            "ENV": "local",
+            "LLM_PROVIDER": "bedrock",
+            "LLM_MODEL": "anthropic.claude-v2",
+            "LLM_BEDROCK_ACCESS_KEY": "key",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match=r"LLM/Bedrock.*missing"):
+                _create_settings()
+
+    def test_bedrock_complete_config_accepted(self):
+        env = {
+            "ENV": "local",
+            "LLM_PROVIDER": "bedrock",
+            "LLM_MODEL": "anthropic.claude-v2",
+            "LLM_BEDROCK_ACCESS_KEY": "key",
+            "LLM_BEDROCK_SECRET_KEY": "secret",
+            "LLM_BEDROCK_REGION": "us-east-1",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.llm_model_name == "bedrock:anthropic.claude-v2"
+
+    def test_llm_model_name_none_without_model(self):
+        env = {
+            "ENV": "local",
+            "LLM_PROVIDER": "openai",
+            "LLM_API_KEY": "sk-test",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.llm_model_name is None
+
 
 class TestWarnDefaults:
     def test_task_name_prefix_warns_in_strict_env(self):
