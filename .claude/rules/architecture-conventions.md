@@ -1,6 +1,6 @@
 # Architecture Conventions
 
-> Last synced: 2026-04-15 via /sync-guidelines
+> Last synced: 2026-04-16 via /sync-guidelines
 > For Absolute Prohibitions, Conversion Patterns, Write DTO criteria, and common commands, refer to AGENTS.md.
 > This file only contains **structural context** that supplements AGENTS.md for Claude.
 
@@ -56,13 +56,23 @@ Key differences from RDB/DynamoDB:
 - Parameter switching in CoreContainer: S3/MinIO by STORAGE_TYPE env var
 - Both use the same `ObjectStorageClient` class — only constructor parameters differ
 - S3: `region_name`, MinIO: `endpoint_url` + dummy `region_name="us-east-1"`
-- No `providers.Selector` needed (same class, different params — contrast with Broker/Embedding)
+- No `providers.Selector` needed (same class, different params — contrast with Broker)
 - Settings computed properties (`storage_access_key`, etc.) resolve to S3/MinIO fields based on STORAGE_TYPE
 
-## Embedding Selection
-- providers.Selector in CoreContainer: OpenAI/Bedrock by EMBEDDING_PROVIDER env var
-- Both implement BaseEmbeddingProtocol (embed_text, embed_batch, dimension)
+## Embedding (PydanticAI Adapter)
+- Single `PydanticAIEmbeddingAdapter` replaces per-provider clients (ADR 039)
+- No `providers.Selector` — PydanticAI handles provider abstraction internally
+- `EmbeddingConfig` (frozen dataclass VO) carries model_name + dimension + credentials via DI
+- Provider determined by `model_name` prefix format (e.g., `openai:text-embedding-3-small`)
+- Implements `BaseEmbeddingProtocol` (embed_text, embed_batch, dimension)
 - Dimension auto-derived from model name — `settings.embedding_dimension` is single source of truth
+
+## LLM (PydanticAI Agent)
+- `build_llm_model()` factory returns PydanticAI Model object from `LLMConfig`
+- `LLMConfig` (frozen dataclass VO) carries model_name + credentials via DI
+- Domain services inject pre-built `llm_model` and create `Agent(model=llm_model)` at init
+- Supports OpenAI, Anthropic, Bedrock providers via `model_name` prefix
+- Agents are reusable across requests (create once at service init)
 
 ## Object Roles
 

@@ -6,14 +6,14 @@
 > This file is auto-extracted/updated from `src/user/` (reference domain) and `src/_core/` (Base classes)
 > when `/sync-guidelines` is run. **Run `/sync-guidelines` instead of editing manually.**
 >
-> Last updated: 2026-04-14
+> Last updated: 2026-04-16
 
 ## Section Index
 §0 Project Scale and Design Philosophy |
 §1 Directory Structure | §2 Base Class Path | §3 Generic Type Signatures | §4 CRUD Methods
 §5 DI Pattern | §6 Conversion Patterns | §7 Security Tools | §8 Active Features
 §9 Router Pattern | §10 Exception Pattern | §11 Admin Page Pattern
-§12 S3 Vector Store Pattern | §13 Embedding Pattern
+§12 S3 Vector Store Pattern | §13 Embedding Pattern | §14 LLM Pattern
 
 ---
 
@@ -143,8 +143,10 @@ src/{name}/
 | S3VectorClient | `src._core.infrastructure.s3vectors.s3vector_client.S3VectorClient` |
 | VectorQuery | `src._core.domain.value_objects.vector_query.VectorQuery` |
 | VectorSearchResult | `src._core.domain.value_objects.vector_search_result.VectorSearchResult` |
-| OpenAIEmbeddingClient | `src._core.infrastructure.embedding.openai_embedding_client.OpenAIEmbeddingClient` |
-| BedrockEmbeddingClient | `src._core.infrastructure.embedding.bedrock_embedding_client.BedrockEmbeddingClient` |
+| PydanticAIEmbeddingAdapter | `src._core.infrastructure.embedding.pydantic_ai_embedding_adapter.PydanticAIEmbeddingAdapter` |
+| EmbeddingConfig | `src._core.domain.value_objects.embedding_config.EmbeddingConfig` |
+| LLMConfig | `src._core.domain.value_objects.llm_config.LLMConfig` |
+| build_llm_model | `src._core.infrastructure.llm.model_factory.build_llm_model` |
 | chunk_text | `src._core.common.text_utils.chunk_text` |
 | chunk_text_by_tokens | `src._core.common.text_utils.chunk_text_by_tokens` |
 | generate_vector_id | `src._core.common.uuid_utils.generate_vector_id` |
@@ -345,7 +347,10 @@ class {Name}Container(containers.DeclarativeContainer):
 | Domain auto-discovery | `src._core.infrastructure.discovery.discover_domains()` |
 | Dynamic Container loading | `src._core.infrastructure.discovery.load_domain_container()` |
 | S3VectorClient | `providers.Singleton` | S3 Vectors API wrapper |
-| Embedding (multi-backend) | `providers.Selector` | Selects OpenAI/Bedrock by config |
+| EmbeddingConfig | `providers.Singleton` | Immutable config VO for PydanticAI Embedder |
+| PydanticAIEmbeddingAdapter | `providers.Singleton` | Single adapter, multi-provider |
+| LLMConfig | `providers.Singleton` | Immutable config VO for PydanticAI Agent |
+| llm_model | `providers.Singleton` | Pre-built model via `build_llm_model()` |
 | Broker (multi-backend) | `providers.Selector` | Selects SQS/RabbitMQ/InMemory by config |
 
 ### App-level Container (Auto-discovery)
@@ -394,28 +399,75 @@ broker = providers.Selector(
 - Task code always uses `from src._apps.worker.broker import broker` — no conditional logic needed
 - stg/prod environments require explicit `BROKER_TYPE` setting
 
-### Embedding Selection Pattern (Runtime Configuration)
+### Embedding Pattern (PydanticAI Adapter)
 
-The embedding service uses `providers.Selector` to dynamically select between embedding backends
-based on the `EMBEDDING_PROVIDER` environment variable:
+Embedding uses a single `PydanticAIEmbeddingAdapter` — no `providers.Selector` needed.
+PydanticAI is the abstraction layer; the adapter bridges it to `BaseEmbeddingProtocol`.
+(Background: ADR 039 — "external framework IS the abstraction" pattern from ADR 037)
 
 ```python
 # src/_core/infrastructure/di/core_container.py
-embedding_client = providers.Selector(
-    lambda: (settings.embedding_provider or "openai").lower().strip(),
-    openai=providers.Singleton(OpenAIEmbeddingClient, api_key=..., model=...),
-    bedrock=providers.Singleton(BedrockEmbeddingClient, access_key=..., ...),
+embedding_config = providers.Singleton(
+    EmbeddingConfig,
+    model_name=settings.embedding_model_name or "",
+    dimension=settings.embedding_dimension,
+    api_key=settings.embedding_openai_api_key,
+    aws_access_key_id=settings.embedding_bedrock_access_key,
+    aws_secret_access_key=settings.embedding_bedrock_secret_key,
+    aws_region=settings.embedding_bedrock_region,
+)
+
+embedding_client = providers.Singleton(
+    PydanticAIEmbeddingAdapter,
+    embedding_config=embedding_config,
 )
 ```
 
-| EMBEDDING_PROVIDER | Client Class | Dependency |
-|-------------------|-------------|------------|
-| `openai` (default) | `OpenAIEmbeddingClient` | `openai`, `tiktoken` (optional extra) |
-| `bedrock` | `BedrockEmbeddingClient` | `aioboto3` (main) |
+| EMBEDDING_PROVIDER | Model Name Format | Dependency |
+|-------------------|------------------|------------|
+| `openai` | `openai:text-embedding-3-small` | `pydantic-ai`, `tiktoken` (optional extra) |
+| `bedrock` | `bedrock:amazon.titan-embed-text-v2:0` | `pydantic-ai`, `aioboto3` (main) |
+| `google` | `google:text-embedding-004` | `pydantic-ai` |
+| `ollama` | `ollama:nomic-embed-text` | `pydantic-ai` |
 
-- Both implement `BaseEmbeddingProtocol` (embed_text, embed_batch, dimension)
-- Dimension is auto-derived from model name — not user-configurable
-- `settings.embedding_dimension` is the single source of truth for vector index dimension
+- Single adapter implements `BaseEmbeddingProtocol` (embed_text, embed_batch, dimension)
+- `EmbeddingConfig`: frozen dataclass value object (domain layer) carrying provider+credentials
+- Provider selection happens inside adapter via `model_name` prefix format
+- Dimension is auto-derived from model name — `settings.embedding_dimension` is single source of truth
+
+### LLM Configuration (PydanticAI Agent)
+
+LLM uses `build_llm_model()` factory to construct a PydanticAI Model object.
+Domain services receive the pre-built model and create `Agent(model=...)` instances.
+(Background: ADR 037 — PydanticAI Agent pattern)
+
+```python
+# src/_core/infrastructure/di/core_container.py
+llm_config = providers.Singleton(
+    LLMConfig,
+    model_name=settings.llm_model_name or "",
+    api_key=settings.llm_api_key,
+    aws_access_key_id=settings.llm_bedrock_access_key,
+    aws_secret_access_key=settings.llm_bedrock_secret_key,
+    aws_region=settings.llm_bedrock_region,
+)
+
+llm_model = providers.Singleton(
+    build_llm_model,
+    llm_config=llm_config,
+)
+```
+
+| LLM_PROVIDER | Model Name Format | Dependency |
+|-------------|------------------|------------|
+| `openai` | `openai:gpt-4o` | `pydantic-ai` |
+| `anthropic` | `anthropic:claude-sonnet-4-20250514` | `pydantic-ai` |
+| `bedrock` | `bedrock:us.anthropic.claude-sonnet-4-20250514-v1:0` | `pydantic-ai`, `aioboto3` |
+
+- `LLMConfig`: frozen dataclass value object (domain layer) carrying provider+credentials
+- `build_llm_model()`: factory function returning Provider-specific Model or plain string
+- Domain services inject `llm_model` and construct `Agent(model=llm_model)` at init
+- Bedrock credentials follow per-service injection convention
 
 ### S3 Vector Store DI Pattern
 
@@ -502,7 +554,8 @@ class {Name}Container(containers.DeclarativeContainer):
 | alembic (migrations) | Active | DB migrations |
 | Password hashing (bcrypt) | Active | hash_password(), verify_password() in src._core.common.security |
 | AWS S3 Vectors (aioboto3) | Active | BaseS3VectorStore + S3VectorClient (optional infra) |
-| Embedding (OpenAI/Bedrock) | Active | Selector pattern, BaseEmbeddingProtocol, auto-dimension |
+| Embedding (PydanticAI) | Active | PydanticAIEmbeddingAdapter, BaseEmbeddingProtocol, auto-dimension, multi-provider |
+| LLM (PydanticAI Agent) | Active | build_llm_model(), LLMConfig, Agent structured output |
 | Text chunking (semantic-text-splitter) | Active | chunk_text(), chunk_text_by_tokens() in src._core.common.text_utils |
 | JWT/Authentication | Not implemented | |
 | File Upload (UploadFile) | Not implemented | |
@@ -733,7 +786,7 @@ src/{name}/
 
 ### BaseEmbeddingProtocol
 
-Backend-agnostic protocol for embedding implementations. Both OpenAI and Bedrock implement this.
+Backend-agnostic protocol for embedding implementations.
 
 ```python
 class BaseEmbeddingProtocol:
@@ -743,16 +796,22 @@ class BaseEmbeddingProtocol:
     async def embed_batch(self, texts: list[str]) -> list[list[float]]: ...
 ```
 
-### Provider Implementations
+### PydanticAI Embedding Adapter
 
-| Provider | Client Class | Batching | Dimension Source |
-|----------|-------------|----------|-----------------|
-| OpenAI | `OpenAIEmbeddingClient` | Auto (2048 items / 300K tokens) | Model lookup table |
-| Bedrock | `BedrockEmbeddingClient` | Sequential (per-text invoke) | Model lookup table |
+Single adapter class replaces per-provider clients. PydanticAI handles provider abstraction;
+the adapter bridges to `BaseEmbeddingProtocol` and adds OpenAI batch splitting.
+(Background: ADR 039 — PydanticAI Embedder transition)
 
-- OpenAI requires optional extras: `uv sync --extra openai` (openai + tiktoken)
-- Bedrock uses aioboto3 (already a main dependency)
-- Both raise domain exceptions: `EmbeddingRateLimitException`, `EmbeddingAuthenticationException`, `EmbeddingInputTooLongException`
+| Provider | Batching | Credentials |
+|----------|----------|------------|
+| OpenAI | Auto (2048 items / 300K tokens via tiktoken) | `api_key` → `OpenAIProvider` |
+| Bedrock | PydanticAI semaphore (default 5 concurrent) | `aws_*` → `BedrockProvider` |
+| Google / Ollama | Native batch or local | Auto-detect env vars |
+
+- Requires `pydantic-ai` extra: `uv sync --extra pydantic-ai`
+- OpenAI batch splitting requires `tiktoken` (included in pydantic-ai extra)
+- Raises domain exceptions: `EmbeddingRateLimitException`, `EmbeddingAuthenticationException`, `EmbeddingInputTooLongException`, `EmbeddingModelNotFoundException`
+- `EmbeddingConfig`: frozen dataclass (domain-layer VO) carrying model_name + dimension + credentials
 
 ### Text Chunking Utilities
 
@@ -763,3 +822,37 @@ class BaseEmbeddingProtocol:
 
 - `semantic-text-splitter` handles Unicode word/sentence boundaries internally
 - Token-based chunking uses tiktoken-rs (built into semantic-text-splitter) — no separate tiktoken install needed
+
+## §14. LLM Pattern
+
+### Model Factory
+
+`build_llm_model(llm_config)` returns a PydanticAI Model object (or plain model string)
+suitable for `Agent(model=...)`. Domain services inject the pre-built model at init.
+(Background: ADR 037 — PydanticAI Agent integration)
+
+```python
+# Domain service receives pre-built model via DI
+class ClassificationService:
+    def __init__(self, llm_model) -> None:
+        self._agent: Agent[None, ClassificationDTO] = Agent(
+            model=llm_model,
+            output_type=ClassificationDTO,
+            system_prompt="...",
+        )
+
+    async def classify(self, text: str) -> ClassificationDTO:
+        result = await self._agent.run(text)
+        return result.output
+```
+
+| Provider | Model Class | Credentials |
+|----------|------------|------------|
+| OpenAI | `OpenAIChatModel` | `api_key` → `OpenAIProvider` |
+| Anthropic | `AnthropicModel` | `api_key` → `AnthropicProvider` |
+| Bedrock | `BedrockConverseModel` | `aws_*` → `BedrockProvider` |
+
+- `LLMConfig`: frozen dataclass (domain-layer VO) carrying model_name + credentials
+- PydanticAI Agent is reusable across requests (create once at init)
+- Structured output via `Agent[DepsType, OutputType]` — type-checked at build time
+- Agents are instantiated at service level, not at container level

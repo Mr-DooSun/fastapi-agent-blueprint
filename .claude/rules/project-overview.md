@@ -1,6 +1,6 @@
 # Project Overview
 
-> Last synced: 2026-04-15 via /sync-guidelines
+> Last synced: 2026-04-16 via /sync-guidelines
 > For tech stack, refer to project-dna.md §8; for layer structure, refer to §1.
 > This file only contains **project-level context** not covered in project-dna.md.
 
@@ -20,17 +20,20 @@ Interface → Application → Domain ← Infrastructure
 - DynamoDB: Optional (DYNAMODB_* env vars, BaseDynamoRepository)
 - Object Storage: S3/MinIO (STORAGE_TYPE env var, parameter switching)
 - S3 Vectors: Optional (S3VECTORS_* env vars, BaseS3VectorStore)
-- Embedding: Optional (EMBEDDING_PROVIDER env var, OpenAI/Bedrock Selector)
+- Embedding: Optional (EMBEDDING_PROVIDER env var, PydanticAIEmbeddingAdapter — OpenAI/Bedrock/Google/Ollama)
+- LLM: Optional (LLM_PROVIDER env var, build_llm_model() — OpenAI/Anthropic/Bedrock)
 - Message Broker: SQS/RabbitMQ/InMemory (BROKER_TYPE env var)
 
 ## Environment Config Validation
 - Settings (pydantic-settings) with model_validator
 - stg/prod: unsafe defaults blocked, broker required, partial config groups rejected
 - STORAGE_TYPE-driven validation: S3/MinIO config group required when set
-- Partial config group validation: S3, MinIO, DynamoDB, S3Vectors, SQS, OpenAI, Bedrock
+- Partial config group validation: S3, MinIO, DynamoDB, S3Vectors, SQS, Embedding (OpenAI/Bedrock), LLM (OpenAI/Anthropic/Bedrock)
 
 ## Key Value Objects
 - QueryFilter: Immutable filter for paginated queries (sort/search). Used in BaseRepository.select_datas_with_count() and BaseService.get_datas().
 - DynamoKey: Composite key for DynamoDB (partition_key + optional sort_key). Used in BaseDynamoRepository operations.
 - VectorQuery: Immutable vector similarity search query (vector, top_k, filters). Used in BaseS3VectorStore.search().
 - VectorSearchResult: Vector search result container (items, distances, count). CursorPage counterpart for vector search.
+- EmbeddingConfig: Immutable embedding configuration (model_name, dimension, credentials). Domain-layer VO for PydanticAI Embedder.
+- LLMConfig: Immutable LLM configuration (model_name, credentials). Domain-layer VO for PydanticAI Agent.
