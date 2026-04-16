@@ -2,17 +2,16 @@ from dependency_injector import containers, providers
 from taskiq import InMemoryBroker
 
 from src._core.config import settings
+from src._core.domain.value_objects.embedding_config import EmbeddingConfig
 from src._core.domain.value_objects.llm_config import LLMConfig
 from src._core.infrastructure.database.config import DatabaseConfig
 from src._core.infrastructure.database.database import Database
 from src._core.infrastructure.dynamodb.dynamodb_client import DynamoDBClient
-from src._core.infrastructure.embedding.bedrock_embedding_client import (
-    BedrockEmbeddingClient,
-)
-from src._core.infrastructure.embedding.openai_embedding_client import (
-    OpenAIEmbeddingClient,
+from src._core.infrastructure.embedding.pydantic_ai_embedding_adapter import (
+    PydanticAIEmbeddingAdapter,
 )
 from src._core.infrastructure.http.http_client import HttpClient
+from src._core.infrastructure.llm.model_factory import build_llm_model
 from src._core.infrastructure.s3vectors.s3vector_client import S3VectorClient
 from src._core.infrastructure.storage.object_storage import ObjectStorage
 from src._core.infrastructure.storage.object_storage_client import ObjectStorageClient
@@ -100,26 +99,6 @@ class CoreContainer(containers.DeclarativeContainer):
     )
 
     #########################################################
-    # Embedding
-    #########################################################
-
-    embedding_client = providers.Selector(
-        lambda: (settings.embedding_provider or "openai").lower().strip(),
-        openai=providers.Singleton(
-            OpenAIEmbeddingClient,
-            api_key=settings.embedding_openai_api_key,
-            model=settings.embedding_model or "text-embedding-3-small",
-        ),
-        bedrock=providers.Singleton(
-            BedrockEmbeddingClient,
-            access_key=settings.embedding_bedrock_access_key,
-            secret_access_key=settings.embedding_bedrock_secret_key,
-            region_name=settings.embedding_bedrock_region,
-            model_id=settings.embedding_model or "amazon.titan-embed-text-v2:0",
-        ),
-    )
-
-    #########################################################
     # Message Queue (Taskiq)
     #########################################################
 
@@ -152,4 +131,31 @@ class CoreContainer(containers.DeclarativeContainer):
         LLMConfig,
         model_name=settings.llm_model_name or "",
         api_key=settings.llm_api_key,
+        aws_access_key_id=settings.llm_bedrock_access_key,
+        aws_secret_access_key=settings.llm_bedrock_secret_key,
+        aws_region=settings.llm_bedrock_region,
+    )
+
+    llm_model = providers.Singleton(
+        build_llm_model,
+        llm_config=llm_config,
+    )
+
+    #########################################################
+    # Embedding Config + Client (Optional — for PydanticAI)
+    #########################################################
+
+    embedding_config = providers.Singleton(
+        EmbeddingConfig,
+        model_name=settings.embedding_model_name or "",
+        dimension=settings.embedding_dimension,
+        api_key=settings.embedding_openai_api_key,
+        aws_access_key_id=settings.embedding_bedrock_access_key,
+        aws_secret_access_key=settings.embedding_bedrock_secret_key,
+        aws_region=settings.embedding_bedrock_region,
+    )
+
+    embedding_client = providers.Singleton(
+        PydanticAIEmbeddingAdapter,
+        embedding_config=embedding_config,
     )

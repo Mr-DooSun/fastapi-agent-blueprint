@@ -7,7 +7,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 KNOWN_ENVS = ("local", "dev", "stg", "prod")
 KNOWN_ENGINES = ("postgresql", "mysql", "sqlite")
 KNOWN_BROKER_TYPES = ("sqs", "rabbitmq", "inmemory")
-KNOWN_EMBEDDING_PROVIDERS = ("openai", "bedrock")
+KNOWN_EMBEDDING_PROVIDERS = (
+    "openai",
+    "bedrock",
+    "google",
+    "ollama",
+    "sentence-transformers",
+)
 KNOWN_STORAGE_TYPES = ("s3", "minio")
 KNOWN_LLM_PROVIDERS = ("openai", "anthropic", "bedrock")
 STRICT_ENVS = frozenset({"stg", "prod"})
@@ -20,6 +26,16 @@ _OPENAI_DIMENSIONS: dict[str, int] = {
 _BEDROCK_DIMENSIONS: dict[str, int] = {
     "amazon.titan-embed-text-v2:0": 1024,
     "amazon.titan-embed-text-v1": 1536,
+}
+_GOOGLE_DIMENSIONS: dict[str, int] = {
+    "gemini-embedding-001": 768,
+    "text-embedding-004": 768,
+    "text-multilingual-embedding-002": 768,
+}
+_LOCAL_DIMENSIONS: dict[str, int] = {
+    "nomic-embed-text": 768,
+    "all-MiniLM-L6-v2": 384,
+    "all-mpnet-base-v2": 768,
 }
 
 _UNSAFE_DEFAULTS: dict[str, str] = {
@@ -497,7 +513,24 @@ class Settings(BaseSettings):
             return _BEDROCK_DIMENSIONS.get(
                 model or "amazon.titan-embed-text-v2:0", 1024
             )
+        if provider == "google":
+            return _GOOGLE_DIMENSIONS.get(model or "gemini-embedding-001", 768)
+        if provider in ("ollama", "sentence-transformers"):
+            return _LOCAL_DIMENSIONS.get(model or "nomic-embed-text", 768)
         return _OPENAI_DIMENSIONS.get(model or "text-embedding-3-small", 1536)
+
+    @property
+    def embedding_model_name(self) -> str | None:
+        """PydanticAI-compatible embedding model string.
+
+        e.g. ``'openai:text-embedding-3-small'``, ``'bedrock:amazon.titan-embed-text-v2:0'``.
+        Returns ``None`` when embedding is not configured.
+        """
+        provider = (self.embedding_provider or "").lower().strip()
+        model = self.embedding_model
+        if not provider or not model:
+            return None
+        return f"{provider}:{model}"
 
     @property
     def llm_model_name(self) -> str | None:

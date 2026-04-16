@@ -500,6 +500,68 @@ class TestEmbeddingConfig:
             assert s.embedding_provider == "bedrock"
             assert s.embedding_bedrock_region == "us-east-1"
 
+    def test_embedding_model_name_property(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "openai",
+            "EMBEDDING_MODEL": "text-embedding-3-small",
+            "EMBEDDING_OPENAI_API_KEY": "sk-test",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_model_name == "openai:text-embedding-3-small"
+
+    def test_embedding_model_name_none_without_provider(self):
+        env = {"ENV": "local", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_model_name is None
+
+    def test_embedding_dimension_google(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "google",
+            "EMBEDDING_MODEL": "gemini-embedding-001",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_dimension == 768
+
+    def test_embedding_dimension_ollama(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "ollama",
+            "EMBEDDING_MODEL": "all-MiniLM-L6-v2",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_dimension == 384
+
+    def test_embedding_dimension_sentence_transformers(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "sentence-transformers",
+            "EMBEDDING_MODEL": "all-mpnet-base-v2",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_dimension == 768
+
+    def test_google_provider_accepted(self):
+        env = {
+            "ENV": "local",
+            "EMBEDDING_PROVIDER": "google",
+            "EMBEDDING_MODEL": "gemini-embedding-001",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.embedding_provider == "google"
+
 
 class TestLLMConfig:
     def test_no_llm_provider_accepted(self):
