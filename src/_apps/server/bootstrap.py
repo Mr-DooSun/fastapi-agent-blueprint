@@ -41,6 +41,7 @@ def bootstrap_app(app: FastAPI) -> None:
 
     # Bootstrap DI container (auto-discovery)
     server_container = create_server_container()
+    app.state.container = server_container
 
     # Wire core container for health check DI
     # (core is not a domain — no separate bootstrap file needed)

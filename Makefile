@@ -23,9 +23,29 @@ dev:
 worker:
 	uv run python run_worker_local.py
 
-## Run all tests
+## Run all tests (SQLite in-memory by default)
 test:
 	uv run pytest tests/ -v
+
+## Run all tests against the local docker PostgreSQL (test_db -> postgresql)
+test-pg:
+	docker compose -f docker-compose.local.yml up -d postgres && \
+	sleep 2 && \
+	set -a && . _env/local.env && set +a && \
+	TEST_DB_ENGINE=postgresql \
+	TEST_DB_USER=postgres \
+	TEST_DB_PASSWORD=postgres \
+	TEST_DB_HOST=localhost \
+	TEST_DB_PORT=5432 \
+	TEST_DB_NAME=postgres \
+	uv run pytest tests/ -v
+
+## Run DynamoDB integration tests against local dynamodb-local
+test-dynamo:
+	docker compose -f docker-compose.local.yml up -d dynamodb-local && \
+	sleep 2 && \
+	set -a && . _env/local.env && set +a && \
+	uv run pytest tests/integration/_core/infrastructure/dynamodb/ -v
 
 ## Run tests with coverage
 test-cov:
