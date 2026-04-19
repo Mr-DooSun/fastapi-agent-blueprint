@@ -1,6 +1,6 @@
 # Architecture Conventions
 
-> Last synced: 2026-04-16 via /sync-guidelines
+> Last synced: 2026-04-20 via /sync-guidelines
 > For Absolute Prohibitions, Conversion Patterns, Write DTO criteria, and common commands, refer to AGENTS.md.
 > This file only contains **structural context** that supplements AGENTS.md for Claude.
 

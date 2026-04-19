@@ -1,6 +1,6 @@
 # Project Overview
 
-> Last synced: 2026-04-16 via /sync-guidelines
+> Last synced: 2026-04-20 via /sync-guidelines
 > For tech stack, refer to project-dna.md §8; for layer structure, refer to §1.
 > This file only contains **project-level context** not covered in project-dna.md.
 

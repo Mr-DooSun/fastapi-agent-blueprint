@@ -261,7 +261,7 @@ Check Embedding client and configuration files:
 
 ### API Key Management
 - [ ] [When applicable][CRITICAL] Embedding API keys (OpenAI/Bedrock) managed via environment variables (not hardcoded)
-  - Detection condition: Check **project-dna.md section 8** "Embedding (OpenAI/Bedrock)" status -> [SKIP] if "not implemented"
+  - Detection condition: Check **project-dna.md section 8** "Embedding (PydanticAI)" status -> [SKIP] if "not implemented"
   - Grep: `embedding_openai_api_key|embedding_bedrock_access_key|embedding_bedrock_secret_key` loaded from `Settings`
   - Verify no API key hardcoded in client constructors
 
@@ -290,3 +290,55 @@ Check Embedding client and configuration files:
   - Grep: Settings `_validate_environment_safety` in `config.py` -> verify provider-specific validation
   - OpenAI: requires `embedding_openai_api_key` when `EMBEDDING_PROVIDER=openai`
   - Bedrock: requires all 3 fields (`access_key`, `secret_key`, `region`) when `EMBEDDING_PROVIDER=bedrock`
+
+## 12. LLM API Security
+
+Check LLM model factory, configuration, and Agent-using services:
+
+### API Key / Credential Management
+- [ ] [When applicable][CRITICAL] LLM API keys / AWS credentials managed via environment variables (not hardcoded)
+  - Detection condition: Check **project-dna.md section 8** "LLM (PydanticAI Agent)" status -> [SKIP] if "not implemented"
+  - Grep: `llm_api_key|llm_bedrock_access_key|llm_bedrock_secret_key` loaded from `Settings`
+  - Verify `LLMConfig` is constructed only via DI (`core_container.llm_config`), not instantiated with literal credentials
+  - Verify `build_llm_model()` does not log or echo the credential fields
+
+### Provider / Model Validation
+- [ ] [When applicable][HIGH] LLM provider + model_name configuration validated at startup
+  - Detection condition: Same as above
+  - Grep: Settings `_validate_environment_safety` in `config.py` -> verify `llm_provider` ∈ {openai, anthropic, bedrock}
+  - OpenAI/Anthropic: requires `llm_api_key` when `LLM_PROVIDER` is set
+  - Bedrock: requires all 3 fields (`access_key`, `secret_key`, `region`) when `LLM_PROVIDER=bedrock`
+  - `model_name` follows `{provider}:{model}` prefix format (matches `build_llm_model()` switch)
+
+### Prompt Injection / Input Validation
+- [ ] [When applicable][HIGH] User-supplied text passed to `Agent.run(...)` is treated as untrusted input
+  - Detection condition: Same as above
+  - System prompts are defined as code constants — never concatenated with user input
+  - User input is passed only as the `Agent.run()` argument (data position), not interpolated into the system prompt
+  - When the user input affects tool calls / function calling, validate the action before execution
+
+### Output / Structured Response Handling
+- [ ] [When applicable][MEDIUM] Agent structured output is validated by Pydantic before being returned to clients
+  - Detection condition: Same as above
+  - Grep: `Agent[..., {DTO}]` declarations -> verify `output_type` is a Pydantic model (not `str`/`Any`)
+  - Sensitive fields excluded from API Response via `model_dump(exclude={...})` (same rule as DTO -> Response)
+
+### Context Length / Cost Guardrails
+- [ ] [When applicable][MEDIUM] LLM context length and request size guarded
+  - Detection condition: Same as above
+  - Grep: `LLMContextLengthExceededException` raised when input exceeds model context window
+  - Long-running or batched LLM calls run via Worker (not in request handler) to avoid request-thread blocking
+  - Per-request token / cost limits considered for endpoints exposed to external users
+
+### Rate Limit Handling
+- [ ] [When applicable][HIGH] LLM API rate limit errors caught and wrapped into domain exceptions
+  - Detection condition: Same as above
+  - Grep: provider rate-limit errors mapped to `LLMRateLimitException`
+  - Verify retry / backoff strategy does not amplify the rate limit (no tight retry loop)
+
+### Error Information Exposure
+- [ ] [When applicable][HIGH] LLM error responses do not expose raw provider error details in production
+  - Detection condition: Same as above
+  - Grep: `LLMException` (and subclasses) wrap provider errors -> verify raw `error_message` is not surfaced in user-facing responses
+  - Known exceptions (`LLMAuthenticationException`, `LLMRateLimitException`, `LLMModelNotFoundException`, `LLMContextLengthExceededException`) use sanitized messages
+  - Stack traces / model identifiers / credentials never leaked to API responses or logs in stg/prod
