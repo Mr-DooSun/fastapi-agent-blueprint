@@ -1,4 +1,4 @@
-.PHONY: help setup quickstart demo dev test lint format check clean
+.PHONY: help setup quickstart demo dev test lint format check clean diagrams
 
 ## Show available commands
 help:
@@ -27,6 +27,10 @@ quickstart:
 ## Hit the running quickstart server with sample user requests
 demo:
 	@bash scripts/demo.sh
+
+## Render architecture-diagrams.md Mermaid blocks to SVG (needs npx)
+diagrams:
+	@bash scripts/render-diagrams.sh
 
 ## Start local development (postgres + server)
 dev:

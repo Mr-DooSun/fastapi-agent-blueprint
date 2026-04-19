@@ -166,19 +166,34 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 1. Read the **section 0 Project Scale** of `docs/ai/shared/project-dna.md`
    and explain the project's purpose and scale.
 
-2. Show the architecture core by referencing the canonical diagrams in
-   `docs/ai/shared/architecture-diagrams.md` — render the Layer Dependency
-   diagram and the Write/Read Data Flow diagrams inline (they are Mermaid,
-   so they render in GitHub / most Markdown viewers). Point out:
-   - Domain sits at the center; Interface and Infrastructure point inward
-   - UseCase is the dotted bypass — simple CRUD uses `Router → Service` directly
-   - Cross-domain access uses Protocol-based DIP, never direct imports
+2. Show the architecture core using the canonical diagrams in
+   `docs/ai/shared/architecture-diagrams.md`. Do **not** dump the Mermaid
+   source into the chat — most CLI/terminal clients cannot render it, and
+   reading raw Mermaid is worse than no diagram. Instead, pick the first
+   option that fits the current viewer:
 
-   For harnesses/clients that cannot render Mermaid, fall back to:
+   **a) Viewer can render images (most chat UIs, IDE Markdown previews)**
+   — reference the committed SVG exports directly:
+   - `docs/assets/architecture/01-layer-dependency.svg`
+   - `docs/assets/architecture/02-write-post-put-delete.svg`
+   - `docs/assets/architecture/03-read-get.svg`
+
+   **b) Viewer can render Mermaid natively (GitHub web, some IDEs)**
+   — point the user at the canonical file on GitHub:
+   `https://github.com/Mr-DooSun/fastapi-agent-blueprint/blob/main/docs/ai/shared/architecture-diagrams.md`
+
+   **c) Plain terminal with no image/Mermaid support** — give the text
+   fallback below and link the GitHub URL so the reader can open it:
    ```
    Basic:   Router -> Service(BaseService) -> Repository(BaseRepository)
    Complex: Router -> UseCase -> Service -> Repository   (when combining multiple Services)
+   Domain sits at the center; Interface and Infrastructure depend on it.
+   Cross-domain access uses Protocol-based DIP, never direct imports.
    ```
+
+   After the diagram is shown (or the links are given), summarise in one
+   or two sentences: Domain at the center, UseCase optional, `_core`
+   provides base classes and DI.
 
 3. Read **section 1 Domain Directory Structure** of `docs/ai/shared/project-dna.md` and show the file composition of a single domain.
 

@@ -105,3 +105,26 @@ is what the generics encode.
 - DI pattern (including `providers.Selector` for broker): `project-dna.md` §5
 - Conversion patterns (with explicit examples): `project-dna.md` §6
 - Detailed prohibitions (ADR 004, ADR 011): `AGENTS.md` Absolute Prohibitions
+
+## 5. Static SVG Exports (non-Mermaid viewers)
+
+GitHub, IDE Markdown previews, and most modern viewers render the Mermaid
+blocks above natively. For clients that do not (Claude Code / Codex CLI
+terminals, plain text readers, some in-editor chat UIs), an SVG copy of
+every block is committed alongside this doc:
+
+- [`docs/assets/architecture/01-layer-dependency.svg`](../../assets/architecture/01-layer-dependency.svg)
+- [`docs/assets/architecture/02-write-post-put-delete.svg`](../../assets/architecture/02-write-post-put-delete.svg)
+- [`docs/assets/architecture/03-read-get.svg`](../../assets/architecture/03-read-get.svg)
+
+To regenerate after editing this file:
+
+```bash
+make diagrams
+```
+
+The Makefile target runs [`scripts/render-diagrams.sh`](../../../scripts/render-diagrams.sh),
+which extracts every Mermaid block in order and renders it via
+`@mermaid-js/mermaid-cli` (fetched on demand via `npx`). Keep the
+committed SVGs in sync with the Mermaid source — treat a Mermaid edit
+without a matching `make diagrams` run as an incomplete change.
