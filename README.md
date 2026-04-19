@@ -71,6 +71,22 @@
 
 ## Quick Start
 
+### 60-second evaluation (no Docker, no Postgres, no credentials)
+
+```bash
+git clone https://github.com/Mr-DooSun/fastapi-agent-blueprint.git
+cd fastapi-agent-blueprint
+make setup        # one-time: create venv + install deps
+make quickstart   # boots FastAPI on SQLite + InMemory broker
+```
+
+Open http://127.0.0.1:8001/docs-swagger. In another terminal, `make demo`
+runs a full CRUD walkthrough against the `user` domain.
+
+Full details: [`docs/quickstart.md`](docs/quickstart.md).
+
+### Real local development (PostgreSQL + migrations)
+
 ```bash
 # 1. Clone
 git clone https://github.com/Mr-DooSun/fastapi-agent-blueprint.git

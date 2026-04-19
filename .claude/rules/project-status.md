@@ -27,6 +27,7 @@
 | PydanticAI Agent Integration | #15 | Agent structured output, classification prototype, LLMConfig + build_llm_model |
 | PydanticAI Embedder Transition | ADR 039 | PydanticAIEmbeddingAdapter replaces per-provider clients, EmbeddingConfig VO |
 | Bedrock Credential Support | #15 | LLMConfig with per-service AWS credential injection, model_factory |
+| Zero-config Quickstart | #78 | `make quickstart` + `make demo`, ENV=quickstart with SQLite + InMemory broker + auto create_all, Settings defaults for zero-infra boot |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN

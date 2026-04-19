@@ -7,7 +7,11 @@
 
 ## Run
 ```bash
-# FastAPI server (dev)
+# Zero-config quickstart (SQLite + InMemory broker, no external infra)
+make quickstart
+make demo            # in a second terminal — runs curl CRUD walkthrough
+
+# FastAPI server (dev — requires PostgreSQL via docker-compose.local.yml)
 uvicorn src._apps.server.app:app --reload --host 127.0.0.1 --port 8001
 # or
 python run_server_local.py --env local

@@ -16,7 +16,7 @@ config = context.config
 
 # Resolve environment: ENV variable > alembic.ini > default "local"
 env = os.getenv("ENV") or config.get_main_option("env") or "local"
-valid_envs = {"local", "dev", "stg", "prod"}
+valid_envs = {"quickstart", "local", "dev", "stg", "prod"}
 if env not in valid_envs:
     raise RuntimeError(
         f"Invalid ENV '{env}'. Expected one of: {', '.join(sorted(valid_envs))}. "

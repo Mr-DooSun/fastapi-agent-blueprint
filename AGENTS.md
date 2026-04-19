@@ -82,7 +82,9 @@ When fields match, Request is passed directly to Service — creating a separate
 ### Run
 
 ```bash
-make dev
+make quickstart   # zero-config evaluation (SQLite + InMemory broker)
+make demo         # curl walkthrough against running quickstart
+make dev          # real local dev (PostgreSQL via docker-compose)
 make worker
 ```
 

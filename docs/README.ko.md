@@ -71,6 +71,22 @@
 
 ## 빠른 시작
 
+### 60초 평가용 (Docker·PostgreSQL·자격 증명 모두 불필요)
+
+```bash
+git clone https://github.com/Mr-DooSun/fastapi-agent-blueprint.git
+cd fastapi-agent-blueprint
+make setup        # 최초 1회: venv 생성 + 의존성 설치
+make quickstart   # SQLite + InMemory broker로 FastAPI 기동
+```
+
+http://127.0.0.1:8001/docs-swagger 을 열어보세요. 다른 터미널에서
+`make demo` 로 `user` 도메인 CRUD 전체 흐름을 curl로 돌려볼 수 있습니다.
+
+자세한 내용: [`docs/quickstart.md`](quickstart.md).
+
+### 실제 로컬 개발 (PostgreSQL + 마이그레이션)
+
 ```bash
 # 1. Clone
 git clone https://github.com/Mr-DooSun/fastapi-agent-blueprint.git
