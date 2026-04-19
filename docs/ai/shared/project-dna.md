@@ -15,6 +15,12 @@
 §9 Router Pattern | §10 Exception Pattern | §11 Admin Page Pattern
 §12 S3 Vector Store Pattern | §13 Embedding Pattern | §14 LLM Pattern
 
+> **Visual summary:** see [`architecture-diagrams.md`](architecture-diagrams.md)
+> for the layer dependency graph, Write/Read data flow (RDB), and the
+> RDB / DynamoDB / S3 Vectors variant table. The sections below are the
+> authoritative text reference; the diagrams exist to orient new readers
+> before they dig into §1–§14.
+
 ---
 
 ## §0. Project Scale and Design Philosophy

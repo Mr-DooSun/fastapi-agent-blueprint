@@ -196,13 +196,34 @@ class ProductService(BaseService[CreateProductRequest, UpdateProductRequest, Pro
 
 ## Architecture
 
-```
-Router -> Service(BaseService) -> Repository(BaseRepository) -> DB
-               ^ Simple CRUD: this is all you need
+Arrow direction = **"depends on"**. Domain sits at the center; Interface
+and Infrastructure point inward. UseCase is optional — the dotted bypass
+line is the common path for simple CRUD.
 
-Router -> UseCase -> Service -> Repository -> DB
-               ^ Add only when complex business logic is required
+```mermaid
+flowchart LR
+    subgraph domain["src/{domain}/  (4 DDD layers)"]
+        I["Interface<br/>routers · admin · worker · schemas"]
+        A["Application<br/>use cases — optional"]
+        D["Domain<br/>services · protocols · DTOs · value objects"]
+        Inf["Infrastructure<br/>repositories · models · DI container"]
+        I --> A
+        A --> D
+        Inf --> D
+        I -. direct when no UseCase .-> D
+    end
+
+    Core["src/_core/<br/>Base classes · CoreContainer · shared VOs"]
+    I --> Core
+    A --> Core
+    D --> Core
+    Inf --> Core
+
+    Other["Another domain"] -. via Protocol-based DIP .-> D
 ```
+
+> **Deep dive:** [`docs/ai/shared/architecture-diagrams.md`](docs/ai/shared/architecture-diagrams.md)
+> (canonical diagrams + full variant table for RDB / DynamoDB / S3 Vectors).
 
 ### Layer Responsibilities
 
@@ -215,14 +236,42 @@ Router -> UseCase -> Service -> Repository -> DB
 
 ### Data Flow
 
-```
-Write: Request --> Service --> Repository --> Model -> DB
-Read:  Response <-- Service <-- Repository <-- DTO <-- Model
+**Write** — `POST` / `PUT` / `DELETE`
+
+```mermaid
+flowchart LR
+    C[Client] -->|"HTTP + JSON"| R[Router]
+    R -->|"Request schema"| S[Service]
+    S -->|"entity"| Re["Repository<br/>BaseRepository[DTO]"]
+    Re -->|"Model(**dto.model_dump())"| M[ORM Model]
+    M -->|"SQLAlchemy"| DB[(Database)]
 ```
 
-- Request is passed directly to Service (no extra conversion needed)
-- Repository handles Model -> DTO conversion (`model_validate(model, from_attributes=True)`)
-- Router handles DTO -> Response conversion (`Response(**dto.model_dump(exclude={...}))`)
+**Read** — `GET`
+
+```mermaid
+flowchart LR
+    DB[(Database)] -->|"row"| M[ORM Model]
+    M -->|"DTO.model_validate(from_attributes=True)"| Re[Repository]
+    Re -->|"ReturnDTO"| S[Service]
+    S -->|"ReturnDTO"| R[Router]
+    R -->|"Response(exclude={sensitive})"| C[Client]
+```
+
+- Request passes directly to Service when fields match (no extra DTO)
+- Repository owns the single Model ↔ DTO conversion boundary
+- Router strips sensitive fields (`password`, etc.) at the Response edge
+
+### Storage Variants
+
+Same flow shape across all three storage backends — only the base classes
+and persistence types change.
+
+| Storage | Service base | Repo / Store base | Persistence | List return |
+|---|---|---|---|---|
+| RDB (default) | `BaseService[Create, Update, DTO]` | `BaseRepository[DTO]` | ORM `Model(Base)` | `(list[DTO], PaginationInfo)` |
+| DynamoDB | `BaseDynamoService[...]` | `BaseDynamoRepository[DTO]` | `DynamoModel` | `CursorPage[DTO]` |
+| S3 Vectors | domain-specific | `BaseS3VectorStore[DTO]` | `S3VectorModel` | `VectorSearchResult[DTO]` |
 
 ### Data Objects
 

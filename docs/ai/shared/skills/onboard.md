@@ -166,10 +166,18 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 1. Read the **section 0 Project Scale** of `docs/ai/shared/project-dna.md`
    and explain the project's purpose and scale.
 
-2. Show the architecture core as a diagram (keep it concise since context is already known from Phase 1):
+2. Show the architecture core by referencing the canonical diagrams in
+   `docs/ai/shared/architecture-diagrams.md` — render the Layer Dependency
+   diagram and the Write/Read Data Flow diagrams inline (they are Mermaid,
+   so they render in GitHub / most Markdown viewers). Point out:
+   - Domain sits at the center; Interface and Infrastructure point inward
+   - UseCase is the dotted bypass — simple CRUD uses `Router → Service` directly
+   - Cross-domain access uses Protocol-based DIP, never direct imports
+
+   For harnesses/clients that cannot render Mermaid, fall back to:
    ```
-   Basic: Router -> Service(BaseService) -> Repository(BaseRepository)
-   Complex: Router -> UseCase -> Service -> Repository (when combining multiple Services)
+   Basic:   Router -> Service(BaseService) -> Repository(BaseRepository)
+   Complex: Router -> UseCase -> Service -> Repository   (when combining multiple Services)
    ```
 
 3. Read **section 1 Domain Directory Structure** of `docs/ai/shared/project-dna.md` and show the file composition of a single domain.
