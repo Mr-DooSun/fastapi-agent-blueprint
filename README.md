@@ -204,8 +204,9 @@ Both **Claude Code** and **OpenAI Codex CLI** are first-class. They share one ru
 ```
 
 Swap `/` for `$` if you are on Codex CLI. Prefer no harness at all?
-The [manual scaffolding walkthrough](docs/reference.md#manual-domain-scaffolding)
-shows the exact three layers the skill produces.
+The [**"Your first domain in 10 minutes" tutorial**](docs/tutorial/first-domain.md)
+walks both paths side-by-side — one harness command vs. 9 Python files —
+and ends with a passing `pytest` run plus `curl` against the real server.
 
 Selected skills (all available in both tools): `onboard`, `new-domain`,
 `add-api`, `add-worker-task`, `add-admin-page`, `review-architecture`,
@@ -219,9 +220,10 @@ Full table and setup guide: [`docs/ai-development.md`](docs/ai-development.md).
 | I want to… | Read |
 |---|---|
 | Spin it up and poke around | [`docs/quickstart.md`](docs/quickstart.md) |
+| Build a real domain, end-to-end | [`docs/tutorial/first-domain.md`](docs/tutorial/first-domain.md) |
 | Understand the architecture in depth | [`docs/ai/shared/architecture-diagrams.md`](docs/ai/shared/architecture-diagrams.md) · [`AGENTS.md`](AGENTS.md) |
 | Set up Claude Code or Codex CLI | [`docs/ai-development.md`](docs/ai-development.md) |
-| Add a domain by hand (no AI tools) | [`docs/reference.md#manual-domain-scaffolding`](docs/reference.md#manual-domain-scaffolding) |
+| Add a domain by hand (no AI tools) | [`docs/tutorial/first-domain.md`](docs/tutorial/first-domain.md) (Path B) |
 | See detailed env vars, tech stack, project tree | [`docs/reference.md`](docs/reference.md) |
 | Understand why a decision was made | [ADR index](docs/history/README.md) (40 records) |
 | Follow what's next | [Roadmap](docs/reference.md#roadmap) · [issue tracker](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues) |

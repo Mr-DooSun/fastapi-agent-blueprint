@@ -207,8 +207,9 @@ flowchart LR
 ```
 
 Codex CLI 를 쓴다면 `/` 대신 `$`. 하네스 없이 손으로 만들고 싶다면
-[수동 도메인 스캐폴딩](reference.md#manual-domain-scaffolding) 섹션이 스킬이
-생성하는 3개 레이어를 그대로 보여줍니다.
+[**"10분 안에 첫 도메인" 튜토리얼**](tutorial/first-domain.md) 이 두 경로를
+나란히 보여줍니다 — 스킬 한 줄 vs. Python 파일 9개 — 마지막엔 `pytest`
+통과 + 실제 서버에 `curl` 까지 완주.
 
 두 도구에서 모두 동작하는 주요 스킬: `onboard`, `new-domain`, `add-api`,
 `add-worker-task`, `add-admin-page`, `review-architecture`,
@@ -222,9 +223,10 @@ Codex CLI 를 쓴다면 `/` 대신 `$`. 하네스 없이 손으로 만들고 싶
 | 원하는 것 | 읽을 곳 |
 |---|---|
 | 일단 띄워보기 | [`docs/quickstart.md`](quickstart.md) |
+| 도메인 하나 end-to-end 로 만들기 | [`docs/tutorial/first-domain.md`](tutorial/first-domain.md) |
 | 아키텍처를 깊이 이해 | [`docs/ai/shared/architecture-diagrams.md`](ai/shared/architecture-diagrams.md) · [`AGENTS.md`](../AGENTS.md) |
 | Claude Code / Codex CLI 설정 | [`docs/ai-development.ko.md`](ai-development.ko.md) |
-| 도메인을 수동으로 추가 (AI 도구 없이) | [`docs/reference.md#manual-domain-scaffolding`](reference.md#manual-domain-scaffolding) |
+| 도메인을 수동으로 추가 (AI 도구 없이) | [`docs/tutorial/first-domain.md`](tutorial/first-domain.md) (Path B) |
 | 상세 env 변수 · 기술 스택 · 프로젝트 트리 | [`docs/reference.md`](reference.md) |
 | 어떤 결정을 왜 했는지 | [ADR 인덱스](history/README.md) (40개 기록) |
 | 다음 계획 | [Roadmap](reference.md#roadmap) · [이슈 트래커](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues) |

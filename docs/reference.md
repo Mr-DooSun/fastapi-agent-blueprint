@@ -156,6 +156,11 @@ src/
 
 ## Manual domain scaffolding
 
+> Looking for a guided walk-through that ends with a passing test and a
+> `curl`? Use the [**"Your first domain in 10 minutes" tutorial**](tutorial/first-domain.md)
+> instead — this section is a compact reference card of the same three
+> layers, without the step-by-step verification.
+>
 > Prefer the automated path? `/new-domain product` (Claude Code) or
 > `$new-domain product` (Codex CLI) scaffolds the entire domain —
 > 15 content files + 25 `__init__.py` + 4 tests — in one command.
