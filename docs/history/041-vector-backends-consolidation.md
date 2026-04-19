@@ -1,84 +1,124 @@
-# 041. Consolidate Vector Backends Under `_core/infrastructure/vectors/`
+# 041. Multi-backend Infrastructure Layout — Persistence Umbrella and Backend Subfolders
 
 - Status: Accepted
 - Date: 2026-04-20
 - Related issue: #80 (End-to-end RAG example)
-- Supersedes layout from: [ADR 034](034-s3vectors-vectorstore-pattern.md) (S3 Vectors store)
-- Related ADRs: [040](040-rag-as-reusable-pattern.md) (RAG as a reusable pattern)
+- Supersedes layout from: [ADR 006](006-ddd-layered-architecture.md) (Per-domain layered architecture, unaffected but infrastructure sibling layout evolved), [ADR 034](034-s3vectors-vectorstore-pattern.md) (S3 Vectors layout)
 
 ## Summary
 
-Vector store backends now live in a single folder, `src/_core/infrastructure/vectors/`, instead of being split across `s3vectors/` and `in_memory_vectors/`. The shared vector model is also renamed from `S3VectorModel` / `S3VectorModelMeta` / `S3VectorData` to the neutral `VectorModel` / `VectorModelMeta` / `VectorData` (and `__s3vector_meta__` → `__vector_meta__`) so both backends own it equally. S3-specific artefacts keep their `S3Vector*` naming.
+`src/_core/infrastructure/` now follows a two-part convention for multi-backend abstractions:
+
+1. **Abstractions with the same role group under an umbrella.** RDB and NoSQL share the "CRUD data persistence" role, so `database/` and `dynamodb/` move under `persistence/rdb/` and `persistence/nosql/dynamodb/`.
+2. **Backends of the same abstraction split into subfolders.** `vectors/` keeps its top-level position (the role is retrieval, not persistence) but its two backends live in `vectors/s3/` and `vectors/in_memory/`, with the shared `vector_model.py` at the root.
+
+Abstractions with a single implementation (`embedding/`, `llm/`, `taskiq/`, `http/`, `storage/`) stay flat — umbrellas and subfolders are introduced only where there is genuine multiplicity.
 
 ## Background
 
-ADR 034 introduced `_core/infrastructure/s3vectors/` for the S3 Vectors backend. ADR 040 then added a second backend — an in-memory vector store used by `make quickstart` and the `docs` example domain — under a peer directory `_core/infrastructure/in_memory_vectors/`.
+Two prior structural moves led here:
 
-Two observations drove this ADR:
+1. ADR 034 introduced `_core/infrastructure/s3vectors/` for the AWS S3 Vectors backend.
+2. ADR 040 added an in-memory vector store (for `make quickstart`) under the peer directory `_core/infrastructure/in_memory_vectors/`.
 
-1. The in-memory store already imports `S3VectorModel` from the sibling package and reuses it verbatim. The "borrowed model" made the directory split misleading — there is no clean boundary between the two packages.
-2. Sibling abstractions like `_core/infrastructure/embedding/` and `_core/infrastructure/storage/` already host multiple provider implementations in one folder (OpenAI + Bedrock adapters, S3 + MinIO clients). Vectors was the only cross-backend abstraction that had been split.
+Mid-implementation of #80, two observations surfaced:
+
+- The in-memory store already imports the shared `VectorModel` from the sibling folder — the split hid an actual coupling rather than preventing one. Consolidation was required.
+- Once consolidated, "why does `vectors/` have subfolders but `database/` + `dynamodb/` live as siblings at the same level?" became a fair question. The answer revealed an inconsistency: the project had no declared convention for multi-backend layout. This ADR declares one.
 
 ## Problem
 
-Keeping two folders for one abstraction created three concrete issues:
+### 1. Multi-backend splits without convention
 
-- **Hidden coupling.** `BaseInMemoryVectorStore` depended on `S3VectorModel`, meaning the "in_memory" package was in fact a dependant of "s3vectors". The split suggested independence that did not exist.
-- **Naming implied hierarchy.** The shared model `S3VectorModel` read as "the S3 type that InMemory happens to use," not "the vector model both backends share." Callers had to reason about which backend owned the contract.
-- **Inconsistent with peers.** New contributors reading `_core/infrastructure/` would reasonably expect vectors to follow the same one-folder-per-abstraction convention as `embedding/` and `storage/`.
+Three infra abstractions in this repo have more than one backend:
+
+| Abstraction | Backends | Old layout |
+|---|---|---|
+| CRUD persistence | RDB, DynamoDB | `database/`, `dynamodb/` — siblings |
+| Vector retrieval | S3 Vectors, in-memory | `s3vectors/`, `in_memory_vectors/` — siblings |
+| Object storage | S3, MinIO | `storage/` — merged (same class, different params) |
+
+The third case (`storage/`) is genuinely flat because both backends share one class. The first two were split purely because they were added at different times, not because of a design rule. Contributors could not predict where a new backend should go.
+
+### 2. Conflating persistence and retrieval
+
+Placing `vectors/` alongside `database/` suggested they are alternative data stores. In practice, consumer domains compose them — `DocumentRepository` (RDB, CRUD) and `DocumentChunkVectorStore` (vectors, similarity search) coexist for the same document. A flat layout did not reflect this complementary relationship.
 
 ## Decision
 
-### 1. Single folder for both backends
+### 1. Umbrella folder for same-role abstractions
 
 ```
-src/_core/infrastructure/vectors/
-├── vector_model.py              # Shared: VectorModel, VectorModelMeta, VectorData
-├── base_s3_vector_store.py      # S3-specific: BaseS3VectorStore
-├── base_in_memory_vector_store.py  # InMemory-specific: BaseInMemoryVectorStore
-├── s3_vector_client.py          # S3-specific: S3VectorClient (aioboto3)
-├── exceptions.py                # S3-specific: S3VectorException hierarchy
-└── __init__.py
+_core/infrastructure/
+├── persistence/             # CRUD data persistence
+│   ├── rdb/                 # (was database/)
+│   │   ├── base_repository.py
+│   │   ├── database.py
+│   │   └── config.py
+│   └── nosql/
+│       └── dynamodb/        # (was dynamodb/)
+│           ├── base_dynamo_repository.py
+│           ├── dynamodb_client.py
+│           └── dynamo_model.py
+└── vectors/                 # Vector retrieval — kept top-level (different role)
+    ├── vector_model.py      # Shared: VectorModel, VectorModelMeta, VectorData
+    ├── s3/
+    │   ├── base_store.py    # BaseS3VectorStore
+    │   ├── client.py        # S3VectorClient
+    │   └── exceptions.py    # S3VectorException hierarchy
+    └── in_memory/
+        └── base_store.py    # BaseInMemoryVectorStore
 ```
 
-Note: `base_s3vector_store.py` / `s3vector_client.py` filenames are kept verbatim (no rename to `base_s3_vector_store.py` etc.) to minimise churn beyond what the semantic change requires.
+Two rules applied:
 
-### 2. Neutralise only the shared surface
+- **Rule A — Umbrella for same role, different abstractions.** `rdb` and `nosql` share the "CRUD persistence" role but expose different Protocols (`BaseRepositoryProtocol` vs `BaseDynamoRepositoryProtocol`). They get a shared `persistence/` roof.
+- **Rule B — Subfolders for same abstraction, different backends.** S3 Vectors and in-memory implement the same `BaseVectorStoreProtocol` and share `VectorModel`. They get peer subfolders inside `vectors/`.
 
-| Before | After | Reason |
-|---|---|---|
-| `S3VectorModel` | `VectorModel` | Used by both backends |
-| `S3VectorModelMeta` | `VectorModelMeta` | Used by both backends |
-| `S3VectorData` | `VectorData` | Used by both backends |
-| `__s3vector_meta__` | `__vector_meta__` | Class-level metadata, shared |
-| `DocumentChunkS3VectorModel` | `DocumentChunkVectorModel` | Consumer domain naming follows |
+### 2. Vectors stays separate from persistence
 
-### 3. Keep S3-specific names S3-specific
+`vectors/` does not move under `persistence/`. The vector store's centre is `search(VectorQuery)` — a retrieval / similarity operation, not CRUD. `BaseVectorStoreProtocol` and `BaseRepositoryProtocol` are orthogonal APIs; one is not a substitute for the other. Grouping them would dilute the meaning of "persistence".
 
-| Kept |
-|---|
-| `BaseS3VectorStore` — subclass of the S3 backend only |
-| `S3VectorClient` — `aioboto3` session for AWS's S3 Vectors service |
-| `S3VectorException` / `S3VectorIndexNotFoundException` / `S3VectorThrottlingException` |
-| `to_s3vector()` / `from_s3vector()` on `VectorModel` — serialises to the AWS S3 Vectors API shape |
+### 3. Single-implementation abstractions stay flat
 
-`VectorModel.to_s3vector()` still carries `s3vector` in its name because the output shape (`{"key": …, "data": {"float32": [...]}, "metadata": …}`) is the AWS S3 Vectors `put_vectors` contract. The in-memory store happens to reuse that same dict shape, which is a *compatibility* choice, not a naming accident.
+`embedding/`, `llm/`, `taskiq/`, `http/`, `storage/`, `admin/`, `di/` each have one adapter / implementation today. No umbrella, no subfolder — flat stays readable. Adding ceremony to empty categories is overhead with zero current benefit.
 
-### 4. Settings and env vars unchanged
+### 4. Filename simplification in `vectors/{s3,in_memory}/`
 
-`S3VECTORS_ACCESS_KEY`, `S3VECTORS_BUCKET_NAME`, and `settings.s3vectors_*` stay as-is — they configure the AWS product and keep the product name.
+Because the subfolder name already encodes the backend, prefixes are dropped:
 
-`migrations/s3vectors/` keeps its folder name for the same reason: it is S3 Vectors index migration tooling.
+| Before | After |
+|---|---|
+| `base_s3vector_store.py` | `s3/base_store.py` |
+| `s3vector_client.py` | `s3/client.py` |
+| `exceptions.py` (S3-specific) | `s3/exceptions.py` |
+| `base_in_memory_vector_store.py` | `in_memory/base_store.py` |
+
+Class names keep their backend in the identifier — `BaseS3VectorStore`, `S3VectorClient`, `BaseInMemoryVectorStore` — so IDE autocomplete and grep are unambiguous even across subfolders.
+
+### 5. Shared vector model stays at `vectors/` root
+
+`vector_model.py` holds `VectorModel` / `VectorModelMeta` / `VectorData` — the contract that both backends implement. It lives at `vectors/` (not under `s3/` or `in_memory/`) because it belongs to neither backend alone.
+
+### 6. Domain-side infrastructure stays flat
+
+Domain packages (`src/user/infrastructure/database/`, `src/docs/infrastructure/vectors/`, etc.) do **not** adopt the umbrella. Rationale: a domain has already chosen its backend(s); the folder names there describe *which* adapter the domain uses, not a catalogue of options. Umbrella structure is a `_core` concern, not a per-domain concern.
+
+### 7. `S3VECTORS_*` env vars, settings fields, and `migrations/` CLI folders keep their product names
+
+Env vars (`S3VECTORS_BUCKET_NAME`), Settings fields (`settings.s3vectors_*`), and CLI tool folders (`migrations/s3vectors/`, `migrations/dynamodb/`) continue to reference the AWS product name directly. They configure specific AWS products, not the generic abstraction, and do not change with the Python module layout.
 
 ## Consequences
 
-- **One import origin.** Consumer domains write `from src._core.infrastructure.vectors import …` regardless of which backend they pick at DI time.
-- **Backend swapping is configuration-only.** `DocsContainer`'s `providers.Selector` on `VECTOR_STORE_TYPE` (inmemory ↔ s3vectors) chooses the subclass; both construct the same `VectorModel` via `_to_model()`.
-- **ADR 034 stays valid for the S3 Vectors design itself** — index schema, batch limits, filter contract, etc. Only the path it described (`_core/infrastructure/s3vectors/`) changed.
-- **Future backends plug in here.** If a `QdrantVectorStore`, `PgVectorStore`, or `LanceVectorStore` is added, it goes under `vectors/` next to the existing two, subclasses the shared `VectorModel`, and exposes a backend key for `VECTOR_STORE_TYPE`.
+- **Every consumer import path changes** for `database/`, `dynamodb/`, and the three split vector files. Not optional — covered in this PR.
+- **Future backend additions get a clear rule.** Adding Qdrant? It goes in `vectors/qdrant/`. Adding MongoDB? `persistence/nosql/mongodb/`. Adding a second LLM adapter? Today still flat; introduce subfolders only when the third adapter arrives.
+- **Umbrella introduction is localised, not wholesale.** The `_apps/` entrypoints (`server`, `worker`, `admin`) stay flat; so do all single-implementation infra folders. This ADR sets a *threshold* for when umbrellas are worth introducing, not a mandate to apply them everywhere.
+- **ADR 034 remains valid for the S3 Vectors design itself** — index schema, batch limits, filter contract. Only the paths change (tracked under "Supersedes layout from").
 
 ## Alternatives Considered
 
-- **Keep the two folders, rename only the model** (`S3VectorModel` → `VectorModel`) **in-place.** Rejected: this hides the coupling without fixing it — `in_memory_vectors/` would still live as a separate package that imports from `s3vectors/`.
-- **Move `in_memory_vectors/` under `s3vectors/`.** Rejected: implies the in-memory backend is a variant of the S3 backend, which is the wrong mental model.
-- **Fully generalise the serialisation contract** (`to_s3vector()` → `to_dict()`, extract an AWS-specific adapter). Rejected for this ADR: out of scope for #80 and the S3 Vectors API shape is already a fine de-facto interchange format. Revisit if/when a non-S3 backend is added that needs a different wire shape.
+- **Keep `vectors/` flat (5 files, two backend groups mixed).** Rejected: the `exceptions.py` / `base_in_memory_vector_store.py` split was legible via filename prefix, but the same argument would apply to `persistence/` if it had stayed flat — and the convention should be uniform. Flat-with-prefix is acceptable for 2–3 files total; beyond that, subfolders are clearer.
+- **Put `vectors/` under `persistence/vectors/`.** Rejected for the reasons in Decision §2. A vector store's role is retrieval, not persistence; colocation would imply they are alternatives.
+- **Introduce umbrellas across the board** (`ai/{embedding,llm}/`, `network/{http}/`, `execution/{taskiq}/`, etc.). Rejected: YAGNI. Umbrellas with one occupant add path depth without clarity benefit. Revisit when any such area grows to 2+ implementations.
+- **Apply umbrella to domain infrastructure too** (`src/{domain}/infrastructure/persistence/rdb/models/`). Rejected: domain infra names describe adopted backends, not a catalogue of choices. The umbrella serves no purpose there and would change every per-domain scaffolding path and tutorial.
+- **One ADR per decision** (split into 041a "vector consolidation" + 041b "persistence umbrella" + 041c "vector subfolder split"). Rejected: the three moves are three applications of the same policy ("backend multiplicity deserves structural marking"). Splitting them would hide the policy behind three narrower documents.

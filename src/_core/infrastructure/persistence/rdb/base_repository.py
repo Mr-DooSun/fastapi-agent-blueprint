@@ -8,7 +8,7 @@ from sqlalchemy import String, func, or_, select
 from sqlalchemy.orm import InstrumentedAttribute
 
 from src._core.exceptions.base_exception import BaseCustomException
-from src._core.infrastructure.database.database import Base, Database
+from src._core.infrastructure.persistence.rdb.database import Base, Database
 
 if TYPE_CHECKING:
     from src._core.domain.value_objects.query_filter import QueryFilter

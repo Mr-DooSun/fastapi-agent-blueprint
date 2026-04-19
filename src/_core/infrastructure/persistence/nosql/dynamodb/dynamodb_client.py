@@ -7,7 +7,7 @@ import aioboto3
 from botocore.exceptions import ClientError
 from types_aiobotocore_dynamodb.client import DynamoDBClient as BotoDynamoDBClient
 
-from src._core.infrastructure.dynamodb.exceptions import (
+from src._core.infrastructure.persistence.nosql.dynamodb.exceptions import (
     DynamoDBConditionFailedException,
     DynamoDBException,
     DynamoDBThrottlingException,

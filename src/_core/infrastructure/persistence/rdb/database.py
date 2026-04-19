@@ -8,8 +8,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-from src._core.infrastructure.database.config import DatabaseConfig
-from src._core.infrastructure.database.exceptions import DatabaseException
+from src._core.infrastructure.persistence.rdb.config import DatabaseConfig
+from src._core.infrastructure.persistence.rdb.exceptions import DatabaseException
 
 # ---------------------------------------------------------------------------
 # Driver mappings per engine

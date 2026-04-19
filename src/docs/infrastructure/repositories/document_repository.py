@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from src._core.infrastructure.database.base_repository import BaseRepository
-from src._core.infrastructure.database.database import Database
+from src._core.infrastructure.persistence.rdb.base_repository import BaseRepository
+from src._core.infrastructure.persistence.rdb.database import Database
 from src.docs.domain.dtos.document_dto import DocumentDTO
 from src.docs.infrastructure.database.models.document_model import DocumentModel
 

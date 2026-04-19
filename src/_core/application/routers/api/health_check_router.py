@@ -2,8 +2,8 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
-from src._core.infrastructure.database.database import Database
 from src._core.infrastructure.di.core_container import CoreContainer
+from src._core.infrastructure.persistence.rdb.database import Database
 
 router = APIRouter()
 

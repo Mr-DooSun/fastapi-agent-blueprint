@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel
 
 from src._core.domain.value_objects.vector_query import VectorQuery
-from src._core.infrastructure.vectors.base_in_memory_vector_store import (
+from src._core.infrastructure.vectors.in_memory.base_store import (
     BaseInMemoryVectorStore,
 )
 from src._core.infrastructure.vectors.vector_model import (

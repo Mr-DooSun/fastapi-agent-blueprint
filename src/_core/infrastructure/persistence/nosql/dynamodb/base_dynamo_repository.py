@@ -10,9 +10,15 @@ from pydantic import BaseModel
 
 from src._core.domain.value_objects.cursor_page import CursorPage
 from src._core.domain.value_objects.dynamo_key import DynamoKey, SortKeyCondition
-from src._core.infrastructure.dynamodb.dynamodb_client import DynamoDBClient
-from src._core.infrastructure.dynamodb.dynamodb_model import DynamoModel
-from src._core.infrastructure.dynamodb.exceptions import DynamoDBNotFoundException
+from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_client import (
+    DynamoDBClient,
+)
+from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model import (
+    DynamoModel,
+)
+from src._core.infrastructure.persistence.nosql.dynamodb.exceptions import (
+    DynamoDBNotFoundException,
+)
 
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
 

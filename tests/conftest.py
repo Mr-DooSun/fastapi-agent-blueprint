@@ -3,8 +3,8 @@ import os
 import pytest
 import pytest_asyncio
 
-from src._core.infrastructure.database.config import DatabaseConfig
-from src._core.infrastructure.database.database import Base, Database
+from src._core.infrastructure.persistence.rdb.config import DatabaseConfig
+from src._core.infrastructure.persistence.rdb.database import Base, Database
 
 
 def _build_test_database() -> Database:

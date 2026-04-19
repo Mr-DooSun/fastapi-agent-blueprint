@@ -2,7 +2,7 @@ from typing import ClassVar
 
 import pytest
 
-from src._core.infrastructure.dynamodb.dynamodb_model import (
+from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model import (
     DynamoModel,
     DynamoModelMeta,
     GSIDefinition,

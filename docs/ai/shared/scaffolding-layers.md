@@ -90,12 +90,12 @@ src/{name}/
 ```
 
 7. `src/{name}/infrastructure/database/models/{name}_model.py`
-    - `from src._core.infrastructure.database.database import Base`
+    - `from src._core.infrastructure.persistence.rdb.database import Base`
     - `class {Name}Model(Base)` — SQLAlchemy 2.0 `Mapped[Type]` + `mapped_column()`
     - `__tablename__ = "{name}"`
     - Use `func.now()` for `created_at`, `updated_at`
 8. `src/{name}/infrastructure/repositories/{name}_repository.py`
-    - `from src._core.infrastructure.database.base_repository import BaseRepository`
+    - `from src._core.infrastructure.persistence.rdb.base_repository import BaseRepository`
     - Generic: `BaseRepository[{Name}DTO]` (see project-dna.md section 3)
     - `class {Name}Repository(BaseRepository[{Name}DTO])`
     - `__init__` signature: refer to **project-dna.md section 3** "BaseRepository.__init__"
@@ -126,8 +126,8 @@ When the domain uses DynamoDB instead of RDB, replace `infrastructure/database/`
         └── {name}_container.py            ← dynamodb_client injection
 ```
 
-- Model: `from src._core.infrastructure.dynamodb.dynamodb_model import DynamoModel, DynamoModelMeta`
-- Repository: `from src._core.infrastructure.dynamodb.base_dynamo_repository import BaseDynamoRepository`
+- Model: `from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model import DynamoModel, DynamoModelMeta`
+- Repository: `from src._core.infrastructure.persistence.nosql.dynamodb.base_dynamo_repository import BaseDynamoRepository`
 - DI: `dynamodb_client=core_container.dynamodb_client` (not `database=core_container.database`)
 - Refer to **project-dna.md "DynamoDB Generic Type Signatures"** and **"DynamoDB DI Pattern"** for details
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from src._core.infrastructure.database.database import Database
+from src._core.infrastructure.persistence.rdb.database import Database
 from src.docs.infrastructure.di.docs_container import DocsContainer
 from src.docs.interface.server.routers import docs_router
 

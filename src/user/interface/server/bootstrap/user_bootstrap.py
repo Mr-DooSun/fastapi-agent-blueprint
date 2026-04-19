@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 
-from src._core.infrastructure.database.database import Database
+from src._core.infrastructure.persistence.rdb.database import Database
 from src.user.infrastructure.di.user_container import UserContainer
 from src.user.interface.server.routers import user_router
 

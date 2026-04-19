@@ -112,16 +112,16 @@ src/{name}/
 |---------|------------|
 | BaseRepositoryProtocol | `src._core.domain.protocols.repository_protocol.BaseRepositoryProtocol` |
 | BaseService | `src._core.domain.services.base_service.BaseService` |
-| BaseRepository | `src._core.infrastructure.database.base_repository.BaseRepository` |
-| Base (ORM DeclarativeBase) | `src._core.infrastructure.database.database.Base` |
-| Database | `src._core.infrastructure.database.database.Database` |
+| BaseRepository | `src._core.infrastructure.persistence.rdb.base_repository.BaseRepository` |
+| Base (ORM DeclarativeBase) | `src._core.infrastructure.persistence.rdb.database.Base` |
+| Database | `src._core.infrastructure.persistence.rdb.database.Database` |
 | BaseDynamoRepositoryProtocol | `src._core.domain.protocols.dynamo_repository_protocol.BaseDynamoRepositoryProtocol` |
 | BaseDynamoService | `src._core.domain.services.base_dynamo_service.BaseDynamoService` |
-| BaseDynamoRepository | `src._core.infrastructure.dynamodb.base_dynamo_repository.BaseDynamoRepository` |
-| DynamoModel | `src._core.infrastructure.dynamodb.dynamodb_model.DynamoModel` |
-| DynamoModelMeta | `src._core.infrastructure.dynamodb.dynamodb_model.DynamoModelMeta` |
-| GSIDefinition | `src._core.infrastructure.dynamodb.dynamodb_model.GSIDefinition` |
-| DynamoDBClient | `src._core.infrastructure.dynamodb.dynamodb_client.DynamoDBClient` |
+| BaseDynamoRepository | `src._core.infrastructure.persistence.nosql.dynamodb.base_dynamo_repository.BaseDynamoRepository` |
+| DynamoModel | `src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model.DynamoModel` |
+| DynamoModelMeta | `src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model.DynamoModelMeta` |
+| GSIDefinition | `src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model.GSIDefinition` |
+| DynamoDBClient | `src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_client.DynamoDBClient` |
 | DynamoKey | `src._core.domain.value_objects.dynamo_key.DynamoKey` |
 | SortKeyCondition | `src._core.domain.value_objects.dynamo_key.SortKeyCondition` |
 | CursorPage | `src._core.domain.value_objects.cursor_page.CursorPage` |
@@ -142,11 +142,11 @@ src/{name}/
 | verify_password | `src._core.common.security.verify_password` |
 | BaseVectorStoreProtocol | `src._core.domain.protocols.vector_store_protocol.BaseVectorStoreProtocol` |
 | BaseEmbeddingProtocol | `src._core.domain.protocols.embedding_protocol.BaseEmbeddingProtocol` |
-| BaseS3VectorStore | `src._core.infrastructure.vectors.base_s3vector_store.BaseS3VectorStore` |
+| BaseS3VectorStore | `src._core.infrastructure.vectors.s3.base_store.BaseS3VectorStore` |
 | VectorModel | `src._core.infrastructure.vectors.vector_model.VectorModel` |
 | VectorModelMeta | `src._core.infrastructure.vectors.vector_model.VectorModelMeta` |
 | VectorData | `src._core.infrastructure.vectors.vector_model.VectorData` |
-| S3VectorClient | `src._core.infrastructure.vectors.s3vector_client.S3VectorClient` |
+| S3VectorClient | `src._core.infrastructure.vectors.s3.client.S3VectorClient` |
 | VectorQuery | `src._core.domain.value_objects.vector_query.VectorQuery` |
 | VectorSearchResult | `src._core.domain.value_objects.vector_search_result.VectorSearchResult` |
 | PydanticAIEmbeddingAdapter | `src._core.infrastructure.embedding.pydantic_ai_embedding_adapter.PydanticAIEmbeddingAdapter` |
@@ -748,7 +748,7 @@ class {Name}VectorModel(VectorModel):
 Implements `BaseVectorStoreProtocol`. Subclass must implement `_to_model()` for domain-specific conversion.
 
 ```python
-from src._core.infrastructure.vectors.base_s3vector_store import BaseS3VectorStore
+from src._core.infrastructure.vectors.s3.base_store import BaseS3VectorStore
 
 class {Name}S3VectorStore(BaseS3VectorStore[{Name}DTO]):
     def __init__(self, s3vector_client, *, bucket_name):

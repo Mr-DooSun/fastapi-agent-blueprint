@@ -10,7 +10,7 @@ from typing import Any
 
 from botocore.exceptions import ClientError
 
-from src._core.infrastructure.dynamodb.dynamodb_model import DynamoModel
+from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model import DynamoModel
 
 
 def _make_attr_def(name: str) -> dict[str, str]:

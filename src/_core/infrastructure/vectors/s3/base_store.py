@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from src._core.domain.value_objects.vector_query import VectorQuery
 from src._core.domain.value_objects.vector_search_result import VectorSearchResult
-from src._core.infrastructure.vectors.s3vector_client import S3VectorClient
+from src._core.infrastructure.vectors.s3.client import S3VectorClient
 from src._core.infrastructure.vectors.vector_model import VectorModel
 
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)

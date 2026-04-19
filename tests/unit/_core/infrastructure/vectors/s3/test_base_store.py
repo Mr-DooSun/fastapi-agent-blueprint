@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from src._core.domain.value_objects.vector_query import VectorQuery
 from src._core.domain.value_objects.vector_search_result import VectorSearchResult
-from src._core.infrastructure.vectors.base_s3vector_store import (
+from src._core.infrastructure.vectors.s3.base_store import (
     BaseS3VectorStore,
 )
 from src._core.infrastructure.vectors.vector_model import (

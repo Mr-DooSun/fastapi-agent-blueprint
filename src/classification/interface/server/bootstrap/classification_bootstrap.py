@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 
-from src._core.infrastructure.database.database import Database
+from src._core.infrastructure.persistence.rdb.database import Database
 from src.classification.infrastructure.di.classification_container import (
     ClassificationContainer,
 )
