@@ -51,23 +51,6 @@ async def test_db():
     await db.dispose()
 
 
-@pytest_asyncio.fixture(autouse=True, scope="session")
-async def _override_app_database(test_db):
-    """Swap the app's PostgreSQL Database for the active ``test_db``.
-
-    The FastAPI app boots a real PostgreSQL Singleton at import time
-    (`src._apps.server.app.app`). E2E tests must run without external infra,
-    so we override the running container instance attached to ``app.state``.
-    """
-    from src._apps.server.app import app
-
-    container = app.state.container
-    core = container.core_container()
-    core.database.override(test_db)
-    yield
-    core.database.reset_override()
-
-
 @pytest.fixture(scope="session")
 def anyio_backend():
     return "asyncio"
