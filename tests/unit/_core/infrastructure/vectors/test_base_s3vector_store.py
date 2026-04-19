@@ -14,22 +14,22 @@ from pydantic import BaseModel
 
 from src._core.domain.value_objects.vector_query import VectorQuery
 from src._core.domain.value_objects.vector_search_result import VectorSearchResult
-from src._core.infrastructure.s3vectors.base_s3vector_store import (
+from src._core.infrastructure.vectors.base_s3vector_store import (
     BaseS3VectorStore,
 )
-from src._core.infrastructure.s3vectors.s3vector_model import (
-    S3VectorData,
-    S3VectorModel,
-    S3VectorModelMeta,
+from src._core.infrastructure.vectors.vector_model import (
+    VectorData,
+    VectorModel,
+    VectorModelMeta,
 )
 
 # -- Test fixtures (domain implementation reference) -------------------
 
 
-class DocS3VectorModel(S3VectorModel):
-    """Sample S3VectorModel -- define like this in domains."""
+class DocVectorModel(VectorModel):
+    """Sample VectorModel -- define like this in domains."""
 
-    __s3vector_meta__: ClassVar[S3VectorModelMeta] = S3VectorModelMeta(
+    __vector_meta__: ClassVar[VectorModelMeta] = VectorModelMeta(
         index_name="test-docs",
         dimension=4,
         distance_metric="cosine",
@@ -176,16 +176,16 @@ class DocS3VectorStore(BaseS3VectorStore[DocResultDTO]):
     def __init__(self, s3vector_client: FakeS3VectorClient) -> None:
         super().__init__(
             s3vector_client=s3vector_client,
-            model=DocS3VectorModel,
+            model=DocVectorModel,
             return_entity=DocResultDTO,
             bucket_name="test-bucket",
         )
 
-    def _to_model(self, entity: BaseModel) -> S3VectorModel:
+    def _to_model(self, entity: BaseModel) -> VectorModel:
         data = entity.model_dump()
-        return DocS3VectorModel(
+        return DocVectorModel(
             key=data["key"],
-            data=S3VectorData(float32=data["vector"]),
+            data=VectorData(float32=data["vector"]),
             category=data["category"],
             content=data["content"],
         )

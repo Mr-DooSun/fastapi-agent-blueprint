@@ -88,7 +88,7 @@ is what the generics encode.
 |---|---|---|---|---|---|
 | **RDB** (default) | `BaseService[Create, Update, DTO]` | `BaseRepository[DTO]` | ORM `Model(Base)` | `QueryFilter` | `(list[DTO], PaginationInfo)` |
 | **DynamoDB** | `BaseDynamoService[Create, Update, DTO]` | `BaseDynamoRepository[DTO]` | `DynamoModel` | `DynamoKey` + `filter_expression` | `CursorPage[DTO]` |
-| **S3 Vectors** | domain-specific | `BaseS3VectorStore[DTO]` | `S3VectorModel` | `VectorQuery(vector, top_k, filters)` | `VectorSearchResult[DTO]` |
+| **S3 Vectors** | domain-specific | `BaseS3VectorStore[DTO]` | `VectorModel` | `VectorQuery(vector, top_k, filters)` | `VectorSearchResult[DTO]` |
 
 - **RDB** uses offset pagination (`page`, `page_size`). Use `QueryFilter`
   for sort/search combinations.

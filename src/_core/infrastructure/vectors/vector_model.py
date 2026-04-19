@@ -11,14 +11,14 @@ def _default_embedding_dimension() -> int:
     """Lazy-load settings to derive embedding dimension.
 
     Avoids module-level ``settings`` import so that test modules
-    importing ``S3VectorModel`` do not trigger ``Settings()`` init.
+    importing ``VectorModel`` do not trigger ``Settings()`` init.
     """
     from src._core.config import settings
 
     return settings.embedding_dimension
 
 
-class S3VectorModelMeta(BaseModel):
+class VectorModelMeta(BaseModel):
     """S3 Vectors index schema metadata.
 
     ``DynamoModelMeta`` counterpart — declares index configuration
@@ -38,22 +38,22 @@ class S3VectorModelMeta(BaseModel):
     non_filter_fields: list[str] = []
 
 
-class S3VectorData(BaseModel):
+class VectorData(BaseModel):
     """S3 Vectors embedding data format."""
 
     float32: list[float]
 
 
-class S3VectorModel(BaseModel):
+class VectorModel(BaseModel):
     """Base class for S3 Vectors index models.
 
     ``DynamoModel`` counterpart — subclasses define index schema via
-    ``__s3vector_meta__`` and declare metadata as Pydantic fields.
+    ``__vector_meta__`` and declare metadata as Pydantic fields.
 
     Example::
 
-        class DocumentS3VectorModel(S3VectorModel):
-            __s3vector_meta__: ClassVar[S3VectorModelMeta] = S3VectorModelMeta(
+        class DocumentVectorModel(VectorModel):
+            __vector_meta__: ClassVar[VectorModelMeta] = VectorModelMeta(
                 index_name="document-search",
                 dimension=1536,
                 distance_metric="cosine",
@@ -66,10 +66,10 @@ class S3VectorModel(BaseModel):
             content_preview: str
     """
 
-    __s3vector_meta__: ClassVar[S3VectorModelMeta]
+    __vector_meta__: ClassVar[VectorModelMeta]
 
     key: str = Field(default_factory=generate_vector_id)
-    data: S3VectorData
+    data: VectorData
 
     # ------------------------------------------------------------------
     # Serialization (model -> S3 Vectors API format)
@@ -100,6 +100,6 @@ class S3VectorModel(BaseModel):
         """
         return cls(
             key=raw.get("key", ""),
-            data=S3VectorData(**raw.get("data", {"float32": []})),
+            data=VectorData(**raw.get("data", {"float32": []})),
             **raw.get("metadata", {}),
         )

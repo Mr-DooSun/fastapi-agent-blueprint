@@ -142,11 +142,11 @@ src/{name}/
 | verify_password | `src._core.common.security.verify_password` |
 | BaseVectorStoreProtocol | `src._core.domain.protocols.vector_store_protocol.BaseVectorStoreProtocol` |
 | BaseEmbeddingProtocol | `src._core.domain.protocols.embedding_protocol.BaseEmbeddingProtocol` |
-| BaseS3VectorStore | `src._core.infrastructure.s3vectors.base_s3vector_store.BaseS3VectorStore` |
-| S3VectorModel | `src._core.infrastructure.s3vectors.s3vector_model.S3VectorModel` |
-| S3VectorModelMeta | `src._core.infrastructure.s3vectors.s3vector_model.S3VectorModelMeta` |
-| S3VectorData | `src._core.infrastructure.s3vectors.s3vector_model.S3VectorData` |
-| S3VectorClient | `src._core.infrastructure.s3vectors.s3vector_client.S3VectorClient` |
+| BaseS3VectorStore | `src._core.infrastructure.vectors.base_s3vector_store.BaseS3VectorStore` |
+| VectorModel | `src._core.infrastructure.vectors.vector_model.VectorModel` |
+| VectorModelMeta | `src._core.infrastructure.vectors.vector_model.VectorModelMeta` |
+| VectorData | `src._core.infrastructure.vectors.vector_model.VectorData` |
+| S3VectorClient | `src._core.infrastructure.vectors.s3vector_client.S3VectorClient` |
 | VectorQuery | `src._core.domain.value_objects.vector_query.VectorQuery` |
 | VectorSearchResult | `src._core.domain.value_objects.vector_search_result.VectorSearchResult` |
 | PydanticAIEmbeddingAdapter | `src._core.infrastructure.embedding.pydantic_ai_embedding_adapter.PydanticAIEmbeddingAdapter` |
@@ -229,7 +229,7 @@ def __init__(
     self,
     s3vector_client: S3VectorClient,
     *,
-    model: type[S3VectorModel],
+    model: type[VectorModel],
     return_entity: type[ReturnDTO],
     bucket_name: str,
 ) -> None:
@@ -703,18 +703,18 @@ For domain-specific rendering, subclass `BaseAdminPage` in the config file and o
 
 ## §12. S3 Vector Store Pattern
 
-### S3VectorModel (Data Model)
+### VectorModel (Data Model)
 
-`DynamoModel` counterpart — subclasses define index schema via `__s3vector_meta__` and declare metadata as Pydantic fields.
+`DynamoModel` counterpart — subclasses define index schema via `__vector_meta__` and declare metadata as Pydantic fields.
 
 ```python
 from typing import ClassVar
-from src._core.infrastructure.s3vectors.s3vector_model import (
-    S3VectorModel, S3VectorModelMeta, S3VectorData,
+from src._core.infrastructure.vectors.vector_model import (
+    VectorModel, VectorModelMeta, VectorData,
 )
 
-class {Name}S3VectorModel(S3VectorModel):
-    __s3vector_meta__: ClassVar[S3VectorModelMeta] = S3VectorModelMeta(
+class {Name}VectorModel(VectorModel):
+    __vector_meta__: ClassVar[VectorModelMeta] = VectorModelMeta(
         index_name="{name}-search",
         # dimension defaults to settings.embedding_dimension (auto-derived)
         distance_metric="cosine",
@@ -728,11 +728,11 @@ class {Name}S3VectorModel(S3VectorModel):
 ```
 
 - `key`: auto-generated UUID v4 hex (via `generate_vector_id`)
-- `data`: `S3VectorData(float32=[...])` — embedding vector
+- `data`: `VectorData(float32=[...])` — embedding vector
 - Remaining fields → metadata (filter/non-filter)
 - `to_s3vector()` serializes to S3 Vectors API format; `from_s3vector()` deserializes
 
-### S3VectorModelMeta Fields
+### VectorModelMeta Fields
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -748,20 +748,20 @@ class {Name}S3VectorModel(S3VectorModel):
 Implements `BaseVectorStoreProtocol`. Subclass must implement `_to_model()` for domain-specific conversion.
 
 ```python
-from src._core.infrastructure.s3vectors.base_s3vector_store import BaseS3VectorStore
+from src._core.infrastructure.vectors.base_s3vector_store import BaseS3VectorStore
 
 class {Name}S3VectorStore(BaseS3VectorStore[{Name}DTO]):
     def __init__(self, s3vector_client, *, bucket_name):
         super().__init__(
             s3vector_client=s3vector_client,
-            model={Name}S3VectorModel,
+            model={Name}VectorModel,
             return_entity={Name}DTO,
             bucket_name=bucket_name,
         )
 
-    def _to_model(self, entity: BaseModel) -> {Name}S3VectorModel:
-        return {Name}S3VectorModel(
-            data=S3VectorData(float32=entity.embedding),
+    def _to_model(self, entity: BaseModel) -> {Name}VectorModel:
+        return {Name}VectorModel(
+            data=VectorData(float32=entity.embedding),
             category=entity.category,
             # ... map DTO fields to model metadata
         )
@@ -782,7 +782,7 @@ class {Name}S3VectorStore(BaseS3VectorStore[{Name}DTO]):
 src/{name}/
 ├── infrastructure/
 │   ├── s3vectors/
-│   │   └── models/{name}_model.py    # extends S3VectorModel
+│   │   └── models/{name}_model.py    # extends VectorModel
 │   ├── repositories/{name}_vector_store.py  # extends BaseS3VectorStore
 │   └── di/{name}_container.py        # s3vector_client + embedding_client injection
 └── (나머지 동일)

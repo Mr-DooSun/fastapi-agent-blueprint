@@ -5,12 +5,12 @@ from typing import Any
 from pydantic import BaseModel
 
 from src._core.domain.value_objects.rag.chunk import BaseChunkDTO
-from src._core.infrastructure.in_memory_vectors.base_in_memory_vector_store import (
+from src._core.infrastructure.vectors.base_in_memory_vector_store import (
     BaseInMemoryVectorStore,
 )
-from src._core.infrastructure.s3vectors.s3vector_model import S3VectorData
-from src.docs.infrastructure.vectors.document_chunk_s3vector_model import (
-    DocumentChunkS3VectorModel,
+from src._core.infrastructure.vectors.vector_model import VectorData
+from src.docs.infrastructure.vectors.document_chunk_vector_model import (
+    DocumentChunkVectorModel,
 )
 
 
@@ -23,16 +23,16 @@ class DocumentChunkInMemoryVectorStore(BaseInMemoryVectorStore[BaseChunkDTO]):
 
     def __init__(self) -> None:
         super().__init__(
-            model=DocumentChunkS3VectorModel,
+            model=DocumentChunkVectorModel,
             return_entity=BaseChunkDTO,
         )
 
-    def _to_model(self, entity: BaseModel) -> DocumentChunkS3VectorModel:
+    def _to_model(self, entity: BaseModel) -> DocumentChunkVectorModel:
         data = entity.model_dump()
         chunk = data["chunk"]
         vector = data["vector"]
-        return DocumentChunkS3VectorModel(
-            data=S3VectorData(float32=list(vector)),
+        return DocumentChunkVectorModel(
+            data=VectorData(float32=list(vector)),
             source_id=chunk["source_id"],
             source_title=chunk["source_title"],
             content=chunk["content"],

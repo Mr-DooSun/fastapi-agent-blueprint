@@ -6,18 +6,18 @@ import pytest
 from pydantic import BaseModel
 
 from src._core.domain.value_objects.vector_query import VectorQuery
-from src._core.infrastructure.in_memory_vectors.base_in_memory_vector_store import (
+from src._core.infrastructure.vectors.base_in_memory_vector_store import (
     BaseInMemoryVectorStore,
 )
-from src._core.infrastructure.s3vectors.s3vector_model import (
-    S3VectorData,
-    S3VectorModel,
-    S3VectorModelMeta,
+from src._core.infrastructure.vectors.vector_model import (
+    VectorData,
+    VectorModel,
+    VectorModelMeta,
 )
 
 
-class _FakeModel(S3VectorModel):
-    __s3vector_meta__: ClassVar[S3VectorModelMeta] = S3VectorModelMeta(
+class _FakeModel(VectorModel):
+    __vector_meta__: ClassVar[VectorModelMeta] = VectorModelMeta(
         index_name="test-index",
         dimension=3,
         filter_fields=["category"],
@@ -38,7 +38,7 @@ class _FakeStore(BaseInMemoryVectorStore[_FakeDTO]):
     def __init__(self) -> None:
         super().__init__(model=_FakeModel, return_entity=_FakeDTO)
 
-    def _to_model(self, entity: BaseModel) -> S3VectorModel:
+    def _to_model(self, entity: BaseModel) -> VectorModel:
         # Test passes _FakeModel instances directly — return as-is
         assert isinstance(entity, _FakeModel)
         return entity
@@ -47,7 +47,7 @@ class _FakeStore(BaseInMemoryVectorStore[_FakeDTO]):
 def _make_model(key: str, vector: list[float], category: str, label: str) -> _FakeModel:
     return _FakeModel(
         key=key,
-        data=S3VectorData(float32=vector),
+        data=VectorData(float32=vector),
         category=category,
         label=label,
     )

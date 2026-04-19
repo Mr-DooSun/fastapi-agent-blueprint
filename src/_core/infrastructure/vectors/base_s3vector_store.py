@@ -8,8 +8,8 @@ from pydantic import BaseModel
 
 from src._core.domain.value_objects.vector_query import VectorQuery
 from src._core.domain.value_objects.vector_search_result import VectorSearchResult
-from src._core.infrastructure.s3vectors.s3vector_client import S3VectorClient
-from src._core.infrastructure.s3vectors.s3vector_model import S3VectorModel
+from src._core.infrastructure.vectors.s3vector_client import S3VectorClient
+from src._core.infrastructure.vectors.vector_model import VectorModel
 
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
 
@@ -23,7 +23,7 @@ class BaseS3VectorStore(Generic[ReturnDTO], ABC):
     """Base vector store for S3 Vectors operations.
 
     Implements ``BaseVectorStoreProtocol``.
-    Constructor takes ``S3VectorClient``, ``S3VectorModel`` class,
+    Constructor takes ``S3VectorClient``, ``VectorModel`` class,
     the return DTO class, and the bucket name.
     """
 
@@ -31,7 +31,7 @@ class BaseS3VectorStore(Generic[ReturnDTO], ABC):
         self,
         s3vector_client: S3VectorClient,
         *,
-        model: type[S3VectorModel],
+        model: type[VectorModel],
         return_entity: type[ReturnDTO],
         bucket_name: str,
     ) -> None:
@@ -42,18 +42,18 @@ class BaseS3VectorStore(Generic[ReturnDTO], ABC):
 
     @property
     def index_name(self) -> str:
-        return self.model.__s3vector_meta__.index_name
+        return self.model.__vector_meta__.index_name
 
     # ------------------------------------------------------------------
     # Abstract: subclass must implement
     # ------------------------------------------------------------------
 
     @abstractmethod
-    def _to_model(self, entity: BaseModel) -> S3VectorModel:
-        """Convert a PutDTO into an S3VectorModel instance.
+    def _to_model(self, entity: BaseModel) -> VectorModel:
+        """Convert a PutDTO into an VectorModel instance.
 
         Each domain store must implement this to map its DTO
-        fields into key, S3VectorData, and metadata fields.
+        fields into key, VectorData, and metadata fields.
         """
         ...
 

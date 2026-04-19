@@ -52,7 +52,7 @@ src/_core/infrastructure/rag/
 ├── stub_answer_agent.py         # zero-config fallback
 └── pydantic_ai_answer_agent.py  # real LLM via PydanticAI
 
-src/_core/infrastructure/in_memory_vectors/
+src/_core/infrastructure/vectors/
 └── base_in_memory_vector_store.py  # process-local cosine for quickstart
 
 src/docs/                        # Example consumer — docs QA

@@ -1,18 +1,18 @@
-"""Unit tests for S3VectorModel serialization."""
+"""Unit tests for VectorModel serialization."""
 
 from typing import ClassVar
 
-from src._core.infrastructure.s3vectors.s3vector_model import (
-    S3VectorData,
-    S3VectorModel,
-    S3VectorModelMeta,
+from src._core.infrastructure.vectors.vector_model import (
+    VectorData,
+    VectorModel,
+    VectorModelMeta,
 )
 
 
-class SampleS3VectorModel(S3VectorModel):
+class SampleVectorModel(VectorModel):
     """Test vector model -- demonstrates how domains define models."""
 
-    __s3vector_meta__: ClassVar[S3VectorModelMeta] = S3VectorModelMeta(
+    __vector_meta__: ClassVar[VectorModelMeta] = VectorModelMeta(
         index_name="test-documents",
         dimension=4,
         distance_metric="cosine",
@@ -25,11 +25,11 @@ class SampleS3VectorModel(S3VectorModel):
     content_preview: str
 
 
-class TestS3VectorModelSerialization:
+class TestVectorModelSerialization:
     def test_to_s3vector_structure(self):
-        model = SampleS3VectorModel(
+        model = SampleVectorModel(
             key="vec-001",
-            data=S3VectorData(float32=[0.1, 0.2, 0.3, 0.4]),
+            data=VectorData(float32=[0.1, 0.2, 0.3, 0.4]),
             category="tech",
             author_id="user-1",
             content_preview="Sample content",
@@ -45,9 +45,9 @@ class TestS3VectorModelSerialization:
         }
 
     def test_to_s3vector_excludes_key_and_data_from_metadata(self):
-        model = SampleS3VectorModel(
+        model = SampleVectorModel(
             key="vec-001",
-            data=S3VectorData(float32=[0.1, 0.2, 0.3, 0.4]),
+            data=VectorData(float32=[0.1, 0.2, 0.3, 0.4]),
             category="tech",
             author_id="user-1",
             content_preview="Content",
@@ -58,9 +58,9 @@ class TestS3VectorModelSerialization:
         assert "data" not in result["metadata"]
 
     def test_from_s3vector_roundtrip(self):
-        original = SampleS3VectorModel(
+        original = SampleVectorModel(
             key="vec-001",
-            data=S3VectorData(float32=[0.1, 0.2, 0.3, 0.4]),
+            data=VectorData(float32=[0.1, 0.2, 0.3, 0.4]),
             category="tech",
             author_id="user-1",
             content_preview="Content",
@@ -72,7 +72,7 @@ class TestS3VectorModelSerialization:
             "data": serialized["data"],
             "metadata": serialized["metadata"],
         }
-        restored = SampleS3VectorModel.from_s3vector(raw)
+        restored = SampleVectorModel.from_s3vector(raw)
 
         assert restored.key == "vec-001"
         assert restored.category == "tech"
@@ -81,8 +81,8 @@ class TestS3VectorModelSerialization:
         assert restored.data.float32 == [0.1, 0.2, 0.3, 0.4]
 
     def test_default_key_generated(self):
-        model = SampleS3VectorModel(
-            data=S3VectorData(float32=[0.1, 0.2, 0.3, 0.4]),
+        model = SampleVectorModel(
+            data=VectorData(float32=[0.1, 0.2, 0.3, 0.4]),
             category="tech",
             author_id="user-1",
             content_preview="Content",
@@ -93,15 +93,15 @@ class TestS3VectorModelSerialization:
     def test_none_metadata_excluded(self):
         """Optional metadata fields excluded when None."""
 
-        class OptionalMetaModel(S3VectorModel):
-            __s3vector_meta__: ClassVar[S3VectorModelMeta] = S3VectorModelMeta(
+        class OptionalMetaModel(VectorModel):
+            __vector_meta__: ClassVar[VectorModelMeta] = VectorModelMeta(
                 index_name="test-optional", dimension=4
             )
             required_field: str
             optional_field: str | None = None
 
         model = OptionalMetaModel(
-            data=S3VectorData(float32=[0.1, 0.2, 0.3, 0.4]),
+            data=VectorData(float32=[0.1, 0.2, 0.3, 0.4]),
             required_field="value",
         )
         result = model.to_s3vector()
@@ -110,9 +110,9 @@ class TestS3VectorModelSerialization:
         assert result["metadata"]["required_field"] == "value"
 
 
-class TestS3VectorModelMeta:
+class TestVectorModelMeta:
     def test_defaults(self):
-        meta = S3VectorModelMeta(index_name="test")
+        meta = VectorModelMeta(index_name="test")
         assert meta.data_type == "float32"
         assert meta.dimension == 1536
         assert meta.distance_metric == "cosine"
@@ -120,7 +120,7 @@ class TestS3VectorModelMeta:
         assert meta.non_filter_fields == []
 
     def test_custom_values(self):
-        meta = S3VectorModelMeta(
+        meta = VectorModelMeta(
             index_name="custom",
             dimension=768,
             distance_metric="euclidean",

@@ -7,7 +7,7 @@ import aioboto3
 from aiobotocore.client import AioBaseClient
 from botocore.exceptions import ClientError
 
-from src._core.infrastructure.s3vectors.exceptions import (
+from src._core.infrastructure.vectors.exceptions import (
     S3VectorException,
     S3VectorIndexNotFoundException,
     S3VectorThrottlingException,

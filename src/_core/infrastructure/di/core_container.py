@@ -12,7 +12,6 @@ from src._core.infrastructure.embedding.pydantic_ai_embedding_adapter import (
 )
 from src._core.infrastructure.http.http_client import HttpClient
 from src._core.infrastructure.llm.model_factory import build_llm_model
-from src._core.infrastructure.s3vectors.s3vector_client import S3VectorClient
 from src._core.infrastructure.storage.object_storage import ObjectStorage
 from src._core.infrastructure.storage.object_storage_client import ObjectStorageClient
 from src._core.infrastructure.taskiq.broker import (
@@ -20,6 +19,7 @@ from src._core.infrastructure.taskiq.broker import (
     create_sqs_broker,
 )
 from src._core.infrastructure.taskiq.manager import TaskiqManager
+from src._core.infrastructure.vectors.s3vector_client import S3VectorClient
 
 
 class CoreContainer(containers.DeclarativeContainer):

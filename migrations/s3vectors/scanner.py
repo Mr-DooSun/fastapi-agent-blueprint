@@ -1,6 +1,6 @@
 """S3 Vectors model auto-discovery scanner.
 
-Scans domain directories for S3VectorModel subclasses,
+Scans domain directories for VectorModel subclasses,
 analogous to the DynamoDB model scanner.
 """
 
@@ -11,20 +11,20 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src._core.infrastructure.s3vectors.s3vector_model import S3VectorModel
+    from src._core.infrastructure.vectors.vector_model import VectorModel
 
 
-def scan_s3vector_models(src_root: Path) -> list[type[S3VectorModel]]:
-    """Discover all S3VectorModel subclasses under ``src/`` domains.
+def scan_s3vector_models(src_root: Path) -> list[type[VectorModel]]:
+    """Discover all VectorModel subclasses under ``src/`` domains.
 
-    Scans ``{domain}/infrastructure/s3vectors/models/`` for each domain.
+    Scans ``{domain}/infrastructure/vectors/models/`` for each domain.
     Same convention as ``scan_dynamo_models()``.
     """
-    from src._core.infrastructure.s3vectors.s3vector_model import (
-        S3VectorModel as BaseS3VectorModel,
+    from src._core.infrastructure.vectors.vector_model import (
+        VectorModel as BaseVectorModel,
     )
 
-    models: list[type[S3VectorModel]] = []
+    models: list[type[VectorModel]] = []
 
     for domain_dir in sorted(src_root.iterdir()):
         if not domain_dir.is_dir():
@@ -58,9 +58,9 @@ def scan_s3vector_models(src_root: Path) -> list[type[S3VectorModel]]:
                 attr = getattr(module, attr_name)
                 if (
                     isinstance(attr, type)
-                    and issubclass(attr, BaseS3VectorModel)
-                    and attr is not BaseS3VectorModel
-                    and hasattr(attr, "__s3vector_meta__")
+                    and issubclass(attr, BaseVectorModel)
+                    and attr is not BaseVectorModel
+                    and hasattr(attr, "__vector_meta__")
                 ):
                     models.append(attr)
 

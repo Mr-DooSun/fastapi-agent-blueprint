@@ -29,14 +29,14 @@ Key differences from RDB:
 
 ## S3 Vectors Data Flow
 ```
-  Write: Entity → VectorStore(BaseS3VectorStore) → S3VectorModel → S3 Vectors API
+  Write: Entity → VectorStore(BaseS3VectorStore) → VectorModel → S3 Vectors API
   Read:  VectorSearchResult[DTO] ← VectorStore ← DTO ← S3 Vectors API response
 ```
 Key differences from RDB/DynamoDB:
 - String keys (UUID v4 hex) via `generate_vector_id`
 - Similarity search via VectorQuery (top_k, filters) → VectorSearchResult
-- Subclass must implement `_to_model()` for domain-specific DTO → S3VectorModel conversion
-- `S3VectorModelMeta.dimension` auto-derived from `settings.embedding_dimension`
+- Subclass must implement `_to_model()` for domain-specific DTO → VectorModel conversion
+- `VectorModelMeta.dimension` auto-derived from `settings.embedding_dimension`
 
 ## BaseService Generic Structure
 - `BaseService(Generic[CreateDTO, UpdateDTO, ReturnDTO])` — 3 TypeVars (ADR 011 update, 2026-04-09)
@@ -100,9 +100,9 @@ Key differences from RDB/DynamoDB:
 - Uses `DynamoModelMeta` + `__dynamo_meta__` for table schema declaration
 - Must never leave the Repository layer (same rule as ORM Model)
 
-### S3VectorModel
-- Location: `src/{domain}/infrastructure/s3vectors/models/{domain}_model.py`
-- Uses `S3VectorModelMeta` + `__s3vector_meta__` for index schema declaration
+### VectorModel
+- Location: `src/{domain}/infrastructure/vectors/models/{domain}_model.py`
+- Uses `VectorModelMeta` + `__vector_meta__` for index schema declaration
 - Must never leave the VectorStore layer (same rule as ORM Model/DynamoModel)
 - Conversion: `Entity → Model: _to_model()` (abstract, subclass implements)
 - Conversion: `API response → DTO: return_entity.model_validate(metadata)`
