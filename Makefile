@@ -1,4 +1,4 @@
-.PHONY: help setup quickstart demo dev test lint format check clean diagrams
+.PHONY: help setup quickstart demo demo-rag dev test lint format check clean diagrams
 
 ## Show available commands
 help:
@@ -27,6 +27,10 @@ quickstart:
 ## Hit the running quickstart server with sample user requests
 demo:
 	@bash scripts/demo.sh
+
+## End-to-end RAG showcase: seed 3 docs, list, run a query (needs quickstart server)
+demo-rag:
+	@bash scripts/demo-rag.sh
 
 ## Render architecture-diagrams.md Mermaid blocks to SVG (needs npx)
 diagrams:

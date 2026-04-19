@@ -4,8 +4,8 @@
 
 ## Current Version Context
 - Latest release: v0.3.0 (2026-04-10)
-- Active domains: user (reference domain), classification (prototype)
-- Infrastructure: RDB (PostgreSQL/MySQL/SQLite), DynamoDB, Storage (S3/MinIO), S3 Vectors, Embedding (PydanticAI), LLM (PydanticAI Agent), Broker (SQS/RabbitMQ/InMemory)
+- Active domains: user (reference domain), classification (prototype), docs (RAG consumer example, #80)
+- Infrastructure: RDB (PostgreSQL/MySQL/SQLite), DynamoDB, Storage (S3/MinIO), S3 Vectors, InMemory Vectors (quickstart), Embedding (PydanticAI + Stub), LLM (PydanticAI Agent), RagPipeline (+ Stub answer agent), Broker (SQS/RabbitMQ/InMemory)
 
 ## Recent Major Changes (since v0.3.0)
 | Feature | Issue | Impact |
@@ -28,6 +28,7 @@
 | PydanticAI Embedder Transition | ADR 039 | PydanticAIEmbeddingAdapter replaces per-provider clients, EmbeddingConfig VO |
 | Bedrock Credential Support | #15 | LLMConfig with per-service AWS credential injection, model_factory |
 | Zero-config Quickstart | #78 | `make quickstart` + `make demo`, ENV=quickstart with SQLite + InMemory broker + auto create_all, Settings defaults for zero-infra boot |
+| RAG Pattern + docs Domain | #80 | `_core/domain/services/rag_pipeline.py` (Generic[TChunk] orchestrator), `_core/domain/value_objects/rag/` (BaseChunkDTO, CitationDTO, QueryAnswer), `_core/domain/protocols/answer_agent_protocol.py`, `_core/infrastructure/rag/` (StubEmbedder, StubAnswerAgent, PydanticAIAnswerAgent), `_core/infrastructure/in_memory_vectors/` (BaseInMemoryVectorStore), `src/docs/` consumer (document CRUD + query), `make demo-rag`, VECTOR_STORE_TYPE env var, [ADR 040](../../docs/history/040-rag-as-reusable-pattern.md) |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN
