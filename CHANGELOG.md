@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING** — `boto3` and `aioboto3` moved from core `[project.dependencies]` to a new `[project.optional-dependencies].aws` extra (alongside the `types-aiobotocore-*` stubs relocated from the `dev` group). Non-AWS deployments no longer pay the ~100 MB boto3 install cost; the four AWS-backed infrastructure clients (`ObjectStorageClient`, `ObjectStorage`, `DynamoDBClient`, `S3VectorClient`) and the `DynamoModel` / `BaseDynamoRepository` helpers now lazy-import `aioboto3` / `boto3` / `botocore` inside `__init__` or lazy module-level singletons. CoreContainer Selectors already return `providers.Object(None)` for the disabled branch (#101), so lazy imports never fire when the matching AWS env vars are unset. Contributors running `make setup` get the extra automatically; the main CI `test` job now runs `uv sync --group dev --extra admin --extra aws`. Migration: add `--extra aws` to your `uv sync` command if you use S3/MinIO, DynamoDB, or S3 Vectors. The `minimal-install` CI job is extended to assert the 4 AWS client modules import cleanly and every AWS-backed Selector resolves to `None` without the extra ([#104](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/104))
+
 ## [0.4.0] - 2026-04-21
 
 ### Added

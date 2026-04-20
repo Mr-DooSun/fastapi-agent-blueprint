@@ -45,7 +45,7 @@ Open <http://localhost:8000/docs-swagger> to explore the API.
 # 1. Create venv + install deps
 uv venv --python 3.12
 source .venv/bin/activate
-uv sync --group dev --extra admin   # drop --extra admin for API-only installs
+uv sync --group dev --extra admin --extra aws   # drop extras you don't need
 
 # 2. Environment variables
 cp _env/local.env.example _env/local.env
@@ -63,20 +63,23 @@ python run_server_local.py --env local
 | Extra | What it installs | Enables |
 |---|---|---|
 | `admin` | `nicegui` | The NiceGUI admin dashboard at `/admin`. Drop for API-only deployments; the server still boots, `/api/*` still serves, just no dashboard |
+| `aws` | `boto3`, `aioboto3`, `types-aiobotocore-*` | Object storage (S3/MinIO), DynamoDB, S3 Vectors. Drop for non-AWS deployments — the 4 AWS-backed client modules still import, CoreContainer Selectors resolve to `None` when the matching `*_TYPE` / `*_ACCESS_KEY` env vars are unset |
 | `sqs` | `taskiq-aws` | `BROKER_TYPE=sqs` broker backend |
 | `rabbitmq` | `taskiq-aio-pika` | `BROKER_TYPE=rabbitmq` broker backend |
 | `pydantic-ai` | `pydantic-ai-slim` + `tiktoken` | `EMBEDDING_PROVIDER` / `LLM_PROVIDER` and any agent-based domain |
 | `pydantic-ai-anthropic` | Anthropic provider for PydanticAI | `LLM_PROVIDER=anthropic` |
 | `pydantic-ai-google` | Google provider for PydanticAI | `EMBEDDING_PROVIDER=google` / `LLM_PROVIDER=google` |
 
-Pass `--extra <name>` to `uv sync` for each capability you need. `make setup` / `make quickstart` default to `--extra admin` because the dashboard is part of the advertised quickstart UX; other extras opt in explicitly.
+Pass `--extra <name>` to `uv sync` for each capability you need. `make setup` pulls `--extra admin --extra aws` by default for full dev coverage; `make quickstart` only needs `--extra admin` (it runs on SQLite + InMemory broker). Every other extra opts in explicitly.
 
 ---
 
 ## Tech stack
 
 FastAPI + SQLAlchemy 2.0 + Pydantic 2.x + dependency-injector + Taskiq +
-NiceGUI + asyncpg + aioboto3.
+asyncpg, plus optional `NiceGUI` (`[admin]` extra) and `aioboto3`
+(`[aws]` extra) when you need the admin dashboard or the AWS-backed
+infrastructure clients.
 
 ### AI & Agent
 
@@ -103,7 +106,7 @@ NiceGUI + asyncpg + aioboto3.
 | **PostgreSQL** + asyncpg | Primary RDBMS |
 | **Taskiq** + SQS / RabbitMQ / InMemory | Async task queue ([why not Celery?](history/archive/001-celery-to-taskiq.md)) |
 | **aiohttp** | Async HTTP client |
-| **aioboto3** | DynamoDB, S3/MinIO, S3 Vectors, Bedrock clients |
+| **aioboto3** (`[aws]` extra) | DynamoDB, S3/MinIO, S3 Vectors clients |
 | **semantic-text-splitter** | Character/token chunking for embedding preprocessing |
 | **Alembic** | DB migrations |
 
