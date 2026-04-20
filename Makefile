@@ -1,4 +1,4 @@
-.PHONY: help setup dev test lint format check clean
+.PHONY: help setup quickstart demo dev test lint format check clean
 
 ## Show available commands
 help:
@@ -11,6 +11,22 @@ help:
 ## Setup development environment
 setup:
 	uv venv && uv sync --group dev && uv run pre-commit install && uv run pre-commit install --hook-type commit-msg
+
+## Zero-config quickstart: SQLite + InMemory broker, no external infra
+quickstart:
+	@if [ ! -f _env/quickstart.env ]; then \
+		echo "→ Creating _env/quickstart.env from template"; \
+		cp _env/quickstart.env.example _env/quickstart.env; \
+	fi
+	@echo "→ Starting FastAPI server on http://127.0.0.1:8001"
+	@echo "  Docs:       http://127.0.0.1:8001/docs-swagger"
+	@echo "  Admin:      http://127.0.0.1:8001/admin (admin / admin)"
+	@echo "  Run demo:   make demo  (in another terminal)"
+	@uv run python run_server_local.py --env quickstart
+
+## Hit the running quickstart server with sample user requests
+demo:
+	@bash scripts/demo.sh
 
 ## Start local development (postgres + server)
 dev:

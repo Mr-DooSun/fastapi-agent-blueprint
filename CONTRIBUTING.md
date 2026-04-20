@@ -4,6 +4,11 @@ Thank you for your interest in contributing! This guide will help you get starte
 
 ## Development Setup
 
+> First time evaluating the project? Run `make quickstart` instead — it
+> boots the server on SQLite with no external infrastructure. See
+> [`docs/quickstart.md`](docs/quickstart.md). The setup below is for
+> actual contribution work against PostgreSQL + migrations.
+
 ```bash
 # Clone the repository
 git clone https://github.com/Mr-DooSun/fastapi-agent-blueprint.git

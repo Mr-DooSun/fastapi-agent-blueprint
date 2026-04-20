@@ -17,6 +17,7 @@ from src._core.exceptions.exception_handlers import (
     http_exception_handler,
     validation_exception_handler,
 )
+from src._core.infrastructure.database.database import Base, Database
 from src._core.infrastructure.discovery import discover_domains
 
 
@@ -42,6 +43,12 @@ def bootstrap_app(app: FastAPI) -> None:
     # Bootstrap DI container (auto-discovery)
     server_container = create_server_container()
     app.state.container = server_container
+
+    # Quickstart convenience: auto-create tables from model metadata so that
+    # `make quickstart` works with an empty SQLite file and no migrations.
+    # Real environments (local/dev/stg/prod) must use Alembic.
+    if settings.env.lower() == "quickstart":
+        _auto_create_tables(server_container.core_container.database())
 
     # Wire core container for health check DI
     # (core is not a domain — no separate bootstrap file needed)
@@ -74,3 +81,16 @@ def _bootstrap_domains(app: FastAPI, server_container) -> None:
             database=server_container.core_container.database(),
             **{f"{name}_container": domain_container},
         )
+
+
+def _auto_create_tables(database: Database) -> None:
+    """Create tables from SQLAlchemy metadata — quickstart only.
+
+    Invoked at bootstrap time when ``ENV=quickstart`` so a fresh SQLite file
+    immediately has the schema needed for the `user` domain (and any other
+    domain whose models are registered on ``Base.metadata``).
+
+    Real deployments use Alembic migrations; calling ``create_all`` against
+    a non-sqlite engine would mask migration drift.
+    """
+    Base.metadata.create_all(database.engine)

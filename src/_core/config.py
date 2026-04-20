@@ -4,7 +4,7 @@ from typing import Self
 from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-KNOWN_ENVS = ("local", "dev", "stg", "prod")
+KNOWN_ENVS = ("quickstart", "local", "dev", "stg", "prod")
 KNOWN_ENGINES = ("postgresql", "mysql", "sqlite")
 KNOWN_BROKER_TYPES = ("sqs", "rabbitmq", "inmemory")
 KNOWN_EMBEDDING_PROVIDERS = (
@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     # General
     # ----------------------------------------------------------------
     # Environment (e.g. local, dev, stg, prod)
-    env: str = Field("local", validation_alias=AliasChoices("ENV", "env"))
+    env: str = Field(default="local", validation_alias=AliasChoices("ENV", "env"))
 
     # Taskiq task name prefix (e.g. "my-project.user.test")
     task_name_prefix: str = Field(
@@ -68,20 +68,36 @@ class Settings(BaseSettings):
 
     # ----------------------------------------------------------------
     # Admin Dashboard
+    #
+    # Defaults here are intentionally unsafe ("admin"/"admin") so that
+    # `make quickstart` runs with no configuration. They are blocked in
+    # stg/prod by the `_UNSAFE_DEFAULTS` check below; callers in real
+    # deployments must override them via env vars.
     # ----------------------------------------------------------------
-    admin_id: str = Field(validation_alias="ADMIN_ID")
-    admin_password: str = Field(validation_alias="ADMIN_PASSWORD")
-    admin_storage_secret: str = Field(validation_alias="ADMIN_STORAGE_SECRET")
+    admin_id: str = Field(default="admin", validation_alias="ADMIN_ID")
+    admin_password: str = Field(default="admin", validation_alias="ADMIN_PASSWORD")
+    admin_storage_secret: str = Field(
+        default="change-me-in-production", validation_alias="ADMIN_STORAGE_SECRET"
+    )
 
     # ----------------------------------------------------------------
     # Database
+    #
+    # Defaults target the zero-config SQLite path used by `make quickstart`.
+    # For non-sqlite engines, the user/password/host/port/name fields must
+    # all be supplied via env vars. stg/prod additionally reject the
+    # unsafe-password and unsafe-host defaults via `_UNSAFE_DEFAULTS`.
     # ----------------------------------------------------------------
-    database_engine: str = Field(validation_alias="DATABASE_ENGINE")
-    database_user: str = Field(validation_alias="DATABASE_USER")
-    database_password: str = Field(validation_alias="DATABASE_PASSWORD")
-    database_host: str = Field(validation_alias="DATABASE_HOST")
-    database_port: int = Field(validation_alias="DATABASE_PORT")
-    database_name: str = Field(validation_alias="DATABASE_NAME")
+    database_engine: str = Field(default="sqlite", validation_alias="DATABASE_ENGINE")
+    database_user: str = Field(default="postgres", validation_alias="DATABASE_USER")
+    database_password: str = Field(
+        default="postgres", validation_alias="DATABASE_PASSWORD"
+    )
+    database_host: str = Field(default="localhost", validation_alias="DATABASE_HOST")
+    database_port: int = Field(default=5432, validation_alias="DATABASE_PORT")
+    database_name: str = Field(
+        default="./quickstart.db", validation_alias="DATABASE_NAME"
+    )
     database_pool_size: int | None = Field(
         default=None, validation_alias="DATABASE_POOL_SIZE"
     )
@@ -437,7 +453,7 @@ class Settings(BaseSettings):
 
     @property
     def is_dev(self) -> bool:
-        return self.env.lower() in {"dev", "local"}
+        return self.env.lower() in {"quickstart", "dev", "local"}
 
     @property
     def docs_url(self) -> str | None:
