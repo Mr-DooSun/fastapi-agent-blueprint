@@ -1,5 +1,4 @@
 import importlib
-import logging
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -19,8 +18,6 @@ from src._core.exceptions.exception_handlers import (
 )
 from src._core.infrastructure.discovery import discover_domains
 from src._core.infrastructure.persistence.rdb.database import Base, Database
-
-logger = logging.getLogger(__name__)
 
 
 def bootstrap_app(app: FastAPI) -> None:
@@ -77,14 +74,16 @@ def _maybe_bootstrap_admin(app: FastAPI) -> None:
     ``admin`` extra (``uv sync --extra admin``). If it is absent, the server
     still boots; the admin routes simply are not mounted. This keeps the
     #101 acceptance criterion intact for API-only deployments.
+
+    An operator-facing skip log is intentionally omitted until structured
+    logging lands (#9) — at that point the skip path will emit a structured
+    record. Until then the skip is silent; users discover the missing
+    dashboard by hitting ``/admin`` and getting a 404 + the extras table in
+    ``docs/reference.md``.
     """
     try:
         from src._apps.admin.bootstrap import bootstrap_admin
     except ImportError:
-        logger.info(
-            "Admin dashboard not mounted — ``nicegui`` is not installed. "
-            "Install with: uv sync --extra admin",
-        )
         return
 
     bootstrap_admin(app)
