@@ -1,6 +1,6 @@
 # Architecture Conventions
 
-> Last synced: 2026-04-20 via /sync-guidelines
+> Last synced: 2026-04-21 via /sync-guidelines
 > For Absolute Prohibitions, Conversion Patterns, Write DTO criteria, and common commands, refer to AGENTS.md.
 > This file only contains **structural context** that supplements AGENTS.md for Claude.
 
@@ -61,16 +61,17 @@ Key differences from RDB/DynamoDB:
 
 ## Embedding (PydanticAI Adapter)
 - Single `PydanticAIEmbeddingAdapter` replaces per-provider clients (ADR 039)
-- No `providers.Selector` — PydanticAI handles provider abstraction internally
-- `EmbeddingConfig` (frozen dataclass VO) carries model_name + dimension + credentials via DI
-- Provider determined by `model_name` prefix format (e.g., `openai:text-embedding-3-small`)
+- No provider-level Selector — PydanticAI handles provider abstraction internally via `model_name` prefix
+- `CoreContainer.embedding_client` wraps the adapter in `providers.Selector`: enabled → real adapter; disabled → `StubEmbedder` for graceful degradation (ADR 042)
+- `EmbeddingConfig` (frozen dataclass VO) is constructed inside the lazy factory — not a standalone container provider
 - Implements `BaseEmbeddingProtocol` (embed_text, embed_batch, dimension)
 - Dimension auto-derived from model name — `settings.embedding_dimension` is single source of truth
 
 ## LLM (PydanticAI Agent)
 - `build_llm_model()` factory returns PydanticAI Model object from `LLMConfig`
-- `LLMConfig` (frozen dataclass VO) carries model_name + credentials via DI
-- Domain services inject pre-built `llm_model` and create `Agent(model=llm_model)` at init
+- `CoreContainer.llm_model` wraps the factory in `providers.Selector`: enabled → real model; disabled → PydanticAI `TestModel` via `build_stub_llm_model` (or `None` when the `pydantic-ai` extra is uninstalled) (ADR 042)
+- `LLMConfig` (frozen dataclass VO) is constructed inside the lazy factory — not a standalone container provider
+- Domain services inject the Selector-resolved `llm_model` and create `Agent(model=llm_model)` at init; stub propagates transparently
 - Supports OpenAI, Anthropic, Bedrock providers via `model_name` prefix
 - Agents are reusable across requests (create once at service init)
 
