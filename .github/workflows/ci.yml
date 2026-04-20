@@ -67,7 +67,11 @@ jobs:
 
       - name: Run tests
         env:
-          ENV: test
+          ENV: local
+          ADMIN_ID: admin
+          ADMIN_PASSWORD: admin
+          ADMIN_STORAGE_SECRET: ci-test-secret
+          DATABASE_ENGINE: postgresql
           DATABASE_USER: postgres
           DATABASE_PASSWORD: postgres
           DATABASE_HOST: 127.0.0.1
@@ -76,7 +80,7 @@ jobs:
           AWS_SQS_ACCESS_KEY: test
           AWS_SQS_SECRET_KEY: test
           AWS_SQS_URL: http://localhost:4566
-        run: uv run pytest tests/ -v --tb=short --ignore=tests/e2e
+        run: uv run pytest tests/ -v --tb=short
 
   architecture:
     runs-on: ubuntu-latest

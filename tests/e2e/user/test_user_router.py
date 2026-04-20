@@ -7,10 +7,10 @@ from src._apps.server.app import app
 @pytest.mark.asyncio
 async def test_create_user():
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
+        transport=ASGITransport(app=app), base_url="http://localhost"
     ) as client:
         response = await client.post(
-            "/api/user",
+            "/v1/user",
             json={
                 "username": "e2euser",
                 "fullName": "E2E User",
@@ -28,9 +28,9 @@ async def test_create_user():
 @pytest.mark.asyncio
 async def test_get_users():
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
+        transport=ASGITransport(app=app), base_url="http://localhost"
     ) as client:
-        response = await client.get("/api/users")
+        response = await client.get("/v1/users")
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True

@@ -6,7 +6,7 @@
 > This file is auto-extracted/updated from `src/user/` (reference domain) and `src/_core/` (Base classes)
 > when `/sync-guidelines` is run. **Run `/sync-guidelines` instead of editing manually.**
 >
-> Last updated: 2026-04-16
+> Last updated: 2026-04-20
 
 ## Section Index
 §0 Project Scale and Design Philosophy |
@@ -425,10 +425,10 @@ embedding_client = providers.Singleton(
 
 | EMBEDDING_PROVIDER | Model Name Format | Dependency |
 |-------------------|------------------|------------|
-| `openai` | `openai:text-embedding-3-small` | `pydantic-ai`, `tiktoken` (optional extra) |
-| `bedrock` | `bedrock:amazon.titan-embed-text-v2:0` | `pydantic-ai`, `aioboto3` (main) |
-| `google` | `google:text-embedding-004` | `pydantic-ai` |
-| `ollama` | `ollama:nomic-embed-text` | `pydantic-ai` |
+| `openai` | `openai:text-embedding-3-small` | `pydantic-ai` extra (includes `tiktoken`) |
+| `bedrock` | `bedrock:amazon.titan-embed-text-v2:0` | `pydantic-ai` extra, `aioboto3` (main) |
+| `google` | `google:text-embedding-004` | `pydantic-ai-google` extra |
+| `ollama` | `ollama:nomic-embed-text` | `pydantic-ai` extra |
 
 - Single adapter implements `BaseEmbeddingProtocol` (embed_text, embed_batch, dimension)
 - `EmbeddingConfig`: frozen dataclass value object (domain layer) carrying provider+credentials
@@ -460,9 +460,9 @@ llm_model = providers.Singleton(
 
 | LLM_PROVIDER | Model Name Format | Dependency |
 |-------------|------------------|------------|
-| `openai` | `openai:gpt-4o` | `pydantic-ai` |
-| `anthropic` | `anthropic:claude-sonnet-4-20250514` | `pydantic-ai` |
-| `bedrock` | `bedrock:us.anthropic.claude-sonnet-4-20250514-v1:0` | `pydantic-ai`, `aioboto3` |
+| `openai` | `openai:gpt-4o` | `pydantic-ai` extra |
+| `anthropic` | `anthropic:claude-sonnet-4-20250514` | `pydantic-ai-anthropic` extra |
+| `bedrock` | `bedrock:us.anthropic.claude-sonnet-4-20250514-v1:0` | `pydantic-ai` extra, `aioboto3` (main) |
 
 - `LLMConfig`: frozen dataclass value object (domain layer) carrying provider+credentials
 - `build_llm_model()`: factory function returning Provider-specific Model or plain string
@@ -808,7 +808,9 @@ the adapter bridges to `BaseEmbeddingProtocol` and adds OpenAI batch splitting.
 | Bedrock | PydanticAI semaphore (default 5 concurrent) | `aws_*` → `BedrockProvider` |
 | Google / Ollama | Native batch or local | Auto-detect env vars |
 
-- Requires `pydantic-ai` extra: `uv sync --extra pydantic-ai`
+- Requires `pydantic-ai` extra: `uv sync --extra pydantic-ai` (installs `pydantic-ai-slim` + `tiktoken`)
+- Provider-specific extras: `pydantic-ai-anthropic` (Anthropic LLM), `pydantic-ai-google` (Google embedding)
+- Bedrock providers reuse the main `aioboto3` dependency — no extra needed
 - OpenAI batch splitting requires `tiktoken` (included in pydantic-ai extra)
 - Raises domain exceptions: `EmbeddingRateLimitException`, `EmbeddingAuthenticationException`, `EmbeddingInputTooLongException`, `EmbeddingModelNotFoundException`
 - `EmbeddingConfig`: frozen dataclass (domain-layer VO) carrying model_name + dimension + credentials

@@ -1,6 +1,5 @@
 from pydantic import Field
 
-from src._core.application.dtos.base_config import ApiConfig
 from src._core.application.dtos.base_request import BaseRequest
 from src._core.application.dtos.base_response import BaseResponse
 
@@ -13,8 +12,6 @@ class ClassifyRequest(BaseRequest):
         default=None, description="Allowed categories (optional)"
     )
 
-    model_config = ApiConfig
-
 
 class ClassificationResponse(BaseResponse):
     """Response schema for classification result."""
@@ -22,5 +19,3 @@ class ClassificationResponse(BaseResponse):
     category: str
     confidence: float
     reasoning: str
-
-    model_config = ApiConfig

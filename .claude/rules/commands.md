@@ -1,6 +1,6 @@
 # Suggested Commands
 
-> Last synced: 2026-04-16 via /sync-guidelines
+> Last synced: 2026-04-20 via /sync-guidelines
 > Purpose: Quick reference for Claude Code when executing shell commands.
 > Also referenced when running Skills.
 > Makefile targets (`make dev`, `make test`, etc.) are available as shortcuts — see `AGENTS.md` Common Commands.
@@ -18,12 +18,27 @@ python run_worker_local.py --env local
 
 ## Test
 ```bash
-pytest tests/ -v
+pytest tests/ -v                          # SQLite in-memory (default, no infra)
 pytest tests/unit/ -v
 pytest tests/integration/ -v
 pytest tests/e2e/ -v
-pytest tests/integration/ -v -k "dynamo"   # DynamoDB tests only
+pytest tests/integration/ -v -k "dynamo"  # DynamoDB tests only (requires docker dynamodb-local)
+
+# Run against real PostgreSQL (docker-compose.local.yml postgres service)
+make test-pg
+# or manually:
+TEST_DB_ENGINE=postgresql \
+  TEST_DB_USER=postgres TEST_DB_PASSWORD=postgres \
+  TEST_DB_HOST=localhost TEST_DB_PORT=5432 TEST_DB_NAME=postgres \
+  pytest tests/ -v
+
+# Run DynamoDB integration tests against docker dynamodb-local
+make test-dynamo
 ```
+
+- `tests/conftest.py::test_db` switches engine via `TEST_DB_ENGINE` (default `sqlite`)
+- `tests/conftest.py::_override_app_database` (autouse) swaps the running app's `CoreContainer.database` to `test_db`, so e2e tests do not need real PostgreSQL
+- `app.state.container` exposes the wired `DynamicContainer` for fixture overrides
 
 ## Lint / Format
 ```bash
