@@ -1,10 +1,25 @@
-from io import BytesIO
-from typing import BinaryIO
+from __future__ import annotations
 
-from botocore.exceptions import ClientError
+from io import BytesIO
+from typing import TYPE_CHECKING, BinaryIO
 
 from src._core.exceptions.base_exception import BaseCustomException
 from src._core.infrastructure.storage.object_storage_client import ObjectStorageClient
+
+if TYPE_CHECKING:
+    from botocore.exceptions import ClientError
+else:
+    try:
+        from botocore.exceptions import ClientError
+    except ImportError:
+        # ``botocore`` ships with ``boto3`` / ``aioboto3`` (both in the
+        # ``[aws]`` extra). When it is not installed, this module still
+        # imports cleanly so the app boots. Any real ``ObjectStorage``
+        # call path goes through ``ObjectStorageClient`` which raises an
+        # ImportError at construction time pointing at ``uv sync --extra aws``
+        # — so this fallback never actually catches an exception.
+        class ClientError(Exception):
+            pass
 
 
 class ObjectStorage:

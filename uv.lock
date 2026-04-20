@@ -942,17 +942,15 @@ wheels = [
 
 [[package]]
 name = "fastapi-agent-blueprint"
-version = "0.3.0"
+version = "0.4.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "aioboto3" },
     { name = "aiohttp" },
     { name = "aiomysql" },
     { name = "alembic" },
     { name = "asgi-correlation-id" },
     { name = "asyncpg" },
     { name = "bcrypt" },
-    { name = "boto3" },
     { name = "dependency-injector" },
     { name = "email-validator" },
     { name = "fastapi" },
@@ -973,6 +971,12 @@ dependencies = [
 [package.optional-dependencies]
 admin = [
     { name = "nicegui" },
+]
+aws = [
+    { name = "aioboto3" },
+    { name = "boto3" },
+    { name = "types-aiobotocore-dynamodb" },
+    { name = "types-aiobotocore-s3" },
 ]
 openai = [
     { name = "openai" },
@@ -1007,20 +1011,18 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "ruff" },
-    { name = "types-aiobotocore-dynamodb" },
-    { name = "types-aiobotocore-s3" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "aioboto3", specifier = ">=15.4.0" },
+    { name = "aioboto3", marker = "extra == 'aws'", specifier = ">=15.4.0" },
     { name = "aiohttp", specifier = ">=3.13.0" },
     { name = "aiomysql", specifier = ">=0.2.0" },
     { name = "alembic", specifier = ">=1.15.2" },
     { name = "asgi-correlation-id", specifier = ">=4.3.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "bcrypt", specifier = ">=4.3.0" },
-    { name = "boto3", specifier = ">=1.39.12" },
+    { name = "boto3", marker = "extra == 'aws'", specifier = ">=1.39.12" },
     { name = "dependency-injector", specifier = ">=4.46.0" },
     { name = "email-validator", specifier = ">=2.0.0" },
     { name = "fastapi", specifier = ">=0.115.12" },
@@ -1044,9 +1046,11 @@ requires-dist = [
     { name = "taskiq-aws", marker = "extra == 'sqs'", specifier = ">=0.4.0" },
     { name = "tiktoken", marker = "extra == 'openai'", specifier = ">=0.7.0" },
     { name = "tiktoken", marker = "extra == 'pydantic-ai'", specifier = ">=0.7.0" },
+    { name = "types-aiobotocore-dynamodb", marker = "extra == 'aws'", specifier = ">=2.25.0" },
+    { name = "types-aiobotocore-s3", marker = "extra == 'aws'", specifier = ">=2.25.0" },
     { name = "uvicorn", specifier = ">=0.34.1" },
 ]
-provides-extras = ["admin", "sqs", "rabbitmq", "openai", "pydantic-ai", "pydantic-ai-anthropic", "pydantic-ai-google"]
+provides-extras = ["admin", "aws", "sqs", "rabbitmq", "openai", "pydantic-ai", "pydantic-ai-anthropic", "pydantic-ai-google"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1060,8 +1064,6 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=0.23.0" },
     { name = "pytest-cov", specifier = ">=5.0.0" },
     { name = "ruff", specifier = ">=0.15.7" },
-    { name = "types-aiobotocore-dynamodb", specifier = ">=2.25.0" },
-    { name = "types-aiobotocore-s3", specifier = ">=2.25.0" },
 ]
 
 [[package]]

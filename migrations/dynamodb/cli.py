@@ -12,7 +12,14 @@ import argparse
 import sys
 from pathlib import Path
 
-import boto3
+try:
+    import boto3
+except ImportError as exc:
+    raise SystemExit(
+        "[ERROR] Missing optional dependency 'boto3' for DynamoDB migrations. "
+        "Install with: uv sync --extra aws"
+    ) from exc
+
 from dotenv import load_dotenv
 
 # Ensure project root is on sys.path

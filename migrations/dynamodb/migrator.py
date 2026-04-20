@@ -8,9 +8,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from botocore.exceptions import ClientError
+try:
+    from botocore.exceptions import ClientError
+except ImportError as exc:
+    raise SystemExit(
+        "[ERROR] Missing optional dependency 'botocore' for DynamoDB migrations. "
+        "Install with: uv sync --extra aws"
+    ) from exc
 
-from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model import DynamoModel
+from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model import (
+    DynamoModel,
+)
 
 
 def _make_attr_def(name: str) -> dict[str, str]:
@@ -49,9 +57,7 @@ class DynamoDBMigrator:
         attr_defs = [_make_attr_def(meta.partition_key_name)]
 
         if meta.sort_key_name:
-            key_schema.append(
-                _make_key_element(meta.sort_key_name, "RANGE")
-            )
+            key_schema.append(_make_key_element(meta.sort_key_name, "RANGE"))
             attr_defs.append(_make_attr_def(meta.sort_key_name))
 
         params: dict[str, Any] = {
@@ -66,28 +72,19 @@ class DynamoDBMigrator:
             existing_attr_names = {a["AttributeName"] for a in attr_defs}
 
             for gsi in meta.gsi:
-                gsi_key_schema = [
-                    _make_key_element(gsi.partition_key_name, "HASH")
-                ]
+                gsi_key_schema = [_make_key_element(gsi.partition_key_name, "HASH")]
                 if gsi.partition_key_name not in existing_attr_names:
                     attr_defs.append(_make_attr_def(gsi.partition_key_name))
                     existing_attr_names.add(gsi.partition_key_name)
 
                 if gsi.sort_key_name:
-                    gsi_key_schema.append(
-                        _make_key_element(gsi.sort_key_name, "RANGE")
-                    )
+                    gsi_key_schema.append(_make_key_element(gsi.sort_key_name, "RANGE"))
                     if gsi.sort_key_name not in existing_attr_names:
                         attr_defs.append(_make_attr_def(gsi.sort_key_name))
                         existing_attr_names.add(gsi.sort_key_name)
 
-                projection: dict[str, Any] = {
-                    "ProjectionType": gsi.projection_type
-                }
-                if (
-                    gsi.projection_type == "INCLUDE"
-                    and gsi.non_key_attributes
-                ):
+                projection: dict[str, Any] = {"ProjectionType": gsi.projection_type}
+                if gsi.projection_type == "INCLUDE" and gsi.non_key_attributes:
                     projection["NonKeyAttributes"] = gsi.non_key_attributes
 
                 gsi_list.append(
@@ -104,13 +101,10 @@ class DynamoDBMigrator:
         waiter.wait(TableName=table_name)
         print("  [CREATED] " + table_name)
 
-    def _update_gsi(
-        self, table_name: str, meta: Any, table_desc: dict
-    ) -> None:
+    def _update_gsi(self, table_name: str, meta: Any, table_desc: dict) -> None:
         """Compare existing GSIs with model definition and apply changes."""
         existing_gsi = {
-            g["IndexName"]: g
-            for g in table_desc.get("GlobalSecondaryIndexes", [])
+            g["IndexName"]: g for g in table_desc.get("GlobalSecondaryIndexes", [])
         }
         desired_gsi = {g.index_name: g for g in meta.gsi}
 
@@ -126,9 +120,7 @@ class DynamoDBMigrator:
             print("    [DELETE GSI] " + name)
             self.client.update_table(
                 TableName=table_name,
-                GlobalSecondaryIndexUpdates=[
-                    {"Delete": {"IndexName": name}}
-                ],
+                GlobalSecondaryIndexUpdates=[{"Delete": {"IndexName": name}}],
             )
             self._wait_for_table(table_name)
 
@@ -136,20 +128,14 @@ class DynamoDBMigrator:
             gsi = desired_gsi[name]
             print("    [ADD GSI] " + name)
 
-            gsi_key_schema = [
-                _make_key_element(gsi.partition_key_name, "HASH")
-            ]
+            gsi_key_schema = [_make_key_element(gsi.partition_key_name, "HASH")]
             gsi_attr_defs = [_make_attr_def(gsi.partition_key_name)]
 
             if gsi.sort_key_name:
-                gsi_key_schema.append(
-                    _make_key_element(gsi.sort_key_name, "RANGE")
-                )
+                gsi_key_schema.append(_make_key_element(gsi.sort_key_name, "RANGE"))
                 gsi_attr_defs.append(_make_attr_def(gsi.sort_key_name))
 
-            projection: dict[str, Any] = {
-                "ProjectionType": gsi.projection_type
-            }
+            projection: dict[str, Any] = {"ProjectionType": gsi.projection_type}
             if gsi.projection_type == "INCLUDE" and gsi.non_key_attributes:
                 projection["NonKeyAttributes"] = gsi.non_key_attributes
 
@@ -174,9 +160,7 @@ class DynamoDBMigrator:
             return
 
         try:
-            ttl_desc = self.client.describe_time_to_live(
-                TableName=table_name
-            )
+            ttl_desc = self.client.describe_time_to_live(TableName=table_name)
             current = ttl_desc.get("TimeToLiveDescription", {})
             status = current.get("TimeToLiveStatus")
             if status in ("ENABLED", "ENABLING"):
@@ -203,8 +187,7 @@ class DynamoDBMigrator:
     def _gsi_changed(existing: dict, desired: Any) -> bool:
         """Check if a GSI's KeySchema or ProjectionType has changed."""
         existing_keys = {
-            (k["AttributeName"], k["KeyType"])
-            for k in existing["KeySchema"]
+            (k["AttributeName"], k["KeyType"]) for k in existing["KeySchema"]
         }
         desired_keys = {(desired.partition_key_name, "HASH")}
         if desired.sort_key_name:

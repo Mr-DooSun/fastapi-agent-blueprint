@@ -12,7 +12,13 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from botocore.exceptions import ClientError
+try:
+    from botocore.exceptions import ClientError
+except ImportError as exc:
+    raise SystemExit(
+        "[ERROR] Missing optional dependency 'botocore' for S3 Vectors migrations. "
+        "Install with: uv sync --extra aws"
+    ) from exc
 
 from src._core.infrastructure.vectors.vector_model import (
     VectorModel,

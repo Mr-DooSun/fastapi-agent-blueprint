@@ -1,8 +1,18 @@
+from __future__ import annotations
+
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING
 
-import aioboto3
-from types_aiobotocore_s3.client import S3Client as BotoS3Client
+if TYPE_CHECKING:
+    from aioboto3 import Session
+    from types_aiobotocore_s3.client import S3Client as BotoS3Client
+
+
+_AWS_EXTRA_HINT = (
+    "Missing optional dependency 'aioboto3' for object storage (S3/MinIO). "
+    "Install with: uv sync --extra aws"
+)
 
 
 class ObjectStorageClient:
@@ -13,7 +23,12 @@ class ObjectStorageClient:
         region_name: str = "ap-northeast-2",
         endpoint_url: str | None = None,
     ) -> None:
-        self.session = aioboto3.Session(
+        try:
+            import aioboto3
+        except ImportError as exc:
+            raise ImportError(_AWS_EXTRA_HINT) from exc
+
+        self.session: Session = aioboto3.Session(
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_access_key,
             region_name=region_name,

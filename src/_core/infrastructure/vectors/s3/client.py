@@ -2,15 +2,32 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-
-import aioboto3
-from aiobotocore.client import AioBaseClient
-from botocore.exceptions import ClientError
+from typing import TYPE_CHECKING
 
 from src._core.infrastructure.vectors.s3.exceptions import (
     S3VectorException,
     S3VectorIndexNotFoundException,
     S3VectorThrottlingException,
+)
+
+if TYPE_CHECKING:
+    from aioboto3 import Session
+    from aiobotocore.client import AioBaseClient
+    from botocore.exceptions import ClientError
+else:
+    try:
+        from botocore.exceptions import ClientError
+    except ImportError:
+        # ``[aws]`` extra not installed. ``S3VectorClient.__init__`` raises
+        # ImportError with the install hint, so this fallback never catches
+        # a real exception.
+        class ClientError(Exception):
+            pass
+
+
+_AWS_EXTRA_HINT = (
+    "Missing optional dependency 'aioboto3' for S3 Vectors support. "
+    "Install with: uv sync --extra aws"
 )
 
 
@@ -31,7 +48,12 @@ class S3VectorClient:
         secret_access_key: str,
         region_name: str = "us-east-2",
     ) -> None:
-        self.session = aioboto3.Session(
+        try:
+            import aioboto3
+        except ImportError as exc:
+            raise ImportError(_AWS_EXTRA_HINT) from exc
+
+        self.session: Session = aioboto3.Session(
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_access_key,
             region_name=region_name,

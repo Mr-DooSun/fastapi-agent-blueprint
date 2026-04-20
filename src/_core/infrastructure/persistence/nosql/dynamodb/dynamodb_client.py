@@ -2,15 +2,32 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-
-import aioboto3
-from botocore.exceptions import ClientError
-from types_aiobotocore_dynamodb.client import DynamoDBClient as BotoDynamoDBClient
+from typing import TYPE_CHECKING
 
 from src._core.infrastructure.persistence.nosql.dynamodb.exceptions import (
     DynamoDBConditionFailedException,
     DynamoDBException,
     DynamoDBThrottlingException,
+)
+
+if TYPE_CHECKING:
+    from aioboto3 import Session
+    from botocore.exceptions import ClientError
+    from types_aiobotocore_dynamodb.client import DynamoDBClient as BotoDynamoDBClient
+else:
+    try:
+        from botocore.exceptions import ClientError
+    except ImportError:
+        # ``[aws]`` extra not installed. ``DynamoDBClient.__init__`` below
+        # raises ImportError with the install hint, so this fallback never
+        # catches a real exception.
+        class ClientError(Exception):
+            pass
+
+
+_AWS_EXTRA_HINT = (
+    "Missing optional dependency 'aioboto3' for DynamoDB support. "
+    "Install with: uv sync --extra aws"
 )
 
 _THROTTLE_CODES = frozenset(
@@ -33,7 +50,12 @@ class DynamoDBClient:
         region_name: str = "ap-northeast-2",
         endpoint_url: str | None = None,
     ) -> None:
-        self.session = aioboto3.Session(
+        try:
+            import aioboto3
+        except ImportError as exc:
+            raise ImportError(_AWS_EXTRA_HINT) from exc
+
+        self.session: Session = aioboto3.Session(
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_access_key,
             region_name=region_name,

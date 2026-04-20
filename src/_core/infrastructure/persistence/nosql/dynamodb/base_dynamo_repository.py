@@ -5,7 +5,6 @@ import json
 from abc import ABC
 from typing import Any, Generic, TypeVar
 
-from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from pydantic import BaseModel
 
 from src._core.domain.value_objects.cursor_page import CursorPage
@@ -15,6 +14,8 @@ from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_client import 
 )
 from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model import (
     DynamoModel,
+    _get_deserializer,
+    _get_serializer,
 )
 from src._core.infrastructure.persistence.nosql.dynamodb.exceptions import (
     DynamoDBNotFoundException,
@@ -51,8 +52,8 @@ class BaseDynamoRepository(Generic[ReturnDTO], ABC):
         self.dynamodb_client = dynamodb_client
         self.model = model
         self.return_entity = return_entity
-        self._serializer = TypeSerializer()
-        self._deserializer = TypeDeserializer()
+        self._serializer = _get_serializer()
+        self._deserializer = _get_deserializer()
 
     @property
     def table_name(self) -> str:
