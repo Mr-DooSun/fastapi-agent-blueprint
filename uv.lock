@@ -945,7 +945,6 @@ dependencies = [
     { name = "greenlet" },
     { name = "gunicorn" },
     { name = "httpx" },
-    { name = "nicegui" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic-settings" },
     { name = "pymysql" },
@@ -957,6 +956,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+admin = [
+    { name = "nicegui" },
+]
 openai = [
     { name = "openai" },
     { name = "tiktoken" },
@@ -1009,7 +1011,7 @@ requires-dist = [
     { name = "greenlet", specifier = ">=3.2.0" },
     { name = "gunicorn", specifier = ">=23.0.0" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "nicegui", specifier = ">=3.5.0" },
+    { name = "nicegui", marker = "extra == 'admin'", specifier = ">=3.5.0" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.12" },
     { name = "pydantic-ai-slim", marker = "extra == 'pydantic-ai'", specifier = ">=1.39.0" },
@@ -1027,7 +1029,7 @@ requires-dist = [
     { name = "tiktoken", marker = "extra == 'pydantic-ai'", specifier = ">=0.7.0" },
     { name = "uvicorn", specifier = ">=0.34.1" },
 ]
-provides-extras = ["sqs", "rabbitmq", "openai", "pydantic-ai", "pydantic-ai-anthropic", "pydantic-ai-google"]
+provides-extras = ["admin", "sqs", "rabbitmq", "openai", "pydantic-ai", "pydantic-ai-anthropic", "pydantic-ai-google"]
 
 [package.metadata.requires-dev]
 dev = [

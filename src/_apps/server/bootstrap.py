@@ -1,4 +1,5 @@
 import importlib
+import logging
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -6,7 +7,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from src._apps.admin.bootstrap import bootstrap_admin
 from src._apps.server.di.container import create_server_container
 from src._core.application.routers.api import docs_router, health_check_router
 from src._core.config import settings
@@ -19,6 +19,8 @@ from src._core.exceptions.exception_handlers import (
 )
 from src._core.infrastructure.discovery import discover_domains
 from src._core.infrastructure.persistence.rdb.database import Base, Database
+
+logger = logging.getLogger(__name__)
 
 
 def bootstrap_app(app: FastAPI) -> None:
@@ -64,7 +66,27 @@ def bootstrap_app(app: FastAPI) -> None:
     # Bootstrap each domain
     _bootstrap_domains(app=app, server_container=server_container)
 
-    # Bootstrap admin dashboard (NiceGUI)
+    # Bootstrap admin dashboard (NiceGUI) — gated on the ``admin`` extra
+    _maybe_bootstrap_admin(app=app)
+
+
+def _maybe_bootstrap_admin(app: FastAPI) -> None:
+    """Mount the NiceGUI admin dashboard if the ``admin`` extra is installed.
+
+    ``nicegui`` is an optional dependency — installing it is gated behind the
+    ``admin`` extra (``uv sync --extra admin``). If it is absent, the server
+    still boots; the admin routes simply are not mounted. This keeps the
+    #101 acceptance criterion intact for API-only deployments.
+    """
+    try:
+        from src._apps.admin.bootstrap import bootstrap_admin
+    except ImportError:
+        logger.info(
+            "Admin dashboard not mounted — ``nicegui`` is not installed. "
+            "Install with: uv sync --extra admin",
+        )
+        return
+
     bootstrap_admin(app)
 
 
