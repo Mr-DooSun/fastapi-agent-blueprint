@@ -407,25 +407,29 @@ broker = providers.Selector(
 
 ### Embedding Pattern (PydanticAI Adapter)
 
-Embedding uses a single `PydanticAIEmbeddingAdapter` — no `providers.Selector` needed.
+Embedding uses a single `PydanticAIEmbeddingAdapter` — no per-provider `providers.Selector` needed.
 PydanticAI is the abstraction layer; the adapter bridges it to `BaseEmbeddingProtocol`.
 (Background: ADR 039 — "external framework IS the abstraction" pattern from ADR 037)
 
+CoreContainer wraps `embedding_client` in a Selector that returns `StubEmbedder` when `EMBEDDING_PROVIDER` / `EMBEDDING_MODEL` are unset, so consumer domains degrade gracefully (ADR 042):
+
 ```python
 # src/_core/infrastructure/di/core_container.py
-embedding_config = providers.Singleton(
-    EmbeddingConfig,
-    model_name=settings.embedding_model_name or "",
-    dimension=settings.embedding_dimension,
-    api_key=settings.embedding_openai_api_key,
-    aws_access_key_id=settings.embedding_bedrock_access_key,
-    aws_secret_access_key=settings.embedding_bedrock_secret_key,
-    aws_region=settings.embedding_bedrock_region,
-)
+def _embedding_selector() -> str:
+    return "enabled" if settings.embedding_model_name else "disabled"
 
-embedding_client = providers.Singleton(
-    PydanticAIEmbeddingAdapter,
-    embedding_config=embedding_config,
+embedding_client = providers.Selector(
+    _embedding_selector,
+    enabled=providers.Singleton(
+        _build_embedding_client,
+        model_name=settings.embedding_model_name,
+        dimension=settings.embedding_dimension,
+        api_key=settings.embedding_openai_api_key,
+        aws_access_key_id=settings.embedding_bedrock_access_key,
+        aws_secret_access_key=settings.embedding_bedrock_secret_key,
+        aws_region=settings.embedding_bedrock_region,
+    ),
+    disabled=providers.Singleton(_build_stub_embedder, dimension=settings.embedding_dimension),
 )
 ```
 
@@ -445,22 +449,26 @@ embedding_client = providers.Singleton(
 
 LLM uses `build_llm_model()` factory to construct a PydanticAI Model object.
 Domain services receive the pre-built model and create `Agent(model=...)` instances.
-(Background: ADR 037 — PydanticAI Agent pattern)
+(Background: ADR 037 — PydanticAI Agent pattern; ADR 042 — Selector + lazy factory)
+
+CoreContainer wraps `llm_model` in a Selector whose disabled branch returns a PydanticAI `TestModel` (via `build_stub_llm_model`) so any domain that does `Agent(model=core_container.llm_model)` degrades gracefully when `LLM_PROVIDER` / `LLM_MODEL` are unset:
 
 ```python
 # src/_core/infrastructure/di/core_container.py
-llm_config = providers.Singleton(
-    LLMConfig,
-    model_name=settings.llm_model_name or "",
-    api_key=settings.llm_api_key,
-    aws_access_key_id=settings.llm_bedrock_access_key,
-    aws_secret_access_key=settings.llm_bedrock_secret_key,
-    aws_region=settings.llm_bedrock_region,
-)
+def _llm_selector() -> str:
+    return "enabled" if settings.llm_model_name else "disabled"
 
-llm_model = providers.Singleton(
-    build_llm_model,
-    llm_config=llm_config,
+llm_model = providers.Selector(
+    _llm_selector,
+    enabled=providers.Singleton(
+        _build_llm_model,
+        model_name=settings.llm_model_name or "",
+        api_key=settings.llm_api_key,
+        aws_access_key_id=settings.llm_bedrock_access_key,
+        aws_secret_access_key=settings.llm_bedrock_secret_key,
+        aws_region=settings.llm_bedrock_region,
+    ),
+    disabled=providers.Singleton(_build_stub_llm_model),
 )
 ```
 
