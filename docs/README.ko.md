@@ -196,13 +196,34 @@ class ProductService(BaseService[CreateProductRequest, UpdateProductRequest, Pro
 
 ## 아키텍처
 
-```
-Router -> Service(BaseService) -> Repository(BaseRepository) -> DB
-               ^ 단순 CRUD는 이것만으로 충분
+화살표 방향 = **"의존한다"**. Domain 이 중심에 있고 Interface / Infrastructure
+가 Domain 을 향해 의존합니다. UseCase 는 선택 사항 — 단순 CRUD 는 점선
+경로(직접 연결)를 사용합니다.
 
-Router -> UseCase -> Service -> Repository -> DB
-               ^ 복잡한 비즈니스 로직이 필요할 때만 추가
+```mermaid
+flowchart LR
+    subgraph domain["src/{domain}/  (4 DDD layers)"]
+        I["Interface<br/>routers · admin · worker · schemas"]
+        A["Application<br/>use cases — optional"]
+        D["Domain<br/>services · protocols · DTOs · value objects"]
+        Inf["Infrastructure<br/>repositories · models · DI container"]
+        I --> A
+        A --> D
+        Inf --> D
+        I -. direct when no UseCase .-> D
+    end
+
+    Core["src/_core/<br/>Base classes · CoreContainer · shared VOs"]
+    I --> Core
+    A --> Core
+    D --> Core
+    Inf --> Core
+
+    Other["다른 도메인"] -. Protocol 기반 DIP .-> D
 ```
+
+> **전체 다이어그램 + RDB / DynamoDB / S3 Vectors 변종 표:**
+> [`docs/ai/shared/architecture-diagrams.md`](ai/shared/architecture-diagrams.md)
 
 ### 계층별 책임
 
@@ -215,14 +236,42 @@ Router -> UseCase -> Service -> Repository -> DB
 
 ### 데이터 흐름
 
-```
-Write: Request --> Service --> Repository --> Model -> DB
-Read:  Response <-- Service <-- Repository <-- DTO <-- Model
+**Write** — `POST` / `PUT` / `DELETE`
+
+```mermaid
+flowchart LR
+    C[Client] -->|"HTTP + JSON"| R[Router]
+    R -->|"Request schema"| S[Service]
+    S -->|"entity"| Re["Repository<br/>BaseRepository[DTO]"]
+    Re -->|"Model(**dto.model_dump())"| M[ORM Model]
+    M -->|"SQLAlchemy"| DB[(Database)]
 ```
 
-- Request를 Service에 직접 전달 (별도 변환 불필요)
-- Repository가 Model -> DTO 변환 (`model_validate(model, from_attributes=True)`)
-- Router가 DTO -> Response 변환 (`Response(**dto.model_dump(exclude={...}))`)
+**Read** — `GET`
+
+```mermaid
+flowchart LR
+    DB[(Database)] -->|"row"| M[ORM Model]
+    M -->|"DTO.model_validate(from_attributes=True)"| Re[Repository]
+    Re -->|"ReturnDTO"| S[Service]
+    S -->|"ReturnDTO"| R[Router]
+    R -->|"Response(exclude={민감 필드})"| C[Client]
+```
+
+- 필드가 일치하면 Request 를 Service 에 그대로 전달 (별도 DTO 불필요)
+- Model ↔ DTO 변환은 **오직 Repository** 에서만 발생
+- 민감 필드(`password` 등)는 Router 가 Response 로 내보내기 직전에 제거
+
+### 저장소 변종
+
+세 저장소 모두 동일한 흐름 형태를 사용하며, Base 클래스와 영속 객체,
+리스트 반환 타입만 바뀝니다.
+
+| 저장소 | Service base | Repo / Store base | 영속 객체 | 리스트 반환 |
+|---|---|---|---|---|
+| RDB (기본) | `BaseService[Create, Update, DTO]` | `BaseRepository[DTO]` | ORM `Model(Base)` | `(list[DTO], PaginationInfo)` |
+| DynamoDB | `BaseDynamoService[...]` | `BaseDynamoRepository[DTO]` | `DynamoModel` | `CursorPage[DTO]` |
+| S3 Vectors | 도메인 고유 | `BaseS3VectorStore[DTO]` | `S3VectorModel` | `VectorSearchResult[DTO]` |
 
 ### 데이터 객체
 
