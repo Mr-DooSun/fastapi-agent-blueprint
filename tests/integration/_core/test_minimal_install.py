@@ -19,6 +19,7 @@ import importlib.util
 import logging
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from src._core.config import settings
@@ -67,8 +68,8 @@ class TestMinimalInstall:
     def test_admin_routes_absent_when_nicegui_missing(self, clean_optional_env: None):
         """When nicegui is not installed, admin routes are not mounted.
 
-        This assertion is the #104 Part 1 contract. On dev machines that
-        have nicegui installed, it is skipped — the CI minimal-install
+        This is the load-bearing assertion for #104 Part 1. On dev machines
+        that have nicegui installed it is skipped — the CI minimal-install
         job is the authoritative runner.
         """
         from src._apps.server.app import app
@@ -81,16 +82,22 @@ class TestMinimalInstall:
         assert not admin_paths, f"Expected no /admin routes, found: {admin_paths}"
 
     @pytest.mark.skipif(_has_nicegui, reason="nicegui is installed locally")
-    def test_bootstrap_logs_admin_skip(
+    def test_maybe_bootstrap_admin_emits_skip_log(
         self, clean_optional_env: None, caplog: pytest.LogCaptureFixture
     ):
-        """The bootstrap emits an INFO log when skipping admin mount.
+        """``_maybe_bootstrap_admin`` emits an INFO log when skipping.
 
         Users running ``uv sync`` without ``--extra admin`` should see the
-        install hint in logs so the missing dashboard is not silent.
+        install hint in logs so the missing dashboard is not silent. Tests
+        the helper directly rather than via the module-level ``app`` import
+        so the log fires inside this test's ``caplog`` window regardless of
+        which test ran first and whether ``src._apps.server.app`` is already
+        cached in ``sys.modules``.
         """
+        from src._apps.server.bootstrap import _maybe_bootstrap_admin
+
         caplog.set_level(logging.INFO, logger="src._apps.server.bootstrap")
-        from src._apps.server.app import app  # noqa: F401  (triggers bootstrap)
+        _maybe_bootstrap_admin(FastAPI())
 
         assert any(
             "Admin dashboard not mounted" in record.message
