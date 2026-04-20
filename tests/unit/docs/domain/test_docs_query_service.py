@@ -4,8 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src._core.domain.value_objects.rag.chunk import BaseChunkDTO
-from src._core.domain.value_objects.rag.query_answer import QueryAnswer
+from src._core.domain.dtos.rag import BaseChunkDTO, QueryAnswerDTO
 from src.docs.domain.exceptions.docs_exceptions import QueryFailedException
 from src.docs.domain.services.docs_query_service import DocsQueryService
 
@@ -22,7 +21,7 @@ def _chunk(idx: int) -> BaseChunkDTO:
 @pytest.mark.asyncio
 async def test_answer_question_returns_answer_and_count():
     pipeline = MagicMock()
-    answer = QueryAnswer(answer="x", citations=[])
+    answer = QueryAnswerDTO(answer="x", citations=[])
     chunks = [_chunk(0), _chunk(1), _chunk(2)]
     pipeline.answer = AsyncMock(return_value=(answer, chunks))
 
@@ -48,7 +47,7 @@ async def test_answer_question_wraps_exception():
 async def test_passes_filters_and_top_k_to_pipeline():
     pipeline = MagicMock()
     pipeline.answer = AsyncMock(
-        return_value=(QueryAnswer(answer="a", citations=[]), [])
+        return_value=(QueryAnswerDTO(answer="a", citations=[]), [])
     )
     filters = {"source_id": {"$eq": "123"}}
 

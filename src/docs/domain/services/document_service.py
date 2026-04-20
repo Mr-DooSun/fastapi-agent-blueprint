@@ -5,10 +5,10 @@ import logging
 from pydantic import BaseModel, Field
 
 from src._core.common.text_utils import chunk_text
+from src._core.domain.dtos.rag import BaseChunkDTO
 from src._core.domain.protocols.embedding_protocol import BaseEmbeddingProtocol
 from src._core.domain.protocols.vector_store_protocol import BaseVectorStoreProtocol
 from src._core.domain.services.base_service import BaseService
-from src._core.domain.value_objects.rag.chunk import BaseChunkDTO
 from src._core.domain.value_objects.vector_query import VectorQuery
 from src.docs.domain.dtos.document_dto import DocumentDTO
 from src.docs.domain.exceptions.docs_exceptions import IngestionFailedException

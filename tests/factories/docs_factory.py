@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from src._core.domain.value_objects.rag.chunk import BaseChunkDTO
+from src._core.domain.dtos.rag import BaseChunkDTO
 from src.docs.domain.dtos.document_dto import DocumentDTO
 from src.docs.interface.server.schemas.docs_schema import (
     CreateDocumentRequest,

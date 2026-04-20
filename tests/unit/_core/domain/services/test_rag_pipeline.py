@@ -4,9 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from src._core.domain.dtos.rag import BaseChunkDTO, QueryAnswerDTO
 from src._core.domain.services.rag_pipeline import RagPipeline
-from src._core.domain.value_objects.rag.chunk import BaseChunkDTO
-from src._core.domain.value_objects.rag.query_answer import QueryAnswer
 from src._core.domain.value_objects.vector_query import VectorQuery
 from src._core.domain.value_objects.vector_search_result import VectorSearchResult
 
@@ -23,7 +22,7 @@ def _make_chunk(idx: int) -> BaseChunkDTO:
 def _make_pipeline(
     search_items: list[BaseChunkDTO],
     distances: list[float] | None,
-    answer: QueryAnswer | None = None,
+    answer: QueryAnswerDTO | None = None,
 ):
     embedder = AsyncMock()
     embedder.embed_text = AsyncMock(return_value=[0.1, 0.2, 0.3])
@@ -37,7 +36,7 @@ def _make_pipeline(
 
     agent = AsyncMock()
     agent.answer = AsyncMock(
-        return_value=answer or QueryAnswer(answer="final-answer", citations=[])
+        return_value=answer or QueryAnswerDTO(answer="final-answer", citations=[])
     )
 
     pipeline = RagPipeline(
@@ -73,7 +72,7 @@ async def test_pipeline_calls_search_with_vector_query_filters_top_k():
 @pytest.mark.asyncio
 async def test_pipeline_calls_agent_with_chunks_and_returns_tuple():
     chunks = [_make_chunk(0), _make_chunk(1)]
-    expected_answer = QueryAnswer(answer="A", citations=[])
+    expected_answer = QueryAnswerDTO(answer="A", citations=[])
     pipeline, _, _, agent = _make_pipeline(chunks, [0.1, 0.2], answer=expected_answer)
 
     answer, returned_chunks = await pipeline.answer(question="q")
@@ -107,7 +106,7 @@ async def test_pipeline_handles_empty_search_result():
     agent.answer.assert_awaited_once()
     assert agent.answer.call_args.kwargs["context_chunks"] == []
     assert chunks == []
-    assert isinstance(answer, QueryAnswer)
+    assert isinstance(answer, QueryAnswerDTO)
 
 
 @pytest.mark.asyncio

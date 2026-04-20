@@ -3,9 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from src._core.domain.dtos.rag import BaseChunkDTO, QueryAnswerDTO
 from src._core.domain.services.rag_pipeline import RagPipeline
-from src._core.domain.value_objects.rag.chunk import BaseChunkDTO
-from src._core.domain.value_objects.rag.query_answer import QueryAnswer
 from src.docs.domain.exceptions.docs_exceptions import QueryFailedException
 
 logger = logging.getLogger(__name__)
@@ -29,7 +28,7 @@ class DocsQueryService:
         question: str,
         top_k: int = 5,
         filters: dict[str, Any] | None = None,
-    ) -> tuple[QueryAnswer, int]:
+    ) -> tuple[QueryAnswerDTO, int]:
         try:
             answer, chunks = await self._pipeline.answer(
                 question=question, top_k=top_k, filters=filters

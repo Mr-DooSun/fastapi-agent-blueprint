@@ -82,6 +82,14 @@ Key differences from RDB/DynamoDB:
 - **Read-only, single type**: `{Name}DTO` — may include sensitive fields (password, etc.)
 - Create/Update DTO is only created separately when fields differ from Request
 
+### Value Object vs DTO — decision rule
+- **VO (`src/_core/domain/value_objects/`)**: frozen, value-equal, self-validating. Represents a domain concept whose identity IS its fields (e.g. `VectorQuery`, `EmbeddingConfig`, `LLMConfig`, `DynamoKey`, `QueryFilter`).
+  - Prefer `@dataclass(frozen=True)` for config-only VOs (no runtime validation needed).
+  - Use `ValueObject(BaseModel, frozen=True)` base when Pydantic validators are required.
+- **Shared DTO (`src/_core/domain/dtos/`)**: transfer/carrier across layers. Not frozen. Mutable transients allowed (e.g. `RagPipeline` attaches `_distance` on `BaseChunkDTO`). Read-result containers that are intrinsically values AND never mutated (e.g. `CursorPage`, `VectorSearchResult`) stay in `value_objects/` as frozen VOs.
+- **Rule of thumb**: "Can I hand this to another layer and expect it to never change downstream?" — yes → VO (frozen). no → DTO.
+- Suffix `DTO` on class names signals carrier role (ADR 004). VOs keep their domain name without suffix.
+
 ### API Schema (Interface DTO)
 - Location: `src/{domain}/interface/server/schemas/{domain}_schema.py`
 - Inherits `BaseRequest` / `BaseResponse`

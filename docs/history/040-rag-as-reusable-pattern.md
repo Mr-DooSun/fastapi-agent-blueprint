@@ -36,10 +36,10 @@ If `DocumentService.create_data` owns chunk → embed → upsert and `QueryServi
 Split the work along the pattern/consumer seam:
 
 ```
-src/_core/domain/value_objects/rag/
+src/_core/domain/dtos/rag/
 ├── chunk.py                     # BaseChunkDTO
 ├── citation.py                  # CitationDTO
-└── query_answer.py              # QueryAnswer
+└── query_answer.py              # QueryAnswerDTO
 
 src/_core/domain/protocols/
 └── answer_agent_protocol.py     # AnswerAgentProtocol
@@ -72,7 +72,7 @@ class RagPipeline(Generic[TChunk]):
         question: str,
         top_k: int = 5,
         filters: dict[str, Any] | None = None,
-    ) -> tuple[QueryAnswer, list[TChunk]]: ...
+    ) -> tuple[QueryAnswerDTO, list[TChunk]]: ...
 ```
 
 Consumer domains define their own chunk DTO (subclassing `BaseChunkDTO` for extra metadata, or using it directly). Every chunk carries `source_id: str` and `source_title: str` so answer agents can build citations without knowing the consumer's internals.

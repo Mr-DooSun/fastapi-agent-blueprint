@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src._core.common.text_utils import chunk_text
-from src._core.domain.value_objects.rag.chunk import BaseChunkDTO
+from src._core.domain.dtos.rag import BaseChunkDTO
 from src._core.domain.value_objects.vector_search_result import VectorSearchResult
 from src.docs.domain.services.document_service import DocumentService
 from tests.factories.docs_factory import (

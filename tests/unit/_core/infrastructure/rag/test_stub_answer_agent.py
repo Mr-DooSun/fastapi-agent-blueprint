@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from src._core.domain.value_objects.rag.chunk import BaseChunkDTO
+from src._core.domain.dtos.rag import BaseChunkDTO
 from src._core.infrastructure.rag.stub_answer_agent import StubAnswerAgent
 
 

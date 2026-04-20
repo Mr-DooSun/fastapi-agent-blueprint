@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from src._core.domain.value_objects.rag.chunk import BaseChunkDTO
+from src._core.domain.dtos.rag import BaseChunkDTO
 from src._core.infrastructure.vectors.s3.base_store import BaseS3VectorStore
 from src._core.infrastructure.vectors.s3.client import S3VectorClient
 from src._core.infrastructure.vectors.vector_model import VectorData

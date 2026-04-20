@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from src._core.domain.value_objects.rag.chunk import BaseChunkDTO
+from src._core.domain.dtos.rag import BaseChunkDTO
 from src._core.infrastructure.vectors.in_memory.base_store import (
     BaseInMemoryVectorStore,
 )
