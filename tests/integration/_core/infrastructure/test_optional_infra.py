@@ -62,14 +62,17 @@ class TestCoreContainerMinimalBoot:
         container = CoreContainer()
         assert isinstance(container.embedding_client(), StubEmbedder)
 
-    def test_llm_model_returns_none_pr1(self, clean_optional_env: None):
-        """PR 1 leaves LLM disabled branch as ``None``.
+    def test_llm_model_returns_stub_when_disabled(self, clean_optional_env: None):
+        """Disabled branch returns a PydanticAI ``TestModel`` (ADR 042 + Part B).
 
-        PR 2 (#101 Part B) replaces this with ``StubLLMModel`` so
-        classification can degrade gracefully. Update this assertion then.
+        Consumer domains (``classification``, ``docs``) that build
+        ``Agent(model=core_container.llm_model)`` can therefore run in
+        ``make quickstart`` without any LLM credentials.
         """
+        from pydantic_ai.models.test import TestModel
+
         container = CoreContainer()
-        assert container.llm_model() is None
+        assert isinstance(container.llm_model(), TestModel)
 
     def test_broker_defaults_to_inmemory(self, clean_optional_env: None):
         from taskiq import InMemoryBroker
@@ -108,10 +111,12 @@ class TestAppBootsWithoutOptionalInfra:
         # Importing triggers ``bootstrap_app`` which exercises every domain's
         # container wiring. If any optional provider's disabled branch blew
         # up (e.g. eagerly importing ``pydantic_ai``), this would fail.
+        from pydantic_ai.models.test import TestModel
+
         from src._apps.server.app import app
 
         assert app is not None
         assert app.state.container is not None
         core = app.state.container.core_container()
         assert core.embedding_client() is not None  # StubEmbedder
-        assert core.llm_model() is None
+        assert isinstance(core.llm_model(), TestModel)  # build_stub_llm_model
