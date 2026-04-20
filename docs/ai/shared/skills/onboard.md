@@ -130,7 +130,7 @@ Reference the ADRs in `docs/history/` directory and convey in narrative form wha
 - Key takeaway: This is the background for the "UseCase is optional" rule. More layers does not mean better architecture
 
 **Story 4: Why IoC Container**
-- Read `docs/history/013-why-ioc-container.md` and convey the key points
+- Read `docs/history/archive/013-why-ioc-container.md` and convey the key points
 - "Inheritance implies an is-a relationship, but Service uses (has-a) Repository, not is-a"
 - "FastAPI Depends() only works in Router -> cannot be reused in Worker"
 - "Container connects Protocol (interface) and implementation at runtime"

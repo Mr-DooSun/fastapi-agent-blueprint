@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-04-20
 - Related issue: #80 (End-to-end RAG example)
-- Related ADRs: [034](034-s3vectors-vectorstore-pattern.md) (Vector store), [035](035-embedding-service-abstraction.md) (Embedding abstraction), [037](037-pydanticai-agent-integration.md) (PydanticAI Agent)
+- Related ADRs: [034](archive/034-s3vectors-vectorstore-pattern.md) (Vector store), [035](archive/035-embedding-service-abstraction.md) (Embedding abstraction), [037](037-pydanticai-agent-integration.md) (PydanticAI Agent)
 
 ## Summary
 

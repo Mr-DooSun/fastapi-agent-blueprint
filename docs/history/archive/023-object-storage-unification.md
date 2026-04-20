@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2025-10
-- Related ADR: [009](009-async-external-clients.md)(Async External Clients)
+- Related ADR: [009](../009-async-external-clients.md)(Async External Clients)
 
 ## Summary
 

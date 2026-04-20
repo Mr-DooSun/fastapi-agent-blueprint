@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-04-02
-- Related ADR: [001](001-celery-to-taskiq.md)(Taskiq), [007](007-di-container-and-app-separation.md)(App Separation), [011](011-3tier-hybrid-architecture.md)(3-Tier Hybrid)
+- Related ADR: [001](001-celery-to-taskiq.md)(Taskiq), [007](../007-di-container-and-app-separation.md)(App Separation), [011](../011-3tier-hybrid-architecture.md)(3-Tier Hybrid)
 
 ## Summary
 

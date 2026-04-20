@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-04-15
 - Related issue: #15
-- Related ADRs: [029](029-broker-abstraction-selector.md)(Selector pattern), [034](034-s3vectors-vectorstore-pattern.md)(VectorStore pattern), [035](035-embedding-service-abstraction.md)(Embedding abstraction)
+- Related ADRs: [029](archive/029-broker-abstraction-selector.md)(Selector pattern), [034](archive/034-s3vectors-vectorstore-pattern.md)(VectorStore pattern), [035](archive/035-embedding-service-abstraction.md)(Embedding abstraction)
 
 ## Summary
 
@@ -19,11 +19,11 @@ To provide shared LLM/agent infrastructure for AI-powered domain services, we ad
 
 | Infrastructure | Selection Pattern | ADR |
 |---------------|-------------------|-----|
-| S3/MinIO | Parameter switching (endpoint_url) | [023](023-object-storage-unification.md) |
-| PostgreSQL/MySQL/SQLite | Parameter switching (engine) | [027](027-flexible-rdb-configuration.md) |
-| SQS/RabbitMQ/InMemory | `providers.Selector` (different classes) | [029](029-broker-abstraction-selector.md) |
-| OpenAI/Bedrock Embedding | `providers.Selector` (different classes) | [035](035-embedding-service-abstraction.md) |
-| S3 Vectors VectorStore | Dedicated pattern (different paradigm) | [034](034-s3vectors-vectorstore-pattern.md) |
+| S3/MinIO | Parameter switching (endpoint_url) | [023](archive/023-object-storage-unification.md) |
+| PostgreSQL/MySQL/SQLite | Parameter switching (engine) | [027](archive/027-flexible-rdb-configuration.md) |
+| SQS/RabbitMQ/InMemory | `providers.Selector` (different classes) | [029](archive/029-broker-abstraction-selector.md) |
+| OpenAI/Bedrock Embedding | `providers.Selector` (different classes) | [035](archive/035-embedding-service-abstraction.md) |
+| S3 Vectors VectorStore | Dedicated pattern (different paradigm) | [034](archive/034-s3vectors-vectorstore-pattern.md) |
 | **PydanticAI Agent** | **No project-level abstraction needed** | **037 (this)** |
 
 ## Problem

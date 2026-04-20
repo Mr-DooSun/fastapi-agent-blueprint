@@ -81,14 +81,14 @@ NiceGUI + asyncpg + aioboto3.
 | **FastAPI** | Async web framework |
 | **Pydantic** 2.x | Data validation & settings |
 | **SQLAlchemy** 2.0 | Async ORM |
-| **dependency-injector** | IoC container ([why?](history/013-why-ioc-container.md)) |
+| **dependency-injector** | IoC container ([why?](history/archive/013-why-ioc-container.md)) |
 
 ### Infrastructure
 
 | Technology | Purpose |
 |---|---|
 | **PostgreSQL** + asyncpg | Primary RDBMS |
-| **Taskiq** + SQS / RabbitMQ / InMemory | Async task queue ([why not Celery?](history/001-celery-to-taskiq.md)) |
+| **Taskiq** + SQS / RabbitMQ / InMemory | Async task queue ([why not Celery?](history/archive/001-celery-to-taskiq.md)) |
 | **aiohttp** | Async HTTP client |
 | **aioboto3** | DynamoDB, S3/MinIO, S3 Vectors, Bedrock clients |
 | **semantic-text-splitter** | Character/token chunking for embedding preprocessing |
@@ -98,9 +98,9 @@ NiceGUI + asyncpg + aioboto3.
 
 | Technology | Purpose |
 |---|---|
-| **Ruff** | Linting + formatting ([replaces 6 tools](history/012-ruff-migration.md)) |
+| **Ruff** | Linting + formatting ([replaces 6 tools](history/archive/012-ruff-migration.md)) |
 | **pre-commit** | Git hook automation + architecture enforcement |
-| **UV** | Python package management ([why not Poetry?](history/005-poetry-to-uv.md)) |
+| **UV** | Python package management ([why not Poetry?](history/archive/005-poetry-to-uv.md)) |
 | **NiceGUI** | Admin dashboard UI |
 
 ---
@@ -285,14 +285,20 @@ for the live view.
 ## Selected ADRs
 
 Every technical choice in this project is captured as an ADR.
-[View all 40 ADRs →](history/README.md)
+The 13 load-bearing decisions a contributor must understand live at
+[`docs/history/README.md`](history/README.md); historical / superseded / tooling decisions
+are preserved under [`docs/history/archive/`](history/archive/).
 
 | # | Title |
 |---|---|
+| [003](history/003-response-request-pattern.md) | Response/Request pattern |
 | [004](history/004-dto-entity-responsibility.md) | DTO/Entity responsibility redefined |
 | [006](history/006-ddd-layered-architecture.md) | Domain-driven layered architecture |
 | [007](history/007-di-container-and-app-separation.md) | DI container hierarchy and app separation |
 | [011](history/011-3tier-hybrid-architecture.md) | 3-tier hybrid architecture |
-| [012](history/012-ruff-migration.md) | Ruff adoption |
-| [013](history/013-why-ioc-container.md) | Why IoC container over inheritance |
+| [017](history/017-exception-handling-strategy.md) | Exception handling strategy |
+| [019](history/019-domain-auto-discovery.md) | Domain auto-discovery |
+| [037](history/037-pydanticai-agent-integration.md) | PydanticAI Agent integration |
 | [039](history/039-pydantic-ai-embedder-transition.md) | PydanticAI embedder transition |
+| [040](history/040-rag-as-reusable-pattern.md) | RAG as a reusable `_core` pattern |
+| [041](history/041-vector-backends-consolidation.md) | Multi-backend infrastructure layout |

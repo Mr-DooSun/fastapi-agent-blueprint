@@ -41,7 +41,7 @@ When fields match, Request is passed directly to Service — creating a separate
 ## Terminology
 
 - **Request/Response**: API communication schema (`interface/server/schemas/`)
-- **Payload**: Worker message contract schema (`interface/worker/payloads/`) — background: [ADR 016](docs/history/016-worker-payload-schema.md)
+- **Payload**: Worker message contract schema (`interface/worker/payloads/`) — background: [ADR 016](docs/history/archive/016-worker-payload-schema.md)
 - **DTO**: Internal data carrier between layers — Repository → Router (`domain/dtos/`)
 - **Model**: DB table mapping, never exposed outside Repository (`infrastructure/database/models/`)
 - **DynamoModel**: DynamoDB table mapping, never exposed outside Repository (`infrastructure/dynamodb/models/`)
