@@ -162,6 +162,6 @@ def create_server_container():
 
 ## Follow-up
 
-- Celery was later replaced with Taskiq ([001](001-celery-to-taskiq.md)), which also changed the Worker app structure
+- Celery was later replaced with Taskiq ([001](archive/001-celery-to-taskiq.md)), which also changed the Worker app structure
 - consumer was renamed to worker (done together in commit `aafdcd4`)
 - Domain auto-discovery system introduced in #57, eliminating the need to modify containers in `_apps/` when adding new domains ([019](019-domain-auto-discovery.md))

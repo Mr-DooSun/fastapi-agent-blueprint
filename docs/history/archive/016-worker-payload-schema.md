@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-04-06
 - Related issue: #37
-- Related ADR: [003](003-response-request-pattern.md)(Response/Request Pattern), [004](004-dto-entity-responsibility.md)(DTO/Entity Responsibility)
+- Related ADR: [003](../003-response-request-pattern.md)(Response/Request Pattern), [004](../004-dto-entity-responsibility.md)(DTO/Entity Responsibility)
 
 ## Summary
 

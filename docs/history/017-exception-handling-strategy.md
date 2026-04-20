@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2025-09 ~ 2026-03
 - Related issue: #32
-- Related ADR: [003](003-response-request-pattern.md)(Response/Request Pattern), [008](008-deploy-env-separation.md)(Environment Configuration)
+- Related ADR: [003](003-response-request-pattern.md)(Response/Request Pattern), [008](archive/008-deploy-env-separation.md)(Environment Configuration)
 
 ## Summary
 

@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-03-23
 - Related Issues: #21
-- Related ADRs: 007-di-container-and-app-separation.md (supplementary)
+- Related ADRs: ../007-di-container-and-app-separation.md (supplementary)
 
 ## Summary
 

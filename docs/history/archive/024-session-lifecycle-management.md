@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2025-08 ~ 2025-10
-- Related ADR: [011](011-3tier-hybrid-architecture.md)(3-Tier Hybrid Architecture), [013](013-why-ioc-container.md)(IoC Container)
+- Related ADR: [011](../011-3tier-hybrid-architecture.md)(3-Tier Hybrid Architecture), [013](013-why-ioc-container.md)(IoC Container)
 
 ## Summary
 

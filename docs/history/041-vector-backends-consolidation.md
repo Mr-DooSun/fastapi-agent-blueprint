@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-04-20
 - Related issue: #80 (End-to-end RAG example)
-- Supersedes layout from: [ADR 006](006-ddd-layered-architecture.md) (Per-domain layered architecture, unaffected but infrastructure sibling layout evolved), [ADR 034](034-s3vectors-vectorstore-pattern.md) (S3 Vectors layout)
+- Supersedes layout from: [ADR 006](006-ddd-layered-architecture.md) (Per-domain layered architecture, unaffected but infrastructure sibling layout evolved), [ADR 034](archive/034-s3vectors-vectorstore-pattern.md) (S3 Vectors layout)
 
 ## Summary
 

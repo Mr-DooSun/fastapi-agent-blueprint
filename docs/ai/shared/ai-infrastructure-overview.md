@@ -26,8 +26,8 @@ PydanticAI Agent execution
 | Component | Choice | Why | ADR |
 |-----------|--------|-----|-----|
 | Agent Framework | PydanticAI v1.0+ | Pydantic-native structured output, OTEL standard, FastAPI DI philosophy, v1.0 stable | [037](../../docs/history/037-pydanticai-agent-integration.md) |
-| Observability | Langfuse (self-hosted) | MIT full OSS, tracing + prompt mgmt + cost API — only tool covering all three | [038](../../docs/history/038-llm-observability-dual-path.md) |
-| Customer Billing | Self-owned `ai_usage` domain | Business-critical data cannot depend on external system | [038](../../docs/history/038-llm-observability-dual-path.md) |
+| Observability | Langfuse (self-hosted) | MIT full OSS, tracing + prompt mgmt + cost API — only tool covering all three | [038](../../docs/history/archive/038-llm-observability-dual-path.md) |
+| Customer Billing | Self-owned `ai_usage` domain | Business-critical data cannot depend on external system | [038](../../docs/history/archive/038-llm-observability-dual-path.md) |
 
 ### Rejected Alternatives
 
@@ -72,7 +72,7 @@ Issue #15 (PydanticAI Core)
 - `src/_core/infrastructure/llm/exceptions.py` — `LLMException` hierarchy
 - `src/classification/` — Prototype AI domain (full domain scaffold)
 - `docs/history/037-pydanticai-agent-integration.md`
-- `docs/history/038-llm-observability-dual-path.md`
+- `docs/history/archive/038-llm-observability-dual-path.md`
 
 ### Issue A: Langfuse OTEL + Prompt Management
 

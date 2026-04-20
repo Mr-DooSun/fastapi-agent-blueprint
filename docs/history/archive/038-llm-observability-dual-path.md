@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-04-15
 - Related issue: #15 (design), subsequent issues for Langfuse and AI Usage implementation
-- Related ADRs: [037](037-pydanticai-agent-integration.md)(PydanticAI), [029](029-broker-abstraction-selector.md)(Selector pattern), [035](035-embedding-service-abstraction.md)(Embedding abstraction)
+- Related ADRs: [037](../037-pydanticai-agent-integration.md)(PydanticAI), [029](029-broker-abstraction-selector.md)(Selector pattern), [035](035-embedding-service-abstraction.md)(Embedding abstraction)
 
 ## Summary
 

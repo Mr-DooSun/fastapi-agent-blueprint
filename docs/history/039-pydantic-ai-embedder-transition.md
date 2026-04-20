@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-04-15
 - Related issue: #15 (PydanticAI integration)
-- Related ADRs: [035](035-embedding-service-abstraction.md)(Embedding abstraction), [037](037-pydanticai-agent-integration.md)(PydanticAI Agent)
+- Related ADRs: [035](archive/035-embedding-service-abstraction.md)(Embedding abstraction), [037](037-pydanticai-agent-integration.md)(PydanticAI Agent)
 
 ## Summary
 
