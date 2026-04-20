@@ -24,7 +24,13 @@ repos:
       - id: mixed-line-ending
         args: ["--fix=lf"]
 
-  # 2. Ruff: linting + formatting (integrates pyupgrade, autoflake, isort, Black, flake8, bandit)
+  # 2. Gitleaks: block credentials from reaching git at commit time
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  # 3. Ruff: linting + formatting (integrates pyupgrade, autoflake, isort, Black, flake8, bandit)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.7
     hooks:
