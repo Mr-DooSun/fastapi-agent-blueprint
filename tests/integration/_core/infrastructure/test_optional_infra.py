@@ -17,11 +17,15 @@ clients; they only verify the container's wiring.
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
 
 from src._core.config import settings
 from src._core.infrastructure.di.core_container import CoreContainer
 from src._core.infrastructure.rag.stub_embedder import StubEmbedder
+
+_has_pydantic_ai = importlib.util.find_spec("pydantic_ai") is not None
 
 
 @pytest.fixture
@@ -63,16 +67,24 @@ class TestCoreContainerMinimalBoot:
         assert isinstance(container.embedding_client(), StubEmbedder)
 
     def test_llm_model_returns_stub_when_disabled(self, clean_optional_env: None):
-        """Disabled branch returns a PydanticAI ``TestModel`` (ADR 042 + Part B).
+        """Disabled branch returns a PydanticAI ``TestModel`` when the
+        ``pydantic-ai`` extra is installed; otherwise ``None``.
 
-        Consumer domains (``classification``, ``docs``) that build
-        ``Agent(model=core_container.llm_model)`` can therefore run in
-        ``make quickstart`` without any LLM credentials.
+        ``build_stub_llm_model`` is deliberately defensive — the
+        acceptance criterion for #101 is "app boots with optional
+        extras uninstalled". With pydantic-ai present, the stub lets
+        ``classification`` / ``docs`` round-trip under ``make quickstart``
+        with no LLM credentials (ADR 042 + Part B).
         """
-        from pydantic_ai.models.test import TestModel
-
         container = CoreContainer()
-        assert isinstance(container.llm_model(), TestModel)
+        llm = container.llm_model()
+
+        if _has_pydantic_ai:
+            from pydantic_ai.models.test import TestModel
+
+            assert isinstance(llm, TestModel)
+        else:
+            assert llm is None
 
     def test_broker_defaults_to_inmemory(self, clean_optional_env: None):
         from taskiq import InMemoryBroker
@@ -111,12 +123,17 @@ class TestAppBootsWithoutOptionalInfra:
         # Importing triggers ``bootstrap_app`` which exercises every domain's
         # container wiring. If any optional provider's disabled branch blew
         # up (e.g. eagerly importing ``pydantic_ai``), this would fail.
-        from pydantic_ai.models.test import TestModel
-
         from src._apps.server.app import app
 
         assert app is not None
         assert app.state.container is not None
         core = app.state.container.core_container()
         assert core.embedding_client() is not None  # StubEmbedder
-        assert isinstance(core.llm_model(), TestModel)  # build_stub_llm_model
+
+        llm = core.llm_model()
+        if _has_pydantic_ai:
+            from pydantic_ai.models.test import TestModel
+
+            assert isinstance(llm, TestModel)
+        else:
+            assert llm is None
