@@ -544,6 +544,9 @@ tests/unit/order/test_order_service.py::test_update_order         PASSED
 
 ## Next
 
+- **Browse more patterns** — [`examples/`](../../examples/) has small
+  self-contained apps contributors can read and paste: CRUD, worker
+  tasks, cross-domain dependencies, minimal LLM agent.
 - **Add a background job** — same domain, new interface. See
   [`add-worker-task`](../ai-development.md) skill or
   [`src/user/interface/worker/`](../../src/user/interface/worker/).

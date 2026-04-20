@@ -146,7 +146,18 @@ Use the built-in Claude Code skill:
 /new-domain {name}
 ```
 
-Or follow the [manual steps in the README](README.md#adding-a-new-domain).
+Or follow the [10-minute tutorial](docs/tutorial/first-domain.md) which
+walks both the harness-assisted and manual paths side-by-side.
+
+## Contributing an Example
+
+Small pattern-focused apps live under [`examples/`](examples/). Each
+example is scoped to one pattern (CRUD, worker task, cross-domain link,
+LLM agent) and is mirrored by a `good first issue` on the tracker.
+
+Start at [`examples/README.md`](examples/README.md) — it covers the
+layout expectation, the "copy into `src/` to run" workflow, and the
+acceptance criteria every example PR must meet.
 
 ## Running Tests
 

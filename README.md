@@ -221,6 +221,7 @@ Full table and setup guide: [`docs/ai-development.md`](docs/ai-development.md).
 |---|---|
 | Spin it up and poke around | [`docs/quickstart.md`](docs/quickstart.md) |
 | Build a real domain, end-to-end | [`docs/tutorial/first-domain.md`](docs/tutorial/first-domain.md) |
+| See small, pattern-focused example apps | [`examples/`](examples/) |
 | Understand the architecture in depth | [`docs/ai/shared/architecture-diagrams.md`](docs/ai/shared/architecture-diagrams.md) · [`AGENTS.md`](AGENTS.md) |
 | Set up Claude Code or Codex CLI | [`docs/ai-development.md`](docs/ai-development.md) |
 | Add a domain by hand (no AI tools) | [`docs/tutorial/first-domain.md`](docs/tutorial/first-domain.md) (Path B) |
@@ -243,7 +244,8 @@ Full table and setup guide: [`docs/ai-development.md`](docs/ai-development.md).
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for dev setup, coding guidelines,
 and the PR workflow. Newcomers — check the
 [`good first issue`](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
-label.
+label; the small apps tracked under [`examples/`](examples/) are a
+low-friction place to land your first PR.
 
 ## License
 

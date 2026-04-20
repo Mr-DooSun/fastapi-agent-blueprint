@@ -224,6 +224,7 @@ Codex CLI 를 쓴다면 `/` 대신 `$`. 하네스 없이 손으로 만들고 싶
 |---|---|
 | 일단 띄워보기 | [`docs/quickstart.md`](quickstart.md) |
 | 도메인 하나 end-to-end 로 만들기 | [`docs/tutorial/first-domain.md`](tutorial/first-domain.md) |
+| 작은 패턴 중심 예제 앱 둘러보기 | [`examples/`](../examples/) |
 | 아키텍처를 깊이 이해 | [`docs/ai/shared/architecture-diagrams.md`](ai/shared/architecture-diagrams.md) · [`AGENTS.md`](../AGENTS.md) |
 | Claude Code / Codex CLI 설정 | [`docs/ai-development.ko.md`](ai-development.ko.md) |
 | 도메인을 수동으로 추가 (AI 도구 없이) | [`docs/tutorial/first-domain.md`](tutorial/first-domain.md) (Path B) |
@@ -246,7 +247,8 @@ Codex CLI 를 쓴다면 `/` 대신 `$`. 하네스 없이 손으로 만들고 싶
 개발 환경 설정, 코딩 가이드라인, PR 워크플로우는
 [`CONTRIBUTING.md`](../CONTRIBUTING.md) 를 참고하세요. 새로 오신 분은
 [`good first issue`](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
-라벨을 먼저 확인해주세요.
+라벨을 먼저 확인해주세요. [`examples/`](../examples/) 아래 작은 예제
+앱들이 첫 PR을 내기 좋은 저마찰 진입점입니다.
 
 ## License
 
