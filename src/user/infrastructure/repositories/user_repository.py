@@ -1,5 +1,5 @@
-from src._core.infrastructure.database.base_repository import BaseRepository
-from src._core.infrastructure.database.database import Database
+from src._core.infrastructure.persistence.rdb.base_repository import BaseRepository
+from src._core.infrastructure.persistence.rdb.database import Database
 from src.user.domain.dtos.user_dto import UserDTO
 from src.user.infrastructure.database.models.user_model import UserModel
 

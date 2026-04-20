@@ -9,7 +9,7 @@ class BaseEmbeddingProtocol:
     Domain services inject this protocol directly.
 
     ``dimension`` exposes the vector size so that callers
-    (e.g. ``S3VectorModelMeta``) can align index configuration.
+    (e.g. ``VectorModelMeta``) can align index configuration.
     """
 
     @property

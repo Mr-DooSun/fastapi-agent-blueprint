@@ -176,7 +176,7 @@ class UpdateOrderRequest(BaseRequest):
 from sqlalchemy import DateTime, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src._core.infrastructure.database.database import Base
+from src._core.infrastructure.persistence.rdb.database import Base
 
 
 class OrderModel(Base):
@@ -197,8 +197,8 @@ class OrderModel(Base):
 `src/order/infrastructure/repositories/order_repository.py`
 
 ```python
-from src._core.infrastructure.database.base_repository import BaseRepository
-from src._core.infrastructure.database.database import Database
+from src._core.infrastructure.persistence.rdb.base_repository import BaseRepository
+from src._core.infrastructure.persistence.rdb.database import Database
 from src.order.domain.dtos.order_dto import OrderDTO
 from src.order.infrastructure.database.models.order_model import OrderModel
 
@@ -343,7 +343,7 @@ async def delete_order_by_id(
 
 from fastapi import FastAPI
 
-from src._core.infrastructure.database.database import Database
+from src._core.infrastructure.persistence.rdb.database import Database
 from src.order.infrastructure.di.order_container import OrderContainer
 from src.order.interface.server.routers import order_router
 

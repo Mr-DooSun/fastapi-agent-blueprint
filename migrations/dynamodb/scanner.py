@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src._core.infrastructure.dynamodb.dynamodb_model import DynamoModel
+    from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model import DynamoModel
 
 
 def scan_dynamo_models(src_root: Path) -> list[type[DynamoModel]]:
@@ -20,7 +20,7 @@ def scan_dynamo_models(src_root: Path) -> list[type[DynamoModel]]:
     Scans ``{domain}/infrastructure/dynamodb/models/`` for each domain
     discovered by the same convention as ``discover_domains()``.
     """
-    from src._core.infrastructure.dynamodb.dynamodb_model import (
+    from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model import (
         DynamoModel as BaseDynamoModel,
     )
 

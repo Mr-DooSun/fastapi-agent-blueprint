@@ -1,6 +1,6 @@
 """S3 Vectors index migrator.
 
-Creates and manages indexes based on S3VectorModel definitions.
+Creates and manages indexes based on VectorModel definitions.
 Uses sync boto3 (index management is a one-time operation).
 
 Adapted from proj-ai-courseware-backend S3VectorIndexMigrator,
@@ -14,9 +14,9 @@ from typing import Any
 
 from botocore.exceptions import ClientError
 
-from src._core.infrastructure.s3vectors.s3vector_model import (
-    S3VectorModel,
-    S3VectorModelMeta,
+from src._core.infrastructure.vectors.vector_model import (
+    VectorModel,
+    VectorModelMeta,
 )
 
 
@@ -27,9 +27,9 @@ class S3VectorMigrator:
         self.client = client
         self.bucket_name = bucket_name
 
-    def migrate_model(self, model_cls: type[S3VectorModel]) -> None:
-        """Create or update the index for a S3VectorModel subclass."""
-        meta = model_cls.__s3vector_meta__
+    def migrate_model(self, model_cls: type[VectorModel]) -> None:
+        """Create or update the index for a VectorModel subclass."""
+        meta = model_cls.__vector_meta__
 
         try:
             response = self.client.get_index(
@@ -57,9 +57,9 @@ class S3VectorMigrator:
         response = self.client.list_indexes(vectorBucketName=self.bucket_name)
         return response.get("indexes", [])
 
-    def cleanup_orphaned_indexes(self, model_classes: list[type[S3VectorModel]]) -> int:
+    def cleanup_orphaned_indexes(self, model_classes: list[type[VectorModel]]) -> int:
         """Delete indexes not defined in code."""
-        defined = {m.__s3vector_meta__.index_name for m in model_classes}
+        defined = {m.__vector_meta__.index_name for m in model_classes}
         existing: set[str] = {
             name
             for idx in self.list_indexes()
@@ -84,7 +84,7 @@ class S3VectorMigrator:
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _create_index(self, meta: S3VectorModelMeta) -> None:
+    def _create_index(self, meta: VectorModelMeta) -> None:
         """Create a new S3 Vectors index."""
         params: dict[str, Any] = {
             "vectorBucketName": self.bucket_name,
@@ -114,7 +114,7 @@ class S3VectorMigrator:
             print("  [WARN] Delete failed for " + index_name + ": " + str(e))
 
     def _index_needs_update(
-        self, existing: dict[str, Any], meta: S3VectorModelMeta
+        self, existing: dict[str, Any], meta: VectorModelMeta
     ) -> bool:
         """Compare existing index with model definition."""
         if existing.get("dataType", "").lower() != meta.data_type.lower():

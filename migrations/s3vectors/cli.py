@@ -84,7 +84,7 @@ def main() -> None:
 
     print(f"[INFO] Found {len(models)} vector model(s):")
     for model in models:
-        print(f"  - {model.__name__} -> {model.__s3vector_meta__.index_name}")
+        print(f"  - {model.__name__} -> {model.__vector_meta__.index_name}")
 
     for model in models:
         print(f"\n[MIGRATE] {model.__name__}")

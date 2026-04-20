@@ -120,14 +120,14 @@ LangChain uses `Document(page_content, metadata)` as the universal data unit. We
 ### 5. Backend-specific infrastructure directory
 
 ```
-infrastructure/s3vectors/    # not infrastructure/vector/
+infrastructure/vectors/    # not infrastructure/vector/
 ```
 
 Named after the backend (like `infrastructure/dynamodb/`), not the concept. When pgvector is added, it goes in `infrastructure/pgvector/`. This prevents confusion about which code is generic vs backend-specific.
 
-### 6. S3VectorModel for storage serialization
+### 6. VectorModel for storage serialization
 
-`S3VectorModel` is the infrastructure serialization model (like `DynamoModel`). It handles `to_s3vector()` / `from_s3vector()` conversion and is never exposed outside the store. Domain code only sees DTOs.
+`VectorModel` is the infrastructure serialization model (like `DynamoModel`). It handles `to_s3vector()` / `from_s3vector()` conversion and is never exposed outside the store. Domain code only sees DTOs.
 
 ## Rationale
 

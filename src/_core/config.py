@@ -170,6 +170,15 @@ class Settings(BaseSettings):
     )
 
     # ----------------------------------------------------------------
+    # Vector Store backend selector
+    # Values: ``inmemory`` (default, process-local) | ``s3vectors``.
+    # Domain containers use this to pick between InMemory and S3 backends.
+    # ----------------------------------------------------------------
+    vector_store_type: str | None = Field(
+        default=None, validation_alias="VECTOR_STORE_TYPE"
+    )
+
+    # ----------------------------------------------------------------
     # Message Broker
     # ----------------------------------------------------------------
     broker_type: str | None = Field(default=None, validation_alias="BROKER_TYPE")
@@ -521,7 +530,7 @@ class Settings(BaseSettings):
         """Derive embedding vector dimension from provider and model.
 
         Not user-configurable — determined by the selected model.
-        Used as the single source of truth for ``S3VectorModelMeta.dimension``.
+        Used as the single source of truth for ``VectorModelMeta.dimension``.
         """
         provider = (self.embedding_provider or "openai").lower()
         model = self.embedding_model

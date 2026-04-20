@@ -50,7 +50,7 @@ A factory function with mixed parameters (like the broker's rejected Alternative
 
 ### 3. Dimension must be consistent with vector store indexes
 
-Embedding model dimension must match `S3VectorModelMeta.dimension`. If these drift apart (e.g., switching from OpenAI 1,536 to Bedrock 1,024 without updating the index), vector upserts silently fail or produce corrupted results. Making dimension a separate configuration increases this risk.
+Embedding model dimension must match `VectorModelMeta.dimension`. If these drift apart (e.g., switching from OpenAI 1,536 to Bedrock 1,024 without updating the index), vector upserts silently fail or produce corrupted results. Making dimension a separate configuration increases this risk.
 
 ## Alternatives Considered
 
@@ -70,7 +70,7 @@ Use `langchain-core`'s `Embeddings` ABC and implement providers against it.
 
 The initial implementation included `EMBEDDING_DIMENSION` as a user-settable env var, passed to both clients and the DI container.
 
-**Corrected before merge**: Changing the dimension without re-embedding all existing vectors and recreating indexes causes silent data corruption. Dimension is a property of the model, not an independent configuration. The corrected design auto-derives dimension from the model name via internal lookup tables, and `S3VectorModelMeta.dimension` defaults to `settings.embedding_dimension` (a computed property).
+**Corrected before merge**: Changing the dimension without re-embedding all existing vectors and recreating indexes causes silent data corruption. Dimension is a property of the model, not an independent configuration. The corrected design auto-derives dimension from the model name via internal lookup tables, and `VectorModelMeta.dimension` defaults to `settings.embedding_dimension` (a computed property).
 
 ### D. Direct implementations with Selector pattern (chosen)
 
@@ -111,7 +111,7 @@ Default provider is OpenAI (most accessible). Adding a new provider means adding
 
 ### 4. Dimension auto-derived from model
 
-Each client has an internal `_MODEL_DIMENSIONS` lookup table. The Settings class exposes a computed `embedding_dimension` property (read-only) that resolves provider + model to dimension. `S3VectorModelMeta.dimension` defaults to this property via `default_factory` with lazy import to avoid circular initialization.
+Each client has an internal `_MODEL_DIMENSIONS` lookup table. The Settings class exposes a computed `embedding_dimension` property (read-only) that resolves provider + model to dimension. `VectorModelMeta.dimension` defaults to this property via `default_factory` with lazy import to avoid circular initialization.
 
 | Model | Dimension |
 |-------|-----------|
@@ -150,7 +150,7 @@ Embedding model dimension and vector store index dimension must be identical. If
 
 ```
 EMBEDDING_DIMENSION=1536  →  new vectors are 1536-dim
-S3VectorModelMeta(dimension=1024)  →  index expects 1024-dim
+VectorModelMeta(dimension=1024)  →  index expects 1024-dim
 →  silent mismatch, search quality degrades or API errors
 ```
 

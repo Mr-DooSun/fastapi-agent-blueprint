@@ -29,7 +29,7 @@
   - `test_query_items` — verify CursorPage returned with correct count
   - `test_update_item` — verify changed DTO after update
   - `test_delete_item` — verify True returned after deletion
-- Reference implementation: `tests/unit/_core/infrastructure/dynamodb/test_base_dynamo_repository.py`
+- Reference implementation: `tests/unit/_core/infrastructure/persistence/nosql/dynamodb/test_base_dynamo_repository.py`
 
 ### Integration Tests — `tests/integration/{name}/`
 

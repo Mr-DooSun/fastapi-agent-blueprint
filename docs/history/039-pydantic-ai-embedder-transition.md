@@ -82,7 +82,7 @@ PydanticAI does not auto-split large batches. The adapter preserves the existing
 
 ### 5. Dimension management unchanged
 
-`settings.embedding_dimension` remains the single source of truth, derived from provider + model via lookup tables in `config.py`. Extended to support Google (768) and local models (384-768). `S3VectorModelMeta.dimension` continues to use this property.
+`settings.embedding_dimension` remains the single source of truth, derived from provider + model via lookup tables in `config.py`. Extended to support Google (768) and local models (384-768). `VectorModelMeta.dimension` continues to use this property.
 
 ## Infrastructure Selection Framework (updated)
 

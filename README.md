@@ -50,7 +50,9 @@ make setup        # one-time: venv + deps via uv
 make quickstart   # FastAPI on :8001, SQLite schema auto-created
 ```
 
-In a second terminal, `make demo` exercises the `user` domain with `curl`:
+In a second terminal, `make demo` exercises the `user` domain and
+`make demo-rag` exercises the `docs` domain (end-to-end RAG: upload → chunk
+→ embed → retrieve → answer with citations, zero credentials):
 
 ```text
 → Health check
@@ -181,6 +183,43 @@ One business logic, multiple surfaces:
 | Async worker | Taskiq + SQS / RabbitMQ / InMemory | Stable | Background jobs |
 | Admin UI | NiceGUI | Stable | Auto-generated admin CRUD |
 | MCP server | FastMCP | Planned ([#18](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/18)) | AI agent tool interface |
+
+---
+
+## AI use case: document QA (`src/docs/`)
+
+The blueprint ships a worked RAG example — upload documents, ask questions,
+get structured answers with citations. It proves the building blocks
+(vectors, embeddings, LLM agent, worker, admin) compose end-to-end.
+
+```bash
+make quickstart   # terminal 1
+make demo-rag     # terminal 2 — seeds 3 docs, runs a query
+```
+
+```text
+POST /v1/docs/documents   # chunk → embed → upsert
+POST /v1/docs/query       # embed question → top-k retrieval → agent answer
+GET  /admin/docs          # browse + query playground
+```
+
+Under the hood, the RAG orchestration is a **reusable `_core` pattern**
+([ADR 040](docs/history/040-rag-as-reusable-pattern.md)), not a domain.
+`src/docs/` is one consumer; future AI domains (`support_bot`, `product_qa`)
+inject the same `RagPipeline` instead of duplicating chunking + retrieval
+code:
+
+```python
+# src/_core/domain/services/rag_pipeline.py
+class RagPipeline(Generic[TChunk]):
+    async def answer(self, question, top_k=5, filters=None) -> tuple[QueryAnswer, list[TChunk]]:
+        ...  # embed → vector_store.search → answer_agent.answer
+```
+
+Zero-config path uses a **stub embedder** (keyword bag-of-words) and **stub
+answer agent** (templated response from retrieved chunks), both in
+`src/_core/infrastructure/rag/`. Set `EMBEDDING_PROVIDER` + `LLM_PROVIDER`
+in `.env` to swap in real providers — the pipeline is the same.
 
 ---
 

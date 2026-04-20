@@ -28,7 +28,7 @@ Refer to `docs/ai/shared/drift-checklist.md` for detailed inspection items.
 
 [OK] AGENTS.md: Absolute Prohibitions -- No violations found
 [DRIFT] /new-domain: Base class import -- Path change detected
-  -> Previous: src._core.infrastructure.database.base_repository
+  -> Previous: src._core.infrastructure.persistence.rdb.base_repository
   -> Actual: src._core.database.base_repository
   -> Action: Update `docs/ai/shared/scaffolding-layers.md` and any dependent skill entry points
 

@@ -17,8 +17,8 @@ from src._core.exceptions.exception_handlers import (
     http_exception_handler,
     validation_exception_handler,
 )
-from src._core.infrastructure.database.database import Base, Database
 from src._core.infrastructure.discovery import discover_domains
+from src._core.infrastructure.persistence.rdb.database import Base, Database
 
 
 def bootstrap_app(app: FastAPI) -> None:
