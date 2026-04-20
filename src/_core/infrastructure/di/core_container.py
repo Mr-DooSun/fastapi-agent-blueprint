@@ -159,6 +159,12 @@ def _build_stub_embedder(dimension: int):
     return StubEmbedder(dimension=dimension)
 
 
+def _build_stub_llm_model():
+    from src._core.infrastructure.llm.stub_llm_model import build_stub_llm_model
+
+    return build_stub_llm_model()
+
+
 def _build_llm_model(
     model_name: str,
     api_key: str | None,
@@ -326,8 +332,8 @@ class CoreContainer(containers.DeclarativeContainer):
 
     #########################################################
     # LLM (optional — LLM_PROVIDER + LLM_MODEL)
-    # Disabled → None for PR 1; PR 2 (#101 Part B) swaps in StubLLMModel
-    # so domains like ``classification`` can degrade gracefully.
+    # Disabled → PydanticAI TestModel via ``build_stub_llm_model`` so
+    # domains like ``classification`` can degrade gracefully.
     #########################################################
 
     llm_model = providers.Selector(
@@ -340,5 +346,5 @@ class CoreContainer(containers.DeclarativeContainer):
             aws_secret_access_key=settings.llm_bedrock_secret_key,
             aws_region=settings.llm_bedrock_region,
         ),
-        disabled=providers.Object(None),
+        disabled=providers.Singleton(_build_stub_llm_model),
     )
