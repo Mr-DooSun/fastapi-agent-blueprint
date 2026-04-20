@@ -86,6 +86,7 @@ make quickstart   # zero-config evaluation (SQLite + InMemory broker)
 make demo         # curl walkthrough against running quickstart
 make dev          # real local dev (PostgreSQL via docker-compose)
 make worker
+make diagrams     # regenerate SVGs under docs/assets/architecture/
 ```
 
 ### Test

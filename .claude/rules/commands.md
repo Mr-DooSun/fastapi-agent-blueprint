@@ -65,6 +65,14 @@ uv add <package>
 uv sync
 ```
 
+## Architecture Diagrams
+```bash
+# Regenerate SVG exports under docs/assets/architecture/ from the
+# Mermaid blocks in docs/ai/shared/architecture-diagrams.md. Required
+# whenever that file is edited so CLI/non-Mermaid viewers stay in sync.
+make diagrams
+```
+
 ## Architecture Verification
 ```bash
 # Verify no Domain → Infrastructure imports (should return nothing)
