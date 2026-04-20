@@ -1,5 +1,6 @@
 import traceback
 
+import structlog
 from fastapi import Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -9,6 +10,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from src._core.application.dtos.base_response import ErrorResponse
 from src._core.config import settings
 from src._core.exceptions.base_exception import BaseCustomException
+
+_logger = structlog.stdlib.get_logger("src._core.exceptions")
 
 
 async def validation_exception_handler(
@@ -59,10 +62,17 @@ async def custom_exception_handler(
 
 
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    error_trace = traceback.format_exc()
-    print(error_trace)
+    # Structured exception log — ``format_exc_info`` in the configured
+    # processor pipeline renders the traceback for us, so we just pass
+    # ``exc_info=True``. In dev the renderer is ``ConsoleRenderer`` (human-
+    # readable with coloured traceback); in prod it's ``JSONRenderer``.
+    _logger.exception(
+        "unhandled_exception",
+        exc_info=exc,
+        exception_type=type(exc).__name__,
+    )
 
-    error_details = {"trace": error_trace} if settings.is_dev else None
+    error_details = {"trace": traceback.format_exc()} if settings.is_dev else None
 
     content = jsonable_encoder(
         ErrorResponse(

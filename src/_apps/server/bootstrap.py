@@ -1,5 +1,7 @@
 import importlib
 
+import structlog
+from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,20 +19,37 @@ from src._core.exceptions.exception_handlers import (
     validation_exception_handler,
 )
 from src._core.infrastructure.discovery import discover_domains
+from src._core.infrastructure.logging.configure import configure_logging
+from src._core.infrastructure.logging.request_log_middleware import (
+    RequestLogMiddleware,
+)
 from src._core.infrastructure.persistence.rdb.database import Base, Database
+
+_logger = structlog.stdlib.get_logger("src._apps.server.bootstrap")
 
 
 def bootstrap_app(app: FastAPI) -> None:
+    # Structured logging — configure once before any route or middleware can
+    # emit a record so startup logs (including our own) land in the chosen
+    # pipeline (JSON in stg/prod, coloured console in dev) (#9).
+    configure_logging(
+        log_level=settings.log_level,
+        json_logs=settings.effective_log_json,
+    )
+
     # Exception handlers
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(BaseCustomException, custom_exception_handler)
     app.add_exception_handler(Exception, generic_exception_handler)
 
-    # TrustedHostMiddleware setup
+    # Middlewares — Starlette applies the LAST one added as the OUTERMOST.
+    # ``CorrelationIdMiddleware`` must see the raw request first (so it can
+    # read / generate the X-Request-ID header before the log middleware
+    # tries to bind it), so it is added AFTER the request-log middleware.
+    # Order after registration becomes:
+    #   Request → CorrelationId → RequestLog → CORS → TrustedHost → App
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
-
-    # CORSMiddleware setup
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allow_origins,
@@ -38,6 +57,8 @@ def bootstrap_app(app: FastAPI) -> None:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(RequestLogMiddleware)
+    app.add_middleware(CorrelationIdMiddleware)
 
     # Bootstrap DI container (auto-discovery)
     server_container = create_server_container()
@@ -72,18 +93,19 @@ def _maybe_bootstrap_admin(app: FastAPI) -> None:
 
     ``nicegui`` is an optional dependency — installing it is gated behind the
     ``admin`` extra (``uv sync --extra admin``). If it is absent, the server
-    still boots; the admin routes simply are not mounted. This keeps the
-    #101 acceptance criterion intact for API-only deployments.
-
-    An operator-facing skip log is intentionally omitted until structured
-    logging lands (#9) — at that point the skip path will emit a structured
-    record. Until then the skip is silent; users discover the missing
-    dashboard by hitting ``/admin`` and getting a 404 + the extras table in
-    ``docs/reference.md``.
+    still boots; the admin routes simply are not mounted (the #101 acceptance
+    criterion for API-only deployments). The skip path emits a structured
+    ``admin_mount_skipped`` record so operators who expected the dashboard at
+    ``/admin`` can diagnose from logs without re-reading the README.
     """
     try:
         from src._apps.admin.bootstrap import bootstrap_admin
     except ImportError:
+        _logger.info(
+            "admin_mount_skipped",
+            reason="nicegui_not_installed",
+            install_hint="uv sync --extra admin",
+        )
         return
 
     bootstrap_admin(app)
