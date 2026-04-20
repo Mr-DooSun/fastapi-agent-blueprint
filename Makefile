@@ -8,9 +8,9 @@ help:
 
 .DEFAULT_GOAL := help
 
-## Setup development environment (includes admin extra for the NiceGUI dashboard)
+## Setup development environment (includes admin + aws extras for full dev coverage)
 setup:
-	uv venv && uv sync --group dev --extra admin && uv run pre-commit install && uv run pre-commit install --hook-type commit-msg
+	uv venv && uv sync --group dev --extra admin --extra aws && uv run pre-commit install && uv run pre-commit install --hook-type commit-msg
 
 ## Zero-config quickstart: SQLite + InMemory broker, no external infra
 quickstart:

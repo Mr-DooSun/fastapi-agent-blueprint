@@ -1,16 +1,24 @@
 """Minimal-install boot regression (#104, extends #101 acceptance criterion).
 
 This test is meant to run in a CI environment that has done ``uv sync``
-**without** any optional extras (no ``--extra admin``, no
-``--extra pydantic-ai``, no ``--extra sqs``). The local dev machine
-typically has extras installed and will simply not hit the "admin not
-mounted" branch; the assertions in that case are relaxed accordingly.
+**without** any optional extras (no ``--extra admin``, no ``--extra aws``,
+no ``--extra pydantic-ai``, no ``--extra sqs``). The local dev machine
+typically has extras installed and will simply not hit the "extra not
+installed" branches; assertions in that case are relaxed accordingly.
 
-Acceptance criterion (the load-bearing one for #104 Part 1):
+Acceptance criteria:
 
-- With ``nicegui`` uninstalled, the FastAPI app still imports cleanly,
-  ``bootstrap_app`` logs an INFO message explaining the missing extra,
-  and ``/api/health`` continues to serve. No admin routes are mounted.
+- **Part 1** — With ``nicegui`` uninstalled, the FastAPI app still imports
+  cleanly, ``bootstrap_app`` logs an INFO message explaining the missing
+  extra, and ``/api/health`` continues to serve. No admin routes are
+  mounted.
+- **Part 2** — With ``boto3`` / ``aioboto3`` uninstalled, the FastAPI app
+  still imports cleanly; the storage / DynamoDB / S3 Vectors infrastructure
+  modules also import cleanly (their AWS SDK imports are gated by
+  ``TYPE_CHECKING`` + lazy ``__init__`` imports). The ``CoreContainer``
+  Selector resolves every AWS-backed provider to ``None`` when the matching
+  ``*_TYPE`` / ``*_ACCESS_KEY`` env var is unset, so no AWS SDK import ever
+  fires.
 """
 
 from __future__ import annotations
@@ -78,3 +86,48 @@ class TestMinimalInstall:
             if hasattr(route, "path") and "/admin" in str(route.path)  # type: ignore[attr-defined]
         ]
         assert not admin_paths, f"Expected no /admin routes, found: {admin_paths}"
+
+    def test_aws_infra_modules_import_without_aws_extra(self, clean_optional_env: None):
+        """The 4 AWS-backed infra modules import cleanly without boto3/aioboto3.
+
+        Load-bearing for #104 Part 2 — this is what lets the ``CoreContainer``
+        be constructed and the app boot. The actual ``*Client.__init__``
+        still raises ImportError if called, but the Selector's ``disabled``
+        branch returns ``providers.Object(None)``, so ``__init__`` is never
+        reached when the AWS env vars are unset.
+
+        Executed on both dev (aws installed) and CI minimal-install (aws
+        NOT installed) — the assertion is the same in both cases: import
+        must succeed.
+        """
+        import importlib
+
+        for module_name in (
+            "src._core.infrastructure.storage.object_storage_client",
+            "src._core.infrastructure.storage.object_storage",
+            "src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_client",
+            "src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model",
+            "src._core.infrastructure.vectors.s3.client",
+        ):
+            # Fresh import each call — ``find_spec`` does not load the module
+            module = importlib.import_module(module_name)
+            assert module is not None
+
+    def test_core_container_selectors_return_none_without_aws_env(
+        self, clean_optional_env: None
+    ):
+        """Without AWS env vars, every AWS-backed Selector resolves to None.
+
+        This guarantees the lazy ``aioboto3`` import inside each client's
+        ``__init__`` is never triggered when the matching optional infra is
+        disabled — which is the whole point of the ``[aws]`` extra being
+        optional. Covers storage / DynamoDB / S3 Vectors in one pass.
+        """
+        from src._core.infrastructure.di.core_container import CoreContainer
+
+        container = CoreContainer()
+
+        assert container.storage_client() is None
+        assert container.storage() is None
+        assert container.dynamodb_client() is None
+        assert container.s3vector_client() is None
