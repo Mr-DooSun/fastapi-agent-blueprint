@@ -6,7 +6,7 @@
 > This file is auto-extracted/updated from `src/user/` (reference domain) and `src/_core/` (Base classes)
 > when `/sync-guidelines` is run. **Run `/sync-guidelines` instead of editing manually.**
 >
-> Last updated: 2026-04-21 (v0.4.0 post-release sync)
+> Last updated: 2026-04-22 (ADR 043 responsibility-driven refactor sync)
 
 ## Section Index
 §0 Project Scale and Design Philosophy |
@@ -140,6 +140,7 @@ src/{name}/
 | make_pagination | `src._core.common.pagination.make_pagination` |
 | hash_password | `src._core.common.security.hash_password` |
 | verify_password | `src._core.common.security.verify_password` |
+| AdminCrudServiceProtocol | `src._core.domain.protocols.admin_service_protocol.AdminCrudServiceProtocol` |
 | BaseVectorStoreProtocol | `src._core.domain.protocols.vector_store_protocol.BaseVectorStoreProtocol` |
 | BaseEmbeddingProtocol | `src._core.domain.protocols.embedding_protocol.BaseEmbeddingProtocol` |
 | BaseS3VectorStore | `src._core.infrastructure.vectors.s3.base_store.BaseS3VectorStore` |
@@ -213,8 +214,9 @@ class ChatRoomService(BaseDynamoService[CreateChatRoomRequest, UpdateChatRoomReq
 ### S3 Vector Store Generic Type Signatures
 
 ```python
-# BaseVectorStoreProtocol / BaseS3VectorStore — 1 TypeVar (ReturnDTO only)
-class BaseVectorStoreProtocol(Generic[ReturnDTO]): ...
+# BaseVectorStoreProtocol — typing.Protocol (runtime_checkable), 1 TypeVar
+# BaseS3VectorStore — ABC with concrete implementation (Generic base)
+class BaseVectorStoreProtocol(Protocol[ReturnDTO]): ...
 class BaseS3VectorStore(Generic[ReturnDTO], ABC): ...
 
 # S3 Vector domain usage example:
@@ -659,11 +661,16 @@ from src._core.infrastructure.admin.base_admin_page import (
     searchable_fields=["username", "email"],
     sortable_fields=["id", "username", "created_at"],
     default_sort_field="id",
+    # extra_services_config: declare additional DI-wired services by alias → container attr name.
+    # Bootstrap resolves each by attr name from the domain container.
+    # Use _get_extra_service(alias) in page handlers to access them.
+    # extra_services_config={"query": "docs_query_service"},  # example (docs domain)
 )
 ```
 
 - `ColumnConfig` options: `field_name`, `header_name`, `sortable`, `searchable`, `hidden`, `masked`, `width`
 - Sensitive fields (password, secret, token): always set `masked=True`
+- `extra_services_config`: optional, for domains that need more than one service (e.g. separate query service). Declare `{alias: container_attr_name}` pairs; bootstrap wires them automatically. Call `page._get_extra_service("alias")` in page handlers.
 - Config only — no route logic, no `ui` import
 
 ### Page File Pattern (`pages/{name}_page.py`)
@@ -804,7 +811,10 @@ src/{name}/
 Backend-agnostic protocol for embedding implementations.
 
 ```python
-class BaseEmbeddingProtocol:
+from typing import Protocol, runtime_checkable
+
+@runtime_checkable
+class BaseEmbeddingProtocol(Protocol):
     @property
     def dimension(self) -> int: ...
     async def embed_text(self, text: str) -> list[float]: ...
@@ -845,22 +855,42 @@ the adapter bridges to `BaseEmbeddingProtocol` and adds OpenAI batch splitting.
 ### Model Factory
 
 `build_llm_model(llm_config)` returns a PydanticAI Model object (or plain model string)
-suitable for `Agent(model=...)`. Domain services inject the pre-built model at init.
-(Background: ADR 037 — PydanticAI Agent integration)
+suitable for `Agent(model=...)`. Domain services must **not** import PydanticAI directly.
+Instead, follow the ADR 040/043 pattern: domain Protocol + infra Adapter.
+(Background: ADR 037 — PydanticAI Agent integration; ADR 043 — responsibility refactor)
 
 ```python
-# Domain service receives pre-built model via DI
+# 1. Domain layer: protocol only — no SDK imports
+class ClassifierProtocol(Protocol):
+    async def classify(self, text: str, categories: list[str] | None = None) -> ClassificationDTO: ...
+
 class ClassificationService:
-    def __init__(self, llm_model) -> None:
+    def __init__(self, classifier: ClassifierProtocol) -> None:
+        self._classifier = classifier
+
+    async def classify(self, text: str, categories: list[str] | None = None) -> ClassificationDTO:
+        return await self._classifier.classify(text=text, categories=categories)
+
+# 2. Infrastructure adapter: PydanticAI Agent lives here
+class PydanticAIClassifier:
+    def __init__(self, llm_model: Any) -> None:
         self._agent: Agent[None, ClassificationDTO] = Agent(
             model=llm_model,
             output_type=ClassificationDTO,
             system_prompt="...",
         )
 
-    async def classify(self, text: str) -> ClassificationDTO:
+    async def classify(self, text: str, categories: list[str] | None = None) -> ClassificationDTO:
         result = await self._agent.run(text)
         return result.output
+
+# 3. DI container: Selector wires real vs stub
+classifier = providers.Selector(
+    _classifier_selector,  # "real" if LLM_MODEL_NAME else "stub"
+    real=providers.Singleton(PydanticAIClassifier, llm_model=core_container.llm_model),
+    stub=providers.Singleton(StubClassifier),
+)
+classification_service = providers.Factory(ClassificationService, classifier=classifier)
 ```
 
 | Provider | Model Class | Credentials |
@@ -870,6 +900,7 @@ class ClassificationService:
 | Bedrock | `BedrockConverseModel` | `aws_*` → `BedrockProvider` |
 
 - `LLMConfig`: frozen dataclass (domain-layer VO) carrying model_name + credentials
-- PydanticAI Agent is reusable across requests (create once at init)
+- PydanticAI Agent is reusable across requests (create once at adapter init)
 - Structured output via `Agent[DepsType, OutputType]` — type-checked at build time
-- Agents are instantiated at service level, not at container level
+- Domain service injects `ClassifierProtocol` (or equivalent), not `llm_model` directly
+- ADR 043: Domain → Protocol → Infra Adapter → Selector is the canonical AI feature pattern
