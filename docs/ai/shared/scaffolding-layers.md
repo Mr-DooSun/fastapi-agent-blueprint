@@ -131,6 +131,45 @@ When the domain uses DynamoDB instead of RDB, replace `infrastructure/database/`
 - DI: `dynamodb_client=core_container.dynamodb_client` (not `database=core_container.database`)
 - Refer to **project-dna.md "DynamoDB Generic Type Signatures"** and **"DynamoDB DI Pattern"** for details
 
+### Optional AI Infra Variant (Layer 3) — Selector + Stub Fallback
+
+When the domain consumes an optional AI infra (LLM via `core_container.llm_model`, Embedding via `core_container.embedding_client`, or Vector Store via `core_container.s3vector_client`), the domain container SHOULD wrap the injection in `providers.Selector(real=..., stub=...)` so the domain keeps working when the user has not configured that infra. (Background: [ADR 042](../../history/042-optional-infrastructure-di-pattern.md) Decision 5 — "Graceful degradation may layer".)
+
+Reference implementation: [`src/docs/infrastructure/di/docs_container.py`](../../../src/docs/infrastructure/di/docs_container.py). Shape:
+
+```python
+# src/{name}/infrastructure/di/{name}_container.py
+from dependency_injector import containers, providers
+from src._core.config import settings
+from src._core.infrastructure.rag.stub_answer_agent import StubAnswerAgent  # or your stub
+
+
+def _llm_selector() -> str:
+    return "real" if settings.llm_model_name else "stub"
+
+
+class {Name}Container(containers.DeclarativeContainer):
+    core_container = providers.DependenciesContainer()
+
+    answer_agent = providers.Selector(
+        _llm_selector,
+        real=providers.Singleton(PydanticAIAnswerAgent, llm_model=core_container.llm_model),
+        stub=providers.Singleton(StubAnswerAgent),
+    )
+
+    {name}_service = providers.Factory(
+        {Name}Service,
+        answer_agent=answer_agent,
+    )
+```
+
+**When to use this pattern:**
+
+- ✅ Use when the domain can still produce a meaningful response without the real infra (answer stubs, retrieval over local keyword index, etc.)
+- ❌ Skip when the domain MUST have the infra to function (in which case let CoreContainer's `None` propagate and add an explicit guard in the service)
+- `core_container.embedding_client` and `core_container.llm_model` already stub at the Core layer, so the domain-level Selector is belt-and-suspenders — kept for readability and as a template
+- `core_container.s3vector_client` / `dynamodb_client` return `None` when disabled; domains that consume them MUST either declare the infra mandatory or pick a real fallback (like `docs` domain switching to `DocumentChunkInMemoryVectorStore` via its `_vector_store_selector`)
+
 ## Layer 4: Interface
 
 ```

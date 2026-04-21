@@ -14,7 +14,7 @@ Every non-DB infrastructure in `CoreContainer` (storage, DynamoDB, S3 Vectors, e
 2. A module-scope `_build_<infra>()` factory does a **lazy import** of the real client inside its body, so removing an optional extra (`pydantic-ai-slim`, etc.) does not break app boot when the infra is not configured.
 3. The container exposes the provider as `providers.Selector(_selector, enabled=..., disabled=...)`.
 4. The **disabled branch** is per-infra:
-   - Stub instance for infras where consumer domains need graceful degradation (`embedding_client` → `StubEmbedder`; `llm_model` → `StubLLMModel` once #101 Part B lands).
+   - Stub instance for infras where consumer domains need graceful degradation (`embedding_client` → `StubEmbedder`; `llm_model` → PydanticAI `TestModel` via `build_stub_llm_model`, or `None` if the `pydantic-ai` extra is not installed).
    - `providers.Object(None)` for data-storage infras (`storage_client`, `storage`, `dynamodb_client`, `s3vector_client`) where a fake client would mislead.
 
 Broker continues to use its three-way Selector (`sqs` / `rabbitmq` / `inmemory`) as the original template.
@@ -82,7 +82,7 @@ Key discipline:
 | `dynamodb_client` | `providers.Object(None)` | A fake DynamoDB client would accept writes that never persist; user debugging would blame the wrong layer. |
 | `s3vector_client` | `providers.Object(None)` | Same as DynamoDB. The `docs` domain already falls back to in-memory via its own `chunk_vector_store` selector, so the S3 client genuinely goes unused when disabled. |
 | `embedding_client` | `Singleton(StubEmbedder, dimension=...)` | Consumer domains (`docs`) need to answer questions even without an embedding provider. `StubEmbedder` already exists (keyword bag-of-words). |
-| `llm_model` | `providers.Object(None)` in this PR; `Singleton(StubLLMModel)` after #101 Part B | `classification` / `docs` need graceful degradation once `StubLLMModel` exists. Intermediate None does not regress: today's empty-string path also fails at request time. |
+| `llm_model` | `Singleton(build_stub_llm_model)` — returns PydanticAI `TestModel` when `pydantic-ai` is installed, otherwise `None` | `classification` / `docs` need graceful degradation. The `None` fallback preserves #101's "uninstall optional extra → still boots" acceptance criterion: when `pydantic-ai` is absent, the stub itself cannot exist either, and the only domain that could have used it (`ClassificationService`) is already gated by its own `pydantic-ai` ImportError at construction time. |
 
 The rule of thumb: **stub when the disabled path must still serve traffic; None when the disabled path should never be touched.** Data stores fall in the second bucket because a fake that accepts writes is worse than a `NoneType` error at the call site.
 
@@ -93,6 +93,17 @@ Previously each infra exposed both a config VO (`LLMConfig` / `EmbeddingConfig`)
 ### 4. Selector functions read computed Settings properties
 
 `settings.llm_model_name` and `settings.embedding_model_name` are `str | None` computed properties that already return `None` when provider + model are not both set. Selectors use these (not raw `llm_provider` fields) as the single source of truth for "is this infra enabled?", matching the semantics already established by the `docs` domain's embedder selector.
+
+### 5. Graceful degradation may layer — Core stub + Domain Selector can coexist
+
+Once CoreContainer's `embedding_client` returns `StubEmbedder` on disable, the domain-level Selector in [`docs_container.py:59-63`](../../src/docs/infrastructure/di/docs_container.py#L59-L63) is, strictly speaking, redundant — `core_container.embedding_client` already resolves to `StubEmbedder` when the embedding group is unset. The same applies to `answer_agent` once #101 Part B lands.
+
+**Decision: keep the domain-level Selector in `docs` anyway.** Two reasons:
+
+1. **Self-contained reference pattern.** `docs_container.py` is cited in both the [`/new-domain` skill](../../.claude/skills/new-domain/SKILL.md) and [AGENTS.md's Optional Infrastructure section](../../AGENTS.md) as the canonical template for domain-level Selector wiring. Stripping it out would force future contributors to infer the pattern from absence, which is fragile.
+2. **Core fallback is not guaranteed to exist for every optional infra.** Storage, DynamoDB, and S3 Vectors deliberately return `None` at the Core layer (no stub — fake data stores mislead, see Decision 2). Domains that consume those infras must either declare them mandatory or add a domain-level guard. Keeping the `docs` pattern visible means the guard shape is obvious when the next contributor faces a `None`-returning core provider.
+
+**Corollary for future domains:** a domain that consumes an optional infra SHOULD add a domain-level Selector if (a) graceful degradation matters to its workflow AND (b) the core layer returns `None` (no stub). If the core layer already stubs (embedding, LLM-after-Part-B), a second-level Selector is optional — add it for readability, skip it for brevity. The `/new-domain` skill generates the full pattern by default; trim as needed.
 
 ## Alternatives Considered
 
@@ -122,10 +133,58 @@ Combines (1) lazy import inside the factory with (2) Selector for branch encodin
 
 Considered and rejected for data stores. Stubs for "write-then-read" data stores must decide whether to persist in memory or to silently drop — both mislead. A user who writes a row and queries it back, receiving it intact, will not suspect that real DynamoDB was never touched. `None` plus an explicit guard at the call site ("this domain requires DYNAMODB to be configured") is honest. Stubs make sense only where the consumer's workflow is still meaningful without a real backend — currently that's embedding (similarity over random vectors approximates keyword overlap) and LLM (templated response from retrieved chunks).
 
+## Testing Strategy
+
+The two new test files establish a reusable pattern that every future optional-infra addition should follow.
+
+### Selector unit tests — monkeypatch + call-time read
+
+Selectors read `settings` at call time, so flipping a branch is a single `monkeypatch.setattr` call:
+
+```python
+def test_dynamodb_disabled_when_access_key_unset(monkeypatch):
+    monkeypatch.setattr(settings, "dynamodb_access_key", None)
+    assert _dynamodb_selector() == "disabled"
+
+def test_dynamodb_enabled_when_access_key_set(monkeypatch):
+    monkeypatch.setattr(settings, "dynamodb_access_key", "AKIA_TEST")
+    assert _dynamodb_selector() == "enabled"
+```
+
+This works because Settings is a non-frozen pydantic-settings model and each selector does a live attribute read per invocation. See [`tests/unit/_core/infrastructure/di/test_core_container_selectors.py`](../../tests/unit/_core/infrastructure/di/test_core_container_selectors.py) (13 tests, one class per infra).
+
+### Boot regression — `clean_optional_env` fixture + container resolution
+
+The acceptance criterion is "app boots with only `DATABASE_ENGINE` set". The [`clean_optional_env` fixture](../../tests/integration/_core/infrastructure/test_optional_infra.py) monkeypatches every optional settings field to its disabled value, then asserts the documented disabled-branch behavior:
+
+```python
+@pytest.fixture
+def clean_optional_env(monkeypatch):
+    for field in ("storage_type", "dynamodb_access_key", "s3vectors_access_key",
+                  "embedding_provider", "embedding_model", "llm_provider", "llm_model"):
+        monkeypatch.setattr(settings, field, None)
+    monkeypatch.setattr(settings, "broker_type", None)
+
+def test_dynamodb_client_returns_none(clean_optional_env):
+    container = CoreContainer()
+    assert container.dynamodb_client() is None
+
+def test_embedding_client_returns_stub(clean_optional_env):
+    assert isinstance(CoreContainer().embedding_client(), StubEmbedder)
+```
+
+### App-boot smoke — real `bootstrap_app` with clean env
+
+A separate smoke test imports the full FastAPI app under `clean_optional_env` to catch the failure mode where a domain container or bootstrap hook eagerly imports an optional dep. If adding a new optional infra, extend this test's assertions to cover your provider.
+
+### Why not test the `enabled` branch exhaustively?
+
+`providers.Singleton(_build_<infra>, kwarg=settings.<field>)` captures its kwargs at class-definition time. Monkeypatching `settings` after the container class has been imported does not re-evaluate those kwargs. Testing "enabled produces a real client" would require reloading the module — brittle and slow. Build functions are instead tested in isolation (`_build_dynamodb_client(access_key="fake", ...)`), and the Selector's branch-choice logic is validated separately. Together they cover the real failure modes without module-reload gymnastics.
+
 ## Consequences
 
 - **Boot-time guarantee:** with only `DATABASE_ENGINE=sqlite` set and all optional extras uninstalled (`pydantic-ai-slim`, `taskiq-aws`, `taskiq-aio-pika`), the app imports cleanly and `/docs` serves OpenAPI. Regression-guarded by `tests/integration/test_optional_infra.py`.
-- **Domain degradation is localised.** `docs` already degrades via its domain-level Selector (kept in place as a self-contained example). `classification` still fails at request time when `LLM_*` is unset — #101 Part B replaces the `llm_model` disabled branch with `StubLLMModel` to close that gap.
+- **Domain degradation is localised.** `docs` already degrades via its domain-level Selector (kept in place as a self-contained example). `classification` now degrades the same way: when `LLM_*` is unset, CoreContainer returns a PydanticAI `TestModel` via `build_stub_llm_model`, which `ClassificationService` accepts as its `Agent(model=...)` argument and uses to return a schema-valid placeholder `ClassificationDTO`. If `pydantic-ai` itself is uninstalled, the stub cannot be constructed and `llm_model()` falls back to `None` — `ClassificationService.__init__` then raises its own "install pydantic-ai" ImportError, which is the correct signal for that scenario.
 - **Every new optional infra uses this pattern by default.** The `/new-domain` skill templates (`/claude/skills/new-domain/`, `.codex/new-domain`) will be updated in #101 Part B so scaffolded domains ship with Selector + stub where they declare an LLM or Embedding dependency.
 - **`#82` unblocked.** Any future CLI that offers "remove DynamoDB" only needs to unset `DYNAMODB_*` in the scaffolded `.env`; no source rewriting. `#82` scope may shrink to "thin `.env` scaffolder" or be closed entirely — decision deferred to post-merge re-evaluation.
 - **`pyproject.toml` cleanup (nicegui, boto3 → optional extras) is out of scope** for this ADR. Filed as a separate follow-up issue; it is a user-facing UX change (admin dashboard mount decision, aws-installation matrix) and deserves its own design pass.

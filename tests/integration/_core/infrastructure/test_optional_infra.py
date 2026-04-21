@@ -17,11 +17,15 @@ clients; they only verify the container's wiring.
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
 
 from src._core.config import settings
 from src._core.infrastructure.di.core_container import CoreContainer
 from src._core.infrastructure.rag.stub_embedder import StubEmbedder
+
+_has_pydantic_ai = importlib.util.find_spec("pydantic_ai") is not None
 
 
 @pytest.fixture
@@ -62,14 +66,25 @@ class TestCoreContainerMinimalBoot:
         container = CoreContainer()
         assert isinstance(container.embedding_client(), StubEmbedder)
 
-    def test_llm_model_returns_none_pr1(self, clean_optional_env: None):
-        """PR 1 leaves LLM disabled branch as ``None``.
+    def test_llm_model_returns_stub_when_disabled(self, clean_optional_env: None):
+        """Disabled branch returns a PydanticAI ``TestModel`` when the
+        ``pydantic-ai`` extra is installed; otherwise ``None``.
 
-        PR 2 (#101 Part B) replaces this with ``StubLLMModel`` so
-        classification can degrade gracefully. Update this assertion then.
+        ``build_stub_llm_model`` is deliberately defensive — the
+        acceptance criterion for #101 is "app boots with optional
+        extras uninstalled". With pydantic-ai present, the stub lets
+        ``classification`` / ``docs`` round-trip under ``make quickstart``
+        with no LLM credentials (ADR 042 + Part B).
         """
         container = CoreContainer()
-        assert container.llm_model() is None
+        llm = container.llm_model()
+
+        if _has_pydantic_ai:
+            from pydantic_ai.models.test import TestModel
+
+            assert isinstance(llm, TestModel)
+        else:
+            assert llm is None
 
     def test_broker_defaults_to_inmemory(self, clean_optional_env: None):
         from taskiq import InMemoryBroker
@@ -114,4 +129,11 @@ class TestAppBootsWithoutOptionalInfra:
         assert app.state.container is not None
         core = app.state.container.core_container()
         assert core.embedding_client() is not None  # StubEmbedder
-        assert core.llm_model() is None
+
+        llm = core.llm_model()
+        if _has_pydantic_ai:
+            from pydantic_ai.models.test import TestModel
+
+            assert isinstance(llm, TestModel)
+        else:
+            assert llm is None
