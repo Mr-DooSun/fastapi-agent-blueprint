@@ -22,7 +22,6 @@ dependencies = [
     "pydantic-settings>=2.10.1",
     "pymysql>=1.1.1",
     "python-dotenv>=1.1.0",
-    "nicegui>=3.5.0",
     "sqlalchemy>=2.0.40",
     "taskiq[reload]>=0.12.1",
     "semantic-text-splitter>=0.17.0",
@@ -30,6 +29,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+admin = ["nicegui>=3.5.0"]
 sqs = ["taskiq-aws>=0.4.0"]
 rabbitmq = ["taskiq-aio-pika>=0.4.0"]
 openai = ["openai>=1.0.0", "tiktoken>=0.7.0"]

@@ -8,9 +8,9 @@ help:
 
 .DEFAULT_GOAL := help
 
-## Setup development environment
+## Setup development environment (includes admin extra for the NiceGUI dashboard)
 setup:
-	uv venv && uv sync --group dev && uv run pre-commit install && uv run pre-commit install --hook-type commit-msg
+	uv venv && uv sync --group dev --extra admin && uv run pre-commit install && uv run pre-commit install --hook-type commit-msg
 
 ## Zero-config quickstart: SQLite + InMemory broker, no external infra
 quickstart:
@@ -18,6 +18,8 @@ quickstart:
 		echo "→ Creating _env/quickstart.env from template"; \
 		cp _env/quickstart.env.example _env/quickstart.env; \
 	fi
+	@echo "→ Syncing dependencies (includes admin extra for the dashboard)"
+	@uv sync --extra admin
 	@echo "→ Starting FastAPI server on http://127.0.0.1:8001"
 	@echo "  Docs:       http://127.0.0.1:8001/docs-swagger"
 	@echo "  Admin:      http://127.0.0.1:8001/admin (admin / admin)"

@@ -45,7 +45,7 @@ Open <http://localhost:8000/docs-swagger> to explore the API.
 # 1. Create venv + install deps
 uv venv --python 3.12
 source .venv/bin/activate
-uv sync --group dev
+uv sync --group dev --extra admin   # drop --extra admin for API-only installs
 
 # 2. Environment variables
 cp _env/local.env.example _env/local.env
@@ -57,6 +57,19 @@ docker compose -f docker-compose.local.yml up -d postgres
 alembic upgrade head
 python run_server_local.py --env local
 ```
+
+### Optional dependency extras
+
+| Extra | What it installs | Enables |
+|---|---|---|
+| `admin` | `nicegui` | The NiceGUI admin dashboard at `/admin`. Drop for API-only deployments; the server still boots, `/api/*` still serves, just no dashboard |
+| `sqs` | `taskiq-aws` | `BROKER_TYPE=sqs` broker backend |
+| `rabbitmq` | `taskiq-aio-pika` | `BROKER_TYPE=rabbitmq` broker backend |
+| `pydantic-ai` | `pydantic-ai-slim` + `tiktoken` | `EMBEDDING_PROVIDER` / `LLM_PROVIDER` and any agent-based domain |
+| `pydantic-ai-anthropic` | Anthropic provider for PydanticAI | `LLM_PROVIDER=anthropic` |
+| `pydantic-ai-google` | Google provider for PydanticAI | `EMBEDDING_PROVIDER=google` / `LLM_PROVIDER=google` |
+
+Pass `--extra <name>` to `uv sync` for each capability you need. `make setup` / `make quickstart` default to `--extra admin` because the dashboard is part of the advertised quickstart UX; other extras opt in explicitly.
 
 ---
 

@@ -63,7 +63,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --group dev --extra admin
 
       - name: Run tests
         env:
@@ -81,6 +81,41 @@ jobs:
           AWS_SQS_SECRET_KEY: test
           AWS_SQS_URL: http://localhost:4566
         run: uv run pytest tests/ -v --tb=short
+
+  # Minimal-install boot regression: confirm the app boots and serves /api/health
+  # with only core deps installed (no admin / sqs / pydantic-ai extras). This is
+  # the acceptance guard for #101's "optional extra uninstall → still boots"
+  # promise, extended by #104 for the admin extra.
+  minimal-install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install core-only dependencies
+        run: uv sync --group dev
+
+      - name: Run no-admin boot regression tests
+        env:
+          ENV: quickstart
+          ADMIN_ID: admin
+          ADMIN_PASSWORD: admin
+          ADMIN_STORAGE_SECRET: ci-test-secret
+          DATABASE_ENGINE: sqlite
+          DATABASE_NAME: ":memory:"
+          DATABASE_USER: unused
+          DATABASE_PASSWORD: unused
+          DATABASE_HOST: unused
+          DATABASE_PORT: "0"
+          BROKER_TYPE: inmemory
+        run: uv run pytest tests/integration/_core/test_minimal_install.py -v --tb=short
 
   architecture:
     runs-on: ubuntu-latest

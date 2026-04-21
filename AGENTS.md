@@ -48,10 +48,12 @@ Every non-DB infra in `CoreContainer` is optional — toggle via env vars, no co
 | DynamoDB | `DYNAMODB_ACCESS_KEY` set | `dynamodb_client()` returns `None` |
 | S3 Vectors | `S3VECTORS_ACCESS_KEY` set | `s3vector_client()` returns `None` |
 | Embedding | `EMBEDDING_PROVIDER` + `EMBEDDING_MODEL` both set | `embedding_client()` returns `StubEmbedder` (keyword bag-of-words) |
-| LLM | `LLM_PROVIDER` + `LLM_MODEL` both set | `llm_model()` returns `None` (→ `StubLLMModel` after #101 Part B) |
+| LLM | `LLM_PROVIDER` + `LLM_MODEL` both set | `llm_model()` returns PydanticAI `TestModel` via `build_stub_llm_model` when `pydantic-ai` is installed, `None` otherwise |
 | Broker | `BROKER_TYPE=sqs` / `rabbitmq` / `inmemory` | Defaults to `inmemory` — no external broker required |
 
 **Consumer rule:** data-store clients (`None`-returning) require an explicit guard at the call site when your domain needs them; stub-returning infras just work (but signal "stub" via startup warning logs). Use `providers.Selector` in your domain container to branch between real and stub paths if needed — `src/docs/infrastructure/di/docs_container.py` is the reference pattern.
+
+**Package-level extras:** optional runtime infras are also gated at the `pyproject.toml` level. Install only what you need — `uv sync --extra admin` for the NiceGUI dashboard, `--extra sqs` / `--extra rabbitmq` for those broker backends, `--extra pydantic-ai` for LLM / Embedding, etc. When an extra is absent, the matching bootstrap path silently skips and the server continues to boot (structured-log hints for these skip paths will land with [#9](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/9)). `make setup` / `make quickstart` install `--extra admin` by default because the dashboard is part of the advertised quickstart UX; every other extra opts in explicitly.
 
 ## Terminology
 
