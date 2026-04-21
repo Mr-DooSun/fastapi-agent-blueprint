@@ -2,10 +2,51 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, ClassVar, Literal, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self
 
-from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
+
+
+_AWS_EXTRA_HINT = (
+    "Missing optional dependency 'boto3' for DynamoDB serialization. "
+    "Install with: uv sync --extra aws"
+)
+
+_serializer_singleton: TypeSerializer | None = None
+_deserializer_singleton: TypeDeserializer | None = None
+
+
+def _get_serializer() -> TypeSerializer:
+    """Lazy-load ``boto3.dynamodb.types.TypeSerializer``.
+
+    Kept as a module-level singleton so callers avoid the per-use import
+    round-trip. Raises ImportError with the ``[aws]`` extra install hint
+    when boto3 is not installed — which only happens if the caller tried
+    to actually serialize a DynamoDB item without the extra (app boot
+    never exercises this path).
+    """
+    global _serializer_singleton
+    if _serializer_singleton is None:
+        try:
+            from boto3.dynamodb.types import TypeSerializer
+        except ImportError as exc:
+            raise ImportError(_AWS_EXTRA_HINT) from exc
+        _serializer_singleton = TypeSerializer()
+    return _serializer_singleton
+
+
+def _get_deserializer() -> TypeDeserializer:
+    global _deserializer_singleton
+    if _deserializer_singleton is None:
+        try:
+            from boto3.dynamodb.types import TypeDeserializer
+        except ImportError as exc:
+            raise ImportError(_AWS_EXTRA_HINT) from exc
+        _deserializer_singleton = TypeDeserializer()
+    return _deserializer_singleton
 
 
 class GSIDefinition(BaseModel):
@@ -39,8 +80,6 @@ class DynamoModel(BaseModel):
     """
 
     __dynamo_meta__: ClassVar[DynamoModelMeta]
-    _serializer: ClassVar[TypeSerializer] = TypeSerializer()
-    _type_deserializer: ClassVar[TypeDeserializer] = TypeDeserializer()
 
     # ------------------------------------------------------------------
     # Key generation (override in subclasses)
@@ -98,7 +137,8 @@ class DynamoModel(BaseModel):
         raw.update(self.get_gsi_keys())
 
         # Serialize every value with TypeSerializer
-        return {k: self._serializer.serialize(v) for k, v in raw.items()}
+        serializer = _get_serializer()
+        return {k: serializer.serialize(v) for k, v in raw.items()}
 
     # ------------------------------------------------------------------
     # Deserialization (DynamoDB item → model)
@@ -107,9 +147,8 @@ class DynamoModel(BaseModel):
     @classmethod
     def from_dynamodb(cls, item: dict[str, Any]) -> Self:
         """Deserialize from DynamoDB Client API format using TypeDeserializer."""
-        deserialized = {
-            k: cls._type_deserializer.deserialize(v) for k, v in item.items()
-        }
+        deserializer = _get_deserializer()
+        deserialized = {k: deserializer.deserialize(v) for k, v in item.items()}
 
         # Convert Decimal back to int/float for Pydantic compatibility
         cleaned = {k: cls._clean_value(v) for k, v in deserialized.items()}

@@ -12,7 +12,14 @@ import argparse
 import sys
 from pathlib import Path
 
-import boto3
+try:
+    import boto3
+except ImportError as exc:
+    raise SystemExit(
+        "[ERROR] Missing optional dependency 'boto3' for S3 Vectors migrations. "
+        "Install with: uv sync --extra aws"
+    ) from exc
+
 from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
