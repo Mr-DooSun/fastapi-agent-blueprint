@@ -161,8 +161,9 @@ Inspect whether `docs/ai/shared/` documents match the current code.
 ### Manual Inspection (Change-history-based — [REVIEW] targets)
 
 - [ ] **`review-architecture` checklist** (`docs/ai/shared/architecture-review-checklist.md`):
-  - Count the items in AGENTS.md's "Absolute Prohibitions" section (expected: 5) and compare against the number of related inspection items in `docs/ai/shared/architecture-review-checklist.md`
-  - On mismatch: confirm with the user whether Grep patterns need to be added for new rules
+  - Compare the **code-auditable** Absolute Prohibitions in AGENTS.md against the related inspection items in `docs/ai/shared/architecture-review-checklist.md`
+  - Exclude the "No modifying or deleting shared rule sources without cross-reference verification" rule from this count; it remains in AGENTS.md / harness docs because it is process-oriented rather than a code-audit grep target
+  - On mismatch: confirm with the user whether checklist coverage should be expanded for any newly code-auditable rule
 
 - [ ] **`security-review` security checklist** (`docs/ai/shared/security-checklist.md`):
   - Extract the "active" feature list from `docs/ai/shared/project-dna.md` §8

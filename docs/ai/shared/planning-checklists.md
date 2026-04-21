@@ -83,7 +83,7 @@
 | Async task | `/add-worker-task` | `{domain} {task_name}` | Add UseCase method first if needed |
 | Admin page addition | `/add-admin-page` | `{domain}` | Auto-discovers, no bootstrap changes needed |
 | Cross-domain connection | `/add-cross-domain` | `from:{consumer} to:{provider}` | Protocol-based DIP |
-| Test generation | `/test-domain` | `{domain} generate` | 4 required test files |
+| Test generation | `/test-domain` | `{domain} generate` | 5 required test files |
 | Test execution | `/test-domain` | `{domain} run` | unit + integration + e2e |
 | Architecture verification | `/review-architecture` | `{domain}` or `all` | 20+ item inspection |
 | Security audit | `/security-review` | `{domain}`, `{file}`, or `all` | OWASP 8 categories, 32+ items |

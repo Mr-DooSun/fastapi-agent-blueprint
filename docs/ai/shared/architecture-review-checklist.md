@@ -1,6 +1,9 @@
 # Architecture Audit Checklist Details
 
 > Refer to `docs/ai/shared/project-dna.md` for detailed definitions of expected patterns.
+> This checklist covers code-auditable architecture rules. The shared-rule-source
+> cross-reference rule stays in `AGENTS.md` and harness docs because it is a
+> process safeguard, not a code grep target.
 
 ## 1. Layer Dependency Rules
 Grep-check Python files in each domain:
@@ -16,6 +19,7 @@ Check across all domain files:
 
 - [ ] No `class.*Mapper` class definitions
 - [ ] No Entity pattern remnants (`to_entity(`, `from_entity(`, `Entity` class definitions)
+- [ ] Persistence models (`Model`, `DynamoModel`, `VectorModel`) are not imported or exposed outside Repository / VectorStore layers
 - [ ] Repository method return values are DTO types (no Model object exposure)
 - [ ] Model -> DTO conversion uses `model_validate(..., from_attributes=True)`
 - [ ] Service classes use 3 TypeVars: `BaseService[Create{Name}Request, Update{Name}Request, {Name}DTO]` (not `BaseService[{Name}DTO]`)

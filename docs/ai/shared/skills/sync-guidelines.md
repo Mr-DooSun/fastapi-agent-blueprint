@@ -86,8 +86,9 @@ Items that can be mechanically extracted from code. When drift is found, generat
 Policy/standard-based content. Only detect whether related sources have changed and request user review.
 
 4. **Architecture Checklist** (`docs/ai/shared/architecture-review-checklist.md`)
-   - Compare the number of Absolute Prohibitions in AGENTS.md vs. the number of check items in `docs/ai/shared/architecture-review-checklist.md`
-   - On mismatch, request confirmation on whether to add Grep patterns for the new rules
+   - Compare the **code-auditable** Absolute Prohibitions in AGENTS.md against the related check items in `docs/ai/shared/architecture-review-checklist.md`
+   - Exclude the shared-rule-source cross-reference rule from this comparison; keep that safeguard in AGENTS.md / harness docs
+   - On mismatch, request confirmation on whether to expand checklist coverage for the newly code-auditable rule
 
 5. **Security Checklist** (`docs/ai/shared/security-checklist.md`)
    - Compare `docs/ai/shared/project-dna.md` section 8 active feature status with `[when applicable]` items
