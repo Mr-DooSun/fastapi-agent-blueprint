@@ -1,22 +1,27 @@
 # Suggested Commands
 
-> Last synced: 2026-04-21 via /sync-guidelines
+> Last synced: 2026-04-21 via /sync-guidelines (v0.4.0 post-release sync)
 > Purpose: Quick reference for Claude Code when executing shell commands.
 > Also referenced when running Skills.
 > Makefile targets (`make dev`, `make test`, etc.) are available as shortcuts — see `AGENTS.md` Common Commands.
 
 ## Run
 ```bash
+# 개발환경 셋업 (admin + aws extras 포함 — #104)
+make setup
+
 # Zero-config quickstart (SQLite + InMemory broker, no external infra)
 make quickstart
 make demo            # in a second terminal — runs curl CRUD walkthrough
+make demo-rag        # RAG end-to-end (seed 3 docs → list → query, #80)
 
-# FastAPI server (dev — requires PostgreSQL via docker-compose.local.yml)
+# 로컬 개발 (PostgreSQL via docker-compose.local.yml)
+make dev
+make worker
+
+# 직접 실행 (참고용)
 uvicorn src._apps.server.app:app --reload --host 127.0.0.1 --port 8001
-# or
 python run_server_local.py --env local
-
-# Taskiq worker
 python run_worker_local.py --env local
 ```
 
@@ -62,7 +67,11 @@ alembic history
 ## Package Management (uv)
 ```bash
 uv add <package>
-uv sync
+uv sync                                          # core only
+uv sync --group dev --extra admin --extra aws    # 개발 기본 (make setup과 동일, #104)
+uv sync --extra admin                            # NiceGUI 관리 대시보드만
+uv sync --extra aws                              # S3/MinIO/DynamoDB/S3Vectors
+uv sync --extra pydantic-ai --extra aws          # Bedrock LLM/Embedding (aioboto3 포함)
 ```
 
 ## Architecture Diagrams
@@ -72,6 +81,18 @@ uv sync
 # whenever that file is edited so CLI/non-Mermaid viewers stay in sync.
 make diagrams
 ```
+
+## Logging (structlog, #9)
+```bash
+# 로그 레벨 / 포맷 조정 — server/worker 공통
+LOG_LEVEL=DEBUG make dev
+LOG_JSON_FORMAT=true make dev   # dev에서도 JSON 렌더러 강제 (파이프라인 확인용)
+LOG_JSON_FORMAT=false make dev  # stg/prod에서 일시적으로 console 렌더러로 디버깅
+```
+
+- 기본: dev/local/quickstart → console, stg/prod → JSON (`settings.effective_log_json`)
+- 모든 신규 코드는 `structlog.stdlib.get_logger(__name__)` 사용
+- `DATABASE_ECHO=true`는 `logging.getLogger("sqlalchemy.engine").setLevel(INFO)`로 변환되어 structlog 파이프라인을 한 번만 경유
 
 ## Architecture Verification
 ```bash
@@ -115,6 +136,11 @@ STORAGE_TYPE=s3 python run_server_local.py --env local
 
 ## Admin Dashboard
 ```bash
-# Auto-mounted on server → http://127.0.0.1:8001/admin
-# Login with ADMIN_ID / ADMIN_PASSWORD from .env
+# Admin 대시보드는 `admin` extra가 설치된 경우에만 마운트됨 (#104)
+uv sync --extra admin            # nicegui 설치
+# → http://127.0.0.1:8001/admin (ADMIN_ID / ADMIN_PASSWORD from .env)
+
+# 미설치 시에는 서버는 정상 boot하고 구조화 로그만 남김:
+#   event="admin_mount_skipped" reason="nicegui_not_installed"
+#   install_hint="uv sync --extra admin"
 ```

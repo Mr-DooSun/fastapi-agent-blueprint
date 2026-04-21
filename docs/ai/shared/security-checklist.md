@@ -159,6 +159,19 @@ Check middleware and exception handling files:
 - [ ] [Always][MEDIUM] Review data ID enumeration attack possibility
   - Grep: `Data with ID` -> awareness needed if present
 
+### Structured Logging (structlog, #9)
+- [ ] [Always][HIGH] structlog kwargs / bind do not carry sensitive fields
+  - Detection condition: Check **project-dna.md section 8** "Structured Logging (structlog)" status -> active for all builds since v0.4.0
+  - Grep: `\.(info|debug|warning|error|exception)\([^)]*\b(password|token|access_key|secret_key|secret|api_key)\s*=`
+  - Grep: `\.(bind|bind_contextvars)\([^)]*\b(password|token|access_key|secret_key|secret|api_key)\s*=`
+  - Reason: structlog kwargs become structured log fields; JSON renderer in stg/prod ships them verbatim to log aggregators
+- [ ] [Always][HIGH] `DATABASE_ECHO` is not enabled in stg/prod without secret filtering
+  - Grep: `DATABASE_ECHO\s*=\s*[Tt]rue` in stg/prod config / `.env.*` shipped samples
+  - Reason: echo forwards SQL with bound parameters to `sqlalchemy.engine` logger — plaintext credentials land in logs when INSERT/UPDATE hits password / token columns
+- [ ] [Always][MEDIUM] `configure_logging()` is invoked before middleware stack in both server and worker bootstrap
+  - Grep: `configure_logging\(\)` call site in `src/_apps/server/app.py` / `src/_apps/worker/app.py`
+  - Reason: un-configured structlog falls back to stdlib default, bypassing ProcessorFormatter JSON renderer and correlation-id binding
+
 ### Rate Limiting
 - [ ] [When applicable][MEDIUM] Rate limiting middleware configuration status
   - Detection condition: Check **project-dna.md section 8** "Rate Limiting (slowapi)" status -> [SKIP] if "not implemented"
