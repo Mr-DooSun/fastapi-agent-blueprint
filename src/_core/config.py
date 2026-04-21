@@ -257,6 +257,29 @@ class Settings(BaseSettings):
     )
 
     # ----------------------------------------------------------------
+    # Logging (structlog)
+    # ----------------------------------------------------------------
+    log_level: str = Field(
+        default="INFO",
+        validation_alias="LOG_LEVEL",
+        description=(
+            "Root log level (DEBUG, INFO, WARNING, ERROR). Applied to both "
+            "structlog-originated records and stdlib loggers routed through "
+            "the ProcessorFormatter bridge."
+        ),
+    )
+    log_json_format: bool | None = Field(
+        default=None,
+        validation_alias="LOG_JSON_FORMAT",
+        description=(
+            "Force JSON renderer on (True) or off (False). When unset, derives "
+            "from ENV — dev/local/quickstart → console renderer, stg/prod → JSON. "
+            "Keep this independently overridable so ops can flip console on in "
+            "prod when debugging without redeploying."
+        ),
+    )
+
+    # ----------------------------------------------------------------
 
     @model_validator(mode="after")
     def _validate_environment_safety(self) -> Self:
@@ -463,6 +486,19 @@ class Settings(BaseSettings):
     @property
     def is_dev(self) -> bool:
         return self.env.lower() in {"quickstart", "dev", "local"}
+
+    @property
+    def effective_log_json(self) -> bool:
+        """Whether the JSON renderer is active for this process.
+
+        Respects an explicit ``LOG_JSON_FORMAT`` override when set; otherwise
+        defaults to console for dev envs and JSON for non-dev (stg/prod + any
+        unrecognised env). Keep the explicit override path so ops can flip
+        console on in prod without redeploying Settings.
+        """
+        if self.log_json_format is not None:
+            return self.log_json_format
+        return not self.is_dev
 
     @property
     def docs_url(self) -> str | None:

@@ -7,7 +7,16 @@ from dotenv import load_dotenv
 
 
 def main():
-    uvicorn.run("src._apps.server.app:app", reload=True, host="127.0.0.1", port=8001)
+    # ``log_config=None`` prevents uvicorn from installing its own
+    # ``dictConfig`` at startup, which would clobber the structlog
+    # ``ProcessorFormatter`` handlers configured in ``bootstrap_app`` (#9).
+    uvicorn.run(
+        "src._apps.server.app:app",
+        reload=True,
+        host="127.0.0.1",
+        port=8001,
+        log_config=None,
+    )
     # subprocess.run([
     #     "gunicorn",
     #     "src.apps.monolith.app:app",

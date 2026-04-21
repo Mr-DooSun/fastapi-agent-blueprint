@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -98,8 +99,17 @@ def _engine_kwargs(
     *,
     exclude_connect_args: bool = False,
 ) -> dict[str, Any]:
-    """Build SQLAlchemy create_engine kwargs from DatabaseConfig."""
-    exclude: set[str] = set()
+    """Build SQLAlchemy create_engine kwargs from DatabaseConfig.
+
+    ``echo`` is intentionally stripped from the kwargs — SQLAlchemy's
+    ``create_engine(echo=True)`` attaches its own ``StreamHandler`` to
+    the ``sqlalchemy.engine`` logger, which double-emits every query
+    when the structlog ``ProcessorFormatter`` handler is also installed
+    on root. Instead, ``Database.__init__`` translates the flag into
+    ``logging.getLogger('sqlalchemy.engine').setLevel(INFO)`` so SQL
+    queries flow through the structlog pipeline exactly once.
+    """
+    exclude: set[str] = {"echo"}
     if exclude_connect_args:
         exclude.add("connect_args")
     if engine == "sqlite":
@@ -151,6 +161,15 @@ class Database:
             url=async_dsn,
             **_engine_kwargs(config, engine),
         )
+
+        # ``DatabaseConfig.echo`` used to be passed to ``create_engine``,
+        # which in turn installs a ``StreamHandler`` on
+        # ``sqlalchemy.engine``. That bypasses the configured structlog
+        # pipeline and double-emits every query. Translate the flag into
+        # a logger level instead so SQL records flow through the root
+        # structlog handler exactly once (#9).
+        if config.echo:
+            logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
         self.async_session_factory = sessionmaker(
             bind=self.async_engine,
