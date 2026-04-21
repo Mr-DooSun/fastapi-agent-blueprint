@@ -197,11 +197,13 @@ class Database:
         except Exception as e:
             if session:
                 await session.rollback()
+            from src._core.config import settings
+
             raise DatabaseException(
                 status_code=500,
                 message="Internal database error",
                 error_code="DB_INTERNAL_ERROR",
-                details={"original_error": str(e)},
+                details={"original_error": str(e)} if settings.is_dev else None,
             )
         finally:
             if session:
@@ -217,9 +219,11 @@ class Database:
                 await conn.execute(text("SELECT 1"))
                 return True
         except Exception as e:
+            from src._core.config import settings
+
             raise DatabaseException(
                 status_code=503,
                 message="Database health check failed",
                 error_code="DATABASE_UNHEALTHY",
-                details={"original_error": str(e)},
+                details={"original_error": str(e)} if settings.is_dev else None,
             )

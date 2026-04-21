@@ -1,3 +1,4 @@
+import secrets
 import warnings
 from typing import Self
 
@@ -77,7 +78,8 @@ class Settings(BaseSettings):
     admin_id: str = Field(default="admin", validation_alias="ADMIN_ID")
     admin_password: str = Field(default="admin", validation_alias="ADMIN_PASSWORD")
     admin_storage_secret: str = Field(
-        default="change-me-in-production", validation_alias="ADMIN_STORAGE_SECRET"
+        default_factory=lambda: secrets.token_urlsafe(32),
+        validation_alias="ADMIN_STORAGE_SECRET",
     )
 
     # ----------------------------------------------------------------
@@ -305,6 +307,20 @@ class Settings(BaseSettings):
                     errors.append(
                         f"[{field_name}] Using unsafe default "
                         f"'{unsafe_value}' in '{self.env}' environment"
+                    )
+
+            if "admin_storage_secret" not in self.model_fields_set:
+                errors.append(
+                    f"[admin_storage_secret] ADMIN_STORAGE_SECRET must be explicitly set "
+                    f"in '{self.env}' environment (auto-generated value not allowed)"
+                )
+
+            if self.dynamodb_endpoint_url:
+                _local_patterns = ("localhost", "127.", "0.0.0.0", "::1")  # noqa: S104
+                if any(p in self.dynamodb_endpoint_url for p in _local_patterns):
+                    errors.append(
+                        f"[dynamodb_endpoint_url] DYNAMODB_ENDPOINT_URL references a local "
+                        f"address in '{self.env}' environment. Use an AWS endpoint URL."
                     )
 
             for field_name, default_value in _WARN_DEFAULTS.items():

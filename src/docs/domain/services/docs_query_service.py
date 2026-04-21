@@ -3,9 +3,10 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from src._core.common.llm_utils import map_llm_error
 from src._core.domain.dtos.rag import BaseChunkDTO, QueryAnswerDTO
 from src._core.domain.services.rag_pipeline import RagPipeline
-from src.docs.domain.exceptions.docs_exceptions import QueryFailedException
+from src._core.exceptions.base_exception import BaseCustomException
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,9 @@ class DocsQueryService:
             answer, chunks = await self._pipeline.answer(
                 question=question, top_k=top_k, filters=filters
             )
+        except BaseCustomException:
+            raise
         except Exception as exc:
             logger.exception("Docs query failed")
-            raise QueryFailedException(str(exc)) from exc
+            map_llm_error(exc)
         return answer, len(chunks)

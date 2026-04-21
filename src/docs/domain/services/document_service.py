@@ -10,6 +10,7 @@ from src._core.domain.protocols.embedding_protocol import BaseEmbeddingProtocol
 from src._core.domain.protocols.vector_store_protocol import BaseVectorStoreProtocol
 from src._core.domain.services.base_service import BaseService
 from src._core.domain.value_objects.vector_query import VectorQuery
+from src._core.exceptions.base_exception import BaseCustomException
 from src.docs.domain.dtos.document_dto import DocumentDTO
 from src.docs.domain.exceptions.docs_exceptions import IngestionFailedException
 from src.docs.domain.protocols.document_repository_protocol import (
@@ -60,7 +61,9 @@ class DocumentService(
             logger.exception("Docs ingestion failed for document %s", created.id)
             # Best-effort cleanup so the caller does not see a phantom row.
             await self._document_repository.delete_data_by_data_id(data_id=created.id)
-            raise IngestionFailedException(str(exc)) from exc
+            if isinstance(exc, BaseCustomException):
+                raise
+            raise IngestionFailedException("ingestion pipeline error") from exc
 
         if chunk_count != created.chunk_count:
             created = await super().update_data_by_data_id(

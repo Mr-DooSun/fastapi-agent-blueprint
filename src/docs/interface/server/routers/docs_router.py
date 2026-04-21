@@ -57,8 +57,8 @@ async def create_document(
 )
 @inject
 async def list_documents(
-    page: int = 1,
-    page_size: int = Query(10, alias="pageSize"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, alias="pageSize", ge=1, le=100),
     document_service: DocumentService = Depends(
         Provide[DocsContainer.document_service]
     ),

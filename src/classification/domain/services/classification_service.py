@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from src._core.common.llm_utils import map_llm_error
+from src._core.exceptions.base_exception import BaseCustomException
 from src.classification.domain.dtos.classification_dto import ClassificationDTO
-from src.classification.domain.exceptions.classification_exceptions import (
-    ClassificationFailedException,
-)
 
 
 class ClassificationService:
@@ -60,5 +59,7 @@ class ClassificationService:
         try:
             result = await self._agent.run(prompt)
             return result.output
+        except BaseCustomException:
+            raise
         except Exception as exc:
-            raise ClassificationFailedException(str(exc)) from exc
+            map_llm_error(exc)

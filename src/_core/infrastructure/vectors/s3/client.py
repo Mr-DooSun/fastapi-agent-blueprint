@@ -4,6 +4,10 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
+import structlog
+
+_logger = structlog.stdlib.get_logger(__name__)
+
 from src._core.infrastructure.vectors.s3.exceptions import (
     S3VectorException,
     S3VectorIndexNotFoundException,
@@ -73,11 +77,13 @@ class S3VectorClient:
             if error_code == "TooManyRequestsException":
                 raise S3VectorThrottlingException() from e
 
+            _logger.error(
+                "s3vectors_operation_failed",
+                error_code=error_code,
+                error_message=error_message,
+            )
             raise S3VectorException(
                 status_code=500,
-                message="S3 Vectors operation failed ["
-                + error_code
-                + "]: "
-                + error_message,
+                message=f"S3 Vectors operation failed [{error_code}]",
                 error_code="S3VECTOR_OPERATION_FAILED",
             ) from e
