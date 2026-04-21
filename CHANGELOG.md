@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Zero-config quickstart (`make quickstart` / `make demo` / `ENV=quickstart` with SQLite + InMemory broker + auto create_all) so the blueprint can boot in under 60 seconds with no external infra ([#78](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/78))
+- End-to-end RAG example as a reusable `_core` pattern (`RagPipeline`, `BaseChunkDTO` / `CitationDTO` / `QueryAnswerDTO`, `AnswerAgentProtocol`, `StubEmbedder` / `StubAnswerAgent` / `PydanticAIAnswerAgent`, `BaseInMemoryVectorStore`) with `src/docs/` consumer domain, `make demo-rag`, and `VECTOR_STORE_TYPE` env var ([#80](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/80))
+- Optional Infrastructure pattern in CoreContainer — `providers.Selector` + lazy factories for all 5 non-broker optional infras (storage, DynamoDB, S3 Vectors, embedding, LLM); disabled branches return `providers.Object(None)` for data stores or `StubEmbedder` / PydanticAI `TestModel` for AI infras so apps boot with only `DATABASE_ENGINE=sqlite` set and optional extras uninstalled ([#101](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/101))
+- `build_stub_llm_model()` factory — returns PydanticAI `TestModel` when `pydantic-ai` is installed, `None` otherwise, so `ClassificationService` and future LLM-consuming domains degrade gracefully when `LLM_*` env vars are unset ([#101](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/101))
+- AGENTS.md "Optional Infrastructure" reference section and `docs/ai/shared/scaffolding-layers.md` "Optional AI Infra Variant" section for `/new-domain` scaffolding ([#101](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/101))
+- README restructure (633 → 260 lines), `docs/reference.md`, and `docs/README.ko.md` Korean mirror ([#79](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/79))
+- Visual architecture diagrams (Mermaid + SVG exports) with canonical `docs/ai/shared/architecture-diagrams.md` and `make diagrams` target ([#81](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/81), [#89](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/89))
+- "Your first domain in 10 minutes" tutorial ([#84](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/84))
+- Contributor funnel — good-first-issues audit, `examples/` seed, five seed issues for contributors ([#85](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/85))
+- Secret hygiene — gitleaks pre-commit hook, history scan, `SECURITY.md` expansion ([#87](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/87))
+- ADR 040 (RAG as reusable `_core` pattern), ADR 041 (Multi-backend infrastructure layout — persistence umbrella + vector backend subfolders), ADR 042 (Optional Infrastructure — Selector + lazy factory)
+
+### Changed
+
+- ADR curation — 40 ADRs consolidated down to 14 core + 29 archived under `docs/history/archive/`, with `docs/history/README.md` providing a core-reading-order guide for onboarding ([#83](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/83))
+- `CoreContainer.llm_config` and `CoreContainer.embedding_config` are no longer public providers — both VOs are now constructed inside the lazy factory functions, reducing the container's surface area without changing the VO classes themselves ([#101](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/101))
+- `src/_core/infrastructure/` reorganised under the `persistence/` umbrella (RDB at `persistence/rdb/`, DynamoDB at `persistence/nosql/dynamodb/`) with vector backends split into `vectors/s3/` and `vectors/in_memory/` sharing a root `vector_model.py` ([#80](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/80), ADR 041)
+- RAG DTOs relocated from `_core/domain/value_objects/rag/` to `_core/domain/dtos/rag.py` and renamed `QueryAnswer` → `QueryAnswerDTO` for consistency with the ADR 004 DTO suffix convention ([#80](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/80))
+
 ## [0.3.0] - 2026-04-09
 
 ### Added

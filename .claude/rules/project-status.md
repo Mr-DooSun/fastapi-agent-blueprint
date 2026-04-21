@@ -1,11 +1,11 @@
 # Project Status
 
-> Last synced: 2026-04-20 via /sync-guidelines
+> Last synced: 2026-04-21 via /sync-guidelines
 
 ## Current Version Context
 - Latest release: v0.3.0 (2026-04-10)
 - Active domains: user (reference domain), classification (prototype), docs (RAG consumer example, #80)
-- Infrastructure: RDB (PostgreSQL/MySQL/SQLite), DynamoDB, Storage (S3/MinIO), S3 Vectors, InMemory Vectors (quickstart), Embedding (PydanticAI + Stub), LLM (PydanticAI Agent), RagPipeline (+ Stub answer agent), Broker (SQS/RabbitMQ/InMemory)
+- Infrastructure: RDB (PostgreSQL/MySQL/SQLite), DynamoDB, Storage (S3/MinIO), S3 Vectors, InMemory Vectors (quickstart), Embedding (PydanticAI + StubEmbedder fallback), LLM (PydanticAI Agent + TestModel stub fallback via `build_stub_llm_model`), RagPipeline (+ StubAnswerAgent), Broker (SQS/RabbitMQ/InMemory). All non-DB infras are optional via `providers.Selector` + lazy factories (ADR 042).
 
 ## Recent Major Changes (since v0.3.0)
 | Feature | Issue | Impact |
@@ -28,7 +28,10 @@
 | PydanticAI Embedder Transition | ADR 039 | PydanticAIEmbeddingAdapter replaces per-provider clients, EmbeddingConfig VO |
 | Bedrock Credential Support | #15 | LLMConfig with per-service AWS credential injection, model_factory |
 | Zero-config Quickstart | #78 | `make quickstart` + `make demo`, ENV=quickstart with SQLite + InMemory broker + auto create_all, Settings defaults for zero-infra boot |
-| RAG Pattern + docs Domain | #80 | `_core/domain/services/rag_pipeline.py` (Generic[TChunk] orchestrator), `_core/domain/value_objects/rag/` (BaseChunkDTO, CitationDTO, QueryAnswer), `_core/domain/protocols/answer_agent_protocol.py`, `_core/infrastructure/rag/` (StubEmbedder, StubAnswerAgent, PydanticAIAnswerAgent), `_core/infrastructure/vectors/` (BaseInMemoryVectorStore), `src/docs/` consumer (document CRUD + query), `make demo-rag`, VECTOR_STORE_TYPE env var, [ADR 040](../../docs/history/040-rag-as-reusable-pattern.md) |
+| RAG Pattern + docs Domain | #80 | `_core/domain/services/rag_pipeline.py` (Generic[TChunk] orchestrator), `_core/domain/dtos/rag.py` (BaseChunkDTO, CitationDTO, QueryAnswerDTO), `_core/domain/protocols/answer_agent_protocol.py`, `_core/infrastructure/rag/` (StubEmbedder, StubAnswerAgent, PydanticAIAnswerAgent), `_core/infrastructure/vectors/` (BaseInMemoryVectorStore), `src/docs/` consumer (document CRUD + query), `make demo-rag`, VECTOR_STORE_TYPE env var, [ADR 040](../../docs/history/040-rag-as-reusable-pattern.md) |
+| ADR Consolidation | #83 | 40 ADRs → 14 core + 29 archived under `docs/history/archive/`, new `docs/history/README.md` core-reading-order guide |
+| Optional Infrastructure (CoreContainer) — Part A | #101 | `providers.Selector` + lazy factories for all 5 non-broker optional infras (storage, DynamoDB, S3 Vectors, embedding, LLM). Disabled branches: `providers.Object(None)` for data stores, `StubEmbedder` for embedding. `llm_config` / `embedding_config` dropped from public container surface. [ADR 042](../../docs/history/042-optional-infrastructure-di-pattern.md), AGENTS.md "Optional Infrastructure" reference section |
+| Optional Infrastructure — Part B | #101 | `build_stub_llm_model()` factory returns PydanticAI `TestModel` (or `None` if `pydantic-ai` extra not installed). `ClassificationService` now degrades gracefully when `LLM_*` unset. `docs/ai/shared/scaffolding-layers.md` gains "Optional AI Infra Variant" section teaching the domain-level Selector+stub pattern for new-domain scaffolding |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN

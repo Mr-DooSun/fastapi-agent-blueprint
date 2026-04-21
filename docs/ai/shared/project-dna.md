@@ -6,7 +6,7 @@
 > This file is auto-extracted/updated from `src/user/` (reference domain) and `src/_core/` (Base classes)
 > when `/sync-guidelines` is run. **Run `/sync-guidelines` instead of editing manually.**
 >
-> Last updated: 2026-04-20
+> Last updated: 2026-04-21
 
 ## Section Index
 §0 Project Scale and Design Philosophy |
@@ -352,12 +352,9 @@ class {Name}Container(containers.DeclarativeContainer):
 | App Container (Server/Worker) | `containers.DynamicContainer` (factory function) |
 | Domain auto-discovery | `src._core.infrastructure.discovery.discover_domains()` |
 | Dynamic Container loading | `src._core.infrastructure.discovery.load_domain_container()` |
-| S3VectorClient | `providers.Singleton` | S3 Vectors API wrapper |
-| EmbeddingConfig | `providers.Singleton` | Immutable config VO for PydanticAI Embedder |
-| PydanticAIEmbeddingAdapter | `providers.Singleton` | Single adapter, multi-provider |
-| LLMConfig | `providers.Singleton` | Immutable config VO for PydanticAI Agent |
-| llm_model | `providers.Singleton` | Pre-built model via `build_llm_model()` |
-| Broker (multi-backend) | `providers.Selector` | Selects SQS/RabbitMQ/InMemory by config |
+| Broker (multi-backend) | `providers.Selector` | Selects SQS/RabbitMQ/InMemory by config (ADR 029) |
+| Optional infra (storage / DynamoDB / S3 Vectors / embedding / LLM) | `providers.Selector` + lazy factory | Enabled branch constructs the real client; disabled branch returns `providers.Object(None)` for data stores or a stub (`StubEmbedder` / `TestModel`) for AI infras (ADR 042) |
+| `EmbeddingConfig` / `LLMConfig` | Constructed inside lazy factories | Frozen dataclass VOs (domain layer) — **not** standalone container providers post-ADR 042; consumers receive the built `embedding_client` / `llm_model` instead |
 
 ### App-level Container (Auto-discovery)
 
