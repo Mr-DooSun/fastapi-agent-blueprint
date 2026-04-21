@@ -62,6 +62,21 @@ async def custom_exception_handler(
 
 
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    # Before falling through to a generic 500, check if this is a known
+    # LLM/provider SDK exception that should map to a domain error code.
+    from src._core.infrastructure.llm.error_mapper import try_map_llm_error
+
+    mapped = try_map_llm_error(exc)
+    if mapped is not None:
+        content = jsonable_encoder(
+            ErrorResponse(
+                message=mapped.message,
+                error_code=mapped.error_code,
+                error_details=mapped.details,
+            )
+        )
+        return JSONResponse(status_code=mapped.status_code, content=content)
+
     # Structured exception log — ``format_exc_info`` in the configured
     # processor pipeline renders the traceback for us, so we just pass
     # ``exc_info=True``. In dev the renderer is ``ConsoleRenderer`` (human-

@@ -14,11 +14,6 @@ logger = logging.getLogger(__name__)
 # page_configs is injected by bootstrap_admin() after discovery
 page_configs: list[BaseAdminPage] = []
 
-# query_service_provider is injected by the bootstrap hook below so the
-# query playground page can resolve a DocsQueryService without going
-# through the standard BaseAdminPage machinery (which only knows CRUD).
-query_service_provider = None  # type: ignore[assignment]
-
 
 @ui.page("/admin/docs")
 async def docs_list_page(page: int = 1, search: str = "") -> None:
@@ -57,7 +52,7 @@ async def docs_query_page() -> None:
             ui.notify("Question is required", type="warning")
             return
         try:
-            service = _resolve_query_service()
+            service = docs_admin_page._get_extra_service("query")
             answer, retrieved_count = await service.answer_question(
                 question=question, top_k=int(top_k_input.value or 5)
             )
@@ -97,26 +92,3 @@ async def docs_detail_page(record_id: int) -> None:
         return
     admin_layout(page_configs, current_domain="docs")
     await docs_admin_page.render_detail(record_id=record_id)
-
-
-def _resolve_query_service():  # noqa: ANN202
-    """Instantiate a DocsQueryService by walking the DocsContainer manually.
-
-    The admin bootstrap only wires ``{domain}_service`` onto each page's
-    config. For this playground we need a second service, so we build
-    the ``DocsQueryService`` directly from the module-level container.
-    """
-    from src._apps.server.di.container import create_server_container
-    from src.docs.infrastructure.di.docs_container import DocsContainer
-
-    global _cached_query_service  # noqa: PLW0603
-    if _cached_query_service is not None:
-        return _cached_query_service
-
-    container = create_server_container()
-    docs_container: DocsContainer = container.docs_container
-    _cached_query_service = docs_container.docs_query_service()
-    return _cached_query_service
-
-
-_cached_query_service = None

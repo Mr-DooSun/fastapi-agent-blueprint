@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-import logging
 from typing import Any
 
-from src._core.common.llm_utils import map_llm_error
 from src._core.domain.dtos.rag import BaseChunkDTO, QueryAnswerDTO
 from src._core.domain.services.rag_pipeline import RagPipeline
-from src._core.exceptions.base_exception import BaseCustomException
-
-logger = logging.getLogger(__name__)
 
 
 class DocsQueryService:
@@ -17,8 +12,8 @@ class DocsQueryService:
     Exists so the router has a domain-layer entry point; all RAG
     orchestration lives in ``RagPipeline`` (``_core.domain.services``).
     The docs domain plugs its own chunk store + embedder + answer agent
-    into the pipeline via DI — this service just translates errors and
-    surfaces ``retrieved_count`` alongside the structured answer.
+    into the pipeline via DI — this service just delegates to the pipeline.
+    LLM/provider exceptions propagate to the server's generic_exception_handler.
     """
 
     def __init__(self, rag_pipeline: RagPipeline[BaseChunkDTO]) -> None:
@@ -30,13 +25,7 @@ class DocsQueryService:
         top_k: int = 5,
         filters: dict[str, Any] | None = None,
     ) -> tuple[QueryAnswerDTO, int]:
-        try:
-            answer, chunks = await self._pipeline.answer(
-                question=question, top_k=top_k, filters=filters
-            )
-        except BaseCustomException:
-            raise
-        except Exception as exc:
-            logger.exception("Docs query failed")
-            map_llm_error(exc)
+        answer, chunks = await self._pipeline.answer(
+            question=question, top_k=top_k, filters=filters
+        )
         return answer, len(chunks)

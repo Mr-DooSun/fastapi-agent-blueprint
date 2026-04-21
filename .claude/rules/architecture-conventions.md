@@ -1,7 +1,7 @@
 # Architecture Conventions
 
-> Last synced: 2026-04-21 via /sync-guidelines (v0.4.0 post-release sync)
-> For Absolute Prohibitions, Conversion Patterns, Write DTO criteria, and common commands, refer to AGENTS.md.
+> Last synced: 2026-04-22 via /sync-guidelines (responsibility-driven refactor, pre-v0.5.0)
+> For Absolute Prohibitions, Conversion Patterns, Write DTO criteria, Responsibility Matrix, Error Translation, Optional AI Infra Pattern, and Admin Service Contract, refer to AGENTS.md.
 > This file only contains **structural context** that supplements AGENTS.md for Claude.
 
 ## Data Flow (3-Tier Hybrid)

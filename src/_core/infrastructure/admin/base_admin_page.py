@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from nicegui import ui
 
+from src._core.domain.protocols.admin_service_protocol import AdminCrudServiceProtocol
 from src._core.domain.value_objects.query_filter import QueryFilter
 from src._core.exceptions.base_exception import BaseCustomException
 
@@ -46,7 +48,17 @@ class BaseAdminPage:
     default_sort_order: str = "desc"
     page_size: int = 20
     readonly: bool = True
-    _service_provider: Any = field(default=None, repr=False)
+    # Declare extra services by alias → container attr name.
+    # Bootstrap resolves each by attr name from the domain container and stores
+    # the callable in ``_extra_services``. Use ``_get_extra_service(alias)`` to
+    # retrieve them in page handlers.
+    extra_services_config: dict[str, str] = field(default_factory=dict, repr=False)
+    _service_provider: Callable[[], AdminCrudServiceProtocol] | None = field(
+        default=None, repr=False
+    )
+    _extra_services: dict[str, Callable[[], Any]] = field(
+        default_factory=dict, repr=False
+    )
 
     # ── Config helpers ──
 
@@ -56,7 +68,7 @@ class BaseAdminPage:
     def get_masked_field_names(self) -> set[str]:
         return {c.field_name for c in self.columns if c.masked}
 
-    def _get_service(self):
+    def _get_service(self) -> AdminCrudServiceProtocol:
         """Resolve service from the provider injected by bootstrap."""
         if self._service_provider is None:
             raise RuntimeError(
@@ -64,6 +76,16 @@ class BaseAdminPage:
                 "Was bootstrap_admin() called?"
             )
         return self._service_provider()
+
+    def _get_extra_service(self, alias: str) -> Any:
+        """Resolve an extra service by alias (declared in extra_services_config)."""
+        provider = self._extra_services.get(alias)
+        if provider is None:
+            raise RuntimeError(
+                f"Extra service '{alias}' not wired for '{self.domain_name}' admin page. "
+                "Declare it in extra_services_config and ensure bootstrap ran."
+            )
+        return provider()
 
     # ── Template Methods ──
 

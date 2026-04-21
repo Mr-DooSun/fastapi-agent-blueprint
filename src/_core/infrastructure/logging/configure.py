@@ -92,6 +92,68 @@ def _silence_duplicate_sqlalchemy_handlers() -> None:
         logger.propagate = True
 
 
+def _build_dict_config(
+    level_value: int,
+    shared_processors: list[Any],
+    renderer: Any,
+) -> dict[str, Any]:
+    """Build the stdlib ``logging.config.dictConfig`` payload."""
+    return {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "structlog": {
+                "()": structlog.stdlib.ProcessorFormatter,
+                "foreign_pre_chain": shared_processors,
+                "processors": [
+                    structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                    renderer,
+                ],
+            },
+        },
+        "handlers": {
+            "default": {
+                "class": "logging.StreamHandler",
+                "formatter": "structlog",
+                "stream": "ext://sys.stdout",
+            },
+        },
+        "loggers": {
+            # Root — catches every stdlib logger that does not have its
+            # own handler. Every ``logging.getLogger(__name__)`` call in
+            # the codebase propagates here.
+            "": {
+                "handlers": ["default"],
+                "level": level_value,
+                "propagate": False,
+            },
+            # Uvicorn's framework logs: keep as-is, let them ride root.
+            "uvicorn": {"handlers": [], "level": level_value, "propagate": True},
+            "uvicorn.error": {
+                "handlers": [],
+                "level": level_value,
+                "propagate": True,
+            },
+            # Silence uvicorn's built-in access log — the ASGI access
+            # middleware replaces it with structured request/response
+            # records. Keeping both would duplicate every request line.
+            "uvicorn.access": {
+                "handlers": [],
+                "level": logging.WARNING,
+                "propagate": False,
+            },
+            # SQLAlchemy engine echo routes through the root handler
+            # (level honours DATABASE_ECHO). Cleared below to drop any
+            # handler SQLAlchemy attached during ``create_engine``.
+            "sqlalchemy.engine": {
+                "handlers": [],
+                "level": level_value,
+                "propagate": True,
+            },
+        },
+    }
+
+
 def configure_logging(*, log_level: str = "INFO", json_logs: bool = False) -> None:
     """Configure structlog + stdlib logging to share a single pipeline.
 
@@ -120,62 +182,7 @@ def configure_logging(*, log_level: str = "INFO", json_logs: bool = False) -> No
     )
 
     level_value = logging.getLevelNamesMapping().get(log_level.upper(), logging.INFO)
-
     logging.config.dictConfig(
-        {
-            "version": 1,
-            "disable_existing_loggers": False,
-            "formatters": {
-                "structlog": {
-                    "()": structlog.stdlib.ProcessorFormatter,
-                    "foreign_pre_chain": shared_processors,
-                    "processors": [
-                        structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-                        renderer,
-                    ],
-                },
-            },
-            "handlers": {
-                "default": {
-                    "class": "logging.StreamHandler",
-                    "formatter": "structlog",
-                    "stream": "ext://sys.stdout",
-                },
-            },
-            "loggers": {
-                # Root — catches every stdlib logger that does not have its
-                # own handler. Every ``logging.getLogger(__name__)`` call in
-                # the codebase propagates here.
-                "": {
-                    "handlers": ["default"],
-                    "level": level_value,
-                    "propagate": False,
-                },
-                # Uvicorn's framework logs: keep as-is, let them ride root.
-                "uvicorn": {"handlers": [], "level": level_value, "propagate": True},
-                "uvicorn.error": {
-                    "handlers": [],
-                    "level": level_value,
-                    "propagate": True,
-                },
-                # Silence uvicorn's built-in access log — the ASGI access
-                # middleware replaces it with structured request/response
-                # records. Keeping both would duplicate every request line.
-                "uvicorn.access": {
-                    "handlers": [],
-                    "level": logging.WARNING,
-                    "propagate": False,
-                },
-                # SQLAlchemy engine echo routes through the root handler
-                # (level honours DATABASE_ECHO). Cleared below to drop any
-                # handler SQLAlchemy attached during ``create_engine``.
-                "sqlalchemy.engine": {
-                    "handlers": [],
-                    "level": level_value,
-                    "propagate": True,
-                },
-            },
-        }
+        _build_dict_config(level_value, shared_processors, renderer)
     )
-
     _silence_duplicate_sqlalchemy_handlers()

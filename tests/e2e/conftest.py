@@ -14,9 +14,8 @@ async def _override_app_database(test_db):
     unnecessarily depend on Settings env vars.
     """
     from src._apps.server.app import app
+    from src._apps.server.testing import override_database, reset_database_override
 
-    container = app.state.container
-    core = container.core_container()
-    core.database.override(test_db)
+    override_database(app, test_db)
     yield
-    core.database.reset_override()
+    reset_database_override(app)

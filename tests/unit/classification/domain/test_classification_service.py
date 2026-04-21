@@ -1,112 +1,61 @@
-import importlib.util
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src._core.domain.value_objects.llm_config import LLMConfig
-
-_has_pydantic_ai = importlib.util.find_spec("pydantic_ai") is not None
-
-
-class TestClassificationServiceImportError:
-    """pydantic-ai 미설치 시 ImportError 발생 확인."""
-
-    def test_raises_import_error_without_pydantic_ai(self):
-        if _has_pydantic_ai:
-            pytest.skip("pydantic-ai is installed; cannot test ImportError path")
-
-        with pytest.raises(ImportError, match="pydantic-ai is required"):
-            from src.classification.domain.services.classification_service import (
-                ClassificationService,
-            )
-
-            ClassificationService(llm_model="openai:gpt-4o")
+from src.classification.domain.dtos.classification_dto import ClassificationDTO
+from src.classification.domain.services.classification_service import (
+    ClassificationService,
+)
 
 
-@pytest.mark.skipif(not _has_pydantic_ai, reason="pydantic-ai not installed")
-class TestClassificationServiceWithPydanticAI:
-    """pydantic-ai 설치 시 서비스 동작 테스트."""
-
-    def _make_service(self):
-        from src.classification.domain.services.classification_service import (
-            ClassificationService,
-        )
-
-        with patch("pydantic_ai.Agent") as mock_agent_cls:
-            mock_agent = MagicMock()
-            mock_agent_cls.return_value = mock_agent
-            service = ClassificationService(llm_model="openai:gpt-4o")
-            service._agent = mock_agent
-        return service
+class TestClassificationService:
+    """ClassificationService delegates to ClassifierProtocol — uses mock only."""
 
     @pytest.mark.asyncio
     async def test_classify_returns_dto(self):
-        from src.classification.domain.dtos.classification_dto import (
-            ClassificationDTO,
+        expected = ClassificationDTO(
+            category="positive", confidence=0.95, reasoning="Clear positive tone."
+        )
+        mock_classifier = MagicMock()
+        mock_classifier.classify = AsyncMock(return_value=expected)
+
+        service = ClassificationService(classifier=mock_classifier)
+        result = await service.classify(
+            text="This is great!", categories=["positive", "negative"]
         )
 
-        service = self._make_service()
-
-        mock_result = MagicMock()
-        mock_result.output = ClassificationDTO(
-            category="positive",
-            confidence=0.95,
-            reasoning="The text expresses positive sentiment.",
+        assert result is expected
+        mock_classifier.classify.assert_awaited_once_with(
+            text="This is great!", categories=["positive", "negative"]
         )
-
-        with patch.object(
-            service._agent, "run", new_callable=AsyncMock, return_value=mock_result
-        ) as mock_run:
-            result = await service.classify(
-                text="This is great!", categories=["positive", "negative"]
-            )
-
-            assert result.category == "positive"
-            assert result.confidence == 0.95
-            mock_run.assert_called_once()
-            call_args = mock_run.call_args
-            assert "Categories: positive, negative" in call_args[0][0]
-            assert "This is great!" in call_args[0][0]
 
     @pytest.mark.asyncio
     async def test_classify_without_categories(self):
-        from src.classification.domain.dtos.classification_dto import (
-            ClassificationDTO,
+        expected = ClassificationDTO(
+            category="tech", confidence=0.8, reasoning="Technical topic."
         )
+        mock_classifier = MagicMock()
+        mock_classifier.classify = AsyncMock(return_value=expected)
 
-        service = self._make_service()
+        service = ClassificationService(classifier=mock_classifier)
+        result = await service.classify(text="Python is a programming language")
 
-        mock_result = MagicMock()
-        mock_result.output = ClassificationDTO(
-            category="tech",
-            confidence=0.8,
-            reasoning="Technical topic.",
+        assert result is expected
+        mock_classifier.classify.assert_awaited_once_with(
+            text="Python is a programming language", categories=None
         )
-
-        with patch.object(
-            service._agent, "run", new_callable=AsyncMock, return_value=mock_result
-        ) as mock_run:
-            result = await service.classify(text="Python is a programming language")
-
-            assert result.category == "tech"
-            mock_run.assert_called_once_with("Python is a programming language")
 
     @pytest.mark.asyncio
-    async def test_classify_wraps_exception(self):
-        from src.classification.domain.exceptions.classification_exceptions import (
-            ClassificationFailedException,
-        )
+    async def test_classify_propagates_exception(self):
+        """Provider exceptions propagate to the server's generic_exception_handler."""
+        mock_classifier = MagicMock()
+        mock_classifier.classify = AsyncMock(side_effect=RuntimeError("API timeout"))
 
-        service = self._make_service()
+        service = ClassificationService(classifier=mock_classifier)
 
-        with patch.object(
-            service._agent,
-            "run",
-            new_callable=AsyncMock,
-            side_effect=RuntimeError("API timeout"),
-        ):
-            with pytest.raises(ClassificationFailedException, match="API timeout"):
-                await service.classify(text="test input")
+        with pytest.raises(RuntimeError, match="API timeout"):
+            await service.classify(text="test input")
 
 
 class TestLLMConfig:

@@ -38,6 +38,73 @@ When fields match, Request is passed directly to Service — creating a separate
 - UseCase criteria: multiple Service composition, cross-transaction boundaries, or other orchestration complexity
 - When in doubt: start without UseCase, add it when complexity grows
 
+## Responsibility Matrix
+
+Each concern has exactly one home. Do not duplicate or split these across layers.
+
+| Concern | Location | Rule |
+|---------|----------|------|
+| Pure business logic | `{domain}/domain/services/` | No SDK imports, no infra |
+| Domain contracts (AI) | `{domain}/domain/protocols/` or `_core/domain/protocols/` | `typing.Protocol` + `@runtime_checkable` |
+| Provider SDK calls | `_core/infrastructure/{llm,embedding,classifier,rag}/` | PydanticAI, boto3 SDK isolated here |
+| Provider SDK exception translation | `_core/infrastructure/llm/error_mapper.py` | ACL — infra only, never domain |
+| Provider helpers | `_core/infrastructure/ai/providers.py` | `parse_model_name`, `build_*_provider` |
+| DI container, lazy factories | `{domain}/infrastructure/di/{domain}_container.py` | `_build_*` factories belong here |
+| Bootstrap orchestration | `_apps/{server,worker}/bootstrap.py` | Private `_configure_*`, `_install_*`, `_setup_*` functions |
+| Admin service contract | `_core/domain/protocols/admin_service_protocol.py` | `AdminCrudServiceProtocol` |
+| Test DI overrides | `_apps/server/testing.py` | Public `override_database` / `reset_database_override` |
+
+## Error Translation
+
+Provider SDK exceptions (PydanticAI, boto3, openai, anthropic) must be translated to domain LLM exceptions in the **infrastructure layer**, never inside domain services.
+
+- **Domain services**: let exceptions propagate — no `try/except` around provider calls
+- **Infrastructure adapters** (e.g. `PydanticAIEmbeddingAdapter`): catch SDK exceptions and call `map_llm_error(exc)` (NoReturn — always raises a domain exception)
+- **FastAPI `generic_exception_handler`**: catches all unhandled exceptions, calls `try_map_llm_error(exc)` (returns `Optional`) before falling through to 500
+- **ACL module**: `src/_core/infrastructure/llm/error_mapper.py` — the only place that knows provider SDK class names
+
+```
+Provider SDK exception
+  → propagates through domain service untouched
+  → caught by FastAPI generic_exception_handler
+  → try_map_llm_error(exc) → LLMException (mapped HTTP status)
+  OR → 500 Internal Server Error (unrecognised exception)
+```
+
+## Optional AI Infra Pattern
+
+All AI features (LLM classification, RAG answering, embedding) follow the same Protocol + Infra Adapter + Selector pattern. Background: [ADR 040](docs/history/040-rag-as-reusable-pattern.md) + [ADR 042](docs/history/042-optional-infrastructure-di-pattern.md).
+
+**Pattern:**
+1. `{domain}/domain/protocols/{feature}_protocol.py` — `typing.Protocol` contract
+2. `_core/infrastructure/{feature}/pydantic_ai_{feature}.py` — real adapter (or domain-specific if DTO coupling is tight)
+3. `_core/infrastructure/{feature}/stub_{feature}.py` — deterministic stub for quickstart/no-LLM
+4. Domain container uses `providers.Selector(real=..., stub=...)` to branch
+
+**Reference implementations:**
+- RAG: `AnswerAgentProtocol` → `PydanticAIAnswerAgent` / `StubAnswerAgent` (in `_core/infrastructure/rag/`)
+- Classifier: `ClassifierProtocol` → `PydanticAIClassifier` / `StubClassifier` (in `classification/infrastructure/classifier/`)
+
+**Selector selector function convention:** `def _classifier_selector() -> str: return "real" if settings.llm_model_name else "stub"`
+
+## Admin Service Contract
+
+Admin pages consume domain services through `AdminCrudServiceProtocol` (`_core/domain/protocols/admin_service_protocol.py`). Any `BaseService` subclass satisfies this protocol automatically.
+
+- `_service_provider: Callable[[], AdminCrudServiceProtocol]` — main CRUD service, wired by bootstrap
+- `extra_services_config: dict[str, str]` — declare additional services by alias → container attr name
+- `_get_extra_service(alias: str)` — resolve and call an extra service (e.g. `"query"` → `docs_query_service`)
+
+**Example** (docs domain needing a query service alongside the main CRUD service):
+```python
+docs_admin_page = BaseAdminPage(
+    domain_name="docs",
+    extra_services_config={"query": "docs_query_service"},
+)
+# In page handler:
+service = docs_admin_page._get_extra_service("query")
+```
+
 ## Optional Infrastructure
 
 Every non-DB infra in `CoreContainer` is optional — toggle via env vars, no code change. When a group is disabled, the provider returns a stub (where graceful degradation matters) or `None` (for data stores). Background: [ADR 042](docs/history/042-optional-infrastructure-di-pattern.md).

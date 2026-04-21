@@ -20,4 +20,5 @@ docs_admin_page = BaseAdminPage(
     searchable_fields=["title"],
     sortable_fields=["id", "created_at"],
     default_sort_field="id",
+    extra_services_config={"query": "docs_query_service"},
 )
