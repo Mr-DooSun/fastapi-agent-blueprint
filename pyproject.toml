@@ -1,6 +1,6 @@
 [project]
 name = "fastapi-agent-blueprint"
-version = "0.3.0"
+version = "0.4.0"
 description = "FastAPI DDD template, built for AI agent backends — zero-boilerplate CRUD, auto domain discovery, async architecture"
 readme = "README.md"
 requires-python = ">=3.12.9"
