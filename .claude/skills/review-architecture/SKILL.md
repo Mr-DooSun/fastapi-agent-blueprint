@@ -12,9 +12,10 @@ description: |
 Target: $ARGUMENTS (domain name or "all")
 
 ## Procedure Overview
-1. Identify audit target — single domain or all domains
-2. Run 8-category checklist — layer deps, conversions, DTO integrity, DI, tests, worker, admin, bootstrap
-3. Report — PASS/FAIL per item with recommended actions
+1. Resolve the audit target and load the shared rule sources (Phase 0)
+2. Audit the target against the 9 architecture checklist categories (Phase 1)
+3. Determine `Drift Candidates` and whether `Sync Required` is `true` or `false` (Phase 2)
+4. Report using the shared review contract (Phase 3)
 
 Read `docs/ai/shared/skills/review-architecture.md` for detailed steps and output format.
 Also refer to `docs/ai/shared/architecture-review-checklist.md` for the full checklist.

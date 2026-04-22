@@ -291,3 +291,5 @@ Use domain-local Protocol + Adapter when the output DTO is domain-specific (not 
 20. `tests/unit/{name}/application/test_{name}_use_case.py` — **only when UseCase exists** MockService + tests
 21. `tests/integration/{name}/infrastructure/test_{name}_repository.py` — uses test_db fixture
 22. `tests/e2e/{name}/test_{name}_router.py` — TestClient HTTP 요청 테스트
+
+> For canonical required test file definitions (baseline vs. conditional), see `docs/ai/shared/test-files.md`.

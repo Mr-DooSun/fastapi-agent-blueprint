@@ -1,5 +1,13 @@
 # Guideline Synchronization Inspection Items (Detailed)
 
+> This checklist defines drift work for `/sync-guidelines`.
+>
+> Taxonomy:
+> - `AUTO-FIX` = auto-fixable drift that can be updated mechanically
+> - `REVIEW` = policy-review drift that needs human judgment
+> - `DRIFT` = unresolved mismatch discovered during inspection
+> - `OK` = verified and aligned
+
 ## 1. AGENTS.md ↔ Code Consistency Check
 
 Read AGENTS.md and compare each section against the actual code:
@@ -150,8 +158,8 @@ Inspect whether `docs/ai/shared/` documents match the current code.
 
 - [ ] **Phase count consistency**:
   - Count Phase/Step headings in `docs/ai/shared/skills/{name}.md`
-  - Count Phase/Step overview items in `.claude/skills/{name}/SKILL.md` wrapper
-  - On mismatch: flag as [DRIFT] — shared procedure may have been updated without updating the wrapper overview
+  - Count Phase/Step overview items in both `.claude/skills/{name}/SKILL.md` and `.agents/skills/{name}/SKILL.md`
+  - On mismatch: flag as [DRIFT] — shared procedure may have been updated without updating one or both wrappers
 
 - [ ] **No tool-specific instructions in shared procedure**:
   - Grep `docs/ai/shared/skills/*.md` for `.claude/rules/`, `.claude/skills/`, `.agents/skills/`
@@ -161,11 +169,21 @@ Inspect whether `docs/ai/shared/` documents match the current code.
 ### Manual Inspection (Change-history-based — [REVIEW] targets)
 
 - [ ] **`review-architecture` checklist** (`docs/ai/shared/architecture-review-checklist.md`):
-  - Count the items in AGENTS.md's "Absolute Prohibitions" section (expected: 5) and compare against the number of related inspection items in `docs/ai/shared/architecture-review-checklist.md`
-  - On mismatch: confirm with the user whether Grep patterns need to be added for new rules
+  - Compare the **code-auditable** Absolute Prohibitions in AGENTS.md against the related inspection items in `docs/ai/shared/architecture-review-checklist.md`
+  - Exclude the "No modifying or deleting shared rule sources without cross-reference verification" rule from this count; it remains in AGENTS.md / harness docs because it is process-oriented rather than a code-audit grep target
+  - On mismatch: confirm with the user whether checklist coverage should be expanded for any newly code-auditable rule
 
 - [ ] **`security-review` security checklist** (`docs/ai/shared/security-checklist.md`):
   - Extract the "active" feature list from `docs/ai/shared/project-dna.md` §8
-  - Extract the feature list from items marked `[when applicable]` in `docs/ai/shared/security-checklist.md`
-  - Check whether security inspection items exist for newly activated features
+  - Extract the feature list from items marked `[When applicable]` in `docs/ai/shared/security-checklist.md`
+  - Check whether security inspection items exist for newly activated features and whether the live code differs from `project-dna`
   - On uncovered features: confirm with the user whether security inspection items need to be added for those features
+
+## 6. Quality Gate Scenarios
+
+Use these scenario checks when validating the redesigned workflow:
+
+- [ ] Architecture-changing PR -> `/review-pr` should produce findings and/or drift candidates, and `/sync-guidelines` should be required before closure
+- [ ] Security feature active in code but stale in `project-dna` -> `/security-review` should continue auditing and report stale-reference drift instead of ending in `SKIP`
+- [ ] Shared procedure changed without wrapper updates -> `/sync-guidelines` should detect Hybrid C drift for both Claude and Codex wrappers
+- [ ] Docs-only checklist meaning change -> `/sync-guidelines` should classify it as `REVIEW`, not a silent `AUTO-FIX`

@@ -12,12 +12,15 @@ description: |
 Target: $ARGUMENTS (PR number, GitHub URL, or empty for current branch)
 
 ## Procedure Overview
-1. Resolve PR & collect rules — load architecture/security checklists (Phase 0)
-2. Apply rules to PR diff — check per layer, assign severity (Phase 1)
-3. Report — BLOCKING/SUGGESTION/PASS findings (Phase 2)
-4. Post to GitHub — optional, after user confirmation (Phase 3)
+1. Resolve PR and load shared rule sources (Phase 0)
+2. Review changed files against shared architecture and security rules (Phase 1)
+3. Determine `Drift Candidates` and whether `Sync Required` is `true` or `false` (Phase 2)
+4. Report using the shared review contract (Phase 3)
+5. Post to GitHub only after user confirmation (Phase 4)
 
 Read `docs/ai/shared/skills/review-pr.md` for detailed steps and output format.
 
 ## Claude-Specific: Rule Sources
-Also load `.claude/rules/architecture-conventions.md` for additional DO/DON'T context.
+You may cross-check the final wording against `.claude/rules/architecture-conventions.md`,
+but do not create findings that are not already backed by the shared rule
+sources loaded in `docs/ai/shared/skills/review-pr.md`.

@@ -12,10 +12,10 @@ description: |
 Target: $ARGUMENTS (domain name, file path, or "all")
 
 ## Procedure Overview
-1. Identify audit scope — file, domain, or all
-2. Run 8-category security checklist — injection, auth, data protection, input validation, config, errors, worker, S3
-3. Apply conditional checks — [Always] items run unconditionally, [When applicable] items check feature usage first
-4. Report — severity-rated findings with file/line references and mitigations
+1. Resolve the audit scope and run the feature-detection / reference-freshness preflight (Phase 0)
+2. Audit the target against the 12 security checklist categories (Phase 1)
+3. Determine stale-reference drift, other `Drift Candidates`, and whether `Sync Required` is `true` or `false` (Phase 2)
+4. Report using the shared review contract (Phase 3)
 
 Read `docs/ai/shared/skills/security-review.md` for detailed steps and output format.
 Also refer to `docs/ai/shared/security-checklist.md` for the full checklist.
