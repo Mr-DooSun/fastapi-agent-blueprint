@@ -56,8 +56,8 @@ Inspect the 12 security checklist categories defined in
 3. Data Protection
 4. Input Validation
 5. Dependencies & Configuration
-6. Error Handling and Logging
-7. Async Worker Security
+6. Error Handling & Logging
+7. Async Worker Security (Taskiq)
 8. Object Storage Security (AWS S3)
 9. DynamoDB Security
 10. S3 Vectors Security

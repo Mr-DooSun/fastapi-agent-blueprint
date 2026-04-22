@@ -12,9 +12,9 @@ Only shared rule sources may create findings:
 - `docs/ai/shared/architecture-review-checklist.md`
 - `docs/ai/shared/security-checklist.md`
 
-Tool-specific files such as `.claude/rules/*` may help wording or navigation,
-but they must not introduce findings that are not already backed by the shared
-rule sources above.
+Tool-specific convention files, if available, may help with wording or
+navigation, but they must not introduce findings that are not already backed by
+the shared rule sources above.
 
 ## Review Contract
 
