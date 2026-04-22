@@ -83,16 +83,16 @@
 | Async task | `/add-worker-task` | `{domain} {task_name}` | Add UseCase method first if needed |
 | Admin page addition | `/add-admin-page` | `{domain}` | Auto-discovers, no bootstrap changes needed |
 | Cross-domain connection | `/add-cross-domain` | `from:{consumer} to:{provider}` | Protocol-based DIP |
-| Test generation | `/test-domain` | `{domain} generate` | 5 required test files |
+| Test generation | `/test-domain` | `{domain} generate` | baseline + conditional test files (see `docs/ai/shared/test-files.md`) |
 | Test execution | `/test-domain` | `{domain} run` | unit + integration + e2e |
-| Architecture verification | `/review-architecture` | `{domain}` or `all` | 20+ item inspection |
-| Security audit | `/security-review` | `{domain}`, `{file}`, or `all` | OWASP 8 categories, 32+ items |
-| Guideline sync | `/sync-guidelines` | (none) | Run after design changes |
+| Architecture verification | `/review-architecture` | `{domain}` or `all` | 9 categories, severity-tagged architecture audit |
+| Security audit | `/security-review` | `{domain}`, `{file}`, or `all` | 12 categories, feature-freshness preflight, stale-drift detection |
+| Guideline sync | `/sync-guidelines` | (none) | Close the quality gate after design changes or review drift |
 | Bug fix | `/fix-bug` | `"{description}"` | Reproduce -> Trace -> Fix -> Verify |
 | DB migration | `/migrate-domain` | `generate\|upgrade\|downgrade\|status` | Manual review required after autogenerate |
 | New member onboarding | `/onboard` | (none) | Experience-level adaptive (Beginner/Intermediate/Advanced) |
 | Sub-feature design | `/plan-feature` | `"{description}"` | Recursive use when splitting large features |
-| PR review | `/review-pr` | `{number\|URL}` | Architecture-aware review against project rules |
+| PR review | `/review-pr` | `{number\|URL}` | Diff review + drift candidates + explicit sync-required decision |
 | DynamoDB migration | `python -m migrations.dynamodb.cli --env {env}` | — | DynamoDB table/GSI creation (manual CLI) |
 | **Unmappable** items | Manual implementation | — | External API integrations, middleware, etc. |
 

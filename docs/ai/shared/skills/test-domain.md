@@ -4,12 +4,9 @@ If the argument contains "generate", generate missing test files.
 If the argument contains "run", execute existing tests.
 If neither is present, ask the user which mode they want.
 
-## Required Test Files (5)
-- `tests/factories/{name}_factory.py`
-- `tests/unit/{name}/domain/test_{name}_service.py`
-- `tests/unit/{name}/application/test_{name}_use_case.py`
-- `tests/integration/{name}/infrastructure/test_{name}_repository.py`
-- `tests/unit/{name}/interface/admin/test_{name}_admin_config.py` **(only when admin exists)**
+## Required Test Files
+
+See `docs/ai/shared/test-files.md` for the canonical baseline and conditional file definitions.
 
 Refer to `docs/ai/shared/test-patterns.md` for detailed test patterns and Factory code examples.
 
