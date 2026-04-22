@@ -13,7 +13,12 @@ inward.
 
 ```mermaid
 flowchart LR
+    subgraph other["Another domain"]
+        OtherD["Domain"]
+    end
+
     subgraph domain["src/{domain}/  (4 DDD layers)"]
+        direction TB
         I["Interface<br/>routers · admin · worker · schemas"]
         A["Application<br/>use cases — optional"]
         D["Domain<br/>services · protocols · DTOs · value objects"]
@@ -21,16 +26,15 @@ flowchart LR
         I --> A
         A --> D
         Inf --> D
-        I -. direct when no UseCase .-> D
+        I -. "direct (no UseCase)" .-> D
     end
 
-    Core["src/_core/<br/>Base classes · CoreContainer · shared VOs"]
-    I --> Core
-    A --> Core
-    D --> Core
-    Inf --> Core
+    subgraph core["src/_core/"]
+        Core["Base classes<br/>CoreContainer<br/>shared VOs"]
+    end
 
-    Other["Another domain"] -. via Protocol-based DIP .-> D
+    OtherD -. "Protocol-based DIP" .-> D
+    domain --> core
 ```
 
 - **UseCase is optional.** Simple CRUD routes Router → Service directly
