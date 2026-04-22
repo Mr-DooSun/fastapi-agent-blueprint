@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Protocol, TypeVar, runtime_checkable
 
 from pydantic import BaseModel
 
@@ -12,11 +12,12 @@ if TYPE_CHECKING:
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
 
 
-class BaseVectorStoreProtocol(Generic[ReturnDTO]):
+@runtime_checkable
+class BaseVectorStoreProtocol(Protocol[ReturnDTO]):
     """Backend-agnostic vector store protocol.
 
     Abstraction boundary for vector storage implementations.
-    Both S3 Vectors and future pgvector implement this protocol.
+    Both S3 Vectors and InMemory stores implement this protocol structurally.
     Domain services inject this protocol directly.
     """
 

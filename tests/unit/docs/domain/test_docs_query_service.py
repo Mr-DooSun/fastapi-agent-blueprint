@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src._core.domain.dtos.rag import BaseChunkDTO, QueryAnswerDTO
-from src._core.exceptions.llm_exceptions import LLMException
 from src.docs.domain.services.docs_query_service import DocsQueryService
 
 
@@ -33,15 +32,15 @@ async def test_answer_question_returns_answer_and_count():
 
 
 @pytest.mark.asyncio
-async def test_answer_question_wraps_exception():
+async def test_answer_question_propagates_exception():
+    """Provider exceptions propagate to the server's generic_exception_handler for mapping."""
     pipeline = MagicMock()
     pipeline.answer = AsyncMock(side_effect=RuntimeError("boom"))
 
     service = DocsQueryService(rag_pipeline=pipeline)
 
-    with pytest.raises(LLMException) as exc_info:
+    with pytest.raises(RuntimeError, match="boom"):
         await service.answer_question(question="q")
-    assert "boom" not in str(exc_info.value)
 
 
 @pytest.mark.asyncio

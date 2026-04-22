@@ -3,6 +3,11 @@ from __future__ import annotations
 from typing import NoReturn
 
 from src._core.domain.value_objects.embedding_config import EmbeddingConfig
+from src._core.infrastructure.ai.providers import (
+    build_bedrock_provider,
+    build_openai_provider,
+    parse_model_name,
+)
 from src._core.infrastructure.embedding.exceptions import (
     EmbeddingAuthenticationException,
     EmbeddingException,
@@ -19,10 +24,6 @@ _MAX_CHARS_PER_TEXT_BEDROCK = 50_000  # Bedrock per-text character limit
 
 class PydanticAIEmbeddingAdapter:
     """Adapter bridging PydanticAI Embedder to ``BaseEmbeddingProtocol``.
-
-    Implements the same interface as ``OpenAIEmbeddingClient`` /
-    ``BedrockEmbeddingClient`` so it can be a drop-in replacement
-    behind ``BaseEmbeddingProtocol``.
 
     Provider-specific behaviour:
     - **OpenAI**: batch splitting respects 2,048 items / 300K tokens.
@@ -48,11 +49,7 @@ class PydanticAIEmbeddingAdapter:
             )
 
         self._dimension = embedding_config.dimension
-        self._provider = (
-            embedding_config.model_name.split(":")[0]
-            if ":" in embedding_config.model_name
-            else ""
-        )
+        self._provider, _ = parse_model_name(embedding_config.model_name)
         self._model_name = embedding_config.model_name
         self._embedder = Embedder(self._build_model(embedding_config))
 
@@ -66,32 +63,25 @@ class PydanticAIEmbeddingAdapter:
         object for precise authentication control. Otherwise returns the
         plain model string and lets PydanticAI auto-detect env vars.
         """
-        provider = self._provider
-        raw_model = (
-            config.model_name.split(":", 1)[1]
-            if ":" in config.model_name
-            else config.model_name
-        )
+        provider, raw_model = parse_model_name(config.model_name)
 
         if provider == "openai" and config.api_key:
             from pydantic_ai.embeddings.openai import OpenAIEmbeddingModel
-            from pydantic_ai.providers.openai import OpenAIProvider
 
             return OpenAIEmbeddingModel(
                 raw_model,
-                provider=OpenAIProvider(api_key=config.api_key),
+                provider=build_openai_provider(config.api_key),
             )
 
         if provider == "bedrock" and config.aws_access_key_id:
             from pydantic_ai.embeddings.bedrock import BedrockEmbeddingModel
-            from pydantic_ai.providers.bedrock import BedrockProvider
 
             return BedrockEmbeddingModel(
                 raw_model,
-                provider=BedrockProvider(
-                    region_name=config.aws_region or "us-east-1",
-                    aws_access_key_id=config.aws_access_key_id,
-                    aws_secret_access_key=config.aws_secret_access_key,
+                provider=build_bedrock_provider(
+                    config.aws_access_key_id,
+                    config.aws_secret_access_key,
+                    config.aws_region,
                 ),
             )
 
@@ -106,7 +96,7 @@ class PydanticAIEmbeddingAdapter:
                 "tiktoken is required for OpenAI embedding batch splitting. "
                 "Install it with: uv sync --extra pydantic-ai"
             )
-        raw_model = model_name.split(":", 1)[1] if ":" in model_name else model_name
+        _, raw_model = parse_model_name(model_name)
         self._encoding = tiktoken.encoding_for_model(raw_model)
 
     @property

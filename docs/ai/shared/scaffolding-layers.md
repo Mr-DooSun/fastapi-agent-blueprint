@@ -163,6 +163,30 @@ class {Name}Container(containers.DeclarativeContainer):
     )
 ```
 
+**Classifier variant** (when Protocol + Adapter live in the domain, not `_core`):
+
+```python
+# src/classification/infrastructure/di/classification_container.py
+from src.classification.infrastructure.classifier.pydantic_ai_classifier import PydanticAIClassifier
+from src.classification.infrastructure.classifier.stub_classifier import StubClassifier
+
+def _classifier_selector() -> str:
+    return "real" if settings.llm_model_name else "stub"
+
+class ClassificationContainer(containers.DeclarativeContainer):
+    core_container = providers.DependenciesContainer()
+
+    classifier = providers.Selector(
+        _classifier_selector,
+        real=providers.Singleton(PydanticAIClassifier, llm_model=core_container.llm_model),
+        stub=providers.Singleton(StubClassifier),
+    )
+
+    classification_service = providers.Factory(ClassificationService, classifier=classifier)
+```
+
+Use domain-local Protocol + Adapter when the output DTO is domain-specific (not shareable across domains). Use `_core/infrastructure/` placement when the adapter can serve multiple domains (like `PydanticAIAnswerAgent` for any RAG consumer).
+
 **When to use this pattern:**
 
 - ✅ Use when the domain can still produce a meaningful response without the real infra (answer stubs, retrieval over local keyword index, etc.)

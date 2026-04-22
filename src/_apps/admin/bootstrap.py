@@ -45,7 +45,13 @@ def _discover_and_register_pages(
             domain_container = getattr(admin_container, f"{name}_container")
             page_config._service_provider = getattr(domain_container, f"{name}_service")
 
-            # 3) Routes: 모듈 import로 @ui.page 등록 트리거 + page_configs 주입
+            # 3) Extra services: wire any services declared in extra_services_config
+            for alias, attr_name in page_config.extra_services_config.items():
+                provider = getattr(domain_container, attr_name, None)
+                if provider is not None:
+                    page_config._extra_services[alias] = provider
+
+            # 4) Routes: 모듈 import로 @ui.page 등록 트리거 + page_configs 주입
             page_module_path = f"src.{name}.interface.admin.pages.{name}_page"
             page_module = importlib.import_module(page_module_path)
             page_module.page_configs = page_configs

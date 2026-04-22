@@ -1,6 +1,6 @@
 # Suggested Commands
 
-> Last synced: 2026-04-21 via /sync-guidelines (v0.4.0 post-release sync)
+> Last synced: 2026-04-22 via /sync-guidelines (responsibility-driven refactor, pre-v0.5.0)
 > Purpose: Quick reference for Claude Code when executing shell commands.
 > Also referenced when running Skills.
 > Makefile targets (`make dev`, `make test`, etc.) are available as shortcuts — see `AGENTS.md` Common Commands.
@@ -46,8 +46,9 @@ make test-dynamo
 ```
 
 - `tests/conftest.py::test_db` switches engine via `TEST_DB_ENGINE` (default `sqlite`)
-- `tests/conftest.py::_override_app_database` (autouse) swaps the running app's `CoreContainer.database` to `test_db`, so e2e tests do not need real PostgreSQL
+- `tests/e2e/conftest.py::_override_app_database` (autouse) swaps the running app's `CoreContainer.database` to `test_db` via `src._apps.server.testing.override_database()`, so e2e tests do not need real PostgreSQL
 - `app.state.container` exposes the wired `DynamicContainer` for fixture overrides
+- Test DI override public API: `from src._apps.server.testing import override_database, reset_database_override`
 
 ## Lint / Format
 ```bash

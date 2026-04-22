@@ -1,6 +1,6 @@
 # Project Status
 
-> Last synced: 2026-04-21 via /sync-guidelines (v0.4.0 post-release sync)
+> Last synced: 2026-04-22 via /sync-guidelines (responsibility-driven refactor, pre-v0.5.0)
 
 ## Current Version Context
 - Latest release: v0.4.0 (2026-04-21)
@@ -35,6 +35,7 @@
 | Structured Logging | #9 | `structlog` + `asgi-correlation-id` 파이프라인을 server/worker bootstrap에 통합. `configure_logging()`, `RequestLogMiddleware` + `CorrelationIdMiddleware` (server), `StructlogContextMiddleware` (worker)로 task/correlation id contextvars 바인딩. `LOG_LEVEL` / `LOG_JSON_FORMAT` env var (dev/local/quickstart → console, stg/prod → JSON). `DATABASE_ECHO` → `logging.getLogger("sqlalchemy.engine").setLevel(INFO)`로 변환해 double-emit 제거. `generic_exception_handler`가 `print(traceback)` 대신 `logger.exception("unhandled_exception", ...)` 구조화 기록 |
 | Admin extra split | #104 | `nicegui` → `[admin]` extra 이동. `_maybe_bootstrap_admin()`이 `ImportError` 시 `admin_mount_skipped` 구조화 로그만 남기고 skip, 서버는 계속 boot. `make setup`이 `--extra admin` 기본 설치. CI `minimal-install` 잡이 extras 미설치 시 `/admin` 라우트 비마운트 회귀를 가드 |
 | AWS extra split | #104 Part 2 | `boto3` / `aioboto3` / `types-aiobotocore-*` → `[aws]` extra 이동. 4개 AWS client 모듈 (`ObjectStorageClient`, `ObjectStorage`, `DynamoDBClient`, `S3VectorClient`)은 `__init__` / lazy singleton에서 `aioboto3` / `boto3`를 lazy import. CoreContainer Selector가 disabled 분기에서 `None`을 반환하므로 `aws` extra 미설치 + 관련 env var 미설정 시 lazy import가 아예 발화하지 않음. `make setup`이 `--extra aws` 기본 설치 |
+| Responsibility-Driven Refactor | ADR 043 (pre-v0.5.0) | 12개 책임 혼동 지점 정리 (9 Phases). 주요 변경: (1) `error_mapper.py` infra ACL 확립 — domain service 예외 전파, FastAPI handler에서 매핑; (2) `ClassifierProtocol` + `PydanticAIClassifier` + `StubClassifier` — ADR 040 패턴 전면 정렬; (3) `_core/infrastructure/ai/providers.py` 신규 — parse_model_name + provider builder 단일화; (4) `AdminCrudServiceProtocol` + `extra_services_config` — admin 타입 안정성 + `_resolve_query_service` workaround 제거; (5) Bootstrap conductor 분해 (private functions); (6) `BaseEmbeddingProtocol` / `BaseVectorStoreProtocol` → `typing.Protocol`; (7) `src/_apps/server/testing.py` — 테스트 DI override 공개 API |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN
