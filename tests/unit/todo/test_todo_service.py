@@ -23,6 +23,7 @@ def make_todo_dto(**kwargs):
     defaults.update(kwargs)
     return TodoDTO(**defaults)
 
+
 @pytest.mark.asyncio
 async def test_create_todo():
     mock_repo = AsyncMock()
@@ -32,6 +33,7 @@ async def test_create_todo():
     result = await service.create_data(entity=request)
     assert result.title == "Test Todo"
     assert result.done is False
+
 
 @pytest.mark.asyncio
 async def test_get_todo():
