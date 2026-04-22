@@ -20,9 +20,10 @@ Description: $ARGUMENTS
 
 ## Procedure Overview
 1. Requirements Interview — 3-5 questions from 5 categories (Phase 0)
-2. Architecture Impact Analysis — layer, domain, DTO, cross-domain (Phase 1)
-3. Security Checkpoint — 6-item assessment matrix (Phase 2)
-4. Task Breakdown — skill mapping, supervision levels, execution order (Phase 3)
+2. Approach Options — propose 2-3 candidates with trade-offs, recommend one (Phase 1)
+3. Architecture Impact Analysis — layer, domain, DTO, cross-domain (Phase 2)
+4. Security Checkpoint — 6-item assessment matrix (Phase 3)
+5. Task Breakdown — skill mapping, supervision levels, execution order (Phase 4)
 
 Read `docs/ai/shared/skills/plan-feature.md` for detailed steps and output format.
 Also refer to `docs/ai/shared/planning-checklists.md` for question bank and templates.

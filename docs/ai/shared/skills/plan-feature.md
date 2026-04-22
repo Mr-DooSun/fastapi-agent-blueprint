@@ -17,7 +17,29 @@ After receiving user responses, organize the following:
 - [ ] Non-functional requirements (performance, security, scalability)
 - [ ] Identified edge cases
 
-## Phase 1: Architecture Impact Analysis
+## Phase 1: Approach Options
+
+Before diving into architecture details, propose 2-3 candidate approaches
+for implementing the requirements gathered in Phase 0.
+
+**Requirements**:
+- Minimum 2, maximum 3 candidate approaches.
+- Each candidate is a *product/design-level* choice, not a listing of
+  low-level implementation details.
+- Compare along four axes: scope, complexity, extensibility, and
+  repo-specific fit.
+- Conclude with exactly one `Recommended Approach`.
+
+**Procedure**:
+1. For each candidate, write a short description (one-line core idea).
+2. List pros, cons, and situations where this approach fits best.
+3. Identify the recommended approach; briefly state why others were
+   rejected (one line each).
+
+**Output**: populated into the `Approach Options` section of the final
+plan (see Output Plan Template).
+
+## Phase 2: Architecture Impact Analysis
 
 ### 1.1 Layer Impact Analysis
 Determine whether changes/additions are needed for each layer:
@@ -40,7 +62,7 @@ Decide based on the Write DTO criteria in `AGENTS.md`:
 - Does the new feature reference data from existing domains?
 - Is Protocol-based DIP needed? -> Apply `/add-cross-domain` pattern
 
-## Phase 2: Security Checkpoint
+## Phase 3: Security Checkpoint
 
 Evaluate 6 items according to the "Security Assessment Matrix" in `docs/ai/shared/planning-checklists.md`:
 
@@ -56,10 +78,10 @@ Evaluate 6 items according to the "Security Assessment Matrix" in `docs/ai/share
 Derive specific security requirements for any applicable items.
 **If 1 or more items apply**: Confirm security requirements with the user before proceeding to the next Phase.
 
-## Phase 3: Task Breakdown
+## Phase 4: Task Breakdown
 
 ### 3.1 Task Identification
-Break down Phase 1 analysis results into actionable task units.
+Break down Phase 2 analysis results into actionable task units.
 Map each task to an existing Skill (refer to the "Skill Mapping Table" in `docs/ai/shared/planning-checklists.md`):
 
 | Task Type | Mapped Skill | Example |
@@ -85,7 +107,7 @@ For each task (refer to "Supervision Level Definitions" in `docs/ai/shared/plann
 
 ## Output: Feature Implementation Plan
 
-Organize the results of Phases 0-3 above in the following format and present to the user
+Organize the results of Phases 0-4 above in the following format and present to the user
 (refer to the "Output Plan Template" in `docs/ai/shared/planning-checklists.md`):
 
 ```
@@ -94,21 +116,24 @@ Organize the results of Phases 0-3 above in the following format and present to 
 ## 1. Requirements Summary
 (Phase 0 results)
 
-## 2. Architecture Impact Analysis
-(Phase 1 results -- per-layer change table)
+## 2. Approach Options
+(Phase 1 results)
 
-## 3. Security Assessment
-(Phase 2 results -- security matrix table)
+## 3. Architecture Impact Analysis
+(Phase 2 results -- per-layer change table)
 
-## 4. Execution Task List
+## 4. Security Assessment
+(Phase 3 results -- security matrix table)
+
+## 5. Execution Task List
 | # | Task | Skill | Supervision Level | Preceding Tasks | Parallel Group |
 |---|------|-------|--------------------|-----------------|----------------|
-(Phase 3 results)
+(Phase 4 results)
 
-## 5. Execution Order
+## 6. Execution Order
 (Dependency graph in text representation)
 
-## 6. Verification Plan
+## 7. Verification Plan
 - Run /review-architecture {domain}
 - Run /test-domain {domain} generate -> run
 - Run full pre-commit

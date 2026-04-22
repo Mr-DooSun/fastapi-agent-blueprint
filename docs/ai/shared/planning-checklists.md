@@ -136,7 +136,26 @@
 ### Edge Cases
 - {edge case 1}
 
-## 2. Architecture Impact Analysis
+## 2. Approach Options
+
+### Option A: {core idea in one line}
+- Pros: {...}
+- Cons: {...}
+- Best fit: {situation where this approach is most appropriate}
+
+### Option B: {core idea in one line}
+- Pros: {...}
+- Cons: {...}
+- Best fit: {situation where this approach is most appropriate}
+
+### (Option C — if applicable)
+
+### Recommended Approach
+- Selected: Option {X}
+- Why: {rationale for the chosen approach}
+- Why not others: Option {Y} — {one-line reason}; Option {Z} — {one-line reason}
+
+## 3. Architecture Impact Analysis
 
 ### Changes by Layer
 | Layer | Change Type | Details |
@@ -154,7 +173,7 @@
 ### DTO Decisions
 - {each DTO decision with rationale}
 
-## 3. Security Assessment
+## 4. Security Assessment
 
 | Item | Applicable | Required Action |
 |------|-----------|----------------|
@@ -165,14 +184,14 @@
 | Sensitive Data | {Y/N} | {action} |
 | File Processing | {Y/N} | {action} |
 
-## 4. Execution Task List
+## 5. Execution Task List
 
 | # | Task | Skill | Supervision Level | Predecessor | Parallel Group |
 |---|------|-------|----------|------------|----------|
 | 1 | {task} | {skill} | L1/L2/L3 | - | A |
 | 2 | {task} | {skill} | L1/L2/L3 | 1 | B |
 
-## 5. Execution Order
+## 6. Execution Order
 
 ### Stage 1 (Parallel Group A)
 - Tasks 1, 2
@@ -183,7 +202,7 @@
 ### Critical Path
 Task 1 -> 3 -> 5 -> 6
 
-## 6. Verification Plan
+## 7. Verification Plan
 - [ ] `/review-architecture {domain}` — confirm architecture compliance
 - [ ] `/test-domain {domain} generate` — generate tests
 - [ ] `/test-domain {domain} run` — run tests
