@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src._core.domain.dtos.rag import BaseChunkDTO, QueryAnswerDTO
-from src.docs.domain.exceptions.docs_exceptions import QueryFailedException
+from src._core.exceptions.llm_exceptions import LLMException
 from src.docs.domain.services.docs_query_service import DocsQueryService
 
 
@@ -39,8 +39,9 @@ async def test_answer_question_wraps_exception():
 
     service = DocsQueryService(rag_pipeline=pipeline)
 
-    with pytest.raises(QueryFailedException, match="boom"):
+    with pytest.raises(LLMException) as exc_info:
         await service.answer_question(question="q")
+    assert "boom" not in str(exc_info.value)
 
 
 @pytest.mark.asyncio

@@ -15,13 +15,13 @@ from src._core.application.dtos.base_response import BaseResponse
 
 class CreateDocumentRequest(BaseRequest):
     title: str = Field(..., min_length=1, max_length=255)
-    content: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1, max_length=1_000_000)
     source: str | None = Field(default=None, max_length=1024)
 
 
 class UpdateDocumentRequest(BaseRequest):
     title: str | None = Field(default=None, max_length=255)
-    content: str | None = Field(default=None)
+    content: str | None = Field(default=None, max_length=1_000_000)
     source: str | None = Field(default=None, max_length=1024)
     chunk_count: int | None = Field(default=None, ge=0)
 
@@ -42,7 +42,9 @@ class DocumentResponse(BaseResponse):
 
 
 class QueryRequest(BaseRequest):
-    question: str = Field(..., min_length=1, description="User question")
+    question: str = Field(
+        ..., min_length=1, max_length=2_000, description="User question"
+    )
     top_k: int = Field(default=5, ge=1, le=50, description="Chunks to retrieve")
     filters: dict[str, Any] | None = Field(
         default=None,

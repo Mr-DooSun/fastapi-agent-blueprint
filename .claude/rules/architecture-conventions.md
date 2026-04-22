@@ -1,6 +1,6 @@
 # Architecture Conventions
 
-> Last synced: 2026-04-21 via /sync-guidelines
+> Last synced: 2026-04-21 via /sync-guidelines (v0.4.0 post-release sync)
 > For Absolute Prohibitions, Conversion Patterns, Write DTO criteria, and common commands, refer to AGENTS.md.
 > This file only contains **structural context** that supplements AGENTS.md for Claude.
 
@@ -74,6 +74,17 @@ Key differences from RDB/DynamoDB:
 - Domain services inject the Selector-resolved `llm_model` and create `Agent(model=llm_model)` at init; stub propagates transparently
 - Supports OpenAI, Anthropic, Bedrock providers via `model_name` prefix
 - Agents are reusable across requests (create once at service init)
+
+## Structured Logging (#9)
+
+- 파이프라인: `structlog` ProcessorFormatter + `asgi-correlation-id`. JSON(stg/prod) / console(dev/local/quickstart) 자동 전환 (`settings.effective_log_json`)
+- Server: `configure_logging()` → `TrustedHost → CORS → RequestLogMiddleware → CorrelationIdMiddleware` (Starlette는 늦게 `add_middleware`한 것이 외곽이 되므로, 의도적으로 CorrelationId를 가장 마지막에 추가해 요청 최상위에 둠)
+- Worker: `configure_logging()` → `app.add_middlewares(StructlogContextMiddleware())`가 task id / correlation id를 contextvars에 바인딩 (dispatcher가 `with_labels(correlation_id=...)`로 넘긴 값도 자동 lift)
+- Logger 획득 규칙: 모든 애플리케이션 코드는 `structlog.stdlib.get_logger(__name__)` 사용
+  - 기존 `logging.getLogger(__name__)` 호출도 ProcessorFormatter 브리지 덕분에 동일 파이프라인을 타지만, 신규 코드는 structlog API로 통일
+- 민감정보 로깅 금지: `password`, `token`, `access_key`, `secret_key` 등 Response에서 `model_dump(exclude={...})`로 제외하는 필드는 `logger.info(event, password=...)` / `logger.bind(...)` 형태로도 기록 금지
+- SQLAlchemy echo: `DATABASE_ECHO=true`는 `logging.getLogger("sqlalchemy.engine").setLevel(INFO)`로 변환 (engine handler 중복 등록 방지 — 동일 쿼리가 stdlib + structlog 양쪽에서 double-emit 되지 않도록)
+- Env vars: `LOG_LEVEL` (DEBUG/INFO/WARNING/ERROR), `LOG_JSON_FORMAT` (None/True/False — None이면 ENV에서 자동 결정)
 
 ## Object Roles
 

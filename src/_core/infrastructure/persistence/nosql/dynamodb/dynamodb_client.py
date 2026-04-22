@@ -4,6 +4,10 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
+import structlog
+
+_logger = structlog.stdlib.get_logger(__name__)
+
 from src._core.infrastructure.persistence.nosql.dynamodb.exceptions import (
     DynamoDBConditionFailedException,
     DynamoDBException,
@@ -74,12 +78,17 @@ class DynamoDBClient:
             error_message = e.response.get("Error", {}).get("Message", str(e))
 
             if error_code == "ConditionalCheckFailedException":
-                raise DynamoDBConditionFailedException(error_message)
+                raise DynamoDBConditionFailedException(error_code) from e
             if error_code in _THROTTLE_CODES:
-                raise DynamoDBThrottlingException()
+                raise DynamoDBThrottlingException() from e
 
+            _logger.error(
+                "dynamodb_operation_failed",
+                error_code=error_code,
+                error_message=error_message,
+            )
             raise DynamoDBException(
                 status_code=500,
-                message=f"DynamoDB operation failed [{error_code}]: {error_message}",
+                message=f"DynamoDB operation failed [{error_code}]",
                 error_code="DYNAMODB_ERROR",
-            )
+            ) from e

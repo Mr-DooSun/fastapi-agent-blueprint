@@ -55,6 +55,17 @@ Every non-DB infra in `CoreContainer` is optional — toggle via env vars, no co
 
 **Package-level extras:** optional runtime infras are also gated at the `pyproject.toml` level. Install only what you need — `uv sync --extra admin` for the NiceGUI dashboard, `--extra aws` for object storage / DynamoDB / S3 Vectors (boto3 + aioboto3 + type stubs), `--extra sqs` / `--extra rabbitmq` for those broker backends, `--extra pydantic-ai` for LLM / Embedding, etc. When an extra is absent, the matching bootstrap path silently skips and the server continues to boot — the 4 AWS client modules (`ObjectStorageClient`, `ObjectStorage`, `DynamoDBClient`, `S3VectorClient`) import cleanly via `TYPE_CHECKING` + lazy `__init__` imports, and `CoreContainer` resolves the matching Selector to `None` when the env var is unset. `make setup` installs `--extra admin --extra aws` by default for full dev coverage; `make quickstart` only needs `--extra admin` (SQLite + InMemory broker). Every other extra opts in explicitly.
 
+## Structured Logging
+
+Logging is always-on (unlike Optional Infrastructure) and shared across server + worker. Pipeline: `structlog` ProcessorFormatter + `asgi-correlation-id`. Background: #9.
+
+- **Logger acquisition** — all new code uses `structlog.stdlib.get_logger(__name__)`; legacy `logging.getLogger(__name__)` calls still flow through the same pipeline via the ProcessorFormatter bridge but new modules should not add more.
+- **Renderer switching** — `LOG_JSON_FORMAT` env var (None → auto: dev/local/quickstart → console, stg/prod → JSON; True/False force override). Controlled by `settings.effective_log_json`.
+- **Sensitive-field logging is prohibited** — `password`, `token`, `access_key`, `secret_key`, `api_key`, and any field that Response `model_dump(exclude={...})` strips must NOT appear in `logger.info(event, password=...)`, `logger.bind(...)`, or `structlog.contextvars.bind_contextvars(...)`. The JSON renderer ships structlog kwargs verbatim to aggregators.
+- **SQLAlchemy echo** — `DATABASE_ECHO=true` is translated to `logging.getLogger("sqlalchemy.engine").setLevel(INFO)` (not a separate handler) to avoid double-emit between stdlib and structlog pipelines. Do not enable in stg/prod unless secret filtering is in place — bound query parameters reach the log stream.
+- **Bootstrap entrypoints** — server: `configure_logging()` → `RequestLogMiddleware` + `CorrelationIdMiddleware` (Starlette adds late-registered middleware as the outermost layer, so CorrelationId is registered last intentionally). Worker: `configure_logging()` → `StructlogContextMiddleware` binds task id / correlation id into contextvars.
+- **Env vars** — `LOG_LEVEL` (DEBUG/INFO/WARNING/ERROR), `LOG_JSON_FORMAT` (None/True/False).
+
 ## Terminology
 
 - **Request/Response**: API communication schema (`interface/server/schemas/`)

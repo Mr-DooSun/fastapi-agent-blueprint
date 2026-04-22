@@ -1,11 +1,11 @@
 # Project Status
 
-> Last synced: 2026-04-21 via /sync-guidelines
+> Last synced: 2026-04-21 via /sync-guidelines (v0.4.0 post-release sync)
 
 ## Current Version Context
-- Latest release: v0.3.0 (2026-04-10)
+- Latest release: v0.4.0 (2026-04-21)
 - Active domains: user (reference domain), classification (prototype), docs (RAG consumer example, #80)
-- Infrastructure: RDB (PostgreSQL/MySQL/SQLite), DynamoDB, Storage (S3/MinIO), S3 Vectors, InMemory Vectors (quickstart), Embedding (PydanticAI + StubEmbedder fallback), LLM (PydanticAI Agent + TestModel stub fallback via `build_stub_llm_model`), RagPipeline (+ StubAnswerAgent), Broker (SQS/RabbitMQ/InMemory). All non-DB infras are optional via `providers.Selector` + lazy factories (ADR 042).
+- Infrastructure: RDB (PostgreSQL/MySQL/SQLite), DynamoDB, Storage (S3/MinIO), S3 Vectors, InMemory Vectors (quickstart), Embedding (PydanticAI + StubEmbedder fallback), LLM (PydanticAI Agent + TestModel stub fallback via `build_stub_llm_model`), RagPipeline (+ StubAnswerAgent), Broker (SQS/RabbitMQ/InMemory), Structured logging (structlog + asgi-correlation-id). All non-DB infras are optional via `providers.Selector` + lazy factories (ADR 042). `nicegui`는 `admin` extra, `boto3`/`aioboto3`는 `aws` extra (#104).
 
 ## Recent Major Changes (since v0.3.0)
 | Feature | Issue | Impact |
@@ -32,6 +32,9 @@
 | ADR Consolidation | #83 | 40 ADRs → 14 core + 29 archived under `docs/history/archive/`, new `docs/history/README.md` core-reading-order guide |
 | Optional Infrastructure (CoreContainer) — Part A | #101 | `providers.Selector` + lazy factories for all 5 non-broker optional infras (storage, DynamoDB, S3 Vectors, embedding, LLM). Disabled branches: `providers.Object(None)` for data stores, `StubEmbedder` for embedding. `llm_config` / `embedding_config` dropped from public container surface. [ADR 042](../../docs/history/042-optional-infrastructure-di-pattern.md), AGENTS.md "Optional Infrastructure" reference section |
 | Optional Infrastructure — Part B | #101 | `build_stub_llm_model()` factory returns PydanticAI `TestModel` (or `None` if `pydantic-ai` extra not installed). `ClassificationService` now degrades gracefully when `LLM_*` unset. `docs/ai/shared/scaffolding-layers.md` gains "Optional AI Infra Variant" section teaching the domain-level Selector+stub pattern for new-domain scaffolding |
+| Structured Logging | #9 | `structlog` + `asgi-correlation-id` 파이프라인을 server/worker bootstrap에 통합. `configure_logging()`, `RequestLogMiddleware` + `CorrelationIdMiddleware` (server), `StructlogContextMiddleware` (worker)로 task/correlation id contextvars 바인딩. `LOG_LEVEL` / `LOG_JSON_FORMAT` env var (dev/local/quickstart → console, stg/prod → JSON). `DATABASE_ECHO` → `logging.getLogger("sqlalchemy.engine").setLevel(INFO)`로 변환해 double-emit 제거. `generic_exception_handler`가 `print(traceback)` 대신 `logger.exception("unhandled_exception", ...)` 구조화 기록 |
+| Admin extra split | #104 | `nicegui` → `[admin]` extra 이동. `_maybe_bootstrap_admin()`이 `ImportError` 시 `admin_mount_skipped` 구조화 로그만 남기고 skip, 서버는 계속 boot. `make setup`이 `--extra admin` 기본 설치. CI `minimal-install` 잡이 extras 미설치 시 `/admin` 라우트 비마운트 회귀를 가드 |
+| AWS extra split | #104 Part 2 | `boto3` / `aioboto3` / `types-aiobotocore-*` → `[aws]` extra 이동. 4개 AWS client 모듈 (`ObjectStorageClient`, `ObjectStorage`, `DynamoDBClient`, `S3VectorClient`)은 `__init__` / lazy singleton에서 `aioboto3` / `boto3`를 lazy import. CoreContainer Selector가 disabled 분기에서 `None`을 반환하므로 `aws` extra 미설치 + 관련 env var 미설정 시 lazy import가 아예 발화하지 않음. `make setup`이 `--extra aws` 기본 설치 |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN

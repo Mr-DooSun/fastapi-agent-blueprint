@@ -14,6 +14,7 @@ from src._core.infrastructure.embedding.exceptions import (
 _BATCH_SIZE = 2048  # OpenAI max texts per request
 _MAX_TOKENS_PER_BATCH = 300_000  # OpenAI total token limit per request
 _MAX_TOKENS_PER_TEXT = 8192  # OpenAI per-text token limit
+_MAX_CHARS_PER_TEXT_BEDROCK = 50_000  # Bedrock per-text character limit
 
 
 class PydanticAIEmbeddingAdapter:
@@ -123,6 +124,13 @@ class PydanticAIEmbeddingAdapter:
         if self._provider == "openai":
             return await self._split_and_embed(texts)
 
+        if self._provider == "bedrock":
+            for text in texts:
+                if len(text) > _MAX_CHARS_PER_TEXT_BEDROCK:
+                    raise EmbeddingInputTooLongException(
+                        len(text), _MAX_CHARS_PER_TEXT_BEDROCK, "chars"
+                    )
+
         result = await self._call_embed_documents(texts)
         return [list(e) for e in result.embeddings]
 
@@ -188,16 +196,28 @@ class PydanticAIEmbeddingAdapter:
             self._map_error(exc)
 
     def _map_error(self, exc: Exception) -> NoReturn:
-        """Map PydanticAI exceptions to domain exceptions."""
+        """Map PydanticAI/provider exceptions to domain embedding exceptions."""
+        try:
+            from botocore.exceptions import ClientError
+
+            if isinstance(exc, ClientError):
+                code = exc.response.get("Error", {}).get("Code", "")
+                if code in ("ThrottlingException", "TooManyRequestsException"):
+                    raise EmbeddingRateLimitException() from exc
+        except ImportError:
+            pass
+
         error_str = str(exc).lower()
         if "authentication" in error_str or "unauthorized" in error_str:
             raise EmbeddingAuthenticationException() from exc
         if "rate" in error_str and "limit" in error_str:
             raise EmbeddingRateLimitException() from exc
+        if "throttl" in error_str:
+            raise EmbeddingRateLimitException() from exc
         if "not found" in error_str:
             raise EmbeddingModelNotFoundException(self._model_name) from exc
         raise EmbeddingException(
             status_code=502,
-            message=f"Embedding failed: {exc}",
+            message="Embedding operation failed",
             error_code="EMBEDDING_OPERATION_FAILED",
         ) from exc

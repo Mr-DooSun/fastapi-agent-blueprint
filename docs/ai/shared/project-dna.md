@@ -6,7 +6,7 @@
 > This file is auto-extracted/updated from `src/user/` (reference domain) and `src/_core/` (Base classes)
 > when `/sync-guidelines` is run. **Run `/sync-guidelines` instead of editing manually.**
 >
-> Last updated: 2026-04-21
+> Last updated: 2026-04-21 (v0.4.0 post-release sync)
 
 ## Section Index
 §0 Project Scale and Design Philosophy |
@@ -433,7 +433,7 @@ embedding_client = providers.Selector(
 | EMBEDDING_PROVIDER | Model Name Format | Dependency |
 |-------------------|------------------|------------|
 | `openai` | `openai:text-embedding-3-small` | `pydantic-ai` extra (includes `tiktoken`) |
-| `bedrock` | `bedrock:amazon.titan-embed-text-v2:0` | `pydantic-ai` extra, `aioboto3` (main) |
+| `bedrock` | `bedrock:amazon.titan-embed-text-v2:0` | `pydantic-ai` extra + `aws` extra (aioboto3) |
 | `google` | `google:text-embedding-004` | `pydantic-ai-google` extra |
 | `ollama` | `ollama:nomic-embed-text` | `pydantic-ai` extra |
 
@@ -473,7 +473,7 @@ llm_model = providers.Selector(
 |-------------|------------------|------------|
 | `openai` | `openai:gpt-4o` | `pydantic-ai` extra |
 | `anthropic` | `anthropic:claude-sonnet-4-20250514` | `pydantic-ai-anthropic` extra |
-| `bedrock` | `bedrock:us.anthropic.claude-sonnet-4-20250514-v1:0` | `pydantic-ai` extra, `aioboto3` (main) |
+| `bedrock` | `bedrock:us.anthropic.claude-sonnet-4-20250514-v1:0` | `pydantic-ai` extra + `aws` extra (aioboto3) |
 
 - `LLMConfig`: frozen dataclass value object (domain layer) carrying provider+credentials
 - `build_llm_model()`: factory function returning Provider-specific Model or plain string
@@ -528,6 +528,7 @@ class {Name}Container(containers.DeclarativeContainer):
 
 - trailing-whitespace, end-of-file-fixer, check-yaml/json/toml
 - check-added-large-files (1MB), check-merge-conflict, debug-statements, mixed-line-ending (LF)
+- gitleaks v8.30.1 -- block credentials from reaching git at commit time (#87)
 - ruff check --fix (Unified rules for E, W, F, UP, I, B, C4, SIM, S -- replaces pyupgrade, autoflake, isort, flake8, bandit)
 - ruff format (Black-compatible formatting)
 
@@ -559,20 +560,23 @@ class {Name}Container(containers.DeclarativeContainer):
 | SQLAlchemy 2.0+ | Active | Mapped[T] + mapped_column() |
 | Pydantic 2.x | Active | model_validate, model_dump, ConfigDict |
 | dependency-injector | Active | DeclarativeContainer, @inject + Provide |
-| Object Storage (aioboto3) | Active | S3/MinIO switchable via STORAGE_TYPE, ObjectStorage + ObjectStorageClient |
-| AWS DynamoDB (aioboto3) | Active | BaseDynamoRepository + DynamoDBClient (optional infra) |
-| NiceGUI (BaseAdminPage) | Active | Admin dashboard (AG Grid, auto-discovery, Template Method rendering) |
+| Object Storage (aioboto3) | Active | S3/MinIO switchable via STORAGE_TYPE, ObjectStorage + ObjectStorageClient (via `aws` extra) |
+| AWS DynamoDB (aioboto3) | Active | BaseDynamoRepository + DynamoDBClient (optional infra, via `aws` extra) |
+| NiceGUI (BaseAdminPage) | Active | Admin dashboard (AG Grid, auto-discovery, Template Method rendering) -- gated via `admin` extra (#104) |
 | alembic (migrations) | Active | DB migrations |
 | Password hashing (bcrypt) | Active | hash_password(), verify_password() in src._core.common.security |
-| AWS S3 Vectors (aioboto3) | Active | BaseS3VectorStore + S3VectorClient (optional infra) |
+| AWS S3 Vectors (aioboto3) | Active | BaseS3VectorStore + S3VectorClient (optional infra, via `aws` extra) |
 | Embedding (PydanticAI) | Active | PydanticAIEmbeddingAdapter, BaseEmbeddingProtocol, auto-dimension, multi-provider |
 | LLM (PydanticAI Agent) | Active | build_llm_model(), LLMConfig, Agent structured output |
 | Text chunking (semantic-text-splitter) | Active | chunk_text(), chunk_text_by_tokens() in src._core.common.text_utils |
+| Structured Logging (structlog) | Active | structlog + asgi-correlation-id, RequestLogMiddleware (server), StructlogContextMiddleware (worker), LOG_LEVEL / LOG_JSON_FORMAT env vars, sqlalchemy.engine double-emit fix (#9) |
 | JWT/Authentication | Not implemented | |
 | File Upload (UploadFile) | Not implemented | |
 | RBAC/Permissions | Not implemented | |
 | Rate Limiting (slowapi) | Not implemented | |
 | WebSocket | Not implemented | |
+
+> Extras note (#104, ADR 042): `nicegui`는 `admin` extra, `boto3` / `aioboto3` / `types-aiobotocore-*`는 `aws` extra에 속함. 필요한 배포에서만 `uv sync --extra admin --extra aws` — `make setup`은 둘 다 기본 설치. 미설치 시 관련 Selector는 `None` / `StubEmbedder` / `TestModel`로 graceful degradation.
 
 ## §9. Router Pattern
 
@@ -821,7 +825,7 @@ the adapter bridges to `BaseEmbeddingProtocol` and adds OpenAI batch splitting.
 
 - Requires `pydantic-ai` extra: `uv sync --extra pydantic-ai` (installs `pydantic-ai-slim` + `tiktoken`)
 - Provider-specific extras: `pydantic-ai-anthropic` (Anthropic LLM), `pydantic-ai-google` (Google embedding)
-- Bedrock providers reuse the main `aioboto3` dependency — no extra needed
+- Bedrock providers rely on `aioboto3`, which now ships in the `aws` extra (`uv sync --extra aws`) — install both `pydantic-ai` and `aws` extras for Bedrock embedding/LLM (#104 Part 2)
 - OpenAI batch splitting requires `tiktoken` (included in pydantic-ai extra)
 - Raises domain exceptions: `EmbeddingRateLimitException`, `EmbeddingAuthenticationException`, `EmbeddingInputTooLongException`, `EmbeddingModelNotFoundException`
 - `EmbeddingConfig`: frozen dataclass (domain-layer VO) carrying model_name + dimension + credentials
