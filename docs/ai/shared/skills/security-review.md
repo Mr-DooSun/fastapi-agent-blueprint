@@ -1,83 +1,156 @@
-# OWASP-Based Code Security Audit — Detailed Procedure
+# Security Quality Gate Audit
+
+## Purpose
+
+Use this skill to audit a file, domain, or the full repository for security
+issues, while also checking whether shared references such as `project-dna` and
+the security checklist are stale.
+
+## When to Use
+
+Run this skill whenever a change touches one or more of the following surfaces:
+
+- Authentication, authorization, or session management
+- Secrets, API keys, or credential handling
+- Logging, structured log fields, or error responses
+- Object storage (S3/MinIO), DynamoDB, or S3 Vectors
+- AI providers (LLM, Embedding)
+- Async workers or task payloads
+- Any other security-sensitive surface
+
+Also run when the user explicitly asks for a security audit.
+
+## Review Contract
+
+Every result must include:
+
+- `Scope` - audit target, audited domains/files, important exclusions
+- `Sources Loaded` - exact shared rule sources used for the audit
+- `Findings` - only open issues; each item includes `severity`, `rule source`,
+  `file:line`, `impact`, and `recommended fix`
+- `Drift Candidates` - shared docs, checklists, wrappers, or `project-dna`
+  targets that may need sync; each item includes `target`, `reason`,
+  `auto-fix`, and `sync-required`
+- `Next Actions` - remediation, verification, sync path
+- `Completion State` - concise closure status for the audit
+- `Sync Required` - explicit `true` or `false`
+
+### Severity Taxonomy
+
+- Review state: `OPEN`, `OK`, `SKIP`
+- Severity: `BLOCKING`, `HIGH`, `MEDIUM`, `LOW`, `NOTE`
 
 ## Audit Target
-- When "all", audit all directories under `src/` (including `_core`, `_apps`).
-- When a specific domain name, audit only `src/{name}/`.
-- When a file path, audit only that file.
 
-## Current Domain List
-Identify domains using Glob pattern `src/*/` (include all directories)
+- `all` -> audit all directories under `src/`, including `_core` and `_apps`
+- `{domain}` -> audit only `src/{domain}/`
+- `{file}` -> audit only that file
 
-## Audit Procedure
+## Category Coverage
 
-Inspect 8 security categories with 32+ items using Grep-based checks.
-Refer to `docs/ai/shared/security-checklist.md` for the detailed checklist.
+Inspect the 12 security checklist categories defined in
+`docs/ai/shared/security-checklist.md`.
 
-**Category Summary**:
-1. **Injection Prevention** — SQL, Command, Template injection patterns
-2. **Authentication & Authorization** — endpoint protection, credential management, JWT, RBAC
-3. **Data Protection** — PII exposure, sensitive data in logs, encryption
-4. **Input Validation** — Pydantic validation, file uploads, Path Traversal
-5. **Dependencies & Configuration** — vulnerable packages, debug mode, CORS, secret management
-6. **Error Handling & Logging** — stack trace exposure, Rate Limiting
-7. **Async Worker Security (Taskiq)** — payload validation, message security, idempotency
-8. **Object Storage Security (AWS S3)** — access control, upload validation, encryption
+1. Injection Prevention
+2. Authentication & Authorization
+3. Data Protection
+4. Input Validation
+5. Dependencies & Configuration
+6. Error Handling and Logging
+7. Async Worker Security
+8. Object Storage Security (AWS S3)
+9. DynamoDB Security
+10. S3 Vectors Security
+11. Embedding API Security
+12. LLM API Security
 
-## Audit Execution Method
+## Phase 0: Feature Detection and Reference Freshness Preflight
 
-Each checklist item is classified as `[Always]` or `[When applicable]`:
+Before the main audit, compare shared references against live code.
 
-### Conditional Check Procedure
-1. `[Always]` items: Execute Grep check unconditionally
-2. `[When applicable]` items: First verify detection conditions (import/usage of the feature) via Grep
-   - Feature not in use -> Output `[SKIP]` and skip
-   - Feature in use -> Proceed with detailed check
-3. False positive filtering — exclude test code, comments, config examples
-4. Include specific file/line information for discovered issues
-5. Severity indicators: [CRITICAL], [HIGH], [MEDIUM], [LOW]
+1. Load:
+   - `AGENTS.md`
+   - `docs/ai/shared/project-dna.md`
+   - `docs/ai/shared/security-checklist.md`
+2. Build a feature snapshot from `project-dna` section 8.
+3. Re-detect the same features directly from code imports and wiring.
+4. If the live code disagrees with `project-dna`, or `project-dna` is stale for
+   the current security surface, continue the audit but add a
+   `stale reference risk` drift candidate with `sync-required: true`.
 
-## Output Format
+Live code is authoritative. `project-dna` is a cached shared reference, not the
+final source of truth.
 
+## Phase 1: Run the 12-Category Audit
+
+Each checklist item is either `Always` or `When applicable`.
+
+Use a two-step applicability decision:
+1. preflight expectation from `project-dna`
+2. live code re-detection before deciding `SKIP`
+
+Rules:
+- if both sources say inactive -> `SKIP`
+- if code says active -> audit as active, even if `project-dna` says inactive
+- if code says inactive but `project-dna` says active -> note the drift and use
+  judgment on whether the feature was removed or merely hard to detect
+
+Include file and line references for every open issue and filter out false
+positives from tests, comments, or config examples.
+
+## Phase 2: Determine Drift Candidates and Sync Requirement
+
+Mark `Sync Required: true` when:
+- preflight detects stale or conflicting feature status
+- the audit exposes a new active feature without matching checklist coverage
+- the audited changes touch shared references, checklist files, or wrappers
+- the audit finds code that is secure but no longer described correctly in
+  `project-dna` or the checklist
+
+Security review does not stop at `SKIP`. A stale shared reference is itself a
+quality gate issue and must be reported.
+
+## Phase 3: Report Using the Review Contract
+
+Example:
+
+```text
+Scope
+- Target: all
+- Audited domains: docs, user, _core
+
+Sources Loaded
+- AGENTS.md
+- docs/ai/shared/project-dna.md
+- docs/ai/shared/security-checklist.md
+
+Findings
+- [OPEN][BLOCKING] Security checklist - src/user/interface/server/routers/user_router.py:19
+  Impact: write endpoint has no authentication dependency and is exposed to unauthenticated callers.
+  Recommended fix: add the project's auth dependency before allowing create/update/delete actions.
+- [OK][BLOCKING] Security checklist §2 - Admin dashboard: require_auth() present in all @ui.page handlers
+- [SKIP] Security checklist §4.2 - File Upload input validation: project-dna §8 and live code both confirm feature inactive
+
+Drift Candidates
+- target: docs/ai/shared/project-dna.md
+  reason: code uses UploadFile validation paths, but section 8 still reports file upload as not implemented.
+  auto-fix: yes
+  sync-required: true
+- target: docs/ai/shared/security-checklist.md
+  reason: active LLM usage exists but the applicable checklist wording is stale.
+  auto-fix: no
+  sync-required: true
+
+Next Actions
+- Fix the endpoint authentication gap.
+- Run `/sync-guidelines` to refresh feature status and checklist wording.
+
+Completion State
+- complete with findings
+
+Sync Required
+- true
 ```
-=== OWASP Code Security Audit Results ===
 
---- 1. Injection Prevention ---
-[PASS] SQL injection: no f-string SQL patterns found
-[FAIL][HIGH] Command injection: subprocess.call(shell=True) detected
-     -> File: src/example/infrastructure/services/export_service.py:42
-     -> Recommended: use subprocess.run(shell=False) + shlex.split()
-
---- 2. Authentication & Authorization ---
-[PASS] No hardcoded credentials found
-[FAIL][CRITICAL] Missing endpoint authentication: POST /user has no auth dependency
-     -> File: src/user/interface/server/routers/user_router.py:19
-     -> Recommended: add Depends(get_current_user)
-
-...
-
-=== Summary ===
-Passed: XX/24 | Failed: XX/24 | Skipped: XX/24
-  - CRITICAL: X issues
-  - HIGH: X issues
-  - MEDIUM: X issues
-  - LOW: X issues
-  - SKIP: X items (feature not in use)
-```
-
-## External Tool Integration (Optional)
-Run additionally if the tool is installed:
-```bash
-# Python security static analysis
-bandit -r src/{name}/ -f json 2>/dev/null || echo "bandit not installed"
-
-# Dependency vulnerability scan
-pip audit 2>/dev/null || uv pip audit 2>/dev/null || echo "audit tool not installed"
-```
-
-## Recommended Actions on Failure
-- Injection -> parameterized query, shell=False, Jinja2 autoescape
-- Missing authentication -> add Depends(get_current_user) or RBAC middleware
-- PII exposure -> apply model_dump(exclude={'password', ...})
-- Hardcoded secrets -> migrate to Settings class (environment variables)
-- CORS wildcard -> restrict to specific origins in production
-- Stack trace exposure -> verify is_dev condition (generic_exception_handler in exception_handlers.py)
+When there are no security findings, still emit all sections. In particular, do
+not omit `Drift Candidates` or `Sync Required`.

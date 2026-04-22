@@ -11,17 +11,21 @@ description: |
 # Guideline Synchronization Inspection
 
 ## Procedure Overview
-1. Reference code analysis — read `src/user/` for current patterns
-2. Code ↔ Documentation consistency check — AGENTS.md, shared refs, harness docs, skills, `.claude/rules/` (Phase 1-3)
-3. project-dna.md regeneration — extract from code and update (Phase 4)
-4. References drift inspection — AUTO-FIX and REVIEW targets (Phase 5)
+1. Determine the sync mode, gather incoming `Drift Candidates`, and load the governing sources (Phase 0)
+2. Reconcile drift candidates with code, shared references, harness docs, and wrappers (Phase 1)
+3. Refresh `project-dna` and dependent shared references as needed (Phase 2)
+4. Verify Hybrid C parity for both Claude and Codex wrappers, then close with the sync contract (Phase 3)
 
 Read `docs/ai/shared/skills/sync-guidelines.md` for detailed steps.
 Also refer to `docs/ai/shared/drift-checklist.md` for inspection items.
 
-Closing summary must include: `project-dna`, `AUTO-FIX`, `REVIEW`, `Remaining` — see "Sync Completion Contract" in shared procedure.
+Closing summary must include: `Mode`, `Input Drift Candidates`, `project-dna`, `AUTO-FIX`, `REVIEW`, `Remaining`, `Next Actions` - see "Sync Contract" in the shared procedure.
 
 ## Claude-Specific Post-Steps
+
+> This is a Claude-harness post-step.
+> Codex may not have an equivalent post-step unless Codex-specific harness assets also require synchronization.
+
 After completing the shared procedure:
 1. Update `.claude/rules/architecture-conventions.md`
    (data flow, object roles, generic signatures changes)

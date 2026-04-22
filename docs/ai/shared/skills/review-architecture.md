@@ -1,39 +1,126 @@
-# Architecture Compliance Audit — Detailed Procedure
+# Architecture Compliance Audit
+
+## Purpose
+
+Use this skill to audit one domain or the full repository against the project's
+shared architecture rules, then decide whether the audit also requires
+`/sync-guidelines` follow-up.
+
+## Review Contract
+
+Every result must include:
+
+- `Scope` - audit target, audited domains, important exclusions
+- `Sources Loaded` - exact shared rule sources used for the audit
+- `Findings` - only open issues; each item includes `severity`, `rule source`,
+  `file:line`, `impact`, and `recommended fix`
+- `Drift Candidates` - shared docs, checklists, wrappers, or `project-dna`
+  targets that may need sync; each item includes `target`, `reason`,
+  `auto-fix`, and `sync-required`
+- `Next Actions` - implementation follow-up, verification, sync path
+- `Completion State` - concise closure status for the audit
+- `Sync Required` - explicit `true` or `false`
+
+### Severity Taxonomy
+
+- Review state: `OPEN`, `OK`, `SKIP`
+- Severity: `BLOCKING`, `HIGH`, `MEDIUM`, `LOW`, `NOTE`
 
 ## Audit Target
-When "all", audit all domain directories under `src/` (excluding `_core`, `_apps`).
-When a specific domain name, audit only `src/{name}/`.
 
-## Current Domain List
-Identify domains using Glob pattern `src/*/` and exclude `_core`, `_apps` prefixes
+- `all` -> audit all domains under `src/`, excluding `_core` and `_apps`
+- `{domain}` -> audit only `src/{domain}/`
 
-## Audit Procedure
+## Category Coverage
 
-Inspect 8 categories with 28+ items using Grep-based checks.
-Refer to `docs/ai/shared/architecture-review-checklist.md` for the detailed checklist.
+Inspect the 9 architecture checklist categories defined in
+`docs/ai/shared/architecture-review-checklist.md`.
 
-**Category Summary**:
-1. **Layer Dependency Rules** — domain -> infrastructure/interface import violations
-2. **Conversion Patterns Compliance** — Mapper class, Entity pattern remnants
-3. **DTO/Response Integrity** — sensitive field exposure
-4. **DI Container Correctness** — Singleton/Factory distinction
-5. **Test Coverage** — required test file existence
-6. **Worker Payload Compliance** — Payload class usage and location
-7. **Admin Page Compliance** — config/page separation, naming conventions, auth guard, field masking
-8. **Bootstrap Wiring** — app-level registration status
+1. Layer Dependency Rules
+2. Conversion Patterns Compliance
+3. DTO / Response Integrity
+4. DI Container Correctness
+5. Test Coverage
+6. Worker Payload Compliance
+7. Admin Page Compliance
+8. Bootstrap Wiring
+9. DynamoDB Domain Compliance
 
-## Output Format
+## Phase 0: Resolve Scope and Load Rule Sources
 
+1. Resolve the audit target and enumerate the domains included in the run.
+2. Load:
+   - `AGENTS.md`
+   - `docs/ai/shared/project-dna.md`
+   - `docs/ai/shared/architecture-review-checklist.md`
+3. Use `docs/ai/shared/security-checklist.md` only when an architecture issue
+   overlaps with a security boundary such as auth, logging, or storage.
+
+## Phase 1: Audit Against Severity-Tagged Rules
+
+Apply the checklist category by category.
+
+- use grep-style checks for code-auditable rules first
+- read surrounding files when a rule depends on wiring or conversion flow
+- mark optional categories such as DynamoDB only when the domain actually uses
+  that variant
+
+Do not collapse missing tests, dependency violations, and DTO exposure into a
+single issue. Each broken rule gets its own finding.
+
+## Phase 2: Determine Drift Candidates and Sync Requirement
+
+The audit must explicitly decide whether the shared references are still
+accurate.
+
+Mark `Sync Required: true` when:
+- the audited changes touch shared rule sources, shared skill procedures, or
+  wrappers
+- the audit reveals that `project-dna`, checklists, or wrapper summaries no
+  longer describe the implemented architecture
+- the audit reveals a new documented pattern that should be added to the shared
+  references
+
+If the code is already correct but the docs are behind, report that as a
+`Drift Candidates` item instead of forcing a fake code finding.
+
+## Phase 3: Report Using the Review Contract
+
+Example:
+
+```text
+Scope
+- Target: docs
+- Audited domains: docs
+
+Sources Loaded
+- AGENTS.md
+- docs/ai/shared/project-dna.md
+- docs/ai/shared/architecture-review-checklist.md
+
+Findings
+- [OPEN][BLOCKING] Architecture checklist - src/docs/domain/services/docs_service.py:12
+  Impact: domain layer imports infrastructure directly, breaking the layering rule.
+  Recommended fix: introduce a Protocol in the domain layer and invert the dependency.
+- [OK][MEDIUM] Architecture checklist §4 - DI container: providers.DeclarativeContainer and providers.Factory used correctly
+- [SKIP] Architecture checklist §9 - DynamoDB domain compliance: no infrastructure/dynamodb/ directory found in docs domain
+
+Drift Candidates
+- target: docs/ai/shared/project-dna.md
+  reason: the current admin page pattern differs from the documented layout.
+  auto-fix: yes
+  sync-required: true
+
+Next Actions
+- Refactor the direct import.
+- Run `/sync-guidelines` after the admin page pattern reference is updated.
+
+Completion State
+- complete with findings
+
+Sync Required
+- true
 ```
-[PASS] Layer dependency: no domain -> infrastructure imports found
-[FAIL] Test coverage: tests/unit/{name}/domain/test_{name}_service.py missing
-       -> Recommended: generate with `/test-domain {name} generate`
-```
 
-Final summary: `Passed: XX/28 | Failed: XX/28`
-
-## Recommended Actions on Failure
-- Layer dependency violation -> Refactor to Protocol-based approach
-- Conversion Patterns violation -> Replace with inline conversion (model_dump, model_validate)
-- Missing tests -> Run `/test-domain {name} generate`
-- Bootstrap not registered -> Refer to Layer 5 in `/new-domain` reference
+When the audit is clean, still emit `Findings: none`, `Drift Candidates: none`,
+and `Sync Required: false`.

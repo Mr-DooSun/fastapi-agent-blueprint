@@ -25,13 +25,23 @@ This file intentionally keeps only Claude-specific setup and workflow guidance.
 - `/add-admin-page {domain}` — Add NiceGUI admin page to existing domain
 - `/add-cross-domain from:{a} to:{b}` — Wire cross-domain dependency
 - `/review-architecture {domain|all}` — Architecture compliance audit
-- `/security-review {domain|file|all}` — OWASP-based code security audit
+- `/security-review {domain|file|all}` — Security quality-gate audit with feature-freshness preflight
 - `/test-domain {domain} [generate|run]` — Generate or run tests
 - `/fix-bug {description}` — Structured bug-fix workflow
-- `/review-pr {number|URL}` — Architecture-aware PR review (existing rules applied to PR diff)
-- `/sync-guidelines` — Synchronize guidelines after design changes + regenerate project-dna.md
+- `/review-pr {number|URL}` — PR quality-gate review with drift-candidate detection
+- `/sync-guidelines` — Close the quality gate after design changes or review-detected drift
 - `/migrate-domain {generate|upgrade|downgrade|status}` — Alembic migration management
 - `/onboard` — Interactive onboarding for new members (project structure → rules → workflow)
+
+## Quality Gate Flow
+- Start with `/review-pr` for change-scoped review or `/review-architecture` for domain/full-repo structure audits.
+- Run `/security-review` when the change touches security-sensitive surfaces — see `docs/ai/shared/skills/security-review.md` §"When to Use" for the canonical trigger list.
+- If any review reports `Drift Candidates` or `Sync Required: true`, close the work with `/sync-guidelines` before treating the review as complete.
+- `/sync-guidelines` is the closure step for shared docs, `project-dna.md`, skill wrappers, and Claude-specific rules that depend on shared references.
+
+> Review output contract: `/review-pr`, `/review-architecture`, `/security-review` each emit
+> `Scope / Sources Loaded / Findings / Drift Candidates / Next Actions / Completion State / Sync Required`.
+> `/sync-guidelines` uses a separate terminal contract: `Mode / Input Drift Candidates / project-dna / AUTO-FIX / REVIEW / Remaining / Next Actions`.
 
 ## Domain Auto-discovery
 - `discover_domains()` in `src/_core/infrastructure/discovery.py` auto-detects domains

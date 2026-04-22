@@ -1,19 +1,31 @@
 # Security Audit Checklist Details
 
-> **Classification**: `[Always]` = always check | `[When applicable]` = check only when the feature is in use (output [SKIP] when not in use)
+> This checklist defines security findings for `/security-review` and
+> `/review-pr`.
 >
-> **Automatic conditional check determination**: Whether `[When applicable]` items are active is
-> pre-determined using the "Active Features" table in `docs/ai/shared/project-dna.md` section 8.
-> `[When applicable]` items for features marked "not implemented" in section 8 are immediately [SKIP]ped without Grep.
+> Taxonomy:
+> - Rule type: every item is a `code-auditable rule` unless the item explicitly
+>   says `Manual review` or `Policy review`
+> - Review state is assigned by the review procedure: `OPEN`, `OK`, `SKIP`
+> - Severity is declared here: `BLOCKING`, `HIGH`, `MEDIUM`, `LOW`, `NOTE`
+> - Applicability uses `Always` or `When applicable`
+>
+> Applicability decision is a 2-step check:
+> 1. preflight expectation from `docs/ai/shared/project-dna.md` section 8
+> 2. live code re-detection before the review decides `SKIP`
+>
+> If live code and `project-dna` disagree, audit the feature as active when the
+> code says it is active and report the stale shared reference as a drift
+> candidate.
 
 ## 1. Injection Prevention
 
 Grep-check each target Python file:
 
 ### SQL Injection
-- [ ] [Always][CRITICAL] No `f"SELECT ` / `f"INSERT ` / `f"UPDATE ` / `f"DELETE ` patterns
+- [ ] [Always][BLOCKING] No `f"SELECT ` / `f"INSERT ` / `f"UPDATE ` / `f"DELETE ` patterns
   - Grep: `f["'].*\b(SELECT|INSERT|UPDATE|DELETE|DROP)\b`
-- [ ] [Always][CRITICAL] No `.format()` + SQL keyword combinations
+- [ ] [Always][BLOCKING] No `.format()` + SQL keyword combinations
   - Grep: `\.format\(.*\).*(SELECT|INSERT|UPDATE|DELETE)`
 - [ ] [Always][HIGH] When using `text()`, parameter binding applied (no f-string + text() combination)
   - Grep: `text\(f["']`
@@ -21,9 +33,9 @@ Grep-check each target Python file:
   - Grep: `\bexec\s*\(|\beval\s*\(`
 
 ### Command Injection
-- [ ] [Always][CRITICAL] No `subprocess.*(shell=True)` usage
+- [ ] [Always][BLOCKING] No `subprocess.*(shell=True)` usage
   - Grep: `subprocess\.\w+\(.*shell\s*=\s*True`
-- [ ] [Always][CRITICAL] No `os.system(` usage
+- [ ] [Always][BLOCKING] No `os.system(` usage
   - Grep: `os\.system\s*\(`
 - [ ] [Always][HIGH] No `os.popen(` usage
   - Grep: `os\.popen\s*\(`
@@ -38,11 +50,11 @@ Grep-check each target Python file:
 Check router files and configuration files:
 
 ### Endpoint Protection
-- [ ] [Always][CRITICAL] POST/PUT/DELETE endpoints have authentication dependency
+- [ ] [Always][BLOCKING] POST/PUT/DELETE endpoints have authentication dependency
   - Grep: `@router\.(post|put|delete|patch)` -> verify `Depends(.*auth|.*current_user|.*token)` in the function
-  - When not implemented: [FAIL] + "Authentication not implemented — must be implemented before production deployment" warning
+  - When not implemented: treat as `[OPEN][BLOCKING]` and require production-safe auth before release
 ### Admin Dashboard Security
-- [ ] [Always][HIGH] Admin endpoint access restriction verified
+- [ ] [Always][BLOCKING] Admin endpoint access restriction verified
   - Grep: Every `@ui.page("/admin/` function calls `require_auth()` before any rendering
 - [ ] [Always][HIGH] Admin authentication uses timing-safe comparison
   - Grep: Verify `hmac.compare_digest` in `src/_core/infrastructure/admin/auth.py` (not `==` for password comparison)
@@ -56,7 +68,7 @@ Check router files and configuration files:
   - Grep: No `from src.*.domain.services` in `interface/admin/pages/` files
 
 ### Credential Management
-- [ ] [Always][CRITICAL] No hardcoded password/secret/api_key/token
+- [ ] [Always][BLOCKING] No hardcoded password/secret/api_key/token
   - Grep: `(password|secret|api_key|token)\s*=\s*["'][^"']{3,}["']`
   - Exclude: Field(), os.environ, settings., getenv, test files
 - [ ] [When applicable][HIGH] JWT configuration verified
@@ -74,7 +86,7 @@ Check router files and configuration files:
 Check DTO, Response, and log files:
 
 ### PII Exposure Prevention
-- [ ] [Always][CRITICAL] Response DTO does not contain password field
+- [ ] [Always][BLOCKING] Response DTO does not contain password field
   - Grep: No password field in `class.*Response` block
   - Or: Verify `model_dump(exclude=.*password)` usage
 - [ ] [Always][HIGH] Response DTO does not contain sensitive fields
@@ -86,7 +98,7 @@ Check DTO, Response, and log files:
 - [ ] [When applicable][MEDIUM] Password hashing in use (bcrypt, argon2, etc.)
   - Detection condition: Check when password field + DB storage logic exist
   - Grep: Verify `(bcrypt|argon2|pbkdf2|hashlib)` presence
-  - When hashing library not detected: [FAIL] + "Password hashing not applied — bcrypt/argon2 adoption required before production deployment"
+  - When hashing library not detected: treat as `[OPEN][HIGH]` and require bcrypt/argon2 before production deployment
 - [ ] [When applicable][LOW] DB connection SSL configuration verified
   - Detection condition: Check when production environment settings exist
   - Verify `sslmode` in config.py
@@ -113,7 +125,7 @@ Check Request DTO and router files:
   - Grep: Verify `content_type` or `filename` validation
 
 ### Path Traversal
-- [ ] [Always][CRITICAL] User input not used directly in file paths
+- [ ] [Always][BLOCKING] User input not used directly in file paths
   - Grep: `open\(.*\+|Path\(.*\+|os\.path\.join\(.*request`
 
 ## 5. Dependencies & Configuration
@@ -125,7 +137,7 @@ Check configuration files and pyproject.toml:
   - Execute: `uv pip audit 2>/dev/null || pip audit 2>/dev/null || echo "audit tool not installed"`
 
 ### Debug Mode
-- [ ] [Always][CRITICAL] debug=True disabled in production
+- [ ] [Always][BLOCKING] debug=True disabled in production
   - Grep: `debug\s*=\s*True` (when set directly without conditional)
 - [ ] [Always][HIGH] docs/swagger disabled in production
   - Verify `docs_url` in config.py uses `is_dev` condition
@@ -136,7 +148,7 @@ Check configuration files and pyproject.toml:
 - [ ] [Always][MEDIUM] Review scope of `allow_methods=["*"]`, `allow_headers=["*"]`
 
 ### Secret Management
-- [ ] [Always][CRITICAL] `.env` file included in `.gitignore`
+- [ ] [Always][BLOCKING] `.env` file included in `.gitignore`
   - Verify `\.env` pattern exists in .gitignore
 - [ ] [Always][HIGH] Configuration values loaded from environment variables (not hardcoded)
   - Verify Settings class uses `validation_alias`
@@ -148,7 +160,7 @@ Check configuration files and pyproject.toml:
 Check middleware and exception handling files:
 
 ### Stack Trace Exposure
-- [ ] [Always][CRITICAL] Traceback not exposed in production
+- [ ] [Always][BLOCKING] Traceback not exposed in production
   - Verify `is_dev` condition in `generic_exception_handler` (exception_handlers.py)
 - [ ] [Always][HIGH] Error responses do not expose internal implementation details
   - Grep: `traceback|stack_trace|__traceback__` return presence
@@ -176,7 +188,7 @@ Check middleware and exception handling files:
 - [ ] [When applicable][MEDIUM] Rate limiting middleware configuration status
   - Detection condition: Check **project-dna.md section 8** "Rate Limiting (slowapi)" status -> [SKIP] if "not implemented"
   - Grep: `RateLimitMiddleware|slowapi|throttle|rate_limit`
-  - When not configured: [SKIP] + "Recommend adopting slowapi when expanding endpoints"
+  - When not configured: keep `[SKIP]` and recommend adopting slowapi as the endpoint surface expands
 
 ### Request Size Limit
 - [ ] [When applicable][MEDIUM] Request body size limit configuration status
@@ -273,7 +285,7 @@ Check S3 Vectors client, store, and configuration files:
 Check Embedding client and configuration files:
 
 ### API Key Management
-- [ ] [When applicable][CRITICAL] Embedding API keys (OpenAI/Bedrock) managed via environment variables (not hardcoded)
+- [ ] [When applicable][BLOCKING] Embedding API keys (OpenAI/Bedrock) managed via environment variables (not hardcoded)
   - Detection condition: Check **project-dna.md section 8** "Embedding (PydanticAI)" status -> [SKIP] if "not implemented"
   - Grep: `embedding_openai_api_key|embedding_bedrock_access_key|embedding_bedrock_secret_key` loaded from `Settings`
   - Verify no API key hardcoded in client constructors
@@ -309,7 +321,7 @@ Check Embedding client and configuration files:
 Check LLM model factory, configuration, and Agent-using services:
 
 ### API Key / Credential Management
-- [ ] [When applicable][CRITICAL] LLM API keys / AWS credentials managed via environment variables (not hardcoded)
+- [ ] [When applicable][BLOCKING] LLM API keys / AWS credentials managed via environment variables (not hardcoded)
   - Detection condition: Check **project-dna.md section 8** "LLM (PydanticAI Agent)" status -> [SKIP] if "not implemented"
   - Grep: `llm_api_key|llm_bedrock_access_key|llm_bedrock_secret_key` loaded from `Settings`
   - Verify `LLMConfig` is constructed only via DI (`core_container.llm_config`), not instantiated with literal credentials
