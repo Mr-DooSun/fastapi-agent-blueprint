@@ -51,6 +51,7 @@ The core reading order lives in [`../README.md`](../README.md).
 | [029](029-broker-abstraction-selector.md) | Broker abstraction via `providers.Selector` |
 | [036](036-text-chunking-semantic-text-splitter.md) | Text chunking library choice |
 | [038](038-llm-observability-dual-path.md) | LLM observability dual-path (Langfuse + `ai_usage`) — not yet implemented (issues #74/#75) |
+| [044](044-superpowers-gstack-process-governor-evaluation.md) | Superpowers / gstack / process governor evaluation |
 
 ### Meta / governance
 
