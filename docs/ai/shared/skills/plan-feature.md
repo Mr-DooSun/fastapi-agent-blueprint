@@ -41,24 +41,24 @@ plan (see Output Plan Template).
 
 ## Phase 2: Architecture Impact Analysis
 
-### 1.1 Layer Impact Analysis
+### 2.1 Layer Impact Analysis
 Determine whether changes/additions are needed for each layer:
 - **Domain**: New DTO, Protocol, Service, Exception needed?
 - **Application**: New UseCase method needed? Existing UseCase modification?
 - **Infrastructure**: New Model, Repository, DI Container needed? DB migration?
 - **Interface**: New Router, Request/Response DTO, Worker Task needed?
 
-### 1.2 Domain Impact Analysis
+### 2.2 Domain Impact Analysis
 - Is modifying existing domains sufficient? -> Which layer of which domain?
 - Is a new domain needed? -> Suggest domain name with rationale
 - Search related existing code
 
-### 1.3 DTO Decision
+### 2.3 DTO Decision
 Decide based on the Write DTO criteria in `AGENTS.md`:
 - Request fields == Domain fields? -> No separate DTO needed, pass Request directly
 - Request fields != Domain fields? -> Separate Create/Update DTO needed, location: `application/` or `domain/dtos/`
 
-### 1.4 Cross-Domain Dependencies
+### 2.4 Cross-Domain Dependencies
 - Does the new feature reference data from existing domains?
 - Is Protocol-based DIP needed? -> Apply `/add-cross-domain` pattern
 
@@ -80,7 +80,7 @@ Derive specific security requirements for any applicable items.
 
 ## Phase 4: Task Breakdown
 
-### 3.1 Task Identification
+### 4.1 Task Identification
 Break down Phase 2 analysis results into actionable task units.
 Map each task to an existing Skill (refer to the "Skill Mapping Table" in `docs/ai/shared/planning-checklists.md`):
 
@@ -94,13 +94,13 @@ Map each task to an existing Skill (refer to the "Skill Mapping Table" in `docs/
 | Architecture verification | `/review-architecture {domain}` | `/review-architecture order` |
 | **Not mappable** | Manual implementation | External API integration, custom middleware, etc. |
 
-### 3.2 Supervision Level Determination
+### 4.2 Supervision Level Determination
 For each task (refer to "Supervision Level Definitions" in `docs/ai/shared/planning-checklists.md`):
 - **L1 (AI Delegation)**: 100% mapped to existing Skill, pattern is clear
 - **L2 (Confirm then Delegate)**: Business logic decisions, new domain field composition, etc.
 - **L3 (Supervision Required)**: Security-related, payment processing, external API integration, DB design decisions
 
-### 3.3 Execution Order and Parallelization
+### 4.3 Execution Order and Parallelization
 - Create dependency graph (which tasks must precede others)
 - Identify task groups that can be executed in parallel
 - Identify the critical path
