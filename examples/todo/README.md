@@ -1,7 +1,7 @@
 # Todo Example
 
 A minimal CRUD example mirroring the `src/user/` layout.
-
+> **Note:** Reference code only. Not auto-wired. To run it, copy into `src/todo/` or add a manual bootstrap call.
 ## Endpoints
 
 - `POST /v1/todo` — Create a todo
