@@ -1,6 +1,6 @@
 # Harness Evaluation Memo - Superpowers, gstack, and Process Governor
 
-**Status:** Pending review  
+**Status:** Archived evaluation memo (not a final decision)  
 **Date:** 2026-04-23  
 **Related issue:** [#114](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/114)  
 **Branch:** `docs/114-superpowers-gstack-process-governor-eval`
@@ -9,7 +9,7 @@
 
 ## Summary
 
-This memo preserves a user-driven evaluation of whether the project should adopt `superpowers`, `gstack`, or a smaller subset of their ideas while continuing to use the existing local harness. The immediate goal is not to finalize a tool choice today. The goal is to preserve the full reasoning trail so that Claude and Codex can continue the discussion tomorrow without losing context.
+This archived memo preserves a user-driven evaluation of whether the project should adopt `superpowers`, `gstack`, or a smaller subset of their ideas while continuing to use the existing local harness. The immediate goal was not to finalize a tool choice that day. The goal was to preserve the full reasoning trail so that Claude and Codex could continue the discussion later without losing context.
 
 The investigation started as a product identification task: "what are gstack and superpowers, and are they worth considering before designing more harness logic by hand?" That quickly expanded into a broader harness question. The comparison exposed a structural gap in the current project setup: the repository already has strong project rules, safety controls, and domain-specific skills, but it does not strongly enforce a default process flow such as `brainstorm -> plan -> TDD/verification -> review`.
 
@@ -461,4 +461,3 @@ Each should be evaluated against:
 - review discipline
 - user burden
 - cross-tool consistency
-

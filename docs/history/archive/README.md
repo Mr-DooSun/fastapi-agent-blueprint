@@ -1,7 +1,8 @@
-# Archived Decision History
+# Archived Decision and Evaluation History
 
-These ADRs are preserved for the historical record but are **not required
-reading** for contributing to the codebase as it stands today. Archiving
+These ADRs and archived evaluation memos are preserved for the historical
+record but are **not required reading** for contributing to the codebase as it
+stands today. Archiving
 does not mean "wrong" — it means one of the following:
 
 - **Superseded** by a later decision (the later decision is the source of
@@ -15,6 +16,9 @@ does not mean "wrong" — it means one of the following:
   something a new contributor must internalize to ship a domain.
 - **Meta / governance** — decisions about how we run the project or
   write ADRs themselves, distinct from architectural shape.
+- **Evaluation / discussion trail** — an archived investigation or synthesis
+  memo kept for continuity, even when it intentionally stops short of a final
+  decision.
 
 The core reading order lives in [`../README.md`](../README.md).
 
@@ -51,7 +55,6 @@ The core reading order lives in [`../README.md`](../README.md).
 | [029](029-broker-abstraction-selector.md) | Broker abstraction via `providers.Selector` |
 | [036](036-text-chunking-semantic-text-splitter.md) | Text chunking library choice |
 | [038](038-llm-observability-dual-path.md) | LLM observability dual-path (Langfuse + `ai_usage`) — not yet implemented (issues #74/#75) |
-| [044](044-superpowers-gstack-process-governor-evaluation.md) | Superpowers / gstack / process governor evaluation |
 
 ### Meta / governance
 
@@ -64,3 +67,9 @@ The core reading order lives in [`../README.md`](../README.md).
 | [031](031-shared-rules-tool-harness.md) | Shared rules and tool-specific harnesses |
 | [032](032-codex-native-workflow-assets.md) | Codex native workflow assets |
 | [033](033-hybrid-c-skill-split-convention.md) | Hybrid C skill split convention |
+
+### Evaluation / discussion trail
+
+| # | Title |
+|---|-------|
+| [044](044-superpowers-gstack-process-governor-evaluation.md) | Superpowers / gstack / process governor evaluation memo |
