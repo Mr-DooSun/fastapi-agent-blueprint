@@ -7,9 +7,17 @@ metadata:
 
 # Plan Feature
 
+## Procedure Overview
+1. Requirements Interview — 3-5 questions from 5 categories (Phase 0)
+2. Approach Options — propose 2-3 candidates with trade-offs, recommend one (Phase 1)
+3. Architecture Impact Analysis — layer, domain, DTO, cross-domain (Phase 2)
+4. Security Checkpoint — 6-item assessment matrix (Phase 3)
+5. Task Breakdown — skill mapping, supervision levels, execution order (Phase 4)
+
 1. Read `AGENTS.md` and `docs/ai/shared/skills/plan-feature.md` for the full procedure.
 2. Read `docs/ai/shared/planning-checklists.md` for question bank and templates.
 3. Interview the user on requirements (data model, business rules, integrations).
-4. Analyze architecture impact, run security checkpoint, break into tasks.
-5. Present the implementation plan in the standard output format.
-6. After approval, guide task execution in dependency order.
+4. Propose 2-3 approach options with trade-offs and recommend one.
+5. Analyze architecture impact, run security checkpoint, break into tasks.
+6. Present the implementation plan in the standard output format.
+7. After approval, guide task execution in dependency order.
