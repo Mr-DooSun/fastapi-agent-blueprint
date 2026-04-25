@@ -47,44 +47,46 @@ async def list_todos(
 
 
 @router.get(
-    "/todo/{id}",
+    "/todo/{todo_id}",
     summary="Get todo",
     response_model=SuccessResponse[TodoResponse],
     response_model_exclude={"pagination"},
 )
 @inject
 async def get_todo(
-    id: int, todo_service: TodoService = Depends(Provide[TodoContainer.todo_service])
+    todo_id: int,
+    todo_service: TodoService = Depends(Provide[TodoContainer.todo_service]),
 ) -> SuccessResponse[TodoResponse]:
-    data = await todo_service.get_data_by_data_id(data_id=id)
+    data = await todo_service.get_data_by_data_id(data_id=todo_id)
     return SuccessResponse(data=TodoResponse(**data.model_dump()))
 
 
 @router.put(
-    "/todo/{id}",
+    "/todo/{todo_id}",
     summary="Update todo",
     response_model=SuccessResponse[TodoResponse],
     response_model_exclude={"pagination"},
 )
 @inject
 async def update_todo(
-    id: int,
+    todo_id: int,
     item: UpdateTodoRequest,
     todo_service: TodoService = Depends(Provide[TodoContainer.todo_service]),
 ) -> SuccessResponse[TodoResponse]:
-    data = await todo_service.update_data_by_data_id(data_id=id, entity=item)
+    data = await todo_service.update_data_by_data_id(data_id=todo_id, entity=item)
     return SuccessResponse(data=TodoResponse(**data.model_dump()))
 
 
 @router.delete(
-    "/todo/{id}",
+    "/todo/{todo_id}",
     summary="Delete todo",
     response_model=SuccessResponse,
     response_model_exclude={"data", "pagination"},
 )
 @inject
 async def delete_todo(
-    id: int, todo_service: TodoService = Depends(Provide[TodoContainer.todo_service])
+    todo_id: int,
+    todo_service: TodoService = Depends(Provide[TodoContainer.todo_service]),
 ) -> SuccessResponse:
-    success = await todo_service.delete_data_by_data_id(data_id=id)
+    success = await todo_service.delete_data_by_data_id(data_id=todo_id)
     return SuccessResponse(success=success)

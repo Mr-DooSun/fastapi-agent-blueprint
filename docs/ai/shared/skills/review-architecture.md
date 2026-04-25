@@ -30,6 +30,26 @@ Every result must include:
 
 - `all` -> audit all domains under `src/`, excluding `_core` and `_apps`
 - `{domain}` -> audit only `src/{domain}/`
+- `examples/{name}` -> audit `examples/{name}/` against the **examples
+  profile** described below
+
+### Examples Profile (vs production)
+
+`examples/` are reference code, not production domains. Two checklist
+categories apply differently:
+
+- **§5 Test Coverage**: examples require only the unit test declared in
+  `examples/README.md` Contributing, not the full
+  `docs/ai/shared/test-files.md` baseline (3 baseline + applicable
+  conditional). Missing factories / integration / e2e tests are not
+  findings in the examples profile.
+- **§2 Auth (security-checklist)**: examples may omit auth dependencies
+  on `@router.post|put|delete`. The omission is intentional reference
+  simplicity, not a finding, unless the example's stated pattern claims
+  to demonstrate auth.
+
+All other categories (layer dependency, conversion, DI, bootstrap,
+naming) apply identically to examples and production domains.
 
 ## Category Coverage
 
