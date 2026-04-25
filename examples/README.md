@@ -53,15 +53,29 @@ An example PR should include:
    layout (Domain, Infrastructure, Interface) exactly — see the
    [tutorial](../docs/tutorial/first-domain.md#step-3--describe-an-order)
    for the canonical structure.
+   - **Path params** should use `{<domain>_id}` (e.g.
+     `/user/{user_id}`, `/todo/{todo_id}`) to avoid shadowing the
+     Python builtin `id`. The handler parameter name (`user_id: int`,
+     `todo_id: int`) must match the path placeholder.
+   - **Handler function names** follow `src/{domain}/` only when the
+     domain has multiple lookup variants needing disambiguation (e.g.
+     `get_user_by_user_id` vs `get_user_by_ids`). Single-lookup
+     examples may keep short names (`get_todo`, `update_todo`,
+     `delete_todo`).
 2. **A README** in `examples/{name}/README.md` covering:
    - What pattern the example teaches (2–3 sentences).
    - `curl` requests a reader can paste to exercise the endpoints.
    - Relevant production-domain reference (e.g. "compare with
      [`src/user/`](../src/user/) for password hashing").
-3. **A unit test** under `examples/{name}/tests/` (or at least a
-   protocol-based mock test pattern like the
-   [tutorial unit test](../docs/tutorial/first-domain.md#step-5--add-a-unit-test))
-   so a contributor can verify locally before pasting into `src/`.
+3. **A unit test** under `tests/unit/{name}/` (matching the production
+   test layout so CI auto-discovery runs it without extra wiring; see
+   the [tutorial unit test](../docs/tutorial/first-domain.md#step-5--add-a-unit-test)
+   for a protocol-based mock pattern). Examples are **not** required
+   to provide the full production test baseline (factories /
+   integration / e2e under `tests/{layer}/{name}/`) — a single unit
+   test is sufficient. This is the **examples profile**; see
+   [`docs/ai/shared/skills/review-architecture.md`](../docs/ai/shared/skills/review-architecture.md#examples-profile-vs-production)
+   for the audit-side counterpart.
 4. **No new dependencies** unless explicitly called for by the issue.
    If your example needs a library not already in `pyproject.toml`,
    open a discussion on the issue first.
