@@ -32,6 +32,7 @@ This file contains stable repository facts for both Claude and Codex workflows.
 - `docs/ai/shared/governor-paths.md`: canonical source of governor-changing path globs (Tier A / B / C + exclusions). All consumer docs link this file; do not redeclare the list (Round-4 R4.3)
 - `.github/pull_request_template.md`: GitHub PR template with the Governor-Changing PR checklist that artefact-locks cross-tool review and self-application proof (ADR 045 Pillar 5)
 - `.claude/state/` + `.codex/state/` (gitignored): per-session governance state surfaces. Phase 2 (#121) writes exception-token marker JSON files here when a leading `[trivial]` / `[hotfix]` / `[exploration]` / `[자명]` / `[긴급]` / `[탐색]` token is recognised. Phase 4 completion gate will read these markers; lifecycle (read-and-delete vs. age-based filter vs. session-id correlation) is the open question carried as Inherited Constraint into Phase 4.
+- `.codex/state/verify-log-{session_id}.json` (gitignored): Phase 3 (#122) per-session verify-class command log. JSONL append-only — `.codex/hooks/post-tool-format.py` records `pytest` / `make test` / `make demo[-rag]` / `alembic upgrade` invocations. `.codex/hooks/stop-sync-reminder.py` reads only the *current session's* file (R0.2 — defeats cross-session silence) to decide whether to emit the verify-first reminder segment. Each entry stores `ts_epoch_ns` (R0.3) for subsecond freshness comparison against `Path.stat().st_mtime_ns`. Lifecycle shares the IC-11 open question with the Phase 2 marker — Phase 4 (#123) decides both at once.
 
 ## Context Management
 
