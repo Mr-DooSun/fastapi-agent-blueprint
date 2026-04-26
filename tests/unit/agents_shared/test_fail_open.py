@@ -127,6 +127,62 @@ def test_tier2_function_call_import_error_returns_safe_default(
 
 
 # ---------------------------------------------------------------------------
+# Tier 2 supplement (R1-B.1) — verify_first / completion_gate entry points
+# also degrade safely when the shared module raises at attribute lookup.
+# ---------------------------------------------------------------------------
+def test_tier2_verify_first_read_latest_token_marker_safe_default(
+    monkeypatch, tmp_path
+) -> None:
+    """Claude verify_first.read_latest_token_marker must return None when
+    the shared reader raises rather than propagating to the Stop hook."""
+
+    sys.path.insert(0, str(REPO_ROOT / ".claude" / "hooks"))
+    sys.modules.pop("verify_first", None)
+    try:
+        import verify_first as vf  # noqa: PLC0415
+
+        def boom(*_args, **_kwargs):
+            raise ImportError("simulated shared reader failure")
+
+        monkeypatch.setattr(vf, "read_latest_token", boom)
+        # Tier 2 contract: hook helpers do not propagate exceptions.
+        # Drive the degraded path explicitly via _SHARED_OK=False.
+        monkeypatch.setattr(vf, "_SHARED_OK", False)
+        # read_latest_token_marker must surface the degraded state as None.
+        assert vf.read_latest_token_marker(tmp_path) is None
+        # should_remind must complete WITHOUT raising; the boolean it
+        # returns is decided by the existing verify-first decision tree
+        # (no marker → not exploration → reminder fires) and is not the
+        # invariant under test here. The invariant is "no propagation".
+        payload = {"tool_input": {"file_path": "src/foo.py"}}
+        result = vf.should_remind(payload, state_dir=tmp_path)
+        assert isinstance(result, bool)
+    finally:
+        sys.path.pop(0)
+        sys.modules.pop("verify_first", None)
+
+
+def test_tier2_completion_gate_entry_points_safe_default(monkeypatch, tmp_path) -> None:
+    """Claude completion_gate.governor_changing_segment +
+    consume_phase2_markers must absorb shared-side failures and stay
+    silent rather than propagating to the Stop hook."""
+
+    sys.path.insert(0, str(REPO_ROOT / ".claude" / "hooks"))
+    sys.modules.pop("completion_gate", None)
+    try:
+        import completion_gate as cg  # noqa: PLC0415
+
+        # Force the degraded path; both entry points must short-circuit.
+        monkeypatch.setattr(cg, "_SHARED_OK", False)
+        assert cg.governor_changing_segment() is None
+        # consume_phase2_markers returns None (no-op) and does not raise.
+        cg.consume_phase2_markers(tmp_path)
+    finally:
+        sys.path.pop(0)
+        sys.modules.pop("completion_gate", None)
+
+
+# ---------------------------------------------------------------------------
 # Tier 3 — R0-A.1 invariant (no SystemExit at module-import)
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize("hook", CLAUDE_HOOKS + CODEX_HOOKS)

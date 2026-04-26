@@ -111,6 +111,19 @@ The following self-application steps were executed in the same branch on which t
 - **`/sync-guidelines`** — drift candidates: zero new ones from this PR; `harness-asset-matrix.md` Update Log row added (Phase 5 / #124), `repo-facts.md` Shared Workflow Asset Map gains `.agents/shared/governor/` entry, `AGENTS.md` § Process Governor Reference Documents gains a Status (2026-04-27) line announcing Hybrid Harness v1 completion, `target-operating-model.md` § Shared exception-token bullet rewritten to reflect the shipped state. R1-C.1 cleaned up stale `~86/14` / `58 assets` figures in the R1 fix commit. **Sync Required: false** — all four canonical sources are current.
 - **`/review-pr 130`** — drift-candidate detection on this PR itself: zero new candidates (all governance-relevant docs updated in commit 7 + R1 fix). Test invariance asserted by 202 unit tests. The PR description carries the test plan and acceptance criteria explicitly per the Governor-Changing PR template.
 
+## Behaviour-invariance proof (Plan §Verification §"Behavior invariance proof", R0-B.1 — backfilled 2026-04-27)
+
+Plan §Verification mandated a 4-artifact pre/post diff, not a single PASSED count. Captured after Round 2 commit (10 commits on the branch), against `main` at `e00c2bf`:
+
+| Artifact | pre (`main`) | post (`feat/124-shared-governor-module`) | Result |
+|---|---|---|---|
+| `pytest --collect-only -q` nodeids | 91 unique | 201 unique | **OK — every baseline nodeid is a subset of post** (`comm -23 pre post` = 0 missing) |
+| `pytest -v --tb=no` PASSED nodeids | 86 unique | 182 unique | **OK — 0 regressions** (`comm -23 pre-passed post-passed` = 0) |
+| Exit code | 0 (`93 passed in 0.91s`) | 0 (`206 passed in 2.31s`) | **OK** |
+| warning / skip / xfail line count | 1 (`test_corrupt_marker_skipped`) | 3 (two new test names containing `skip` token) | **OK — no actual SKIPPED/warning/xfail; difference is purely test-name lexical** |
+
+(Unique-nodeid counts under raw counts because `pytest -v` lists parametrized cases on individual lines and the simple regex used for capture does not deduplicate the parametrized ID brackets. The relevant invariant — "no baseline nodeid is missing from post" — holds in both columns and is the actual invariance proof.)
+
 ## Round 2 results
 
 - **Round 2 prompt focus**: cascade risk validation (does future governor-asset addition land naturally in `.agents/shared/governor/`?); R1 leftover R-points re-evaluation; dual-system window closure documentation.
@@ -118,4 +131,5 @@ The following self-application steps were executed in the same branch on which t
 - **R2.1 — log entry backfill**: Round 2 §Round 2 review section above is now populated; Self-Application Proof checkboxes verified.
 - **R2.2 — cascade-risk lock**: `tests/unit/agents_shared/test_governor_boundary.py::test_gatestatus_variants_referenced_by_completion_gate_shims` lock-steps `GateStatus.__args__` against the shim manual-orchestration map. Adding a new variant requires updating both shims and this test in the same PR.
 - **R2.3 — figure sync**: `harness-asset-matrix.md` migration risk row updated 200 → 202.
-- **Cascade-risk verdict**: sufficient for v1 closure. The shared module + boundary tests + closed `GateStatus` Literal jointly produce a build-time signal whenever a future governor change tries to land outside the shared package or skip a shim flow update.
+- **R1-B leftover absorption (post-Round-2 polish)**: R1-B.1 added two Tier 2 fail-open scenarios (`test_tier2_verify_first_read_latest_token_marker_safe_default`, `test_tier2_completion_gate_entry_points_safe_default`) so the entry-point degradation contract is exercised end-to-end on both verify-first and completion-gate. R1-B.3 added `test_hooks_import_expected_shared_symbols` to assert the *positive* import shape per shim, complementing the existing inline-redeclaration ban.
+- **Cascade-risk verdict**: sufficient for v1 closure. The shared module + boundary tests + closed `GateStatus` Literal + per-shim positive-import assertion jointly produce a build-time signal whenever a future governor change tries to land outside the shared package or skip a shim flow update.

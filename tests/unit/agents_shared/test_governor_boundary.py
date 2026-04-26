@@ -143,6 +143,66 @@ def test_hooks_do_not_redeclare_canonical_reminder_lines() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 3-supplement (R1-B.3) — positively assert the shared import exists in
+# every hook script so the absence-of-inline-literal check is reinforced
+# by a presence-of-import check. A regression that drops the import (and
+# would force inline redeclaration) now fails twice: once on missing
+# import, once on whatever literal sneaks back in.
+# ---------------------------------------------------------------------------
+EXPECTED_SHARED_IMPORTS = {
+    REPO_ROOT / ".claude" / "hooks" / "user_prompt_submit.py": [
+        "parse_exception_token",
+        "write_marker",
+    ],
+    REPO_ROOT / ".claude" / "hooks" / "verify_first.py": [
+        "REMINDER_TEXT",
+        "EXPLORATION_TOKENS",
+    ],
+    REPO_ROOT / ".claude" / "hooks" / "completion_gate.py": [
+        "GOVERNOR_REMINDER_WITH_PR",
+        "GOVERNOR_REMINDER_NO_PR",
+        "parse_trigger_globs",
+    ],
+    REPO_ROOT / ".codex" / "hooks" / "user-prompt-submit.py": [
+        "safe_parse_exception_token",
+        "PROMPT_RULES",
+    ],
+    REPO_ROOT / ".codex" / "hooks" / "verify_first.py": [
+        "REMINDER_TEXT",
+        "EXPLORATION_TOKENS",
+    ],
+    REPO_ROOT / ".codex" / "hooks" / "completion_gate.py": [
+        "GOVERNOR_REMINDER_WITH_PR",
+        "GOVERNOR_REMINDER_NO_PR",
+        "parse_trigger_globs",
+    ],
+}
+
+
+def test_hooks_import_expected_shared_symbols() -> None:
+    """Each shim must positively import its expected shared symbols.
+
+    This complements the inline-redeclaration ban by also requiring the
+    *positive* shape: dropping the shared import would force inline
+    redeclaration to keep the hook working, and that is exactly what we
+    forbid. Missing imports therefore signal a contract violation even
+    before the inline-literal check runs.
+    """
+
+    for hook, symbols in EXPECTED_SHARED_IMPORTS.items():
+        text = hook.read_text(encoding="utf-8")
+        assert "from governor" in text, (
+            f"{hook.name}: missing 'from governor' import — shim has been "
+            "decoupled from the shared module."
+        )
+        for symbol in symbols:
+            assert symbol in text, (
+                f"{hook.name}: missing expected shared symbol {symbol!r}. "
+                "Either re-add the import or update EXPECTED_SHARED_IMPORTS."
+            )
+
+
+# ---------------------------------------------------------------------------
 # 4. R2.2 — completion-gate shim must handle every GateStatus variant
 # ---------------------------------------------------------------------------
 COMPLETION_GATE_SHIMS = [
