@@ -178,7 +178,7 @@ def test_render_reminder_no_pr_format() -> None:
     result = GateResult("missing", True, None)
     text = render_reminder(result)
     assert text == GOVERNOR_REMINDER_NO_PR
-    assert "PR 번호 미확인" in text
+    assert "PR number unknown" in text
 
 
 def test_render_reminder_mismatch_with_pr() -> None:
@@ -242,17 +242,10 @@ def test_hooks_import_shared_reminder_constants() -> None:
     assert "GOVERNOR_REMINDER_NO_PR" in codex_text
     assert "from governor" in claude_text
     assert "from governor" in codex_text
-    # Shared constant still carries the canonical Korean line.
-    assert (
-        "PR #{pr}에 매칭되는 governor-review-log 항목이 없습니다."
-        in GOVERNOR_REMINDER_WITH_PR
-    )
+    # Shared constant still carries the canonical reminder line.
+    # PR #131 translated the line from Korean to English under AGENTS.md
+    # § Language Policy; the inline-redeclaration ban remains language-agnostic.
+    assert "No governor-review-log entry matches PR #{pr}." in GOVERNOR_REMINDER_WITH_PR
     # Inline redeclaration of the canonical line MUST NOT exist in shims.
-    assert (
-        claude_text.count("PR #{pr}에 매칭되는 governor-review-log 항목이 없습니다.")
-        == 0
-    )
-    assert (
-        codex_text.count("PR #{pr}에 매칭되는 governor-review-log 항목이 없습니다.")
-        == 0
-    )
+    assert claude_text.count("No governor-review-log entry matches PR #{pr}.") == 0
+    assert codex_text.count("No governor-review-log entry matches PR #{pr}.") == 0

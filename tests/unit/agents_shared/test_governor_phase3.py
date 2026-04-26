@@ -17,11 +17,16 @@ from governor import (
 
 
 def test_reminder_text_lines() -> None:
-    """Frozen at Phase 3 — must remain identical to the hook adapters."""
+    """Frozen at Phase 3 — must remain identical to the hook adapters.
+
+    Phase 5 (#131) translated the original Korean opening line to English
+    under AGENTS.md § Language Policy; the bilingual `[탐색]` token in the
+    silence-hint line is preserved (token vocabulary is the only exception).
+    """
 
     lines = REMINDER_TEXT.splitlines()
-    assert lines[0].startswith("[verify-first] verify 단계")
-    assert lines[1].startswith("[verify-first] Verify step")
+    assert lines[0].startswith("[verify-first] Verify step")
+    assert "test or static check" in lines[1]
     assert "Suggested next" in lines[2]
     assert "[exploration]" in lines[3] and "[탐색]" in lines[3]
 
