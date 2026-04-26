@@ -115,15 +115,9 @@ Auto-escape detection is best-effort; the user may always restate their intent v
 
 #### Policy / harness doc carve-out (governance-loosening guard)
 
-The doc-only auto-escape **does not apply** to policy or harness docs. The following paths are *not* escaped even if the diff is "doc-only":
+The doc-only auto-escape **does not apply** to policy or harness docs as defined in [`governor-paths.md`](governor-paths.md) Tier A. When any Tier-A path is in `changed_files`, the change is treated as governor-changing: full `framing` → `plan` → `verify` → `self-review` (with cross-tool review sub-step, see §5) → `completion gate`. The rationale (Codex review R8): a governor that is strict on code but lax on its own rule sources will silently drift away from its own discipline.
 
-- `AGENTS.md`
-- `docs/ai/shared/**`
-- `docs/history/**` (ADRs and archive)
-- `.claude/rules/**`, `.codex/rules/**`
-- `.github/pull_request_template.md` and other repo-level governance artefacts
-
-When any path above is in `changed_files`, the change is treated as governor-changing: full `framing` → `plan` → `verify` → `self-review` (with cross-tool review sub-step, see §5) → `completion gate`. The rationale (Codex review R8): a governor that is strict on code but lax on its own rule sources will silently drift away from its own discipline.
+The canonical path list and the small set of exclusions (e.g. log-only backfill PRs) live in [`governor-paths.md`](governor-paths.md). Do **not** duplicate the list here.
 
 ### What exceptions cannot do
 
@@ -209,7 +203,7 @@ When tool runtime config conflicts with shared rules, shared rules in `AGENTS.md
 
 ### Cross-Tool Review Cadence (Pillar 2)
 
-Cross-tool review is a sub-step of `self-review`, mandatory **only** when the change is governor-changing (the doc-only carve-out paths plus `.claude/**`, `.codex/**`, `.agents/**`, hook scripts, skill wrappers, governor modules). Non-governor-changing PRs are exempt to avoid heavy ceremony.
+Cross-tool review is a sub-step of `self-review`, mandatory **only** when the change is governor-changing as defined in [`governor-paths.md`](governor-paths.md) (Tier A / B / C minus exclusions). Non-governor-changing PRs are exempt to avoid heavy ceremony.
 
 Per round (each PR may need one or several):
 

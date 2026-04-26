@@ -28,7 +28,8 @@ This file contains stable repository facts for both Claude and Codex workflows.
 - `docs/ai/shared/harness-asset-matrix.md`: living inventory of every harness asset and its bucket (Keep / Replace / Overlay / Drop)
 - `docs/ai/shared/target-operating-model.md`: 7-step Default Coding Flow + exception-token vocabulary + Claude/Codex alignment + sample-workflow traces
 - `docs/ai/shared/migration-strategy.md`: phased migration plan for the hybrid harness target architecture (Phase 0~5)
-- `docs/ai/shared/governor-review-log/`: permanent archive of cross-tool review trails for governor-changing PRs (ADR 045 Pillar 4); see `governor-review-log/README.md` for entry shape
+- `docs/ai/shared/governor-review-log/`: permanent archive of cross-tool review trails for governor-changing PRs (ADR 045 Pillar 4); see `governor-review-log/README.md` for entry shape and prompt template
+- `docs/ai/shared/governor-paths.md`: canonical source of governor-changing path globs (Tier A / B / C + exclusions). All consumer docs link this file; do not redeclare the list (Round-4 R4.3)
 - `.github/pull_request_template.md`: GitHub PR template with the Governor-Changing PR checklist that artefact-locks cross-tool review and self-application proof (ADR 045 Pillar 5)
 
 ## Context Management

@@ -130,9 +130,13 @@ To prevent the gap from cascading into Phase 2~5, the following Pillars are adde
 | 5 | `.github/pull_request_template.md` adds Governor-Changing PR checklist (artefact-locks the cross-tool review and self-application proof) | [`.github/pull_request_template.md`](../../.github/pull_request_template.md) |
 | 6 | Follow-up issues #121~#124 bodies link the log entry under "Inherited Review Constraints" | gh issue bodies |
 | 7 | Phase 4 completion-gate Stop adapter checks for missing governor-review-log entry | [`migration-strategy.md` §1 Phase 4 Acceptance](../ai/shared/migration-strategy.md) |
-| 8 | Memory `feedback_codex_cross_review.md` generalised to phase-level review | claude-code memory feedback file |
+| 8 | Optional supplemental — claude-code memory `feedback_codex_cross_review.md` generalised to phase-level review (helpful for the user's own claude-code sessions; not a load-bearing artefact because it is not repo-visible) | claude-code memory feedback file (per-user, per-machine) |
+
+The substantive enforcement lives in Pillars 4 + 5, both repo-visible. Pillar 8 was originally counted equally; Round-4 review (R4.2) downgraded it because a memory file outside the repo is not transmitted to new contributors or to CI. The downgrade does not weaken the system; it relabels honestly.
 
 The Pillars together close the bootstrapping gap: from Phase 1 onward the governor produces evidence of its own application, and any subsequent governor-changing PR encounters the trigger via PR template (Pillar 5) → review-log requirement (Pillar 4) → drift-checklist §1D verification → Phase 4 hard reminder (Pillar 7), so user vigilance is no longer the only enforcement layer.
+
+Round-4 also introduced the canonical [`governor-paths.md`](../ai/shared/governor-paths.md) so that the trigger glob has a single source. Without it, the five consumer documents (AGENTS.md, target-operating-model.md, migration-strategy.md, drift-checklist.md, PR template) would drift over time as they did during Round 4. Future governor-changing PRs must update `governor-paths.md` and **never** redeclare the path list inline.
 
 ## Alternatives Considered
 

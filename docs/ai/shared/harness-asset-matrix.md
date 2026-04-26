@@ -168,6 +168,7 @@ Twelve canonical reference documents that both Claude and Codex consume. Most ar
 | `target-operating-model.md` | Keep | Low | High |
 | `migration-strategy.md` | Keep | Low | High |
 | `governor-review-log/` (directory) | Keep | Low | High |
+| `governor-paths.md` | Keep | Low | High |
 
 ### `project-dna.md`
 
@@ -331,6 +332,16 @@ Twelve canonical reference documents that both Claude and Codex consume. Most ar
 - **Migration risk**: Low (additive only — entries grow over time).
 - **Stability impact**: High (drift-checklist §1D verifies sync; Phase 4 hook reminds on missing entry).
 - **Notes**: Self-classified. Long-term retention; archive subdirectories (e.g. `2026/`) may be introduced by a future ADR if size becomes a problem.
+
+### `governor-paths.md`
+
+- **Current role**: Canonical source for the governor-changing path list (Tier A / B / C plus exclusions). All consumer docs (AGENTS.md, target-operating-model.md, migration-strategy.md, drift-checklist.md, `.github/pull_request_template.md`) link this file rather than redeclare the list.
+- **Why it exists**: Round-4 cross-tool review (R4.3) caught microscopic drift between the five copies of the path list. A single source removes the drift surface and prepares Phase 5's shared module to read the file directly.
+- **Replacement feasibility**: None.
+- **Final location**: unchanged.
+- **Migration risk**: Low.
+- **Stability impact**: High — every path-classification decision in Phase 2~5 hooks resolves to this file.
+- **Notes**: Itself governor-changing. Editing it requires a fresh `governor-review-log/` entry per the file's own §Updating section.
 
 ---
 
@@ -642,13 +653,13 @@ Six rule files (5 Claude + 1 Codex). All `Keep` except `commands.md` which becom
 
 | Bucket | Count | Share | Notes |
 |---|---|---|---|
-| Keep | 47 | ~85% | Project-specific architecture / safety / reference value (incl. 4 design + 2 self-coherence-recovery process-governor artefacts) |
-| Overlay | 8 | ~15% | Process discipline now routed by Default Flow |
+| Keep | 48 | ~86% | Project-specific architecture / safety / reference value (incl. 4 design + 3 self-coherence-recovery process-governor artefacts) |
+| Overlay | 8 | ~14% | Process discipline now routed by Default Flow |
 | Replace | 0 | 0% | None in initial inventory; reserved for future passes |
 | Drop | 0 | 0% | Initial pass found no genuinely removable assets |
-| **Total** | **55** | 100% | |
+| **Total** | **56** | 100% | |
 
-Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=16` (12 reference + 3 design living docs + `governor-review-log/` directory), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=11`, `Tier 4=6` — sum 56. The 55 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d (its row is recorded for completeness only). The bucket-share percentages use 55 as the denominator.
+Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=17` (12 reference + 3 design living docs + `governor-review-log/` directory + `governor-paths.md`), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=11`, `Tier 4=6` — sum 57. The 56 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d (its row is recorded for completeness only). The bucket-share percentages use 56 as the denominator.
 
 This distribution matches the "Mostly Local with Philosophy Overlay" model declared in [ADR 045 §D4](../../history/045-hybrid-harness-target-architecture.md). The `Replace` and `Drop` columns are both empty in the initial pass: no asset's content is being rewritten, and self-verification during cross-link work showed that the only `Drop` candidate identified during the first triage was actually an active component (a sh-wrapper `.py` pair).
 

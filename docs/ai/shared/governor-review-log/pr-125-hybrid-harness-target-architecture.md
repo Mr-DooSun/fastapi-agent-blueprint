@@ -18,7 +18,7 @@ Implements the four design outputs and Phase 1 of the hybrid local process gover
 - **14 × 3 skill wrappers** — each gains a `Default Flow Position` section.
 - **Cross-links** — CLAUDE.md, .claude/rules/{architecture-conventions,project-status,commands}.md, .codex/rules/fastapi-agent-blueprint.rules, drift-checklist §1C.
 
-Final variant pushed to PR: 4 commits totaling 51 changed files (PR diff shows 57 files because three pre-existing maintenance commits on the branch were carried along).
+Final variant pushed to PR: 5 commits. The fifth (Round-4 reinforcement) adds the canonical `governor-paths.md`, README prompt template, log freshness corrections, and Pillar 8 demotion. Total changed-files count is read from `git diff --stat main..HEAD` at merge time; the PR's GitHub display includes pre-existing maintenance commits on the same branch (sync-guidelines snapshot, context7 review log, gitignore entry).
 
 ## Review Rounds
 
@@ -26,6 +26,7 @@ Final variant pushed to PR: 4 commits totaling 51 changed files (PR diff shows 5
 
 - **Target**: `/Users/doo/.claude/plans/117-playful-dongarra.md` plan file.
 - **Prompt focus**: cross-tool consistency of the proposed plan; Codex-only blind spots; doc structure & length; mandatory phase coverage; precedence wording.
+- **Final Verdict**: 7 R-points actionable; plan adoption recommended after R-points reflected.
 - **R-points surfaced** (all reflected into plan and implementation):
   - **R1**. Default Flow precedence must be explicit (sandbox / approval / `.codex/rules` / safety hooks / Absolute Prohibitions, in that order).
   - **R2**. Phase 2~5 must split shared policy from per-tool hook adapters because Codex hook surface differs from Claude.
@@ -39,6 +40,7 @@ Final variant pushed to PR: 4 commits totaling 51 changed files (PR diff shows 5
 
 - **Target**: 53-file working tree after the initial implementation push.
 - **Prompt focus**: did the implementation honour R1~R7? new cross-tool gaps not seen at plan time?
+- **Final Verdict**: 7 cross-tool gaps identified; fixes required before readiness review.
 - **Findings (all fixed)**:
   - Broken relative links in 14 shared-skill docs (`../../../AGENTS.md` should be `../../../../AGENTS.md`) and three living docs (`../history/` should be `../../history/`).
   - Matrix bucket-definition table still cited a stale `Drop` example that the body had already overturned.
@@ -52,6 +54,7 @@ Final variant pushed to PR: 4 commits totaling 51 changed files (PR diff shows 5
 
 - **Target**: 54-file working tree after Round-2 fixes.
 - **Prompt focus**: are Round-2 fixes semantic (not surface)? merge blockers? Phase 2 hand-off readiness?
+- **Final Verdict**: `minor fixes recommended`, **no merge blockers**.
 - **Findings (all fixed)**:
   - Stale "dead" / "Drop 2%" phrasing in five locations (matrix Hook-tier intro, migration-strategy §1 + §6, target-operating-model §4 + §7).
   - Bucket-share denominators were not internally consistent across the four docs; unified to 85% / 15% / 0% / 0% with a counting note.
@@ -60,7 +63,20 @@ Final variant pushed to PR: 4 commits totaling 51 changed files (PR diff shows 5
   - Tier-3 verification command in matrix did not exclude `__pycache__/*.pyc`.
   - Phase 2 acceptance lacked a parser-fixture spec.
   - `.claude/rules/commands.md` had no Default Flow pointer despite the matrix claiming a Phase 1 edit.
-- **Final Verdict**: `minor fixes recommended`, **no merge blockers**.
+
+### Round 4 — Self-Coherence Review
+
+- **Target**: 8-Pillar self-application recovery commit (4th commit on the branch) plus the original 3-round trail.
+- **Prompt focus**: did PR #125 itself follow the governor it defines? Pillar 1~8 self-coherence; trigger-glob alignment across documents; new cascade risk; hand-off readiness for Phase 2~5.
+- **Final Verdict**: `still needs reinforcement` — fixes applied in 5th commit (Round-4 reinforcement), not a merge blocker.
+- **R-points surfaced** (all addressed in 5th commit):
+  - **R4.1** Self-Application Proof freshness: changed-file count and explicit Round 1/2 Final Verdicts. → Round verdicts and freshness note added.
+  - **R4.2** Pillar 8 (memory feedback) is repo-invisible because the file lives only in claude-code memory. Risk: new contributor / CI cannot consume it. → Pillar 8 demoted to "optional supplemental" in ADR 045 (the substantive enforcement now lives in Pillars 4 + 5, both repo-visible).
+  - **R4.3** Trigger-glob list duplicated across five documents with microscopic differences. → New canonical `docs/ai/shared/governor-paths.md` (Tier A / B / C + exclusions); all consumers updated to link the file instead of redeclaring.
+  - **R4.4** Phase 4 gate did not match log entry to current PR number → stale entries could satisfy the gate. → Phase 4 acceptance and drift-checklist §1D updated to require `pr-{currentN}-` filename match.
+  - **R4.5** `governor-review-log/**` is itself under `docs/ai/shared/**` (Tier A) → log-only edits would recursively require their own self-log. → `governor-paths.md` Exclusions section adds the log-only backfill exception.
+  - **R4.6** Cross-tool review prompt template existed only as "Entry shape" outline → new `governor-review-log/README.md` Cross-Tool Review Prompt Template section adds an explicit template adaptable per phase.
+  - **R4.7** PR template Governor-Changing section length flagged as noise risk for general contributors. Minor; deferred (delete-section instruction is sufficient for now). Re-evaluate after first non-governor PR using the template.
 
 ## Inherited Constraints (for Phase 2~5 and any future governor-changing PR)
 
@@ -74,7 +90,8 @@ These items are referenced from follow-up issue bodies. They are not optional re
 - **IC-6** Phase acceptance criteria must not reference deliverables produced by later phases (R3-derived after Round-2; canonised in migration-strategy.md §1).
 - **IC-7** Bucket-share denominator across the four design docs must reconcile to the matrix; `.gitignore`d entries (e.g. `.claude/settings.local.json`) are excluded from the share denominator but recorded for completeness.
 - **IC-8** A governor-changing PR must produce or extend an entry under `docs/ai/shared/governor-review-log/`. `/sync-guidelines` checks this via drift-checklist §1D.
-- **IC-9** The `auto-escape: doc-only` rule does **not** apply to policy / harness docs. See `target-operating-model.md` §3 "Auto-escapes" for the carve-out list.
+- **IC-9** The `auto-escape: doc-only` rule does **not** apply to policy / harness docs. See `target-operating-model.md` §3 "Auto-escapes" for the carve-out reasoning. The actual path list is in [`governor-paths.md`](../governor-paths.md) Tier A.
+- **IC-10** (Round-4) Trigger-glob list lives in a single canonical document — [`governor-paths.md`](../governor-paths.md). All consumer docs (AGENTS.md, target-operating-model, migration-strategy, drift-checklist, PR template) **link** the file, never redeclare the list. Phase 5 shared module reads the same file (or its parsed form). Log-only backfill PRs are explicitly excluded (no recursion). Phase 4 gate matches log entry filename to `pr-{currentN}-` to prevent stale-entry false-negative.
 
 ## Self-Application Proof
 

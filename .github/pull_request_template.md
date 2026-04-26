@@ -28,15 +28,14 @@
 
 ## Governor-Changing PR (delete this section if not applicable)
 
-This section is **required** if your PR touches any of:
-`AGENTS.md`, `docs/ai/shared/**`, `docs/history/**`, `.claude/**`, `.codex/**`, `.agents/**`, `.github/pull_request_template.md`, or other repo-level governance artifacts.
+This section is **required** if your PR is *governor-changing* per [`docs/ai/shared/governor-paths.md`](../docs/ai/shared/governor-paths.md) (Tier A / B / C minus exclusions).
 Otherwise delete the entire section.
 
-Source of truth: [`AGENTS.md` § Default Coding Flow](../AGENTS.md#default-coding-flow) + [`docs/ai/shared/governor-review-log/README.md`](../docs/ai/shared/governor-review-log/README.md).
+Source of truth: [`AGENTS.md` § Default Coding Flow](../AGENTS.md#default-coding-flow) + [`docs/ai/shared/governor-paths.md`](../docs/ai/shared/governor-paths.md) + [`docs/ai/shared/governor-review-log/README.md`](../docs/ai/shared/governor-review-log/README.md).
 
 ### Triggered files
 
-- [ ] At least one file under the trigger glob list above is changed.
+- [ ] At least one file in `changed_files` matches a Tier A / B / C path in `governor-paths.md`, and no full-set exclusion applies.
 
 ### Cross-tool review
 

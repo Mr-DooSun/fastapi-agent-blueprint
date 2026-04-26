@@ -52,6 +52,45 @@ If a future ADR consolidates or rotates entries (e.g. annual archive subdirector
 
 `docs/ai/shared/drift-checklist.md` §1D verifies that every governor-changing PR merged into `main` has a corresponding log entry. `/sync-guidelines` consumes that row.
 
+## Cross-Tool Review Prompt Template
+
+Use the template below as a starting point when invoking `codex exec -m gpt-5.5 --sandbox read-only "<prompt>"`. Adapt the bullets to the specific phase or change set; do not include sections that do not apply.
+
+```
+**Cross-tool review of <PR / plan / change-set name>** (read-only). markdown only; no file modification, no git commands.
+
+## Context
+- Repo: fastapi-agent-blueprint
+- PR / branch: <link or branch name>
+- Issue link: <#NNN>
+- ADR(s) governing this change: <e.g. ADR 045>
+- Inherited constraints carried from prior PRs: <link governor-review-log entries; cite IC-N tags>
+- Round number: <1 plan / 2 implementation / 3 readiness / N>
+
+## What you are reviewing
+- <one-paragraph summary of the change set>
+- Key files: <list 3~5 critical files>
+
+## Review angles (per item: OK / 보완 필요 / 재고 필요 / 머지 차단)
+
+1. Self-coherence — does this PR follow the governor it modifies?
+2. Path-list / trigger glob consistency — do AGENTS.md / TOM / migration / drift-checklist / PR template all link `governor-paths.md` correctly without re-declaring?
+3. Hand-off readiness — can a new contributor with cold context start the next phase from issue body + governor-review-log + ADR?
+4. Cross-tool symmetry — Claude vs Codex hook surfaces; `apply_patch` blind spot (R7); NFKC normalisation (R3); precedence rules (R1).
+5. Cascade risk — what new false-negatives or false-positives does this PR introduce?
+6. Friction vs governance balance — issue #117 Non-Goals (heavy ceremony / false-positive blocking).
+7. New gaps not seen in earlier rounds — what does fresh eyes catch?
+
+## Output format
+
+Each review angle: assessment + 1~3 paragraph analysis citing file:line where possible. Then:
+- **Final Verdict**: merge-ready / minor fixes recommended / still needs reinforcement / block merge
+- **Top recommendations** (priority order)
+- **Open questions** for the user
+```
+
+The prompt is a starting point; phase-specific reviews (Phase 2 token parser, Phase 3 verify adapter, Phase 4 completion gate, Phase 5 shared module) extend it with phase-specific angles.
+
 ## Index
 
 | PR | Title | Issue | Entry |
