@@ -33,6 +33,12 @@ from .safety import (
 )
 from .time_window import _within_24h
 from .tokens import EXPLORATION_TOKENS, TOKEN_REGEX, parse_exception_token
+from .verify import (
+    REMINDER_TEXT,
+    extract_file_path,
+    is_python_source,
+    should_remind_claude,
+)
 
 __all__ = [
     "Blocked",
@@ -41,14 +47,18 @@ __all__ = [
     "MarkerLifecycle",
     "PROMPT_RULES",
     "ParsedToken",
+    "REMINDER_TEXT",
     "REPO_ROOT",
     "SafeParseResult",
     "TOKEN_REGEX",
     "_within_24h",
     "check_safety",
     "consume_phase2_markers",
+    "extract_file_path",
+    "is_python_source",
     "parse_exception_token",
     "read_latest_token",
     "safe_parse_exception_token",
+    "should_remind_claude",
     "write_marker",
 ]
