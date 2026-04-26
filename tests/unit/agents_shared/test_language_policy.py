@@ -251,6 +251,26 @@ def test_markdown_indented_fenced_block_is_exempt(tmp_path: Path) -> None:
     assert violations == []
 
 
+def test_markdown_inline_code_korean_is_violation(tmp_path: Path) -> None:
+    """Inline backticks are line-visible prose, not a fenced-code exemption."""
+    violations = _scan(
+        tmp_path,
+        "docs/ai/shared/example.md",
+        "Do not hide Korean rationale in `한국어 메모` inline code.\n",
+    )
+    assert len(violations) == 1
+
+
+def test_markdown_html_comment_korean_is_violation(tmp_path: Path) -> None:
+    """HTML comments are hidden in rendered Markdown but visible in source."""
+    violations = _scan(
+        tmp_path,
+        "docs/ai/shared/example.md",
+        "<!-- 한국어 rationale -->\n",
+    )
+    assert len(violations) == 1
+
+
 def test_python_source_korean_string_literal_is_violation(
     tmp_path: Path,
 ) -> None:
@@ -282,13 +302,33 @@ def _extract_policy_paths_from_agents_md() -> set[str]:
     )
     assert match, "AGENTS.md § Language Policy → Tier 1 paths section not found"
     section = match.group(0)
-    return set(re.findall(r"`([^`]+)`", section))
+    bullet_lines = "\n".join(
+        line for line in section.splitlines() if line.startswith("- ")
+    )
+    repo_root_markers = (
+        "AGENTS.md",
+        "CLAUDE.md",
+        "CONTRIBUTING.md",
+        "CODE_OF_CONDUCT.md",
+        "SECURITY.md",
+        "docs/",
+        ".claude/",
+        ".codex/",
+        ".agents/",
+        ".github/",
+    )
+    return {
+        token
+        for token in re.findall(r"`([^`]+)`", bullet_lines)
+        if token.startswith(repo_root_markers)
+    }
 
 
 def test_tier1_globs_match_agents_md_policy_bullets() -> None:
     """Drift guard: the TIER1_GLOBS in the checker must cover every
     path token listed in AGENTS.md § Language Policy → Tier 1 paths,
-    and vice versa.
+    and vice versa after normalising prose-level directory bullets to
+    checker-level file globs.
 
     Allow either form: a glob may be present in the policy (e.g.
     ``docs/ai/shared/**``) or in TIER1_GLOBS as a parameterised glob
@@ -307,31 +347,25 @@ def test_tier1_globs_match_agents_md_policy_bullets() -> None:
     policy_normalized = {_normalize(p) for p in policy_paths}
     glob_normalized = {_normalize(g) for g in glob_paths}
 
-    # Anchor on a hand-picked subset that MUST exist in both — these are
-    # the paths whose absence would make the policy text mislead readers.
-    canonical_required = {
-        "AGENTS.md",
-        "CLAUDE.md",
-        "CONTRIBUTING.md",
-        "CODE_OF_CONDUCT.md",
-        "SECURITY.md",
-        "docs/ai/shared",
-        "docs/history",
-        ".claude/rules",
-        ".claude/hooks",
-        ".claude/skills",
-        ".codex/rules",
-        ".codex/hooks",
-        ".agents",
+    assert policy_normalized == glob_normalized
+
+
+def _representative_path_for_glob(pattern: str) -> str:
+    if "*" not in pattern:
+        return pattern
+
+    suffix_samples = {
+        "/**/*.md": "/sample.md",
+        "/**/*.py": "/sample.py",
+        "/**/*.yml": "/sample.yml",
+        "/**/*.yaml": "/sample.yaml",
+        "/**/*": "/sample.txt",
     }
-    missing_from_policy = canonical_required - policy_normalized
-    missing_from_globs = canonical_required - glob_normalized
-    assert not missing_from_policy, (
-        f"AGENTS.md § Language Policy is missing canonical paths: {missing_from_policy}"
-    )
-    assert not missing_from_globs, (
-        f"TIER1_GLOBS is missing canonical paths: {missing_from_globs}"
-    )
+    for suffix, sample in suffix_samples.items():
+        if pattern.endswith(suffix):
+            return pattern[: -len(suffix)] + sample
+
+    raise AssertionError(f"Unsupported TIER1_GLOBS pattern shape: {pattern}")
 
 
 def test_pre_commit_regex_covers_canonical_anchor_paths() -> None:
@@ -342,8 +376,8 @@ def test_pre_commit_regex_covers_canonical_anchor_paths() -> None:
     pre-commit hook never opens.
 
     Strategy: read the YAML, extract the regex from the
-    `tier1-language-policy` hook, and compile it against representative
-    sample paths drawn from each canonical anchor.
+    `tier1-language-policy` hook, and compile it against a generated
+    representative path for every TIER1_GLOBS entry.
     """
     config_text = (REPO_ROOT / ".pre-commit-config.yaml").read_text(encoding="utf-8")
     match = re.search(
@@ -357,22 +391,7 @@ def test_pre_commit_regex_covers_canonical_anchor_paths() -> None:
     files_regex = re.compile(match.group(1))
 
     representative_paths = [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "CONTRIBUTING.md",
-        "SECURITY.md",
-        "docs/ai/shared/skills/sync-guidelines.md",
-        "docs/ai/shared/governor-review-log/pr-132-language-policy.md",
-        "docs/history/045-hybrid-harness-target-architecture.md",
-        ".claude/rules/commands.md",
-        ".claude/hooks/stop-sync-reminder.sh",
-        ".claude/skills/onboard/SKILL.md",
-        ".codex/rules/example.md",
-        ".codex/hooks/verify_first.py",
-        ".agents/shared/governor/verify.py",
-        ".agents/skills/onboard/SKILL.md",
-        ".github/pull_request_template.md",
-        ".github/workflows/ci.yml",
+        _representative_path_for_glob(pattern) for pattern in CHECKER.TIER1_GLOBS
     ]
     not_matched = [p for p in representative_paths if not files_regex.match(p)]
     assert not not_matched, (

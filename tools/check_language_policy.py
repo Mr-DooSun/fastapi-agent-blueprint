@@ -91,6 +91,23 @@ TOKEN_LITERALS_BY_FILE: dict[str, set[str]] = {
     ".agents/shared/governor/completion_gate.py": {"[탐색]", "탐색"},
     # Codex hook docstring references the token.
     ".codex/hooks/verify_first.py": {"[탐색]", "탐색"},
+    # Claude status and shared drift docs summarise token-vocabulary decisions.
+    ".claude/rules/project-status.md": {
+        "[자명]",
+        "[긴급]",
+        "[탐색]",
+        "자명",
+        "긴급",
+        "탐색",
+    },
+    "docs/ai/shared/drift-checklist.md": {
+        "[자명]",
+        "[긴급]",
+        "[탐색]",
+        "자명",
+        "긴급",
+        "탐색",
+    },
     # Migration strategy + target operating model + repo facts mention tokens
     # in policy-table form. Reference docs that quote AGENTS.md verbatim.
     "docs/ai/shared/migration-strategy.md": {
@@ -133,6 +150,39 @@ TOKEN_LITERALS_BY_FILE: dict[str, set[str]] = {
     ".claude/skills/onboard/SKILL.md": {"[자명]", "[긴급]", "[탐색]", "탐색"},
     ".agents/skills/fix-bug/SKILL.md": {"[자명]", "[긴급]", "[탐색]", "긴급"},
     ".agents/skills/onboard/SKILL.md": {"[자명]", "[긴급]", "[탐색]", "탐색"},
+    # Review-log entries that preserve token-vocabulary decisions.
+    "docs/ai/shared/governor-review-log/pr-125-hybrid-harness-target-architecture.md": {
+        "[자명]",
+        "[긴급]",
+        "[탐색]",
+        "자명",
+        "긴급",
+        "탐색",
+    },
+    "docs/ai/shared/governor-review-log/pr-126-userpromptsubmit-token-parser.md": {
+        "[자명]",
+        "[긴급]",
+        "[탐색]",
+        "자명",
+        "긴급",
+        "탐색",
+    },
+    "docs/ai/shared/governor-review-log/pr-127-verify-first-adapters.md": {
+        "[탐색]",
+        "탐색",
+    },
+    "docs/ai/shared/governor-review-log/pr-128-completion-gate-stop-adapter.md": {
+        "[탐색]",
+        "탐색",
+    },
+    "docs/ai/shared/governor-review-log/pr-132-language-policy.md": {
+        "[자명]",
+        "[긴급]",
+        "[탐색]",
+        "자명",
+        "긴급",
+        "탐색",
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -159,9 +209,11 @@ REVIEW_LOG_GLOB = "docs/ai/shared/governor-review-log/"
 # ---------------------------------------------------------------------------
 # Markdown code-block exemption
 # ---------------------------------------------------------------------------
-# Korean inside fenced ``` blocks or `inline` backticks in .md files is
-# permitted (it's literal code/quoted samples, not prose). Outside .md files
-# (e.g. .py source), Korean string literals are violations regardless.
+# Korean inside fenced ``` blocks in .md files is permitted (literal code or
+# quoted samples, not prose). Inline backticks are still line-visible prose and
+# are scanned; allowed bilingual tokens must be covered by the per-file
+# allowlist. Outside .md files (e.g. .py source), Korean string literals are
+# violations regardless.
 
 MARKDOWN_EXTENSIONS = {".md"}
 
@@ -170,7 +222,6 @@ MARKDOWN_EXTENSIONS = {".md"}
 # are intentionally not covered — pre-commit/CI will surface those as
 # violations and prompt the author to outdent the code block.
 FENCED_CODE_RE = re.compile(r"^[ ]{0,3}```", re.MULTILINE)
-INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
 
 
 # ---------------------------------------------------------------------------
@@ -192,11 +243,6 @@ class Violation:
 # ---------------------------------------------------------------------------
 # Per-line check
 # ---------------------------------------------------------------------------
-
-
-def _strip_inline_code(line: str) -> str:
-    """Remove inline-backtick spans before checking. Markdown only."""
-    return INLINE_CODE_RE.sub("", line)
 
 
 def _mask_token_literals(line: str, allowed: set[str]) -> str:
@@ -265,7 +311,7 @@ def find_violations(path: Path, *, repo_root: Path = REPO_ROOT) -> list[Violatio
     violations: list[Violation] = []
     reported_lines: set[int] = set()
     for idx, line in enumerate(raw_lines, start=1):
-        check_line = _strip_inline_code(line) if is_markdown else line
+        check_line = line
 
         if not HANGUL_RE.search(check_line):
             continue
@@ -275,9 +321,7 @@ def find_violations(path: Path, *, repo_root: Path = REPO_ROOT) -> list[Violatio
             # English normalised line must follow on the next non-blank
             # line. Verify it (R132-IMPL.3).
             next_line = _next_non_blank_line(raw_lines, idx - 1)
-            if next_line is None or HANGUL_RE.search(
-                _strip_inline_code(next_line[1]) if is_markdown else next_line[1]
-            ):
+            if next_line is None or HANGUL_RE.search(next_line[1]):
                 target_line = next_line[0] if next_line is not None else idx
                 target_content = next_line[1] if next_line is not None else ""
                 if target_line not in reported_lines:

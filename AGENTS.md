@@ -67,12 +67,12 @@ The escape-token vocabulary `[trivial]/[자명]`, `[hotfix]/[긴급]`, `[explora
 
 ### Two specific prohibitions
 
-1. **No hidden Korean rationale** in Tier 1 paths — Korean text inside HTML comments (`<!-- 한국어 -->`), backtick-quoted attribute values, or hand-written metadata is **blocked by the line-grep checker**. Korean smuggled through base64 / HTML entities / other encodings is **not** detected today; the policy intent rejects them, but enforcement is best-effort. Hidden Korean rationale recreates information asymmetry between Korean-reading and non-Korean-reading contributors — the exact failure mode this policy exists to prevent.
+1. **No hidden Korean rationale** in Tier 1 paths — Korean text inside HTML comments, backtick-quoted attribute values, or hand-written metadata is **blocked by the line-grep checker**. Korean smuggled through base64 / HTML entities / other encodings is **not** detected today; the policy intent rejects them, but enforcement is best-effort. Hidden Korean rationale recreates information asymmetry between Korean-reading and non-Korean-reading contributors — the exact failure mode this policy exists to prevent.
 2. **No new Korean prose lines, even when "just adding a translation for the team."** If translation matters for a specific document, create a sibling file (e.g. `docs/README.ko.md` is the existing reference pattern) and link to it. Tier 1 documents themselves stay English.
 
 ### Exemptions
 
-- `README.md` — the `<a href="docs/README.ko.md">한국어</a>` link label is an i18n affordance pointing to a deliberately translated sibling document. `README.md` is intentionally not in the Tier 1 glob.
+- `README.md` — the Korean-language link label pointing to `docs/README.ko.md` is an i18n affordance pointing to a deliberately translated sibling document. `README.md` is intentionally not in the Tier 1 glob.
 - `docs/README.ko.md` itself and any future `docs/*.{lang}.md` translation files (parallel translations, not in-line bilingualism).
 - `docs/ai/shared/governor-review-log/**` — Korean text inside a line prefixed with `> Original user/owner statement (ko, verbatim):`, `> Original reviewer verdict (ko, verbatim):`, or `> Historical Korean excerpt (ko, verbatim):` is preserved provenance. English normalised meaning must follow on the next line. Multi-line preserved Korean must repeat the prefix on every line.
 
