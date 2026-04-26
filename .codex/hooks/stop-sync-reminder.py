@@ -87,5 +87,20 @@ with contextlib.suppress(Exception):
     if verify_first.should_remind():
         segments.append(verify_first.REMINDER_TEXT)
 
+# Phase 4 completion-gate: Pillar 7 reminder + IC-11 marker lifecycle +
+# stale verify-log cleanup. All three calls wrapped in single suppress so
+# a partial failure does not suppress the others (each has its own guard).
+with contextlib.suppress(Exception):
+    import completion_gate  # noqa: PLC0415
+
+    with contextlib.suppress(Exception):
+        seg = completion_gate.governor_changing_segment()
+        if seg:
+            segments.append(seg)
+    with contextlib.suppress(Exception):
+        completion_gate.consume_phase2_markers(completion_gate.STATE_DIR)
+    with contextlib.suppress(Exception):
+        completion_gate.cleanup_stale_verify_logs(completion_gate.STATE_DIR)
+
 if segments:
     print(json.dumps({"systemMessage": "\n\n".join(segments)}))
