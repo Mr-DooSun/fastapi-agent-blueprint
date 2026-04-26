@@ -7,6 +7,12 @@ metadata:
 
 # Test Domain
 
+## Default Flow Position
+- Step: **`verify`** (canonical owner). `run` mode is the standard post-`implement` action; `generate` mode itself is an `implement`-style operation and must be followed by `run` to exercise the new tests.
+- Routes after: self-review (`/review-architecture {name}`) if layer interactions changed → completion gate (`/review-pr`)
+- Recursion guard: n/a
+
+## Procedure
 1. Read `docs/ai/shared/skills/test-domain.md` for the full procedure.
 2. Read `docs/ai/shared/test-patterns.md` for factory patterns and test examples.
 3. Decide whether the request is generate mode or run mode.

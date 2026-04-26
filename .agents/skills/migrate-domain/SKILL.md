@@ -7,6 +7,12 @@ metadata:
 
 # Migrate Domain
 
+## Default Flow Position
+- Step: `implement` + feeds `verify` (`alembic upgrade head` + `/test-domain {name} run`)
+- `approach options` upstream conditional — required for indexed-column changes, constraint alterations, or backfills
+- Recursion guard: n/a (manual user invocation only)
+
+## Procedure
 1. Read `docs/ai/shared/skills/migrate-domain.md` for the full procedure.
 2. Confirm the requested action: `generate`, `upgrade`, `downgrade`, or `status`.
 3. Verify the target model change and environment configuration first.

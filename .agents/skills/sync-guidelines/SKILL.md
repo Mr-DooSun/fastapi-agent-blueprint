@@ -7,6 +7,12 @@ metadata:
 
 # Sync Guidelines
 
+## Default Flow Position
+- Step: **`completion gate`** (or follow-up to `self-review` when drift detected)
+- Routes after: end of work
+- Recursion guard: do not invoke `/sync-guidelines` recursively, do not invoke `/plan-feature` from inside
+
+## Procedure
 1. Read `AGENTS.md` and `docs/ai/shared/skills/sync-guidelines.md` for the full procedure.
    Also refer to `docs/ai/shared/drift-checklist.md` for detailed inspection items.
 2. Determine the sync mode, gather incoming `Drift Candidates`, and load the governing sources (Phase 0).

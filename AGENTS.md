@@ -12,6 +12,15 @@ Tool-specific harness files must reference this document instead of duplicating 
 - `docs/ai/shared/` — shared workflow references consumed by both Claude and Codex
 - `.mcp.json` — Claude-only MCP server configuration
 
+### Process Governor Reference Documents
+
+Issue #117 introduced a hybrid local process governor. The four documents below, indexed from [ADR 045](docs/history/045-hybrid-harness-target-architecture.md), define how default coding work is routed:
+
+- [`docs/history/045-hybrid-harness-target-architecture.md`](docs/history/045-hybrid-harness-target-architecture.md) — top-level decisions + design-question resolutions
+- [`docs/ai/shared/harness-asset-matrix.md`](docs/ai/shared/harness-asset-matrix.md) — living inventory of every harness asset and its bucket (Keep / Replace / Overlay / Drop)
+- [`docs/ai/shared/target-operating-model.md`](docs/ai/shared/target-operating-model.md) — the target workflow, exception model, Claude/Codex alignment, and sample-workflow traces
+- [`docs/ai/shared/migration-strategy.md`](docs/ai/shared/migration-strategy.md) — phased migration plan, rollback rules, and the asset-move ordering
+
 ## Project Scale
 
 This project is an AI Agent Backend Platform targeting enterprise-grade services with 10+ domains and 5+ team members.
@@ -29,6 +38,56 @@ All proposals and designs must consider scalability, maintainability, and team c
 
 Note: Domain → Interface **schema** imports (Request/Response types) are permitted.
 When fields match, Request is passed directly to Service — creating a separate DTO is prohibited per ADR 004.
+
+## Default Coding Flow
+
+> Source of truth: [ADR 045](docs/history/045-hybrid-harness-target-architecture.md) + [`docs/ai/shared/target-operating-model.md`](docs/ai/shared/target-operating-model.md). Edit those first, then sync this section via `/sync-guidelines`.
+
+Coding work proceeds through seven steps by default. Mandatory-by-default steps must be either performed or explicitly skipped via an escape token (see below). Other steps are conditional.
+
+```
+problem framing → approach options → plan → implement
+                → verify → self-review → completion gate
+```
+
+Mandatory-by-default for implementation-class work: `framing`, `plan`, `verify`, `self-review`.
+Conditionally mandatory (architecture commitment present): `approach options`.
+Currently advisory (becomes mandatory in migration Phase 4): `completion gate`.
+
+### Precedence
+
+The Default Coding Flow ranks **below** the following four layers, in this order:
+
+1. Active sandbox / approval policy / explicit user scope (e.g. read-only, review-only)
+2. `.codex/rules/*` prefix rules (`forbidden` / `prompt`)
+3. Safety hooks (security checks, destructive-command guards)
+4. `## Absolute Prohibitions` (this document)
+
+Escape tokens never override any of these four layers; they only reduce process burden inside the Default Coding Flow itself.
+
+### Exception Tokens
+
+A prompt may opt out of mandatory-by-default steps by carrying a leading exception token on its first line. Tokens are recognised after NFKC normalisation, case-insensitive, only as the leading bracketed token followed by whitespace or end-of-line.
+
+| Token (English) | Token (Korean) | Meaning |
+|---|---|---|
+| `[trivial]` | `[자명]` | Self-evident change (typo, comment, rename); skip framing / approach / plan |
+| `[hotfix]` | `[긴급]` | Urgent fix; skip approach options; verify still required |
+| `[exploration]` | `[탐색]` | Read-only investigation or spike; nothing produces a commit |
+
+Recognition regex: `^\s*\[(trivial|hotfix|exploration|자명|긴급|탐색)\](?:\s|$)`.
+
+Use of an exception token carries a follow-up obligation: the next commit message must record the rationale (one line is enough).
+
+Auto-escapes (no token required): `changed_files == 0`, doc-only changes, comment-only changes.
+
+### Skill Mapping
+
+Each step routes to one or more skills. The shared procedure for each skill (under [`docs/ai/shared/skills/`](docs/ai/shared/skills/)) carries a "Default Flow Position" section documenting which step(s) the skill participates in, and tool-specific wrappers (`.claude/skills/`, `.agents/skills/`) mirror the same position. See [`target-operating-model.md`](docs/ai/shared/target-operating-model.md) §1 for the canonical mapping.
+
+### Claude / Codex Alignment
+
+This document is canonical. Tool-specific enforcement adapters are defined per migration phase in [`migration-strategy.md`](docs/ai/shared/migration-strategy.md). In particular, Codex enforcement is built around prompt-time routing and changed-file completion checks, not Bash-only `PostToolUse` matchers — skill-body instructions alone are insufficient because Codex does not read a skill until it is invoked.
 
 ## Layer Architecture (3-Tier Hybrid)
 

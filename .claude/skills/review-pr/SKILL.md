@@ -11,6 +11,11 @@ description: |
 
 Target: $ARGUMENTS (PR number, GitHub URL, or empty for current branch)
 
+## Default Flow Position
+- Step: **`completion gate`** (final review at end of work)
+- Routes after: `/sync-guidelines` if drift detected
+- Recursion guard: do not invoke `/review-pr` recursively, do not invoke `/plan-feature` from inside
+
 ## Procedure Overview
 1. Resolve PR and load shared rule sources (Phase 0)
 2. Review changed files against shared architecture and security rules (Phase 1)

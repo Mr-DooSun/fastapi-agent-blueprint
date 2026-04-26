@@ -1,5 +1,26 @@
 # Bug Fix Workflow — Detailed Procedure
 
+## Default Flow Position
+
+This skill's four phases map 1:1 onto Default Coding Flow steps:
+
+| /fix-bug Phase | Default Flow Step |
+|---|---|
+| Phase 1: Reproduce | `framing` |
+| Phase 2: Trace | `plan` |
+| Phase 3: Fix | `implement` |
+| Phase 4: Verify | `verify` |
+
+`approach options` is **conditionally mandatory**: required when the trace reveals that the fix could be implemented at multiple layers (e.g. validate at Service vs Router vs Schema) or that the bug indicates a missing architectural pattern. Skip for single-layer single-line fixes.
+
+After verify, route to:
+- `self-review` — `/review-architecture` if the fix changed layer interactions; `/security-review` if security-relevant
+- `completion gate` — `/review-pr`
+
+The `[hotfix]` / `[긴급]` exception token is the natural escape for genuinely time-critical fixes; verify is still mandatory under `[hotfix]`.
+
+Recursion guard: do **not** invoke `/fix-bug` recursively. Do not invoke `/plan-feature` from inside this skill — `/fix-bug`'s Phase 1+2 already cover framing and plan.
+
 ## Phase 1: Reproduce
 1. Analyze the bug description to identify the affected domain and layer
 2. If a GitHub issue number is provided, check details with `gh issue view {number}`

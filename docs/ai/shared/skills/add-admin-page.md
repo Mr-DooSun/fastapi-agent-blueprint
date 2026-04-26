@@ -1,5 +1,16 @@
 # Add Admin Page — Detailed Procedure
 
+## Default Flow Position
+
+This skill participates in the [Default Coding Flow](../../../../AGENTS.md#default-coding-flow) at the **`implement`** step.
+
+`approach options` upstream is **conditionally mandatory**: required when the page exposes sensitive fields, introduces a new admin auth surface, or wires unprecedented service contracts. Skip for routine config-only admin pages.
+
+After implementation, route to:
+- `verify` — `/test-domain {name} run`
+- `self-review` — `/security-review` if the page exposes fields that may carry secrets / PII / tokens
+- `completion gate` — `/sync-guidelines` if shared docs reference admin patterns
+
 ## Analysis
 
 1. Identify the domain name from arguments

@@ -11,6 +11,13 @@ description: |
 
 Bug description: $ARGUMENTS
 
+## Default Flow Position
+- 4-phase 1:1 mapping: Reproduce → `framing`, Trace → `plan`, Fix → `implement`, Verify → `verify`
+- `approach options` upstream conditional — required if multiple layer-fix candidates or missing pattern
+- Routes after: self-review (`/review-architecture` if layer interactions changed; `/security-review` if security-relevant) → completion gate (`/review-pr`)
+- `[hotfix]` / `[긴급]` exception is the natural escape for time-critical fixes; verify still mandatory
+- Recursion guard: do not invoke `/fix-bug` recursively. Do not invoke `/plan-feature` from inside
+
 ## Procedure Overview
 1. Reproduce — identify affected domain/layer, write failing test (Phase 1)
 2. Trace — follow call path, inspect conversion boundaries and DI wiring (Phase 2)

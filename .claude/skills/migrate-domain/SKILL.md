@@ -13,6 +13,11 @@ description: |
 
 Target: $ARGUMENTS (generate | upgrade | downgrade | status)
 
+## Default Flow Position
+- Step: `implement` + feeds `verify` (`alembic upgrade head` against clean DB + `/test-domain {name} run`)
+- `approach options` upstream conditional — required for indexed-column changes, constraint alterations, or backfills
+- Recursion guard: n/a (manual user invocation only — `disable-model-invocation: true`)
+
 ## Procedure Overview
 1. Pre-check — verify alembic.ini, env file, Model file existence
 2. Execute command — generate/upgrade/downgrade/status with appropriate options

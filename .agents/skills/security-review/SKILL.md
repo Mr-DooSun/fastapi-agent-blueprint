@@ -7,6 +7,12 @@ metadata:
 
 # Security Review
 
+## Default Flow Position
+- Step: **`self-review`** (security-sensitive surfaces: auth, tokens, sensitive fields, file upload, credentials)
+- Routes after: completion gate (`/sync-guidelines` if drift; otherwise `/review-pr`)
+- Recursion guard: do not invoke `/security-review` recursively, do not invoke `/plan-feature` from inside
+
+## Procedure
 1. Read `AGENTS.md` and `docs/ai/shared/skills/security-review.md` for the full procedure.
 2. Read `docs/ai/shared/security-checklist.md` and `docs/ai/shared/project-dna.md` as the shared security rule sources.
 3. Resolve the audit scope and run the feature-detection / reference-freshness preflight (Phase 0).

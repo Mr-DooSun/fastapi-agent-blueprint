@@ -18,6 +18,11 @@ Description: $ARGUMENTS
 3. Read `.claude/rules/project-overview.md` -- confirm tech stack and structure
 4. Identify current domain list: use Glob pattern `src/*/` and exclude `_core`, `_apps` prefixes
 
+## Default Flow Position
+- Steps: **`framing`** (Phase 0) + **`approach options`** (Phase 1) + **`plan`** (Phases 2~4)
+- Routes after: hand off to the appropriate `implement` skill (`/new-domain`, `/add-api`, `/add-cross-domain`, etc.)
+- Recursion guard: do not invoke `/plan-feature` recursively. Implement skills must not call `/plan-feature` (planning happens before implement)
+
 ## Procedure Overview
 1. Requirements Interview — 3-5 questions from 5 categories (Phase 0)
 2. Approach Options — propose 2-3 candidates with trade-offs, recommend one (Phase 1)

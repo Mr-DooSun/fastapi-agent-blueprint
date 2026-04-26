@@ -10,6 +10,12 @@ description: |
 
 # Interactive Onboarding for New Team Members
 
+## Default Flow Position
+- **Outside** the normal Default Coding Flow — session-start orientation only
+- Subsequent coding work after `/onboard` is treated as a fresh Default Flow run
+- `[exploration]` / `[탐색]` token is appropriate for combining onboard with read-only investigation
+- Recursion guard: do not invoke `/onboard` recursively, do not invoke `/plan-feature` from inside
+
 ## Pre-check: Collect Project State
 
 Execute the following to understand the current project state (do not output to the user):
