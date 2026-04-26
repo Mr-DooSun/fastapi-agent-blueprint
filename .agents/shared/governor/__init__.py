@@ -16,11 +16,39 @@ Public API is declared via ``__all__`` and grows as Phase 5 commits land:
     commit 4 — completion_gate (GateResult)
 """
 
+from .markers import (
+    MarkerLifecycle,
+    consume_phase2_markers,
+    read_latest_token,
+    write_marker,
+)
 from .paths import GOVERNOR_PATHS_MD, REPO_ROOT
+from .safety import (
+    PROMPT_RULES,
+    Blocked,
+    ParsedToken,
+    SafeParseResult,
+    check_safety,
+    safe_parse_exception_token,
+)
 from .time_window import _within_24h
+from .tokens import EXPLORATION_TOKENS, TOKEN_REGEX, parse_exception_token
 
 __all__ = [
-    "REPO_ROOT",
+    "Blocked",
+    "EXPLORATION_TOKENS",
     "GOVERNOR_PATHS_MD",
+    "MarkerLifecycle",
+    "PROMPT_RULES",
+    "ParsedToken",
+    "REPO_ROOT",
+    "SafeParseResult",
+    "TOKEN_REGEX",
     "_within_24h",
+    "check_safety",
+    "consume_phase2_markers",
+    "parse_exception_token",
+    "read_latest_token",
+    "safe_parse_exception_token",
+    "write_marker",
 ]
