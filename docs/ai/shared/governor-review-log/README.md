@@ -90,3 +90,4 @@ The prompt is a starting point; phase-specific reviews (Phase 2 token parser, Ph
 | #125 | hybrid harness target architecture + Phase 1 | #117 | [pr-125-hybrid-harness-target-architecture.md](pr-125-hybrid-harness-target-architecture.md) |
 | #126 | Phase 2: UserPromptSubmit exception-token parser | #121 | [pr-126-userpromptsubmit-token-parser.md](pr-126-userpromptsubmit-token-parser.md) |
 | #127 | Phase 3: verify-first adapters (Claude PostToolUse + Codex Stop) | #122 | [pr-127-verify-first-adapters.md](pr-127-verify-first-adapters.md) |
+| #128 | Phase 4: completion-gate Stop adapter (IC-11 Option A + Pillar 7) | #123 | [pr-128-completion-gate-stop-adapter.md](pr-128-completion-gate-stop-adapter.md) |
