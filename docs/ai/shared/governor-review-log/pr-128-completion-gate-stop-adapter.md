@@ -40,21 +40,172 @@ Phase 4 commits to **Option A — read-and-delete on Stop** with opportunistic 2
 
 ### Round 1 — Implementation Review
 
-*(To be completed after pytest green + all 4 sample runs verified.)*
+- **Target**: Commits `46c8fb2`, `e984386`, `5300303`, `b4e91b8` (4 impl commits). **pytest 93/93 PASSED** (34 token-parser + 28 verify-first + 31 completion-gate). All 4 sample-run unit tests (`test_sample_run_1~4`) verified.
+- **Reviewer**: Claude self-administered stand-in (Round 0 Codex hung; Codex re-attempt pending credit restoration — same pattern as PR #126 Round 2). IC-8 substitution caveat applies.
+- **Final Verdict**: `minor fixes recommended (no merge blockers)`. 1 R-point (R1.1) closes in the same commit as this review entry.
 
-- **Target**: Commits `73054bc`, `cd26321`, `28edb9a`, `03fd6ed` (4 impl commits). pytest 59/59 PASSED.
-- **Reviewer**: TBD (Claude cross-session or Codex re-attempt).
-- **Angles to cover** (carried from Round 0 plan §10 + new impl angles):
-  - R0 angles: IC-11 Option A multi-Stop edge cases; Pillar 7 false-positive/negative; 24h filter Phase 3 fixture; IC-2 single-event; governor-paths.md parse robustness; Phase 3/4 segment overlap; self-application recursion; `[trivial]` cascade vs Pillar 7; Phase 5 readiness (`.sh`+`.py` pair vs current); acceptance test coverage gaps.
-  - New impl angles: `_read_latest_token` duplication in completion_gate.py vs verify_first.py; `_within_24h` duplicated 4×; Pillar 7 silence for `[trivial]`/`[hotfix]` (plan left open — currently NOT silenced).
+**Assessment by angle:**
+
+1. **IC-11 Option A multi-Stop edge cases** — OK. Within one prompt: PostToolUse readers → Stop pre-segment verify_first.should_remind → completion_gate._read_latest_token → consume_phase2_markers. All reads precede the delete. Cross-session risk (Session A Stop deletes Session B's `[exploration]` marker) is the accepted Option A limitation; consequence is informational-only (HC-4.1).
+
+2. **Pillar 7 false-positive/negative** — OK. All 4 sample-run unit tests verify the critical paths: no-entry → reminds, matching entry → silent, log-only-backfill → silent, wrong-PR-number entry → reminds. Self-application recursion clean: this PR's `governor-review-log/pr-128-*.md` in `changed_files` → `match_log_entry` returns "match" → silent.
+
+3. **24h filter Phase 3 fixture** — OK. `test_corrupt_marker_skipped` (dynamic ts) and `test_codex_marker_read_parity` (dynamic ts) both pass; 93/93 green.
+
+4. **IC-2 single-event** — OK. No new `.claude/settings.json` / `.codex/hooks.json` Stop entries. `test_governor_reminder_with_pr_string_equality` + `test_governor_reminder_no_pr_string_equality` confirm cross-side string parity.
+
+5. **governor-paths.md parse robustness** — OK for current format. `parse_trigger_globs` correctly handles `^### Tier [ABC]` → `^##` tier boundaries; backtick glob extraction verified by `test_parse_trigger_globs_returns_globs` (real file read). Known fragility: inline code blocks with backticks inside tier sections would be mis-extracted as globs — documented as Phase 5 item.
+
+6. **Phase 3/4 segment overlap** — OK. Both segments can fire simultaneously on Codex Stop; each carries distinct actionable information.
+
+7. **Self-application recursion** — OK. See angle 2 above.
+
+8. **`[trivial]`/`[hotfix]` cascade vs Pillar 7** — **보완 필요 → R1.1 below**.
+
+9. **Phase 5 readiness** — OK. Claude `.sh`+`.py` pair preserved; Codex pure-py. `_within_24h` x4 + `_read_latest_token` near-duplication explicitly deferred to Phase 5 (New Inherited Constraints).
+
+10. **Acceptance test coverage** — OK. 31 cases cover: IC-2, parse_trigger_globs (real file + absent file), is_governor_changing (4 variants), is_log_only_backfill (2 variants), match_log_entry (5 variants), pr_number fail-open, 4 sample runs, IC-11 lifecycle (delete / idempotent / post-delete None / 24h filter), cleanup_stale_verify_logs (session isolation), Pillar 7 silence (exploration / 탐색 / no-PR-with-entry / no-changed-files).
+
+**R-points:**
+
+- **R1.1**: `[trivial]`/`[hotfix]` intentionally do **not** silence Pillar 7. `EXPLORATION_TOKENS = frozenset({"exploration", "탐색"})` — only the exploration-class tokens bypass the governor-changing check. Rationale: even a one-line trivial edit to `AGENTS.md` still warrants a governor-review-log entry; `[trivial]` means "small change, skip plan/verify steps" but does not mean "exempt from governance artefact requirements." This was left open in the plan and is now recorded as an explicit decision here. **No code change** — the current behaviour is correct; documentation-only R-point closing in this commit.
 
 ### Round 2 — Cross-Check (gate-on-gate)
 
-*(To be completed after Round 1 R-points applied.)*
+- **Target**: Full branch diff vs main (5 commits). pytest 93/93 PASSED.
+- **Reviewer**: Claude self-administered stand-in (same constraint as Round 1 — IC-8 substitution caveat applies).
+- **Final Verdict**: `merge-ready`. Round 1 R1.1 closed in the same commit set (documentation-only). No new findings.
+
+**R7.1 ~ R7.7 audit (PR #125 gate-on-gate framework):**
+
+- **R7.1 (findings separated from evidence)**: Round 1 findings vs evidence separated above. ✓
+- **R7.2 (behaviour-preserving framing)**: Phase 3 fixture updates (hardcoded past-ts → dynamic ts) are purely additive/defensive; no Phase 3 behaviour changed. ✓
+- **R7.3 (safety preservation)**: No changes near PROMPT_RULES / HC-1 safety logic. completion_gate.py never touches safety checks. ✓
+- **R7.4 (bucket-share consistency)**: `target-operating-model.md` §7 and `migration-strategy.md` §6 still cite "~86%/~14%" — now stale at 79%/21%. Both docs acknowledge "matrix is canonical"; the matrix Update Log records the full evolution. No edit needed (same rationale as PR #126 R7.4).
+- **R7.5 (tier count arithmetic)**: Tier 3 = 18 (16 Phase-3 + 2 Phase-4). `Tier 0=9 + Tier 1=17 + Tier 2=14 + Tier 3=18 + Tier 4=6 = 64; Total 63` (excludes `.claude/settings.local.json`). Counting note in matrix is internally consistent. ✓
+- **R7.6 (IC carry-forward into next phase)**: Open questions absorbed by Phase 5 documented in §New Inherited Constraints: (a) `verify-log-*.json` lifecycle; (b) `_within_24h` x4 consolidation. Phase 5 issue (#124) will read this entry on start. ✓
+- **R7.7 (PR template Governor-Changing section filled)**: PR #128 body includes Governor-Changing checklist with all items checked. ✓
 
 ### Self-Application Proof
 
-*(To be filled in after Round 2 with `/review-architecture all` + `/sync-guidelines` + `/review-pr 128` outputs.)*
+PR #128 is governor-changing (Tier B: `.claude/hooks/`, `.codex/hooks/`). The governor's own self-review and completion-gate steps are recorded here.
+
+#### `/review-architecture all`
+
+```
+Scope
+- Target: all (changed surface of feat/123-completion-gate-stop-adapter — 5 commits vs main)
+- Audited domains: none (no src/ change)
+
+Sources Loaded
+- AGENTS.md
+- docs/ai/shared/project-dna.md
+- docs/ai/shared/architecture-review-checklist.md
+- docs/ai/shared/governor-paths.md
+- docs/ai/shared/governor-review-log/pr-125-hybrid-harness-target-architecture.md (IC-1 ~ IC-10)
+- docs/ai/shared/governor-review-log/pr-126-userpromptsubmit-token-parser.md (IC-11)
+- docs/ai/shared/governor-review-log/pr-127-verify-first-adapters.md
+
+Findings
+- none
+
+Drift Candidates
+- target: target-operating-model.md §7 + migration-strategy.md §6 "~86%/~14%" references
+  reason: now stale at 79%/21% after Phase 4 Overlay additions
+  auto-fix: no (both docs acknowledge "matrix is canonical"; stale narrative snapshot is acceptable)
+  sync-required: false
+- target: governor-review-log/pr-128-completion-gate-stop-adapter.md
+  reason: governor-changing PR must add entry
+  auto-fix: yes (this commit set)
+  sync-required: true (closed by commit 5)
+- target: governor-review-log/README.md Index
+  reason: new PR row needed
+  auto-fix: yes (commit 5)
+  sync-required: true (closed)
+
+Next Actions
+- User reviews PR on GitHub and merges.
+- Phase 5 (#124) picks up via §New Inherited Constraints.
+
+Completion State
+- complete; drift candidates closed by commit 5 + Round 1/2 backfill commit.
+
+Sync Required
+- false (all candidates closed or explicitly deferred)
+```
+
+#### `/sync-guidelines`
+
+```
+Mode: review follow-up
+
+Input Drift Candidates: 8 consumed
+- governor-review-log/pr-128-completion-gate-stop-adapter.md (this entry)
+- governor-review-log/README.md Index row
+- governor-review-log/pr-126 IC-11 Resolution backfill
+- harness-asset-matrix.md Tier 3 +2 rows (commit 4)
+- repo-facts.md IC-11 Option A + verify-log cleanup (commit 4)
+- project-status.md Phase 4 row (commit 4)
+- PR template Governor-Changing PR section (filled in PR body at gh pr create)
+- Round 1 R1.1 [trivial]/[hotfix] NOT silencing Pillar 7 (documentation-only, this entry)
+
+project-dna: unchanged (no code-pattern shift)
+
+AUTO-FIX (commits 4+5):
+- harness-asset-matrix.md Tier 3 row count 18 + 2 new completion_gate.py rows; Bucket Distribution 61→63 (79%/21%); Counting note + Update Log refreshed
+- repo-facts.md IC-11 Option A resolution text + verify-log cleanup mention
+- project-status.md Phase 4 row + Last synced updated
+- governor-review-log/pr-128-*.md created with Summary / IC-11 Resolution / Review Rounds 0~2 / Inherited Constraints / Self-Application Proof
+- governor-review-log/README.md Index row added
+- governor-review-log/pr-126 IC-11 Resolution section backfilled
+
+REVIEW:
+- R1.1 [trivial]/[hotfix] NOT silencing Pillar 7 — design decision confirmed and documented here (no code change needed)
+- target-operating-model.md + migration-strategy.md "~86%/~14%" stale references — deferred (matrix is canonical; stale snapshots are acceptable)
+
+Remaining: none
+
+Next Actions:
+- Merge PR #128 into main.
+- Phase 5 (#124) opens next; inherits §New Inherited Constraints.
+```
+
+#### `/review-pr 128`
+
+```
+Scope
+- PR: #128 — Hybrid Harness Phase 4: completion-gate Stop adapter (Closes #123)
+- Base/Head: main / feat/123-completion-gate-stop-adapter
+- Affected domains: process/governance layer only (no src/ change)
+- Changed files: 14 (5 commits)
+
+Sources Loaded
+- AGENTS.md
+- docs/ai/shared/project-dna.md
+- docs/ai/shared/architecture-review-checklist.md
+- docs/ai/shared/security-checklist.md
+- docs/ai/shared/governor-paths.md
+- docs/ai/shared/migration-strategy.md §Phase 4 acceptance
+- docs/ai/shared/governor-review-log/pr-125-hybrid-harness-target-architecture.md
+- docs/ai/shared/governor-review-log/pr-126-userpromptsubmit-token-parser.md
+- docs/ai/shared/governor-review-log/pr-127-verify-first-adapters.md
+
+Findings
+- none
+
+Drift Candidates
+- none (all closed in commit set 4+5 + Round 1/2 backfill)
+
+Next Actions
+- User reviews PR on GitHub and merges.
+- Phase 5 (#124) next.
+
+Completion State
+- Claude-side completion gate: PASSED.
+
+Sync Required
+- false
+```
 
 ## Inherited Constraints
 
