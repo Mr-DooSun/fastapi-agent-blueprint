@@ -25,6 +25,9 @@ This file contains stable repository facts for both Claude and Codex workflows.
 - `docs/ai/shared/test-patterns.md`: domain test generation patterns
 - `docs/ai/shared/drift-checklist.md`: rule and docs drift inspection items
 - `docs/ai/shared/onboarding-role-tracks.md`: onboarding depth tracks
+- `docs/ai/shared/harness-asset-matrix.md`: living inventory of every harness asset and its bucket (Keep / Replace / Overlay / Drop)
+- `docs/ai/shared/target-operating-model.md`: 7-step Default Coding Flow + exception-token vocabulary + Claude/Codex alignment + sample-workflow traces
+- `docs/ai/shared/migration-strategy.md`: phased migration plan for the hybrid harness target architecture (Phase 0~5)
 
 ## Context Management
 
