@@ -56,7 +56,7 @@ Source of truth: [`AGENTS.md` § Default Coding Flow](../AGENTS.md#default-codin
 
 ### Doc-only escape hygiene
 
-- [ ] If this PR is doc-only, confirm the changes do **not** touch policy / harness docs (`AGENTS.md`, `docs/ai/shared/**`, `docs/history/**`, `.claude/rules/**`, `.codex/rules/**`). Touching those files disqualifies the doc-only auto-escape — see [`target-operating-model.md` §3](../docs/ai/shared/target-operating-model.md).
+- [ ] If this PR is doc-only, confirm the changes do **not** touch policy / harness docs as listed in [`governor-paths.md`](../docs/ai/shared/governor-paths.md) Tier A. Touching those files disqualifies the doc-only auto-escape — see [`target-operating-model.md` §3](../docs/ai/shared/target-operating-model.md).
 
 ### Phase context (Phase 2~5 of #117 only)
 

@@ -207,7 +207,7 @@ Cross-tool review is a sub-step of `self-review`, mandatory **only** when the ch
 
 Per round (each PR may need one or several):
 
-1. **Trigger detection** — Stop or UserPromptSubmit hook (Phases 2~4) detects that `changed_files` intersects the governor-changing trigger glob. Until those hooks land, the trigger detection is performed manually by the author against the glob list above.
+1. **Trigger detection** — Stop or UserPromptSubmit hook (Phases 2~4) detects that `changed_files` intersects the governor-changing trigger glob defined in [`governor-paths.md`](governor-paths.md). Until those hooks land, the trigger detection is performed manually by the author against that file.
 2. **Reviewer invocation** — `codex exec -m gpt-5.5 --sandbox read-only "<review prompt>"` (or any cross-tool reviewer with equivalent capability). The prompt template lives at `governor-review-log/README.md` "Entry shape".
 3. **R-points capture** — review output is annotated with `R1`, `R2`, … per finding, and recorded in the new entry under `governor-review-log/pr-{NNN}-{slug}.md`.
 4. **Resolution discipline** — every R-point is either fixed in the PR or explicitly deferred with a rationale; deferred items become "Inherited Constraints" for downstream phases.

@@ -11,17 +11,9 @@ This directory exists so that the trail is not buried in PR descriptions.
 
 ## Scope (which PRs need a log entry)
 
-A PR is **governor-changing** — and therefore must add an entry here — if it touches any of:
+A PR is **governor-changing** — and therefore must add an entry here — if its `changed_files` intersects any glob in [`governor-paths.md`](../governor-paths.md) (Tier A / B / C minus Exclusions).
 
-- `AGENTS.md`
-- `docs/ai/shared/**` (any file)
-- `docs/history/**` (ADR or archive)
-- `.claude/**` (rules, skills, hooks, settings)
-- `.codex/**` (config, hooks, rules)
-- `.agents/**` (skills, shared modules)
-- `.github/pull_request_template.md` or other repo-level governance artifacts
-
-For non-governor-changing PRs (regular feature, bug fix, refactor inside `src/`), no entry is required.
+For non-governor-changing PRs (regular feature, bug fix, refactor inside `src/`), no entry is required. The `governor-paths.md` file itself defines the Exclusions (e.g. log-only backfill PRs that extend an existing entry).
 
 ## File naming
 

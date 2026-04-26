@@ -78,6 +78,19 @@ Final variant pushed to PR: 5 commits. The fifth (Round-4 reinforcement) adds th
   - **R4.6** Cross-tool review prompt template existed only as "Entry shape" outline → new `governor-review-log/README.md` Cross-Tool Review Prompt Template section adds an explicit template adaptable per phase.
   - **R4.7** PR template Governor-Changing section length flagged as noise risk for general contributors. Minor; deferred (delete-section instruction is sufficient for now). Re-evaluate after first non-governor PR using the template.
 
+### Round 5 — Final Self-Coherence and Merge Readiness
+
+- **Target**: Round-4 reinforcement commit (5th commit on the branch) plus prior commits.
+- **Prompt focus**: did the Round-4 fixes actually close the gap? canonical-paths drift residue? self-application proof freshness; merge readiness on the *"superpowers-grade robust harness"* user-stated bar.
+- **Final Verdict**: `minor fixes recommended` — four small drift residues identified; addressed in the 6th commit (Round-5 fix). No structural blocker.
+- **R-points surfaced** (all addressed in 6th commit):
+  - **R5.1** PR template `.github/pull_request_template.md` retained an inline path list at the "Triggered files" hint that contradicted the Round-4 canonicalisation. → reduced to a single instruction pointing to `governor-paths.md`.
+  - **R5.2** `governor-review-log/README.md` Scope section repeated the path list verbatim. → replaced with a link to `governor-paths.md`; "non-governor-changing PRs" guidance kept.
+  - **R5.3** `target-operating-model.md` had residual "glob list above" wording that referenced an inline list which had since been removed. → wording rewritten to point at `governor-paths.md`.
+  - **R5.4** Self-Application Proof opened with a stale "54 files" count even though Summary correctly said the count is read from `git diff --stat` at merge time. → Self-Application Proof scope line updated to the same convention.
+
+**Self-Coherence Note**: Round 5 reviewed the very PR that introduced the cross-tool review process, so finding additional small drift is expected and itself proves the governor works. The fact that the residue was four small docs lines, not structural design issues, indicates that the substantive design has stabilised.
+
 ## Inherited Constraints (for Phase 2~5 and any future governor-changing PR)
 
 These items are referenced from follow-up issue bodies. They are not optional reading.
@@ -101,7 +114,7 @@ PR #125 itself touched shared rule sources, so it qualified as governor-changing
 
 ```
 Scope
-- Target: changed surface of PR #125 (54 files; doc/skill/wrapper/rule only)
+- Target: changed surface of PR #125 (doc/skill/wrapper/rule only; final file count read from `git diff --stat main..HEAD` at merge time)
 - Audited domains: none (no src/ change)
 - Important exclusions: src/ tree (untouched)
 
