@@ -6,13 +6,14 @@
 
 ## Summary
 
-Lands AGENTS.md `## Language Policy` declaring Tier 1 paths
-(governance / harness / contributor-facing files) as English-only
-prose. Translates 83 Korean prose lines across 19 Tier 1 files to
-English. Adds 3-layer enforcement (AI behaviour rule + pre-commit
-hook + CI grep via the existing `architecture` job) so the leak
-that produced the original 83 lines (Korean chat language driving
-Korean writes through `/sync-guidelines`) cannot recur.
+Lands AGENTS.md `## Language Policy` declaring English as the
+intended writing language for Tier 1 paths (governance / harness /
+contributor-facing files) while matching machine enforcement to the
+observed failure mode: Korean (Hangul) prose leaks. Translates 83
+Korean prose lines across 19 Tier 1 files to English. Adds 3-layer
+enforcement (AI behaviour rule + pre-commit hook + CI execution via
+the existing `architecture` job) so Korean chat language driving
+Korean writes through `/sync-guidelines` is blocked before merge.
 
 The bilingual escape-token vocabulary
 (`[trivial]`/`[자명]`, `[hotfix]`/`[긴급]`,
@@ -118,9 +119,10 @@ implementation, plus a pre-implementation dry run.
     **Applied** as the documented commit-3-then-draft-PR-then-
     commit-4 workflow.
   - **R4.5**: `<!-- ko:rationale -->` is a non-existent literal;
-    naming it confuses readers. **Applied**: prohibition
-    rephrased as `hidden non-English rationale in comments,
-    encoded payloads, attribute values, or metadata`.
+    naming it confuses readers. **Applied** in commits 1-4 as a
+    generic hidden-rationale prohibition; **tightened in commit 5**
+    to the actual checker scope (line-visible Korean only; encoded
+    payloads remain policy intent, not current enforcement).
   - **R4.6**: `AGENT_LOCALE` follow-up issue must be created
     in this PR's lifecycle, not deferred. **Applied** as
     a separate `gh issue create` invocation linked from
@@ -147,7 +149,9 @@ implementation, plus a pre-implementation dry run.
 - **R-points**:
   - **R5.1**: commit-4-after-draft-PR workflow must include
     a final PR-body update (link the new review-log entry)
-    + `gh pr ready`. **Applied**.
+    + `gh pr ready`. **Partially applied** before review fixes;
+    PR #132 was converted back to draft for commit 5 / commit 6
+    and must only be marked ready after the final re-review passes.
   - **R5.2**: per-file `TOKEN_LITERALS_BY_FILE`, multi-line
     provenance prefix repetition, and CWD/argv robustness
     must be explicit in the checker design. **Applied** in
@@ -209,48 +213,61 @@ PRs must respect.
 
 ## Self-application proof
 
-- **`/review-architecture all`** — domain audit invariants
-  (Domain → Infrastructure imports, Mapper class, Entity
-  pattern) all `clean`. The new `tools/check_language_policy.py`
-  module sits outside the application architecture
-  (Tier B governance asset, not a runtime DI participant);
-  the boundary test (`test_language_policy.py` Drift case)
-  substitutes for the architecture pass on the new module.
-- **`/sync-guidelines`** — drift candidates: zero new ones
-  from this PR. Updated:
-  - `AGENTS.md` § Language Policy (new), § Drift Management
-    (language-drift bullet), Token Vocabulary footnote.
-  - `CLAUDE.md` § Claude Collaboration Rules (one bullet
-    cross-referencing AGENTS.md § Language Policy).
-  - `docs/ai/shared/governor-paths.md` Tier A list (added
-    `CLAUDE.md`) and L37 typo
-    (`pre-commit-config.yaml` → `.pre-commit-config.yaml`).
-  - `docs/ai/shared/skills/sync-guidelines.md` Phase 0
-    step 4 (AI-when-editing rule).
-  - `docs/ai/shared/skills/{review-pr,review-architecture,
-    security-review}.md` Phase 0 cross-references.
-  - `docs/ai/shared/drift-checklist.md` §1 language-policy
-    item.
-  - `.claude/rules/project-status.md` Recent Major Changes
-    row (this PR).
-  **Sync Required: false** — all canonical sources updated
-  in the same PR.
-- **`/review-pr 132`** — drift-candidate detection on this
-  PR itself: zero new candidates beyond the changes already
-  documented above. The PR description carries the test plan
-  and acceptance criteria explicitly. The pre-commit hook
-  asserted `0 violations across 157 scanned files` on the
-  branch tip.
+Evidence checkpoint after commit 5 (`e8b9ec9`) and before commit 6
+(this documentation correction):
+
+- **PR state** — GitHub connector read for PR #132 returned
+  `state=open`, `draft=true`, `head_sha=e8b9ec9`, `commits=5`.
+  `fetch_pr_comments`, `list_pull_request_reviews`, and
+  `list_pull_request_review_threads` all returned empty collections,
+  so there were no GitHub inline threads or submitted reviews to
+  resolve at this checkpoint.
+- **Review feedback actually addressed in commit 5** — the owner
+  handoff checklist supplied the actionable review items:
+  R132-IMPL.1, R132-IMPL.2, R132-IMPL.3, R132-IMPL.5, plus the
+  HIGH/MEDIUM/LOW follow-ups. Commit 5 applied those fixes:
+  policy wording now matches Korean/Hangul enforcement scope;
+  `.pre-commit-config.yaml` file matching is drift-tested against
+  canonical anchor paths; provenance lines require a following
+  Hangul-free English summary; Markdown fences tolerate up to
+  three leading spaces; stale `(block-级)` / `(block-level)` labels
+  are now `(blocking)`; IC-19 no longer claims encoded-payload
+  enforcement; `test_governor_phase3.py` is less wording-coupled;
+  and `scaffolding-layers.md` was removed from the live token
+  allowlist.
+- **Commit-hook evidence** — the first commit attempt failed because
+  the hook entry used `python`, which is absent in the local commit
+  environment. Commit 5 changed the hook entry and the matching
+  documentation references to `python3`; the second `git commit`
+  attempt then ran the hook stack successfully.
+- **Verification commands**:
+  - `uv run pytest tests/unit/agents_shared/test_language_policy.py tests/unit/agents_shared/test_governor_phase3.py` → 28 passed.
+  - `uv run pytest tests/unit/agents_shared/ -v` → 223 passed.
+  - `python3 tools/check_language_policy.py` → 0 violations across
+    158 scanned files.
+  - `uv run pre-commit run tier1-language-policy --all-files` → passed.
+  - `uv run pre-commit run --all-files` → passed.
+  - `git diff --check` → clean.
+- **Sync evidence** — commit 5 touched shared rule sources and kept
+  command references aligned across `AGENTS.md`,
+  `docs/ai/shared/drift-checklist.md`,
+  `.pre-commit-config.yaml`, and `tools/check_language_policy.py`.
+  It did not change runtime app layering; architecture guards still
+  ran through pre-commit (`no-domain-infra-import`,
+  `no-entity-pattern`).
+- **Remaining gate** — R132-IMPL.4 is this correction. After commit
+  6 is pushed, the branch still needs a fresh PR re-review plus the
+  required cross-tool review before PR #132 is marked ready again.
 
 ## Behaviour-invariance proof
 
 | Metric | Pre-PR | Post-PR | Note |
 |---|---|---|---|
-| Tier 1 Korean violations (run by `tools/check_language_policy.py`) | 83 across 19 files | 0 across 157 scanned | Cleanup goal met. |
-| `tests/unit/agents_shared/` test count | 79 | 90 | +11 from `test_language_policy.py`. |
+| Tier 1 Korean violations (run by `tools/check_language_policy.py`) | 83 across 19 files | 0 across 158 scanned | Cleanup goal met. |
+| `tests/unit/agents_shared/` full suite | not used as the original PR metric | 223 passed | Includes 17 language-policy regression cases after commit 5. |
 | Existing reminder fixtures | 3 byte-equality assertions targeting Korean reminders | 3 byte-equality assertions targeting English reminders | `CANONICAL_KOREAN_LINES` renamed `CANONICAL_REMINDER_LINES`; intent unchanged (inline-redeclaration ban). |
 | `governor-review-log/*` files with Korean prose | 6 (pr-125 ~ pr-130, README) | 6 (provenance-tagged) | Original Korean preserved verbatim under three blockquote prefixes; English summaries follow. |
-| Pre-commit hook count | 17 | 18 | +1 `tier1-language-policy`. |
+| Pre-commit configured hook count | 16 | 17 | +1 `tier1-language-policy` (15 commit-stage hooks, 1 manual mypy hook, 1 commit-msg hook). |
 | CI workflow file count | unchanged | unchanged | Existing `architecture` job picks up the new hook automatically. |
 | Bilingual escape-token regex | `^\s*\[(trivial\|hotfix\|exploration\|자명\|긴급\|탐색)\](?:\s\|$)` | identical | Token vocabulary unchanged; per-file allowlist preserves them in their canonical files. |
 
