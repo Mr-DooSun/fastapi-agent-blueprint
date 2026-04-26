@@ -33,7 +33,15 @@ This file intentionally keeps only Claude-specific setup and workflow guidance.
 - `/migrate-domain {generate|upgrade|downgrade|status}` — Alembic migration management
 - `/onboard` — Interactive onboarding for new members (project structure → rules → workflow)
 
-## Quality Gate Flow
+## Default Coding Flow
+
+> Canonical: [`AGENTS.md` § Default Coding Flow](AGENTS.md#default-coding-flow). Long-form: [`docs/ai/shared/target-operating-model.md`](docs/ai/shared/target-operating-model.md).
+
+Coding work routes through seven steps by default — `framing → approach options → plan → implement → verify → self-review → completion gate`. The Quality Gate Flow below is the `self-review` + `completion gate` portion of this flow; it is no longer the entire ceremony.
+
+Default Flow is **subordinate** to (a) active sandbox / approval policy, (b) `.codex/rules/*` prefix rules, (c) safety hooks, (d) Absolute Prohibitions. Exception tokens (`[trivial]` / `[hotfix]` / `[exploration]` / `[자명]` / `[긴급]` / `[탐색]`, leading bracket on prompt line 1) reduce process burden but never override these.
+
+## Quality Gate Flow (self-review + completion gate)
 - Start with `/review-pr` for change-scoped review or `/review-architecture` for domain/full-repo structure audits.
 - Run `/security-review` when the change touches security-sensitive surfaces — see `docs/ai/shared/skills/security-review.md` §"When to Use" for the canonical trigger list.
 - If any review reports `Drift Candidates` or `Sync Required: true`, close the work with `/sync-guidelines` before treating the review as complete.

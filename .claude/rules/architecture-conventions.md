@@ -1,7 +1,7 @@
 # Architecture Conventions
 
-> Last synced: 2026-04-26 via /sync-guidelines (no structural changes; verified clean against ADR 042/043 baseline)
-> For Absolute Prohibitions, Conversion Patterns, Write DTO criteria, Responsibility Matrix, Error Translation, Optional AI Infra Pattern, and Admin Service Contract, refer to AGENTS.md.
+> Last synced: 2026-04-26 via /sync-guidelines (added Default Flow cross-link for ADR 045; verified clean against ADR 042/043 baseline)
+> For Absolute Prohibitions, Conversion Patterns, Write DTO criteria, Responsibility Matrix, Error Translation, Optional AI Infra Pattern, Admin Service Contract, and **Default Coding Flow** (process layer, ADR 045), refer to AGENTS.md.
 > This file only contains **structural context** that supplements AGENTS.md for Claude.
 
 ## Data Flow (3-Tier Hybrid)

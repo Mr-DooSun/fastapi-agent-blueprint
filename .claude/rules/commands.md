@@ -1,8 +1,9 @@
 # Suggested Commands
 
-> Last synced: 2026-04-26 via /sync-guidelines (no command surface changes; verified clean)
+> Last synced: 2026-04-26 via /sync-guidelines (added Default Flow cross-link for ADR 045; no command surface changes)
 > Purpose: Quick reference for Claude Code when executing shell commands.
 > Also referenced when running Skills.
+> Default Flow context: see [`AGENTS.md` § Default Coding Flow](../../AGENTS.md#default-coding-flow). The commands below are consulted by the `implement` and `verify` steps; this file is **not** a primary entry point in the Default Flow.
 > Makefile targets (`make dev`, `make test`, etc.) are available as shortcuts — see `AGENTS.md` Common Commands.
 
 ## Run

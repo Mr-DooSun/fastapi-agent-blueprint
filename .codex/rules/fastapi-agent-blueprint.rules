@@ -22,7 +22,7 @@ prefix_rule(
 prefix_rule(
     pattern = ["git", "push"],
     decision = "prompt",
-    justification = "Pushing code should happen only after review and verification.",
+    justification = "Pushing code should happen only after the applicable Default Coding Flow verification and self-review steps.",
     match = ["git push origin main"],
 )
 

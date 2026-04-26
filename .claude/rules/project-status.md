@@ -1,6 +1,6 @@
 # Project Status
 
-> Last synced: 2026-04-26 via /sync-guidelines (examples/todo + examples profile + plan-feature approach options)
+> Last synced: 2026-04-26 via /sync-guidelines (ADR 045 hybrid harness target architecture + Default Coding Flow + Phase 1 14×3 skill wrapper sync; examples/todo + examples profile + plan-feature approach options)
 
 ## Current Version Context
 - Latest release: v0.4.0 (2026-04-21)
@@ -40,6 +40,7 @@
 | Quality Gate Skill Restructure | #113 | `/review-pr` / `/review-architecture` / `/security-review` 통합 review flow + 공통 review contract (`Scope / Sources Loaded / Findings / Drift Candidates / Next Actions / Completion State / Sync Required`). `/sync-guidelines`는 review follow-up 또는 standalone 모드 둘 다 지원하는 closure 단계로 명시 |
 | Plan-feature Approach Options | #116 | `/plan-feature` workflow에 Phase 1 "Approach Options" 추가 (2-3개 후보 제시 + trade-off + 추천). 기존 Phase 0(Requirements)→1(Architecture)→2(Security)→3(Tasks)이 0→1(Approach)→2(Architecture)→3(Security)→4(Tasks)로 재번호 |
 | examples/todo + Examples Profile | #112, #119 | `examples/{name}/`는 `src/{domain}/` 레이아웃을 그대로 미러링하지만 production test baseline(factories/integration/e2e)을 강제하지 않는 contributor reference. `/review-architecture`가 examples profile을 인식해 §5 Test Coverage(단일 unit test 허용)와 §2 Auth(생략 허용) 항목을 완화. 자동 발견 대상이 아니므로 `cp -r examples/todo src/todo` 후 `make quickstart`로 시연 |
+| Hybrid Harness Target Architecture | #117 (ADR 045) | 7-step Default Coding Flow (`framing → approach options → plan → implement → verify → self-review → completion gate`)을 AGENTS.md § 신설. exception token vocabulary (`[trivial]`/`[hotfix]`/`[exploration]`/`[자명]`/`[긴급]`/`[탐색]`)으로 trivial work에만 escape. Default Flow는 sandbox/approval/`.codex/rules`/safety hook/Absolute Prohibitions 보다 하위. Phase 0+1: 4 design doc (matrix/operating-model/migration-strategy + ADR) + 14×3 skill wrapper에 Default Flow Position section 추가. Phase 2~5는 별도 issue (UserPromptSubmit token parser / Claude PostToolUse Edit\|Write + Codex Stop changed-files / Stop completion gate / shared governor module). |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN

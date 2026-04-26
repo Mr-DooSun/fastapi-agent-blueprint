@@ -36,6 +36,19 @@ Read CLAUDE.md and verify Claude-only guidance still matches the harness:
 - [ ] Verify the Note line (Domain → Interface schema imports) is identical in both files
 - [ ] If mismatch found: update `.claude/rules/absolute-prohibitions.md` to match `AGENTS.md` (AGENTS.md is canonical)
 
+## 1C. `harness-asset-matrix.md` ↔ Filesystem Sync Check (ADR 045)
+
+- [ ] Enumerate actual filesystem assets in scope:
+  - Tier 0: `AGENTS.md`, `CLAUDE.md`, `.codex/config.toml`, `.codex/hooks.json`, `.claude/settings.json`, `.claude/settings.local.json`, `.mcp.json`, plus every `docs/history/0XX-*.md` ADR (including ADR 045)
+  - Tier 1: every `docs/ai/shared/*.md` (parent folder only, not `skills/`)
+  - Tier 2: every skill triple — `docs/ai/shared/skills/{name}.md`, `.claude/skills/{name}/SKILL.md`, `.agents/skills/{name}/SKILL.md`
+  - Tier 3: every file under `.claude/hooks/` and `.codex/hooks/`
+  - Tier 4: every file under `.claude/rules/` and `.codex/rules/`
+- [ ] Verify each enumerated asset has exactly one row in `docs/ai/shared/harness-asset-matrix.md`
+- [ ] Verify the Bucket Distribution Summary count equals the row count (subtracting `.gitignore`d entries from the share-percentage denominator)
+- [ ] Verify each row's `Bucket` is one of `Keep` / `Replace` / `Overlay` / `Drop` and matches the bucket definitions at the top of the matrix
+- [ ] For any asset classified `Drop`: verify with `rg <asset> .claude/ .codex/` that no harness component still references it
+
 ## 2. Skills ↔ Code Consistency Check
 
 Read each skill's SKILL.md and compare against reference code:
