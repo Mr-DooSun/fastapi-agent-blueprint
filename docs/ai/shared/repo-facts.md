@@ -42,3 +42,27 @@ codex mcp get context7
 codex debug prompt-input -c 'project_doc_max_bytes=400' "healthcheck" | rg "Shared Collaboration Rules|AGENTS\\.md"
 codex execpolicy check --rules .codex/rules/fastapi-agent-blueprint.rules git push origin main
 ```
+
+## Why context7 stays MCP (not plugin) — 2026-04-26 review
+
+We considered migrating context7 from MCP (`.mcp.json` + `.codex/config.toml`)
+to a Claude Code / Codex CLI plugin, motivated by `uv sync`-style one-shot
+team setup. Decision: **keep MCP**. Two findings drove this:
+
+- **Plugin SKILL auto-trigger reliability ≈ 50% in practice.** Token-budget
+  truncation, YAML formatter conflicts, and Claude's task-completion bias
+  cause silent skips. MCP + the explicit `CLAUDE.md` "Proactively use
+  context7" rule yields deterministic invocation.
+- **upstash/context7 has no official Codex CLI plugin.** Official targets
+  are `--cursor`, `--claude`, `--opencode`. Splitting Claude(plugin) /
+  Codex(MCP) creates a dual-track setup; using a third-party Codex plugin
+  introduces maintenance risk.
+
+Re-evaluate when any of the following becomes true:
+
+1. upstash/context7 ships an official Codex CLI plugin.
+2. Claude Code supports plugin auto-install ([anthropics/claude-code#28310](https://github.com/anthropics/claude-code/issues/28310)).
+3. Skill auto-trigger reliability publicly improves to ≥ 80%, or the
+   `SLASH_COMMAND_TOOL_CHAR_BUDGET` default is raised meaningfully.
+4. The team grows enough that plugin-based onboarding automation becomes
+   a clear win over the current `.mcp.json` + `.codex/config.toml` flow.
