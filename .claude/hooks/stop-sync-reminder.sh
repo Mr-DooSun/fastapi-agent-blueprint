@@ -43,4 +43,13 @@ elif [ -n "$STRUCTURE" ]; then
     echo "================================="
 fi
 
+# Phase 4 completion-gate (Pillar 7 + IC-11 marker lifecycle).
+# Fail-open: helper crash → sync-reminder still emitted above (HC-4.7).
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+COMPLETION_OUT=$(python3 "${HOOK_DIR}/completion_gate.py" 2>/dev/null || true)
+if [ -n "$COMPLETION_OUT" ]; then
+    echo ""
+    echo "$COMPLETION_OUT"
+fi
+
 exit 0

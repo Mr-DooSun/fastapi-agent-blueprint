@@ -14,12 +14,23 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 STATE_DIR = REPO_ROOT / ".claude" / "state"
 
 EXPLORATION_TOKENS = frozenset({"exploration", "탐색"})
+
+
+def _within_24h(ts: str) -> bool:
+    """Return True if ISO 8601 UTC timestamp is within the last 24 hours."""
+    try:
+        dt = datetime.fromisoformat(ts.rstrip("Z")).replace(tzinfo=UTC)
+        return (datetime.now(tz=UTC) - dt).total_seconds() < 86400
+    except Exception:
+        return True
+
 
 REMINDER_TEXT = "\n".join(
     [
@@ -47,7 +58,7 @@ def read_latest_token_marker(state_dir: Path) -> str | None:
             continue
         ts = record.get("ts")
         token = record.get("token")
-        if isinstance(ts, str) and isinstance(token, str):
+        if isinstance(ts, str) and isinstance(token, str) and _within_24h(ts):
             candidates.append((ts, token))
     if not candidates:
         return None
