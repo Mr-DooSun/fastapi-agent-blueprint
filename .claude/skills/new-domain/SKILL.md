@@ -14,6 +14,11 @@ Domain name: $ARGUMENTS
 ## Currently existing domains
 Identify domains using Glob pattern `src/*/` and exclude `_core`, `_apps` prefixes
 
+## Default Flow Position
+- Step: `implement` (architecture commitment — `approach options` upstream is mandatory)
+- Routes after: `/test-domain {name} run` (verify) → `/review-architecture {name}` (self-review) → `/sync-guidelines` if shared docs touched
+- Recursion guard: do not invoke `/plan-feature` from inside this skill
+
 ## Procedure Overview
 1. Pre-check — validate name, verify non-existence, ask key fields
 2. Scaffolding — 6 layers in order (Domain → Application → Infrastructure → Interface → App Wiring → Tests)

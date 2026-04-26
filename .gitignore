@@ -176,3 +176,6 @@ cython_debug/
 !.vscode/extensions.json
 .nicegui/
 quickstart.db
+
+# Claude Code per-user local overrides
+.claude/settings.local.json

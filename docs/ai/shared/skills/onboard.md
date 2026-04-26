@@ -1,5 +1,16 @@
 # Interactive Onboarding — Detailed Procedure
 
+## Default Flow Position
+
+This skill is **outside** the normal Default Coding Flow. It belongs to **session-start** orientation only and is invoked explicitly by a user (typically a new contributor) at the beginning of a session, not as a step inside a coding task.
+
+Implications:
+- `/onboard` does not become an automatic phase of Default Flow.
+- A coding-flow session that starts with `/onboard` should treat the subsequent coding work as a fresh Default Flow run (the onboard session is its own context).
+- The `[exploration]` / `[탐색]` exception token is appropriate when a new contributor wants to combine onboarding with read-only investigation.
+
+Recursion guard: do **not** invoke `/onboard` recursively, and do not invoke `/plan-feature` from inside this skill.
+
 > **Design Principle**: This skill does not have its own architecture documentation.
 > All information is read at runtime from existing sources (README.md, ADR, AGENTS.md, `docs/ai/shared/project-dna.md`, harness guides, rules files, `docs/ai/shared/`, `src/user/` code).
 > When the structure changes, the source is updated, and onboarding automatically reflects the latest content.

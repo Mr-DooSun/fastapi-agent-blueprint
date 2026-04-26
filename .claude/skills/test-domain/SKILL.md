@@ -12,6 +12,12 @@ description: |
 
 Target: $ARGUMENTS (domain name + "generate" or "run")
 
+## Default Flow Position
+- Step: **`verify`** (canonical owner). `run` mode is the standard post-`implement` action.
+- `generate` mode itself is an `implement`-style action; resulting tests must be exercised with `run` afterward.
+- Routes after: `/review-architecture {name}` (self-review) if layer interactions changed → `/review-pr` (completion gate)
+- Recursion guard: n/a (verify-step skill, not a planning step)
+
 ## Procedure Overview
 1. Determine mode — generate or run (ask if unclear)
 2. Generate mode — identify Service/UseCase methods, check existing tests, generate missing files

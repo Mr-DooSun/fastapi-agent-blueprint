@@ -7,6 +7,12 @@ metadata:
 
 # Review PR
 
+## Default Flow Position
+- Step: **`completion gate`** (final review at end of work)
+- Routes after: `/sync-guidelines` if drift detected
+- Recursion guard: do not invoke `/review-pr` recursively, do not invoke `/plan-feature` from inside
+
+## Procedure
 1. Read `AGENTS.md` and `docs/ai/shared/skills/review-pr.md` for the full procedure.
 2. Read `docs/ai/shared/architecture-review-checklist.md`, `docs/ai/shared/security-checklist.md`, and `docs/ai/shared/project-dna.md` as shared rule sources.
 3. Resolve the review target and load the shared rule sources (Phase 0).

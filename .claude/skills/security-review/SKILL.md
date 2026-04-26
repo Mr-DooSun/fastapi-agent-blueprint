@@ -11,6 +11,11 @@ description: |
 
 Target: $ARGUMENTS (domain name, file path, or "all")
 
+## Default Flow Position
+- Step: **`self-review`** (security-sensitive surfaces: auth, tokens, sensitive fields, file upload, credentials)
+- Routes after: completion gate (`/sync-guidelines` if drift; otherwise `/review-pr`)
+- Recursion guard: do not invoke `/security-review` recursively, do not invoke `/plan-feature` from inside
+
 ## Procedure Overview
 1. Resolve the audit scope and run the feature-detection / reference-freshness preflight (Phase 0)
 2. Audit the target against the 12 security checklist categories (Phase 1)

@@ -11,6 +11,11 @@ description: |
 
 Target: $ARGUMENTS (domain name or "all")
 
+## Default Flow Position
+- Step: **`self-review`** (architecture commitments)
+- Routes after: completion gate (`/sync-guidelines` if drift; otherwise `/review-pr`)
+- Recursion guard: do not invoke `/review-architecture` recursively, do not invoke `/plan-feature` from inside
+
 ## Procedure Overview
 1. Resolve the audit target and load the shared rule sources (Phase 0)
 2. Audit the target against the 9 architecture checklist categories (Phase 1)

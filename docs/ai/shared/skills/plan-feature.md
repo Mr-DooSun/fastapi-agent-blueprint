@@ -1,5 +1,18 @@
 # Feature Implementation Planning — Detailed Procedure
 
+## Default Flow Position
+
+This skill is the canonical owner of three Default Coding Flow steps:
+- **`framing`** — Phase 0 (Requirements Interview)
+- **`approach options`** — Phase 1 (Approach Options, ported from #115/#116)
+- **`plan`** — Phases 2~4 (Architecture / Security / Tasks)
+
+After this skill completes, control returns to the user; the user invokes the appropriate `implement` skill (`/new-domain`, `/add-api`, `/add-cross-domain`, etc.) and proceeds through `verify` and `self-review`.
+
+Recursion guard: do **not** invoke `/plan-feature` recursively from within itself. Implementation skills (`/new-domain`, `/add-api`, etc.) must **not** invoke `/plan-feature` either — `framing`/`approach`/`plan` happen *before* the implement skill is reached.
+
+When the user uses an exception token on prompt entry, `/plan-feature` is short-circuited per the [`target-operating-model.md` §3](../target-operating-model.md) escape rules.
+
 ## Phase 0: Requirements Interview
 
 Ask the user 3-5 questions from the following categories.

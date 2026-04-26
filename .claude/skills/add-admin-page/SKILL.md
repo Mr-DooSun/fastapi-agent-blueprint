@@ -11,6 +11,11 @@ description: |
 
 Domain name: $ARGUMENTS
 
+## Default Flow Position
+- Step: `implement` (`approach options` upstream conditional — required for sensitive fields or new admin auth surfaces)
+- Routes after: `/test-domain {name} run` (verify) → `/security-review` (self-review) if sensitive fields exposed
+- Recursion guard: do not invoke `/plan-feature` from inside this skill
+
 ## Procedure Overview
 1. Analysis — verify domain exists, read DTO fields, ask user preferences
 2. Implementation — directory structure → admin config → page routes

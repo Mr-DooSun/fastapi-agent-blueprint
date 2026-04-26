@@ -3,7 +3,7 @@
 This directory records the reasoning behind the structural and technology
 choices that shape how code is written in this project.
 
-> **Not every decision is required reading.** The 13 entries below are the
+> **Not every decision is required reading.** The 14 entries below are the
 > load-bearing ones — a contributor needs to internalize these to work
 > anywhere in the codebase. Superseded, operational, and tooling decisions
 > have been preserved under [`archive/`](archive/) so the historical record
@@ -46,6 +46,12 @@ Read top-to-bottom; each builds on the ones above it.
 | [040](040-rag-as-reusable-pattern.md) | RAG as a Reusable `_core` Pattern | Why RAG lives in `_core/`, not in its own domain. |
 | [041](041-vector-backends-consolidation.md) | Multi-backend Infrastructure Layout | Current `src/_core/infrastructure/` umbrella + subfolder convention. |
 
+### 5. Process & harness governance
+
+| # | Title | Why it matters |
+|---|-------|----------------|
+| [045](045-hybrid-harness-target-architecture.md) | Hybrid Harness Target Architecture | The 7-step Default Coding Flow + escape-token vocabulary + Claude/Codex adapter strategy that route AI-assisted work into framing → plan → verify → review by default. |
+
 ## Archive
 
 Decisions that have been superseded, reversed, or are purely operational
@@ -59,7 +65,7 @@ the rationale behind each archival bucket.
 
 ## Writing a new ADR
 
-Numbering continues sequentially (next free number is 042). Only add a new
+Numbering continues sequentially (next free number is 046). Only add a new
 ADR when the decision is **load-bearing** — i.e. it constrains how future
 code will be written, not merely which tool was picked. Purely
 operational choices can be captured in `CHANGELOG.md` or a PR description.

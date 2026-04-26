@@ -1,5 +1,16 @@
 # Guideline Synchronization Quality Gate
 
+## Default Flow Position
+
+This skill participates in the [Default Coding Flow](../../../../AGENTS.md#default-coding-flow) at the **`completion gate`** step (or as a follow-up to `self-review` when drift is detected).
+
+It is invoked when any of:
+- A `self-review` skill (`/review-architecture`, `/security-review`, `/review-pr`) reported `Drift Candidates` or `Sync Required: true`.
+- The change touched shared rule sources (`AGENTS.md`, `docs/ai/shared/`, `.claude/rules/`, `.codex/rules/`, ADRs).
+- An ADR was created or amended in the session.
+
+Recursion guard: do **not** invoke `/sync-guidelines` recursively from within itself, and do not invoke `/plan-feature` from inside this skill. This skill is the closure step of the flow; it does not re-enter the flow.
+
 Use this skill to close the documentation and workflow side of the quality gate
 after architecture, security, or workflow changes.
 

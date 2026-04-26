@@ -1,5 +1,15 @@
 # Add Async Worker Task — Detailed Procedure
 
+## Default Flow Position
+
+This skill participates in the [Default Coding Flow](../../../../AGENTS.md#default-coding-flow) at the **`implement`** step.
+
+`approach options` upstream is **conditionally mandatory**: required when introducing a new event type, broker pattern, or task interleaving with an existing transactional flow. Skip for routine task additions that follow the established Taskiq pattern.
+
+After implementation, route to:
+- `verify` — `/test-domain {name} run` (and an integration smoke run via `make worker`)
+- `completion gate` — `/sync-guidelines` if shared docs reference the new task
+
 ## Analysis
 
 1. Identify the domain name and task purpose

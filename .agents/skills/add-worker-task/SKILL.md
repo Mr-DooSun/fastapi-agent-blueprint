@@ -7,6 +7,12 @@ metadata:
 
 # Add Worker Task
 
+## Default Flow Position
+- Step: `implement` (`approach options` upstream conditional — required for new event types or broker patterns)
+- Routes after: verify (`/test-domain {name} run`, optional `make worker` smoke run)
+- Recursion guard: do not invoke `/plan-feature` from inside this skill
+
+## Procedure
 1. Read `AGENTS.md` and `docs/ai/shared/skills/add-worker-task.md` for the full procedure.
 2. Read `docs/ai/shared/project-dna.md` for DI and conversion patterns.
 3. Confirm the target Service method exists; add it first if needed.

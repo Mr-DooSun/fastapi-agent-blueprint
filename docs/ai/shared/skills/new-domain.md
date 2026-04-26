@@ -1,5 +1,16 @@
 # New Domain Scaffolding — Detailed Procedure
 
+## Default Flow Position
+
+This skill participates in the [Default Coding Flow](../../../../AGENTS.md#default-coding-flow) at the **`implement`** step.
+
+Because creating a new domain is an architecture commitment (new boundary, optional AI infra decision, cross-domain integration surface), the **`approach options`** step is mandatory before invoking this skill. Run `/plan-feature` first to settle the domain boundary, key fields, and Optional AI Infra Variant.
+
+After implementation, route to:
+- `verify` — `/test-domain {name} run` (or `pytest tests/unit/{name}/ -v`)
+- `self-review` — `/review-architecture {name}`
+- `completion gate` — `/sync-guidelines` if shared docs reference the new domain
+
 ## Pre-check
 1. Verify domain name is a valid Python identifier (lowercase, underscores allowed, hyphens prohibited)
 2. Verify `src/{name}/` directory does not already exist — abort if it does

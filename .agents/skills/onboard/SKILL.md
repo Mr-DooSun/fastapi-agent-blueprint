@@ -7,6 +7,13 @@ metadata:
 
 # Onboard
 
+## Default Flow Position
+- **Outside** the normal Default Coding Flow — session-start orientation only
+- Subsequent coding work after `/onboard` is treated as a fresh Default Flow run
+- `[exploration]` / `[탐색]` token is appropriate for combining onboard with read-only investigation
+- Recursion guard: do not invoke `/onboard` recursively, do not invoke `/plan-feature` from inside
+
+## Procedure
 1. Read `AGENTS.md` and `docs/ai/shared/skills/onboard.md` for the full onboarding flow.
 2. Read `docs/ai/shared/project-dna.md`, `docs/ai/shared/onboarding-role-tracks.md`, and `README.md`.
 3. Ask the user for experience level and preferred format if not already indicated.

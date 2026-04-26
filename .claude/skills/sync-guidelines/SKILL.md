@@ -10,6 +10,11 @@ description: |
 
 # Guideline Synchronization Inspection
 
+## Default Flow Position
+- Step: **`completion gate`** (or follow-up to `self-review` when drift detected)
+- Routes after: end of work
+- Recursion guard: do not invoke `/sync-guidelines` recursively, do not invoke `/plan-feature` from inside
+
 ## Procedure Overview
 1. Determine the sync mode, gather incoming `Drift Candidates`, and load the governing sources (Phase 0)
 2. Reconcile drift candidates with code, shared references, harness docs, and wrappers (Phase 1)

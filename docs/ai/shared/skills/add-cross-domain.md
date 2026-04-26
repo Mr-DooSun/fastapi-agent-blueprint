@@ -1,5 +1,16 @@
 # Cross-Domain Dependency Wiring — Detailed Procedure
 
+## Default Flow Position
+
+This skill participates in the [Default Coding Flow](../../../../AGENTS.md#default-coding-flow) at the **`implement`** step.
+
+`approach options` upstream is **always mandatory**: introducing a cross-domain dependency is by definition an architecture commitment. Run `/plan-feature` first to compare candidate Protocol shapes and confirm the dependency direction.
+
+After implementation, route to:
+- `verify` — `/test-domain {consumer} run` and `/test-domain {producer} run`
+- `self-review` — `/review-architecture {consumer}` for layer-boundary compliance
+- `completion gate` — `/sync-guidelines` (cross-domain wiring is a likely drift trigger)
+
 ## Analysis
 
 1. Identify the consumer domain and the provider domain
