@@ -1,0 +1,339 @@
+"""Tier 1 Language Policy checker.
+
+Enforces AGENTS.md § Language Policy: shared-repo Tier 1 paths must be
+English-only prose. Bilingual escape tokens are the only exception, and they
+are scoped per-file so a token literal cannot launder Korean prose elsewhere.
+
+Used by:
+- `.pre-commit-config.yaml` `tier1-language-policy` hook (filenames passed by argv)
+- `tests/unit/agents_shared/test_language_policy.py` (imported as a library)
+- Ad-hoc dry-run: `python tools/check_language_policy.py` (no argv = full repo scan)
+
+The checker is the single source of truth for the policy. Do not duplicate
+its logic in shell pipelines or yaml regexes.
+"""
+
+from __future__ import annotations
+
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# Repo paths
+# ---------------------------------------------------------------------------
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# ---------------------------------------------------------------------------
+# Hangul detection
+# ---------------------------------------------------------------------------
+# U+AC00-U+D7A3 : precomposed Hangul syllables
+# U+1100-U+11FF : Hangul Jamo
+# U+3130-U+318F : Hangul Compatibility Jamo
+HANGUL_RE = re.compile(r"[가-힣ᄀ-ᇿ㄰-㆏]")
+
+# ---------------------------------------------------------------------------
+# Tier 1 path globs
+# Mirrors AGENTS.md § Language Policy. The drift test in
+# `test_language_policy.py` asserts these stay in sync with the policy section.
+# ---------------------------------------------------------------------------
+TIER1_GLOBS: tuple[str, ...] = (
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "SECURITY.md",
+    "docs/ai/shared/**/*.md",
+    "docs/history/**/*.md",
+    ".claude/rules/**/*.md",
+    ".claude/hooks/**/*",
+    ".claude/skills/**/*.md",
+    ".codex/rules/**/*.md",
+    ".codex/hooks/**/*",
+    ".agents/**/*.py",
+    ".agents/**/*.md",
+    ".github/pull_request_template.md",
+    ".github/workflows/**/*.yml",
+    ".github/workflows/**/*.yaml",
+)
+
+# ---------------------------------------------------------------------------
+# Per-file token literal allowlist
+# ---------------------------------------------------------------------------
+# Korean token-vocabulary references are allowed ONLY in the files that
+# legitimately need them (the policy table, the parser source, docstring
+# references). A global allowlist would let `[자명] 한국어 prose` pass; per-file
+# scoping forces token mentions to live where they belong.
+#
+# Keys are repo-root-relative POSIX paths. Values are sets of literal Korean
+# substrings the checker may strip from a line before re-checking for Hangul.
+TOKEN_LITERALS_BY_FILE: dict[str, set[str]] = {
+    # Canonical token vocabulary table + Default Coding Flow references.
+    "AGENTS.md": {"[자명]", "[긴급]", "[탐색]", "자명", "긴급", "탐색"},
+    "CLAUDE.md": {"[자명]", "[긴급]", "[탐색]"},
+    # Parser source: the regex literally lists the Korean token strings.
+    ".agents/shared/governor/tokens.py": {"자명", "긴급", "탐색", "[탐색]"},
+    # Token references in shared-module reminder strings and docstrings.
+    ".agents/shared/governor/verify.py": {"[탐색]", "탐색"},
+    ".agents/shared/governor/completion_gate.py": {"[탐색]", "탐색"},
+    # Codex hook docstring references the token.
+    ".codex/hooks/verify_first.py": {"[탐색]", "탐색"},
+    # Migration strategy + target operating model + repo facts mention tokens
+    # in policy-table form. Reference docs that quote AGENTS.md verbatim.
+    "docs/ai/shared/migration-strategy.md": {
+        "[자명]",
+        "[긴급]",
+        "[탐색]",
+        "자명",
+        "긴급",
+        "탐색",
+    },
+    "docs/ai/shared/target-operating-model.md": {
+        "[자명]",
+        "[긴급]",
+        "[탐색]",
+        "자명",
+        "긴급",
+        "탐색",
+    },
+    "docs/ai/shared/repo-facts.md": {
+        "[자명]",
+        "[긴급]",
+        "[탐색]",
+        "자명",
+        "긴급",
+        "탐색",
+    },
+    "docs/ai/shared/scaffolding-layers.md": {"[자명]", "[긴급]", "[탐색]"},
+    # ADR 045 introduces the token vocabulary.
+    "docs/history/045-hybrid-harness-target-architecture.md": {
+        "[자명]",
+        "[긴급]",
+        "[탐색]",
+        "자명",
+        "긴급",
+        "탐색",
+    },
+    # Skills that reference exception tokens.
+    "docs/ai/shared/skills/fix-bug.md": {"[자명]", "[긴급]", "[탐색]", "긴급"},
+    "docs/ai/shared/skills/onboard.md": {"[자명]", "[긴급]", "[탐색]", "탐색"},
+    ".claude/skills/fix-bug/SKILL.md": {"[자명]", "[긴급]", "[탐색]", "긴급"},
+    ".claude/skills/onboard/SKILL.md": {"[자명]", "[긴급]", "[탐색]", "탐색"},
+    ".agents/skills/fix-bug/SKILL.md": {"[자명]", "[긴급]", "[탐색]", "긴급"},
+    ".agents/skills/onboard/SKILL.md": {"[자명]", "[긴급]", "[탐색]", "탐색"},
+}
+
+# ---------------------------------------------------------------------------
+# Provenance prefixes — only valid in governor-review-log/*.md
+# ---------------------------------------------------------------------------
+# Korean text is allowed on a single line if and only if that line starts
+# with one of these blockquote prefixes. Multi-line preserved Korean must
+# repeat the prefix on every line.
+PROVENANCE_PREFIXES: tuple[str, ...] = (
+    "> Original user/owner statement (ko, verbatim):",
+    "> Original reviewer verdict (ko, verbatim):",
+    "> Historical Korean excerpt (ko, verbatim):",
+)
+
+REVIEW_LOG_GLOB = "docs/ai/shared/governor-review-log/"
+
+# ---------------------------------------------------------------------------
+# README link-label exemption
+# ---------------------------------------------------------------------------
+# README.md L31 has a `<a href="docs/README.ko.md">한국어</a>` link label
+# pointing to a deliberately translated sibling document. README.md is not in
+# TIER1_GLOBS, so the checker never sees it — listed here for reference only.
+
+# ---------------------------------------------------------------------------
+# Markdown code-block exemption
+# ---------------------------------------------------------------------------
+# Korean inside fenced ``` blocks or `inline` backticks in .md files is
+# permitted (it's literal code/quoted samples, not prose). Outside .md files
+# (e.g. .py source), Korean string literals are violations regardless.
+
+MARKDOWN_EXTENSIONS = {".md"}
+
+FENCED_CODE_RE = re.compile(r"^```", re.MULTILINE)
+INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
+
+
+# ---------------------------------------------------------------------------
+# Violation record
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Violation:
+    path: str
+    line_number: int
+    line_content: str
+    reason: str
+
+    def format(self) -> str:
+        return f"{self.path}:{self.line_number}: {self.reason}\n  {self.line_content!r}"
+
+
+# ---------------------------------------------------------------------------
+# Per-line check
+# ---------------------------------------------------------------------------
+
+
+def _strip_inline_code(line: str) -> str:
+    """Remove inline-backtick spans before checking. Markdown only."""
+    return INLINE_CODE_RE.sub("", line)
+
+
+def _mask_token_literals(line: str, allowed: set[str]) -> str:
+    """Remove token-literal occurrences from a line so remaining Hangul fails."""
+    masked = line
+    # Sort longest-first so `[자명]` masks before `자명` would.
+    for literal in sorted(allowed, key=len, reverse=True):
+        masked = masked.replace(literal, "")
+    return masked
+
+
+def _is_provenance_line(rel_path: str, line: str) -> bool:
+    if not rel_path.startswith(REVIEW_LOG_GLOB):
+        return False
+    stripped = line.lstrip()
+    return any(stripped.startswith(prefix) for prefix in PROVENANCE_PREFIXES)
+
+
+def _strip_fenced_blocks(text: str) -> str:
+    """Replace fenced code blocks with blank lines (preserves line numbers)."""
+    out_lines: list[str] = []
+    in_fence = False
+    for raw in text.splitlines():
+        if FENCED_CODE_RE.match(raw):
+            in_fence = not in_fence
+            out_lines.append("")
+            continue
+        out_lines.append("" if in_fence else raw)
+    return "\n".join(out_lines)
+
+
+def find_violations(path: Path, *, repo_root: Path = REPO_ROOT) -> list[Violation]:
+    """Return all Tier 1 violations in `path`. Empty list = clean."""
+    try:
+        rel = path.resolve().relative_to(repo_root)
+    except ValueError:
+        rel = path
+    rel_str = rel.as_posix()
+
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return []
+
+    is_markdown = path.suffix in MARKDOWN_EXTENSIONS
+    if is_markdown:
+        text = _strip_fenced_blocks(text)
+
+    allowed_tokens = TOKEN_LITERALS_BY_FILE.get(rel_str, set())
+
+    violations: list[Violation] = []
+    for idx, line in enumerate(text.splitlines(), start=1):
+        check_line = _strip_inline_code(line) if is_markdown else line
+
+        if not HANGUL_RE.search(check_line):
+            continue
+
+        if _is_provenance_line(rel_str, check_line):
+            continue
+
+        if allowed_tokens:
+            check_line = _mask_token_literals(check_line, allowed_tokens)
+            if not HANGUL_RE.search(check_line):
+                continue
+
+        violations.append(
+            Violation(
+                path=rel_str,
+                line_number=idx,
+                line_content=line.rstrip(),
+                reason="non-allowlisted Hangul in Tier 1 path",
+            )
+        )
+    return violations
+
+
+# ---------------------------------------------------------------------------
+# Path discovery
+# ---------------------------------------------------------------------------
+
+
+def discover_tier1_paths(repo_root: Path = REPO_ROOT) -> list[Path]:
+    seen: set[Path] = set()
+    for pattern in TIER1_GLOBS:
+        for match in repo_root.glob(pattern):
+            if match.is_file():
+                seen.add(match.resolve())
+    return sorted(seen)
+
+
+def resolve_argv_paths(
+    argv_paths: list[str], repo_root: Path = REPO_ROOT
+) -> list[Path]:
+    out: list[Path] = []
+    for raw in argv_paths:
+        p = Path(raw)
+        if not p.is_absolute():
+            p = (repo_root / p).resolve()
+        if p.is_file():
+            out.append(p)
+    return out
+
+
+def filter_to_tier1(paths: list[Path], repo_root: Path = REPO_ROOT) -> list[Path]:
+    """Keep only paths matching TIER1_GLOBS. Used in pre-commit mode where the
+    `files:` glob already filters, but we double-check defensively."""
+    discovered = set(discover_tier1_paths(repo_root))
+    return [p for p in paths if p in discovered]
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+
+def run(argv_paths: list[str], *, repo_root: Path = REPO_ROOT) -> int:
+    if argv_paths:
+        candidates = filter_to_tier1(
+            resolve_argv_paths(argv_paths, repo_root), repo_root
+        )
+    else:
+        candidates = discover_tier1_paths(repo_root)
+
+    all_violations: list[Violation] = []
+    for path in candidates:
+        all_violations.extend(find_violations(path, repo_root=repo_root))
+
+    if all_violations:
+        print(
+            f"Tier 1 Language Policy violations found "
+            f"({len(all_violations)} across {len({v.path for v in all_violations})} files):",
+            file=sys.stderr,
+        )
+        for v in all_violations:
+            print(v.format(), file=sys.stderr)
+        print(
+            "\nSee AGENTS.md § Language Policy for the rule. "
+            "Bilingual escape tokens [자명]/[긴급]/[탐색] are the only exception.",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(
+        f"Tier 1 Language Policy: 0 violations across {len(candidates)} scanned files."
+    )
+    return 0
+
+
+def main() -> int:
+    return run(sys.argv[1:])
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
