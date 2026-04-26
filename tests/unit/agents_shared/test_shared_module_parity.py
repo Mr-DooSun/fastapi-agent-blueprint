@@ -157,6 +157,76 @@ print(vf.should_remind(payload, state_dir=state_dir))
 
 
 # ---------------------------------------------------------------------------
+# Scenario 4 supplement (R1-A.3 / R1-B.2) — stale 24h+ marker is ignored
+# by the reader; verify-first must NOT be silenced by a leftover marker.
+# ---------------------------------------------------------------------------
+def test_scenario4_stale_marker_does_not_silence_verify_first(tmp_path) -> None:
+    """A 26h-old exploration marker must be filtered out by the 24h
+    defensive window so verify-first emits the reminder."""
+
+    from datetime import UTC, datetime, timedelta
+
+    sys.path.insert(0, str(REPO_ROOT / ".agents" / "shared"))
+    try:
+        # Write a marker manually with a 26h-old ISO timestamp.
+        stale_ts = (datetime.now(tz=UTC) - timedelta(hours=26)).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
+        marker = tmp_path / "exception-token-stale-x.json"
+        marker.write_text(
+            json.dumps(
+                {
+                    "matched": True,
+                    "token": "exploration",
+                    "rationale_required": True,
+                    "ts": stale_ts,
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        from governor import (  # noqa: PLC0415
+            MarkerLifecycle,
+            read_latest_token,
+        )
+
+        # Stale marker must be filtered by _within_24h.
+        assert read_latest_token(tmp_path, MarkerLifecycle.READ_ONLY) is None
+    finally:
+        sys.path.pop(0)
+
+
+def test_scenario4_malformed_marker_skipped_not_crash(tmp_path) -> None:
+    """Marker with missing ``token`` / non-string ``ts`` must be skipped
+    silently — pre-Phase-5 readers already had this behaviour (R1-A.3)."""
+
+    sys.path.insert(0, str(REPO_ROOT / ".agents" / "shared"))
+    try:
+        # Various malformed shapes — none should crash the reader.
+        (tmp_path / "exception-token-bad1.json").write_text(
+            "not json", encoding="utf-8"
+        )
+        (tmp_path / "exception-token-bad2.json").write_text(
+            json.dumps({"ts": "2026-04-27T00:00:00Z"}),  # no token
+            encoding="utf-8",
+        )
+        (tmp_path / "exception-token-bad3.json").write_text(
+            json.dumps({"ts": 12345, "token": "trivial"}),  # non-string ts
+            encoding="utf-8",
+        )
+
+        from governor import (  # noqa: PLC0415
+            MarkerLifecycle,
+            read_latest_token,
+        )
+
+        assert read_latest_token(tmp_path, MarkerLifecycle.READ_ONLY) is None
+    finally:
+        sys.path.pop(0)
+
+
+# ---------------------------------------------------------------------------
 # Scenario 5 — completion-gate 4 branches via shared evaluate_gate
 # ---------------------------------------------------------------------------
 def _evaluate_branch(state_dir: Path, changed: list[str], pr: int | None) -> str:

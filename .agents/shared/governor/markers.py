@@ -78,6 +78,10 @@ def read_latest_token(
     if not state_dir.exists():
         return None
 
+    # Parity contract (R1-A.1): pre-Phase-5 readers checked only that
+    # ``ts`` and ``token`` are strings within the 24h window. They did NOT
+    # require ``matched=True`` because ``write_marker`` already gates on
+    # that field. Stay byte-compatible — do not enforce ``matched`` here.
     candidates: list[tuple[str, str, Path]] = []
     for marker in state_dir.glob("exception-token-*.json"):
         try:
@@ -85,8 +89,6 @@ def read_latest_token(
         except (OSError, json.JSONDecodeError):
             continue
         if not isinstance(data, dict):
-            continue
-        if not data.get("matched"):
             continue
         ts = data.get("ts")
         if not isinstance(ts, str) or not _within_24h(ts):

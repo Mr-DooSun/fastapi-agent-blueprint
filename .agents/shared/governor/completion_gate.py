@@ -38,6 +38,7 @@ import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from .markers import MarkerLifecycle, read_latest_token
 from .paths import GOVERNOR_PATHS_MD, REPO_ROOT
@@ -67,11 +68,25 @@ GOVERNOR_REMINDER_NO_PR = "\n".join(
 )
 
 
+# R1-A.2: closed Literal stops invalid-status drift if a future contributor
+# returns a typo'd string from evaluate_gate or a custom branch.
+GateStatus = Literal[
+    "silent_no_changes",
+    "silent_log_only",
+    "silent_exploration",
+    "silent_not_governor",
+    "match",
+    "mismatch",
+    "missing",
+    "unknown",
+]
+
+
 @dataclass(frozen=True)
 class GateResult:
     """Pillar 7 completion-gate evaluation result.
 
-    ``status`` enumerates the decision branch:
+    ``status`` is one of the eight values declared in :data:`GateStatus`:
 
     * ``"silent_no_changes"`` — no changed files
     * ``"silent_log_only"`` — only governor-review-log/ paths changed (HC-4.5)
@@ -83,7 +98,7 @@ class GateResult:
     * ``"unknown"`` — log entry exists but PR number unresolvable yet
     """
 
-    status: str
+    status: GateStatus
     governor_changing: bool
     pr: int | None
 
@@ -135,11 +150,11 @@ def is_governor_changing(changed: list[str], globs: list[str]) -> bool:
     return any(_matches_glob(p, g) for p in changed for g in globs)
 
 
-def match_log_entry(changed: list[str], current_pr: int | None) -> str:
-    """Classify governor-review-log entry presence vs the current PR number.
+LogEntryStatus = Literal["match", "mismatch", "missing", "unknown"]
 
-    Returns one of ``"match"`` / ``"mismatch"`` / ``"missing"`` / ``"unknown"``.
-    """
+
+def match_log_entry(changed: list[str], current_pr: int | None) -> LogEntryStatus:
+    """Classify governor-review-log entry presence vs the current PR number."""
 
     log_entries = [p for p in changed if re.search(r"governor-review-log/pr-\d+-", p)]
     if not log_entries:
