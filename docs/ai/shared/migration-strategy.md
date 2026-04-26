@@ -202,10 +202,10 @@ If a future audit shows Keep < 30% (i.e. ≥70% of assets have moved to Overlay 
 
 Phase 2~5 each correspond to a separate GitHub issue, registered immediately after Phase 0+1 (this PR) merges. The issue titles follow the pattern:
 
-- `#NNN — Hybrid Harness Phase 2: exception-token UserPromptSubmit adapters`
-- `#NNN — Hybrid Harness Phase 3: verification-first adapters (Claude PostToolUse Edit|Write + Codex Stop changed-files)`
-- `#NNN — Hybrid Harness Phase 4: completion-gate Stop adapter (merged with sync-reminder)`
-- `#NNN — Hybrid Harness Phase 5: shared governor module under .agents/shared/governor/`
+- `#121 — Hybrid Harness Phase 2: exception-token UserPromptSubmit adapters` (PR #126)
+- `#122 — Hybrid Harness Phase 3: verification-first adapters (Claude PostToolUse Edit|Write + Codex Stop changed-files)` (PR #127)
+- `#123 — Hybrid Harness Phase 4: completion-gate Stop adapter (merged with sync-reminder)`
+- `#124 — Hybrid Harness Phase 5: shared governor module under .agents/shared/governor/`
 
 Each issue copies its acceptance criteria from this document and references ADR 045 for context.
 
