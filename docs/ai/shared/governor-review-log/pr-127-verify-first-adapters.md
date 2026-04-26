@@ -34,9 +34,13 @@ R0 reinforcement applied before any implementation file was touched: import fail
 
 ### Round 1 — Implementation Review
 
-- **Target**: 4-commit working tree (commits d143491, 9d88064, 000893f, 2283dad). Pytest 25/25 PASSED at submission time.
-- **Reviewer**: *(pending — to be run post-PR-create; log entry extended as backfill commit)*
-- **Status**: In progress.
+- **Target**: 6-commit working tree (commits d143491, 9d88064, 000893f, 2283dad, 689f1e5, 0f02e8a). Pytest 25/25 PASSED. PR #127 open.
+- **Reviewer**: Claude Code (cross-session review via empirical env var probe + code inspection).
+- **Final Verdict**: `minor fixes recommended` → 3 R-points surfaced (R1.1~R1.3); all applied in commit `0f02e8a`.
+- **R-points** (all resolved):
+  - **R1.1** (block-级): `session_id()` originally preferred `CODEX_SESSION_ID`, but empirical `python3 -c` probe inside the Codex sandbox confirmed `CODEX_SESSION_ID` is **not injected** by Codex CLI. The actual env var is `CODEX_THREAD_ID` (stable across all hook processes in a session). → **Applied**: `session_id()` priority chain updated to `CODEX_THREAD_ID → CODEX_SESSION_ID → ppid-pid-startns`. Tests updated to `monkeypatch.setenv("CODEX_THREAD_ID", ...)` + `monkeypatch.delenv("CODEX_SESSION_ID", raising=False)`.
+  - **R1.2** (block-급): `post-tool-format.py` originally used `payload.get("tool_input", {})` which returns `None` when the key is present but explicitly `null` in the JSON payload, causing `AttributeError: 'NoneType' object has no attribute 'get'`. → **Applied**: changed to `(payload.get("tool_input") or {}).get("command", "")` + added outer broad `except Exception: return 0` (R0.4 strengthened).
+  - **R1.3** (advisory): Direct unit test that Codex `should_remind()` respects `[exploration]`/`[탐색]` marker silence was missing (only Claude side tested). → **Applied**: `test_codex_silent_on_exploration_marker_should_remind` + `test_codex_silent_on_korean_탐색_marker_should_remind` added; test count 25 → 27.
 
 ### Round 2 — Cross-Check (gate-on-gate)
 
@@ -65,42 +69,79 @@ Carried from prior governor-changing PRs (no new IC introduced by Phase 3 — by
 
 ## Self-Application Proof
 
-*(Populated as backfill once Round 1 / Round 2 complete and self-review skills run)*
+Executed in same PR #127 review session (2026-04-27).
 
 ### `/review-architecture all`
 
 ```
-Scope: ...
-Sources Loaded: ...
-Findings: ...
-Drift Candidates: ...
-Next Actions: ...
-Completion State: ...
-Sync Required: ...
+Scope: All 3 active domains (user, classification, docs) + _core
+Sources Loaded: AGENTS.md, project-dna.md, architecture-review-checklist.md,
+  security-checklist.md
+Findings:
+  [OK] §1 Layer Dependency — clean in all domains
+  [OK] §2 Auth — JWT not yet implemented (project-wide known gap per project-dna)
+  [OK] §3 Conversion — DTO ↔ Model patterns correct throughout
+  [OK] §4 Repository — no Model objects leak outside Repositories
+  [OK] §5 Test Coverage — all 3 domains have unit + integration + e2e baselines
+    [MEDIUM] pre-existing: user admin unit tests missing (src/user/interface/admin/)
+    [MEDIUM] pre-existing: classification admin unit tests missing (src/classification/interface/admin/)
+  [OK] §6 Infrastructure DI — Selector/lazy-factory pattern correct; AWS + admin extras guarded
+  [OK] §7 Error Translation — error_mapper ACL established; domain exceptions propagate correctly
+  [OK] §8 Hook surface — governance-only PR; src/ untouched; hook changes reviewed separately
+  [OK] §9 Migration — no new migrations in this PR
+Drift Candidates:
+  - docs/ai/shared/migration-strategy.md §7: #NNN → actual issue numbers
+    auto-fix: yes  sync-required: optional (advisory only)
+Next Actions: Run /sync-guidelines to fix migration-strategy.md §7 (auto-fixable).
+Completion State: complete (no open findings; 2 pre-existing MEDIUM admin test gaps pre-date this PR)
+Sync Required: false
 ```
 
 ### `/sync-guidelines`
 
 ```
-Mode: ...
-Input Drift Candidates: ...
-project-dna: ...
-AUTO-FIX: ...
-REVIEW: ...
-Remaining: ...
-Next Actions: ...
+Mode: drift-candidate follow-up (from /review-architecture all drift candidate)
+Input Drift Candidates:
+  - docs/ai/shared/migration-strategy.md §7: #NNN placeholder → actual issue numbers
+  - .claude/rules/project-status.md: Phase 2 + Phase 3 entries missing; Last synced stale
+project-dna: no changes required
+AUTO-FIX:
+  - migration-strategy.md §7: #NNN → #121/PR#126, #122/PR#127, #123, #124 (applied)
+  - project-status.md: Phase 2 (#121/PR#126) + Phase 3 (#122/PR#127) rows added;
+    Last synced updated to 2026-04-27 (applied)
+REVIEW: none
+Remaining: none
+Next Actions: commit sync changes as log-only-backfill commit
+  → committed as 1109839 "docs(governor): sync migration-strategy §7 issue numbers + project-status Phase 3 entry"
 ```
 
 ### `/review-pr 127`
 
 ```
-Scope: ...
-Sources Loaded: ...
-Findings: ...
-Drift Candidates: ...
-Next Actions: ...
-Completion State: ...
-Sync Required: ...
+Scope: PR #127 Phase 3 verify-first adapters — 11 changed files, governance-only
+Sources Loaded: AGENTS.md, project-dna.md, architecture-review-checklist.md,
+  security-checklist.md, drift-checklist.md §1D, PR #125 + PR #126 governor-review-log entries
+Findings:
+  [OK][BLOCKING-class] HC-3.6 fail-open: all 5 surfaces (verify-first.sh, verify_first.py Claude,
+    post-tool-format.py R0.4, stop-sync-reminder.py R0.1, verify_first.py Codex library)
+  [OK][BLOCKING-class] IC-5: Codex reminder from Stop only; post-tool-format records only
+  [OK][BLOCKING-class] IC-11: read_latest_token_marker() read-only in both helpers
+  [OK][BLOCKING-class] HC-3.3: informational only, exit 0 / return 0 unconditional
+  [OK][BLOCKING-class] IC-2: segments list → single systemMessage print
+  [OK][HIGH] R1.1 CODEX_THREAD_ID priority; R1.2 null tool_input; R1.3 Codex marker silence tests
+  [OK][MEDIUM] REMINDER_TEXT string equality + test assertion; R0.2 cross-session; R0.3 ts_epoch_ns
+  [OK][MEDIUM] 27 test cases; subprocess fail-open smokes; IC-11 marker idempotency
+  [OK][LOW] drift-checklist §1D: pr-127 filename match; README index row; matrix + repo-facts
+  [NOTE] governor-review-log §Round1 + §Self-Application Proof pending → filled by this backfill commit
+Drift Candidates:
+  - migration-strategy.md §7 #NNN: FIXED by /sync-guidelines run (committed 1109839)
+  - project-status.md Phase 2+3 entries: FIXED by /sync-guidelines run (committed 1109839)
+Next Actions:
+  1. Commit this Self-Application Proof update (backfill commit)
+  2. Run Round 2 Codex cross-tool review
+  3. Merge after Round 2 verdict
+Completion State: complete with no open findings; drift candidates resolved and committed
+Sync Required: true (docs/ai/shared/ in diff; resolved by /sync-guidelines run 1109839)
 ```
 
 ## New Inherited Constraints
