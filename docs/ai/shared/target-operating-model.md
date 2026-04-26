@@ -157,7 +157,7 @@ This is the primary cross-tool clarification: what comes from the upstream "supe
 
 ### Model identity
 
-This is **Mostly Local with Philosophy Overlay**, matching the bucket distribution in [harness-asset-matrix.md](harness-asset-matrix.md): 85% Keep, 15% Overlay, 0% Replace, 0% Drop. The philosophy port adds the framing / governance layer; the substantive content is and remains local.
+This is **Mostly Local with Philosophy Overlay**, matching the bucket distribution in [harness-asset-matrix.md](harness-asset-matrix.md): ~86% Keep / ~14% Overlay / 0% Replace / 0% Drop (post Round-7; matrix is canonical). The philosophy port adds the framing / governance layer; the substantive content is and remains local.
 
 ## §5 Claude / Codex Alignment
 
@@ -243,7 +243,7 @@ When two locations could plausibly host the same fact, the table above resolves 
 
 The Target Operating Model is **Mostly Local with Philosophy Overlay**.
 
-- "Mostly Local" because the bucket distribution is 85% Keep / 15% Overlay / 0% Replace / 0% Drop. The substantive content of the harness remains local.
+- "Mostly Local" because the bucket distribution is ~86% Keep / ~14% Overlay / 0% Replace / 0% Drop. The substantive content of the harness remains local.
 - "Philosophy Overlay" because the *governance* layer — Default Flow, mandatory subset, exception vocabulary, completion-gate idea — is borrowed from the superpowers philosophy and grafted on top.
 
 This is not a balanced 50/50 hybrid. It is 80%-local-with-a-process-shell. That ratio is the answer to issue #117's Key Design Question 7 ("How should Claude and Codex stay aligned without duplicating too much harness logic?"): they share the philosophy overlay; the substantive content is the same per-tool because both read identical shared documents.

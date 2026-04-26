@@ -663,7 +663,7 @@ Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `T
 
 This distribution matches the "Mostly Local with Philosophy Overlay" model declared in [ADR 045 §D4](../../history/045-hybrid-harness-target-architecture.md). The `Replace` and `Drop` columns are both empty in the initial pass: no asset's content is being rewritten, and self-verification during cross-link work showed that the only `Drop` candidate identified during the first triage was actually an active component (a sh-wrapper `.py` pair).
 
-If a future `Replace` candidate emerges, the threshold is: Keep+Overlay would otherwise force the asset into structural inconsistency with the Default Flow. None of the current 53 assets meet that.
+If a future `Replace` candidate emerges, the threshold is: Keep+Overlay would otherwise force the asset into structural inconsistency with the Default Flow. None of the current 56 assets meet that.
 
 ## Verification
 
@@ -687,7 +687,7 @@ The following self-checks must pass before this matrix is treated as authoritati
 - [ ] Every skill has a consistent bucket across its three wrapper layers (Phase 1 update preserves this invariant).
 - [ ] No asset is classified `Replace` while other Phase 1 work treats it as `Keep`.
 - [ ] Any `Drop` candidate has been verified to have zero callers (`rg <name> .claude/ .codex/`). Self-verification during cross-link work overturned the only initial Drop candidate; the principle remains: a Drop classification requires positive evidence of zero callers.
-- [ ] Bucket-share ratio matches §Bucket Distribution Summary (~85% Keep / ~15% Overlay / 0% Replace / 0% Drop) within ±10%.
+- [ ] Bucket-share ratio matches §Bucket Distribution Summary (~86% Keep / ~14% Overlay / 0% Replace / 0% Drop) within ±10%.
 
 ## Update Log
 

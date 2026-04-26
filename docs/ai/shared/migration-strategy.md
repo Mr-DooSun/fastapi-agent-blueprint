@@ -189,7 +189,7 @@ If any of these need to change during the migration, that change is its own ADR,
 
 ## §6 Full Replacement vs Hybrid — When to Re-Evaluate
 
-The model is "Mostly Local with Philosophy Overlay" because the asset-matrix bucket distribution is approximately 85% Keep / 15% Overlay / 0% Replace / 0% Drop ([harness-asset-matrix.md §Bucket Distribution Summary](harness-asset-matrix.md#bucket-distribution-summary)).
+The model is "Mostly Local with Philosophy Overlay" because the asset-matrix bucket distribution is approximately ~86% Keep / ~14% Overlay / 0% Replace / 0% Drop ([harness-asset-matrix.md §Bucket Distribution Summary](harness-asset-matrix.md#bucket-distribution-summary)).
 
 The hybrid model is justified as long as:
 - Keep ≥ 60%, AND

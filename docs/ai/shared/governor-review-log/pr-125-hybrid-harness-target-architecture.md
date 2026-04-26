@@ -11,14 +11,14 @@
 Implements the four design outputs and Phase 1 of the hybrid local process governor inspired by superpowers' philosophy:
 
 - **ADR 045** — top-level decisions D1~D4 + 8 design-question resolutions.
-- **harness-asset-matrix.md** — living inventory of 53 assets (~85% Keep / ~15% Overlay / 0% Replace / 0% Drop).
+- **harness-asset-matrix.md** — living inventory of 56 assets (~86% Keep / ~14% Overlay / 0% Replace / 0% Drop).
 - **target-operating-model.md** — 7-step Default Coding Flow + escape-token vocabulary + Claude/Codex alignment + sample workflow traces.
 - **migration-strategy.md** — Phase 0~5 spec with shared-policy + per-tool-adapter split.
 - **AGENTS.md § Default Coding Flow** — constitutional flow with sandbox > prefix-rule > safety-hook > Absolute-Prohibition > flow precedence.
 - **14 × 3 skill wrappers** — each gains a `Default Flow Position` section.
 - **Cross-links** — CLAUDE.md, .claude/rules/{architecture-conventions,project-status,commands}.md, .codex/rules/fastapi-agent-blueprint.rules, drift-checklist §1C.
 
-Final variant pushed to PR: 5 commits. The fifth (Round-4 reinforcement) adds the canonical `governor-paths.md`, README prompt template, log freshness corrections, and Pillar 8 demotion. Total changed-files count is read from `git diff --stat main..HEAD` at merge time; the PR's GitHub display includes pre-existing maintenance commits on the same branch (sync-guidelines snapshot, context7 review log, gitignore entry).
+Final variant pushed to PR: multi-commit (each round's reinforcement is a separate commit so the log structure is auditable). Round-4 reinforcement (`cd2be06`) adds the canonical `governor-paths.md`, README prompt template, log freshness corrections, and Pillar 8 demotion. Round-5 reinforcement (`f7a1403`) drops residual path-list redeclarations. Round-7 reinforcement (this commit set) corrects R7.1~R7.7. The total changed-files count is read from `git diff --stat main..HEAD` at merge time; the PR's GitHub display includes pre-existing maintenance commits on the same branch (sync-guidelines snapshot, context7 review log, gitignore entry).
 
 ## Review Rounds
 
@@ -90,6 +90,75 @@ Final variant pushed to PR: 5 commits. The fifth (Round-4 reinforcement) adds th
   - **R5.4** Self-Application Proof opened with a stale "54 files" count even though Summary correctly said the count is read from `git diff --stat` at merge time. → Self-Application Proof scope line updated to the same convention.
 
 **Self-Coherence Note**: Round 5 reviewed the very PR that introduced the cross-tool review process, so finding additional small drift is expected and itself proves the governor works. The fact that the residue was four small docs lines, not structural design issues, indicates that the substantive design has stabilised.
+
+### Round 6 — Claude-Side Quality Gate (`/review-pr`)
+
+- **Target**: PR #125 head `f7a1403` (post Round-5 reinforcement).
+- **Reviewer**: Claude `/review-pr` skill, executed manually following the procedure in [`docs/ai/shared/skills/review-pr.md`](../skills/review-pr.md).
+- **Why this exists**: Codex Rounds 1~5 supplied *cross-tool* review. Claude `/review-pr` supplies the *intra-tool* completion-gate contract on the same change set, closing the formal gate on the Claude side. Without this round the governor's `completion gate` step would lack its Claude-side proof artefact.
+- **Final Verdict**: `Claude-side completion gate: PASSED`. No code findings. No drift candidates remain. Self-application proof complete.
+
+```
+Scope
+- PR: #125 — feat: hybrid harness target architecture + Phase 1 (#117)
+- Base/Head: main / feat/117-hybrid-superpowers (HEAD: f7a1403)
+- Affected domains: process/governance layer only (no src/ change)
+- Changed files: 61 (+2292 / -9)
+
+Sources Loaded
+- AGENTS.md
+- docs/ai/shared/project-dna.md
+- docs/ai/shared/architecture-review-checklist.md
+- docs/ai/shared/security-checklist.md
+- docs/ai/shared/governor-paths.md (canonical path source for governor-changing classification)
+- docs/ai/shared/governor-review-log/pr-125-hybrid-harness-target-architecture.md (existing entry with Rounds 1~5 + Self-Application Proof)
+
+Findings
+- none
+
+Drift Candidates
+- none (all drift caught and applied across Rounds 1~5; §Self-Application Proof's /sync-guidelines block records 'Remaining: none')
+
+Next Actions
+- Codex Round 7 cross-check on this /review-pr output (Option C, gate-on-gate)
+- Subsequent commit captures Rounds 6 + 7 in this log entry
+- User reviews PR on GitHub UI and merges
+- Phase 2 (#121) picks up via Inherited Review Constraints (IC-1 ~ IC-10)
+
+Completion State
+- Claude-side completion gate: PASSED
+
+Sync Required
+- false
+```
+
+#### Round-6 Evidence (separated from Findings per contract — only open issues belong in Findings)
+
+These OK observations support the `Completion State: PASSED`. They are evidence, not findings.
+
+- Architecture checklist §1~§9: no `src/` change in this PR. All code-auditable categories (layer dependency, conversion, DTO, DI, test coverage, worker payload, admin page, bootstrap wiring, DynamoDB) are not applicable to this change set. Governance-layer review of shared rules is handled instead by AGENTS.md cross-reference safeguards plus Codex Rounds 1~5.
+- Security checklist: no security-sensitive surface touched (auth, password, token, file upload, external request handling, AI providers all unchanged).
+- Self-application proof: `governor-review-log/pr-125` §Self-Application Proof records `/review-architecture` and `/sync-guidelines` manual-scan outputs. This Round 6 emit is the formal Claude-side completion-gate artefact.
+- Cross-tool consistency: Codex Rounds 1~5 captured in same log entry; Round-5 Final Verdict was `minor fixes recommended (no blockers)` and the residual drift was applied in commit f7a1403.
+- Governor-changing PR classification: PR is governor-changing per `governor-paths.md` (Tier A/B/C). Required artefacts present: PR template Governor-Changing section (deletion not chosen), `governor-review-log/pr-125-...` entry, Inherited Review Constraints in follow-up issues #121~#124.
+- Path-list canonicalisation: five consumer documents (AGENTS.md, target-operating-model.md, migration-strategy.md, drift-checklist.md, `.github/pull_request_template.md`) link `governor-paths.md` and do not redeclare the list (verified by grep).
+
+### Round 7 — Cross-Check on Round 6 (gate-on-gate, Codex)
+
+- **Target**: Round 6 emit captured immediately above, plus the rest of this log entry and the in-flight working tree.
+- **Reviewer**: Codex `gpt-5.5 --sandbox read-only`. Triggered by user signal — *"Claude Code가 놓치는 게 생각보다 많다"* — to validate that the Claude-side gate did not miss substantive issues.
+- **Why this exists (Option C)**: When Claude reviews its own change set, self-review bias risks treating `Findings: none` as conclusive. Round 7 is the gate-on-gate axis: a different reviewer audits whether the Claude-side gate output is itself defensible.
+- **Final Verdict**: `still needs reinforcement` → all R7.1~R7.7 fixes applied in the same commit set as this Round 7 entry.
+- **R-points surfaced**:
+  - **R7.1** Round 6 `Findings` field listed `[OK]` items. The `/review-pr` contract defines `Findings` as "only open issues"; OK observations belong in a separate evidence area. → Round 6 `Findings: none` retained; OK observations relocated to a new "Round-6 Evidence" subsection.
+  - **R7.2** This log Summary said "53 assets" and implicitly that the PR ended at 5 commits. → Summary updated: 56 assets / ~86% Keep, with explicit note that commit-count is multi-commit per round; merge-time totals read from `git diff --stat`.
+  - **R7.3** `harness-asset-matrix.md` body retained "current 53 assets" in the §Bucket Distribution Summary closing paragraph. → corrected to 56.
+  - **R7.4** Bucket-share denominators drifted: matrix said 86% / 14% (Keep 48 / total 56) while target-operating-model, migration-strategy, ADR 045, and the matrix's own verification checklist still read 85% / 15%. → unified to ~86% / ~14% across all four canonical mentions; historical Round-3 mentions of 85% retained as-of-Round-3 evidence.
+  - **R7.5** Reflected in PR #125 description in the same commit (Round 6 + Round 7 added; Test plan updated; Final Verdict updated).
+  - **R7.6** Issue #123 body still inlined the Phase 4 governor-changing trigger glob even though `migration-strategy.md` was already corrected to link `governor-paths.md`. → issue #123 body rewritten to delete the inline list and link `governor-paths.md` + `migration-strategy.md` §1 Phase 4 acceptance.
+  - **R7.7** PR #125 body did not show a filled Governor-Changing PR checklist. → PR description updated with an explicit "Governor-Changing PR self-application — checklist filled" block referencing this log entry.
+
+- **Self-Coherence Note (gate-on-gate verdict)**: Round 7 vindicates the user's Option-C decision. Claude Round 6 emitted a clean output that *looked* contract-faithful but actually contained four substantive issues (R7.1, R7.2, R7.3, R7.5) plus three handoff/artefact issues (R7.4, R7.6, R7.7). All would have shipped silently without a cross-tool gate. The pattern — *Claude reviews itself; Codex catches what Claude missed* — is now part of the Cross-Tool Review Cadence (§5 of `target-operating-model.md`) and the user's memory feedback (`feedback_codex_cross_review.md`).
 
 ## Inherited Constraints (for Phase 2~5 and any future governor-changing PR)
 
