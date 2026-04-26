@@ -1,6 +1,7 @@
 # Governor-Changing Paths (Canonical Source)
 
-> Last synced: 2026-04-26 (introduced in Round-4 self-coherence review of PR #125 to reconcile path lists across AGENTS.md / target-operating-model.md / migration-strategy.md / drift-checklist.md / .github/pull_request_template.md).
+> Last synced: 2026-04-27 (added `CLAUDE.md` to Tier A — auto-loaded into every Claude session, so language drift here propagates fastest; fixed `.pre-commit-config.yaml` filename typo).
+> Initial sync: 2026-04-26 (introduced in Round-4 self-coherence review of PR #125 to reconcile path lists across AGENTS.md / target-operating-model.md / migration-strategy.md / drift-checklist.md / .github/pull_request_template.md).
 > All references to "governor-changing paths" in any harness document **must** link this file rather than re-declare the list. Drift between copies is the failure mode this file exists to prevent.
 
 ## Purpose
@@ -14,6 +15,7 @@ A PR is **governor-changing** if its `changed_files` intersects any path below.
 ### Tier A — Constitutional / Policy Documents (always trigger)
 
 - `AGENTS.md`
+- `CLAUDE.md`
 - `docs/ai/shared/**` (every file under the shared reference directory, including `governor-review-log/**`)
 - `docs/history/**` (every ADR and archive entry)
 - `.claude/rules/**`
@@ -34,7 +36,7 @@ Tier B includes Tier A's `.claude/rules/**` and `.codex/rules/**` (those are the
 
 - `.github/workflows/**` (CI as governance)
 - `pyproject.toml`'s `[tool.ruff]`, `[tool.mypy]`, or other linting/typing/policy sections
-- `pre-commit-config.yaml`
+- `.pre-commit-config.yaml`
 - Any new file at the repo root that defines policy (future ADR will add)
 
 Tier C is intentionally narrow today; the list grows only when an ADR explicitly extends it.

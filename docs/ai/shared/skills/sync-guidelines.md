@@ -71,7 +71,7 @@ language.
 3. Read the reference domain (`src/user/`) and shared/base modules to anchor the
    current implementation shape.
 4. Load the governing sources:
-   - `AGENTS.md`
+   - `AGENTS.md` — including § Language Policy. When editing any path listed there (Tier 1), all new prose must be English regardless of the chat language. Refuse Korean prose insertions and hidden-rationale workarounds (HTML comments, encoded payloads, attribute values, metadata). Bilingual escape tokens are the only exception, scoped per-file by `tools/check_language_policy.py`.
    - `docs/ai/shared/project-dna.md`
    - `docs/ai/shared/drift-checklist.md`
    - the affected shared procedures, checklists, wrappers, and harness docs

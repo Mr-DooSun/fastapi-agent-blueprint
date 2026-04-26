@@ -66,6 +66,9 @@ Use a separate review state and severity. Do not mix them.
 2. Collect the diff, changed filenames, affected domains, and surrounding code
    when a changed file alone is not enough to judge the rule.
 3. Load the shared rule sources listed above before forming findings.
+4. AGENTS.md § Language Policy (cross-ref): if the diff inserts non-English
+   prose into Tier 1 paths, surface as a `Findings` violation and a
+   `Sync Required: true` candidate. Bilingual escape tokens are exempt.
 
 ## Phase 1: Review Changed Files Against Shared Rules
 
