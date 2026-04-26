@@ -223,9 +223,10 @@ def test_governor_changing_segment_uses_md_path(tmp_path) -> None:
     assert text is None
 
 
-def test_string_equality_with_pr_template_matches_hook_constants() -> None:
-    """The shared constant must match the inline hook constants byte-for-byte
-    so commit-5 shim conversion preserves IC-2 string-equality."""
+def test_hooks_import_shared_reminder_constants() -> None:
+    """Post commit-5: both hook shims must import GOVERNOR_REMINDER_* from
+    the shared module rather than redeclaring the literals inline. This
+    closes the inline-redeclaration loophole that R0-C.3 flagged."""
 
     repo_root = Path(__file__).resolve().parents[3]
     claude_text = (repo_root / ".claude" / "hooks" / "completion_gate.py").read_text(
@@ -234,12 +235,24 @@ def test_string_equality_with_pr_template_matches_hook_constants() -> None:
     codex_text = (repo_root / ".codex" / "hooks" / "completion_gate.py").read_text(
         encoding="utf-8"
     )
-    # Both inline copies still contain the literal string today; the shared
-    # constant must be present in each so commit 5 can swap them for an
-    # import without breaking IC-2.
-    assert "PR #{pr}에 매칭되는 governor-review-log 항목이 없습니다." in claude_text
-    assert "PR #{pr}에 매칭되는 governor-review-log 항목이 없습니다." in codex_text
+    # Each shim imports from the shared module.
+    assert "GOVERNOR_REMINDER_WITH_PR" in claude_text
+    assert "GOVERNOR_REMINDER_NO_PR" in claude_text
+    assert "GOVERNOR_REMINDER_WITH_PR" in codex_text
+    assert "GOVERNOR_REMINDER_NO_PR" in codex_text
+    assert "from governor" in claude_text
+    assert "from governor" in codex_text
+    # Shared constant still carries the canonical Korean line.
     assert (
         "PR #{pr}에 매칭되는 governor-review-log 항목이 없습니다."
         in GOVERNOR_REMINDER_WITH_PR
+    )
+    # Inline redeclaration of the canonical line MUST NOT exist in shims.
+    assert (
+        claude_text.count("PR #{pr}에 매칭되는 governor-review-log 항목이 없습니다.")
+        == 0
+    )
+    assert (
+        codex_text.count("PR #{pr}에 매칭되는 governor-review-log 항목이 없습니다.")
+        == 0
     )

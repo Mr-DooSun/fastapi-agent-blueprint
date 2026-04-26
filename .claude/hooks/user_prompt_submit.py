@@ -1,79 +1,62 @@
-"""UserPromptSubmit Hook: Exception-token parser (Phase 2 of #117 / #121)
+"""UserPromptSubmit Hook (Claude side) — thin shim over `.agents/shared/governor`.
 
-Parses the leading exception token (`[trivial]` / `[hotfix]` / `[exploration]`
-/ `[자명]` / `[긴급]` / `[탐색]`) from the first line of a user prompt, after
-NFKC normalisation. Writes a per-session marker file under `.claude/state/`
-when matched. Output is informational only — never blocks prompt submission.
+Phase 5 (#124) replaces the inline parser body with imports from the
+shared governor module. Behaviour is byte-identical to Phase 2 (HC-5.1).
 
-Contract — payload schema shared with Codex side:
+Module-level invariants (Plan §D3 fail-open redesign):
+    * No top-level ``sys.exit`` / ``raise SystemExit`` — the Codex
+      Stop adapter imports siblings under ``contextlib.suppress(Exception)``
+      which does NOT catch ``SystemExit`` (BaseException). Top-level exits
+      would crash the Stop hook entirely.
+    * shared import failure → ``_SHARED_OK = False`` plus safe defaults;
+      ``main()`` returns 0 silently rather than raising.
+    * ``raise SystemExit(main())`` is only reached from
+      ``if __name__ == "__main__":`` — i.e. when the file is invoked as
+      a subprocess, never when imported as a module.
+
+Decision payload schema is shared with Codex side and frozen by Phase 2:
     {"matched": bool, "token": str | None, "rationale_required": bool}
-
-Invariant: this hook never overrides safety / sandbox / Absolute Prohibitions
-(IC-1). It only writes a marker file after a token is detected.
 """
 
 from __future__ import annotations
 
 import json
-import re
 import sys
-import time
-import unicodedata
-import uuid
 from pathlib import Path
-
-TOKEN_REGEX = re.compile(
-    r"^\s*\[(trivial|hotfix|exploration|자명|긴급|탐색)\](?:\s|$)",
-    re.IGNORECASE,
-)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 STATE_DIR = REPO_ROOT / ".claude" / "state"
 
+_SHARED = REPO_ROOT / ".agents" / "shared"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
 
-def parse_exception_token(prompt: str) -> dict:
-    """Return canonical decision payload per IC-3.
+try:
+    from governor import (  # noqa: E402 — sys.path adjusted above
+        TOKEN_REGEX,
+        parse_exception_token,
+    )
+    from governor import write_marker as _shared_write_marker  # noqa: E402
 
-    Always returns the same shape regardless of input. Token name is lowercased
-    for English variants; Korean tokens pass through unchanged (NFKC-normalised).
-    """
-    if not prompt:
+    _SHARED_OK = True
+except Exception:  # noqa: BLE001 — HC-5.5 fail-open, must not raise SystemExit
+    TOKEN_REGEX = None  # type: ignore[assignment]
+    _shared_write_marker = None
+    _SHARED_OK = False
+
+    def parse_exception_token(prompt: str) -> dict:  # type: ignore[no-redef]
         return {"matched": False, "token": None, "rationale_required": False}
-
-    normalised = unicodedata.normalize("NFKC", prompt)
-    match = TOKEN_REGEX.match(normalised)
-    if not match:
-        return {"matched": False, "token": None, "rationale_required": False}
-
-    token = match.group(1)
-    if token.isascii():
-        token = token.lower()
-    return {"matched": True, "token": token, "rationale_required": True}
 
 
 def write_marker(payload: dict) -> Path | None:
-    """Write the token decision payload to a per-session marker file.
+    """Backward-compat wrapper — uses module-level STATE_DIR (monkeypatchable)."""
 
-    Marker schema: {matched, token, rationale_required, ts (ISO 8601)}.
-    Returns the marker path on write, or None when not matched.
-    """
-    if not payload.get("matched"):
+    if not _SHARED_OK or _shared_write_marker is None:
         return None
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    ts = time.strftime("%Y%m%dT%H%M%S", time.gmtime())
-    marker = STATE_DIR / f"exception-token-{ts}-{uuid.uuid4().hex[:12]}.json"
-    record = dict(payload)
-    record["ts"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    marker.write_text(json.dumps(record, ensure_ascii=False), encoding="utf-8")
-    return marker
+    return _shared_write_marker(payload, STATE_DIR)
 
 
 def read_prompt() -> str:
-    """Read prompt text from Claude UserPromptSubmit stdin payload.
-
-    Claude Code SDK delivers a JSON object with a `prompt` field. Empty stdin
-    or invalid JSON degrades to empty prompt — informational hook never crashes.
-    """
     raw = sys.stdin.read()
     if not raw.strip():
         return ""
@@ -87,10 +70,15 @@ def read_prompt() -> str:
 
 
 def main() -> int:
-    prompt = read_prompt()
-    payload = parse_exception_token(prompt)
-    write_marker(payload)
-    print(json.dumps(payload, ensure_ascii=False), file=sys.stderr)
+    if not _SHARED_OK:
+        return 0
+    try:
+        prompt = read_prompt()
+        payload = parse_exception_token(prompt)
+        write_marker(payload)
+        print(json.dumps(payload, ensure_ascii=False), file=sys.stderr)
+    except Exception:  # noqa: BLE001 — HC-5.5 fail-open
+        return 0
     return 0
 
 

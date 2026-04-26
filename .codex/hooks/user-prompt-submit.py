@@ -1,121 +1,103 @@
-"""UserPromptSubmit Hook (Codex side).
+"""UserPromptSubmit Hook (Codex side) — thin shim over `.agents/shared/governor`.
 
-Behaviour-preserving extension under Phase 2 of #117 / #121. The pre-existing
-safety check (rule-bypass / destructive git / destructive shell) runs first;
-when it emits ``decision: block`` the hook exits **without** parsing the
-exception-token vocabulary — i.e. dangerous prompts never produce a marker
-file even if they happen to start with `[trivial]`. Only after safety has
-passed the prompt does the parser run; its output is informational only and
-mirrors the Claude-side payload schema (IC-3).
+Phase 5 (#124) replaces the inline parser + safety routing with imports
+from the shared governor module. Behaviour preserves Phase 2 invariants:
 
-Decision payload (shared with `.claude/hooks/user_prompt_submit.py`):
-    {"matched": bool, "token": str | None, "rationale_required": bool}
-
-Marker file (when matched) carries the decision payload plus an ISO 8601 ``ts``
-timestamp.
+* HC-1 (safety-block-first → parser-second) is enforced *inside* the
+  shared ``safe_parse_exception_token`` single-entry function. The shim
+  cannot reach the parser past a destructive-prompt block (R0-C.1
+  rejected callable-injection bypass surface).
+* ``PROMPT_RULES`` and ``parse_exception_token`` remain importable from
+  this module so existing tests continue to monkeypatch / inspect them
+  directly.
+* No top-level ``sys.exit``: shared import failure → silent ``main()``
+  return-0 (HC-5.5; Plan §D3 fail-open redesign).
 """
 
 from __future__ import annotations
 
 import json
-import re
 import sys
-import time
-import unicodedata
-import uuid
 from pathlib import Path
-
-PROMPT_RULES: list[tuple[re.Pattern[str], str, str]] = [
-    (
-        re.compile(
-            r"(ignore|disable|bypass).*(AGENTS\.md|CLAUDE\.md|hooks?|sandbox|approval|rules?)",
-            re.IGNORECASE,
-        ),
-        "Rule-bypass request detected.",
-        "Do not bypass repository rules or Codex safety controls. Ask for a scoped goal instead.",
-    ),
-    (
-        re.compile(r"\bgit\s+reset\s+--hard\b|\bgit\s+checkout\s+--\b", re.IGNORECASE),
-        "Destructive git command requested.",
-        "This repository does not allow destructive git rollback without explicit confirmation and scope.",
-    ),
-    (
-        re.compile(r"\brm\s+-rf\b|\bdd\s+if=|\bmkfs\b", re.IGNORECASE),
-        "Destructive shell command requested.",
-        "Ask the user to confirm the exact path or target before any destructive command is considered.",
-    ),
-]
-
-TOKEN_REGEX = re.compile(
-    r"^\s*\[(trivial|hotfix|exploration|자명|긴급|탐색)\](?:\s|$)",
-    re.IGNORECASE,
-)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 STATE_DIR = REPO_ROOT / ".codex" / "state"
 
+_SHARED = REPO_ROOT / ".agents" / "shared"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
 
-def parse_exception_token(prompt: str) -> dict:
-    """Return canonical decision payload per IC-3 (mirrors Claude side)."""
-    if not prompt:
+try:
+    from governor import (  # noqa: E402 — sys.path adjusted above
+        PROMPT_RULES,
+        TOKEN_REGEX,
+        Blocked,
+        ParsedToken,
+        parse_exception_token,
+        safe_parse_exception_token,
+    )
+    from governor import write_marker as _shared_write_marker  # noqa: E402
+
+    _SHARED_OK = True
+except Exception:  # noqa: BLE001 — HC-5.5 fail-open
+    PROMPT_RULES = []  # type: ignore[assignment]
+    TOKEN_REGEX = None  # type: ignore[assignment]
+    Blocked = None  # type: ignore[assignment,misc]
+    ParsedToken = None  # type: ignore[assignment,misc]
+    safe_parse_exception_token = None  # type: ignore[assignment]
+    _shared_write_marker = None
+    _SHARED_OK = False
+
+    def parse_exception_token(prompt: str) -> dict:  # type: ignore[no-redef]
         return {"matched": False, "token": None, "rationale_required": False}
-    normalised = unicodedata.normalize("NFKC", prompt)
-    match = TOKEN_REGEX.match(normalised)
-    if not match:
-        return {"matched": False, "token": None, "rationale_required": False}
-    token = match.group(1)
-    if token.isascii():
-        token = token.lower()
-    return {"matched": True, "token": token, "rationale_required": True}
 
 
 def write_marker(payload: dict) -> Path | None:
-    if not payload.get("matched"):
+    """Backward-compat wrapper — uses module-level STATE_DIR (monkeypatchable)."""
+
+    if not _SHARED_OK or _shared_write_marker is None:
         return None
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    ts = time.strftime("%Y%m%dT%H%M%S", time.gmtime())
-    marker = STATE_DIR / f"exception-token-{ts}-{uuid.uuid4().hex[:12]}.json"
-    record = dict(payload)
-    record["ts"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    marker.write_text(json.dumps(record, ensure_ascii=False), encoding="utf-8")
-    return marker
+    return _shared_write_marker(payload, STATE_DIR)
 
 
 def main() -> int:
     raw = sys.stdin.read()
     if not raw.strip():
-        # Empty stdin → informational, fail-open (parity with Claude side).
         return 0
     try:
-        payload = json.loads(raw)
+        payload_in = json.loads(raw)
     except json.JSONDecodeError:
-        # Malformed payload → fail-open. The pre-Phase-2 hook crashed here;
-        # Phase 2 prefers symmetry with Claude side and Non-Goal "false-positive
-        # blocking" (issue #117) over preserving the crash behaviour.
         return 0
-    if not isinstance(payload, dict):
+    if not isinstance(payload_in, dict):
         return 0
-    prompt = payload.get("prompt", "") or ""
+    prompt = payload_in.get("prompt", "") or ""
 
-    for pattern, reason, extra in PROMPT_RULES:
-        if pattern.search(prompt):
-            print(
-                json.dumps(
-                    {
-                        "decision": "block",
-                        "reason": reason,
-                        "hookSpecificOutput": {
-                            "hookEventName": "UserPromptSubmit",
-                            "additionalContext": extra,
-                        },
-                    }
-                )
+    if not _SHARED_OK or safe_parse_exception_token is None:
+        return 0
+
+    try:
+        result = safe_parse_exception_token(prompt)
+    except Exception:  # noqa: BLE001 — HC-5.5 fail-open
+        return 0
+
+    if Blocked is not None and isinstance(result, Blocked):
+        print(
+            json.dumps(
+                {
+                    "decision": "block",
+                    "reason": result.reason,
+                    "hookSpecificOutput": {
+                        "hookEventName": "UserPromptSubmit",
+                        "additionalContext": result.additional_context,
+                    },
+                }
             )
-            return 0
+        )
+        return 0
 
-    decision = parse_exception_token(prompt)
-    write_marker(decision)
-    print(json.dumps(decision, ensure_ascii=False), file=sys.stderr)
+    if ParsedToken is not None and isinstance(result, ParsedToken):
+        write_marker(result.payload)
+        print(json.dumps(result.payload, ensure_ascii=False), file=sys.stderr)
     return 0
 
 
