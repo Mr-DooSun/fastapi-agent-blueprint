@@ -504,7 +504,7 @@ Bucket guideline:
 
 ## Tier 3 — Hooks
 
-Eleven hook scripts (4 Claude shell + 1 Claude Python implementation + 6 Codex Python). Currently every hook handles **safety, formatting, or drift reminders**. None handle process governing — that's the Phase 2~5 gap.
+Thirteen hook scripts (5 Claude shell + 2 Claude Python implementations + 6 Codex Python). Phase 2 (#121) added `.claude/hooks/user-prompt-submit.sh` + `.claude/hooks/user_prompt_submit.py` as the first Claude UserPromptSubmit hook surface; the Codex side `.codex/hooks/user-prompt-submit.py` was extended (behaviour-preserving) with the same exception-token parser. Pre-Phase-2 every hook handled **safety, formatting, or drift reminders**; Phase 2 introduced the first *process-governor* hook (token recognition).
 
 | Asset | Bucket | Risk | Impact |
 |---|---|---|---|
@@ -512,7 +512,9 @@ Eleven hook scripts (4 Claude shell + 1 Claude Python implementation + 6 Codex P
 | `.claude/hooks/pre-tool-security.sh` | Keep | Low | Medium |
 | `.claude/hooks/post-tool-format.sh` | Keep | Low | Medium |
 | `.claude/hooks/stop-sync-reminder.sh` | Keep | Low | Medium |
+| `.claude/hooks/user-prompt-submit.sh` | Keep | Low | Medium |
 | `.claude/hooks/pre_tool_security.py` | Keep | Low | Medium |
+| `.claude/hooks/user_prompt_submit.py` | Keep | Low | Medium |
 | `.codex/hooks/_shared.py` | Keep | Low | Low |
 | `.codex/hooks/session-start.py` | Keep | Low | Low |
 | `.codex/hooks/user-prompt-submit.py` | Keep | Low | Medium |
@@ -570,9 +572,23 @@ Eleven hook scripts (4 Claude shell + 1 Claude Python implementation + 6 Codex P
 
 ### `.codex/hooks/user-prompt-submit.py`
 
-- **Current role**: Prompt safety check.
-- **Bucket**: Keep — Phase 2 extends this hook with the exception-token parser.
-- **Notes**: Codex R3 — exception-token recognition runs before any safety check that the parser would invalidate; safety still wins (D1.3).
+- **Current role**: Prompt safety check (rule-bypass / destructive git / destructive shell) **plus** Phase 2 (#121) exception-token parser. Order: safety check first; on `decision: block`, return without parsing or writing a marker (HC-1 from PR #121). Only after safety has passed does the parser run; its output is informational and never blocks submission.
+- **Bucket**: Keep — Phase 2 (#121) extension is behaviour-preserving.
+- **Notes**: Codex R3 — exception-token recognition never overrides safety / sandbox / Absolute Prohibitions (IC-1). Safety still wins (D1.3). Marker file location: `.codex/state/exception-token-{ts}-{seq}.json` (gitignored).
+
+### `.claude/hooks/user-prompt-submit.sh`
+
+- **Current role**: Phase 2 (#121) UserPromptSubmit wrapper. Mirrors `pre-tool-security.sh` shape — pipes stdin to the Python helper. Informational only, exits 0.
+- **Why it exists**: Claude did not have a UserPromptSubmit hook before Phase 2; this PR adds the surface so the exception-token vocabulary defined in PR #125 becomes machine-readable on the Claude side.
+- **Bucket**: Keep.
+- **Notes**: Mirrored against Codex `.codex/hooks/user-prompt-submit.py` for Phase 5 consolidation under `.agents/shared/governor/`.
+
+### `.claude/hooks/user_prompt_submit.py`
+
+- **Current role**: Phase 2 (#121) parser helper. NFKC normalisation + canonical regex `^\s*\[(trivial|hotfix|exploration|자명|긴급|탐색)\](?:\s|$)` (case-insensitive). Emits `{matched, token, rationale_required}` JSON to stderr; on match, writes a marker file under `.claude/state/`.
+- **Why it exists**: Sh wrapper + py helper split (matches the `pre-tool-security.sh` + `pre_tool_security.py` pattern). Avoids shell-escaping NFKC + regex inline.
+- **Bucket**: Keep.
+- **Notes**: Output is identical to `.codex/hooks/user-prompt-submit.py` parser. Parity asserted by `tests/unit/agents_shared/test_token_parser.py` (silent-divergence safety net for D1=B).
 
 ### `.codex/hooks/pre-tool-security.py`
 
@@ -653,17 +669,17 @@ Six rule files (5 Claude + 1 Codex). All `Keep` except `commands.md` which becom
 
 | Bucket | Count | Share | Notes |
 |---|---|---|---|
-| Keep | 48 | ~86% | Project-specific architecture / safety / reference value (incl. 4 design + 3 self-coherence-recovery process-governor artefacts) |
+| Keep | 50 | ~86% | Project-specific architecture / safety / reference value (incl. 4 design + 3 self-coherence-recovery process-governor artefacts + 2 Phase 2 #121 hooks) |
 | Overlay | 8 | ~14% | Process discipline now routed by Default Flow |
 | Replace | 0 | 0% | None in initial inventory; reserved for future passes |
 | Drop | 0 | 0% | Initial pass found no genuinely removable assets |
-| **Total** | **56** | 100% | |
+| **Total** | **58** | 100% | |
 
-Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=17` (12 reference + 3 design living docs + `governor-review-log/` directory + `governor-paths.md`), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=11`, `Tier 4=6` — sum 57. The 56 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d (its row is recorded for completeness only). The bucket-share percentages use 56 as the denominator.
+Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=17` (12 reference + 3 design living docs + `governor-review-log/` directory + `governor-paths.md`), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=13` (Phase 2 #121 added `.claude/hooks/user-prompt-submit.sh` + `.claude/hooks/user_prompt_submit.py`; previously 11), `Tier 4=6` — sum 59. The 58 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d (its row is recorded for completeness only). The bucket-share percentages use 58 as the denominator.
 
 This distribution matches the "Mostly Local with Philosophy Overlay" model declared in [ADR 045 §D4](../../history/045-hybrid-harness-target-architecture.md). The `Replace` and `Drop` columns are both empty in the initial pass: no asset's content is being rewritten, and self-verification during cross-link work showed that the only `Drop` candidate identified during the first triage was actually an active component (a sh-wrapper `.py` pair).
 
-If a future `Replace` candidate emerges, the threshold is: Keep+Overlay would otherwise force the asset into structural inconsistency with the Default Flow. None of the current 56 assets meet that.
+If a future `Replace` candidate emerges, the threshold is: Keep+Overlay would otherwise force the asset into structural inconsistency with the Default Flow. None of the current 58 assets meet that.
 
 ## Verification
 
@@ -692,3 +708,4 @@ The following self-checks must pass before this matrix is treated as authoritati
 ## Update Log
 
 - 2026-04-26 — Initial inventory under ADR 045 / Phase 1.
+- 2026-04-26 — Phase 2 (#121): added `.claude/hooks/user-prompt-submit.sh` + `.claude/hooks/user_prompt_submit.py` to Tier 3; updated `.codex/hooks/user-prompt-submit.py` role to include exception-token parsing (behaviour-preserving). Total 56 → 58.
