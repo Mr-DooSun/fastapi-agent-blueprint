@@ -43,11 +43,13 @@ When fields match, Request is passed directly to Service — creating a separate
 
 ## Language Policy
 
-The repository is contributor-facing for both internal teammates and external OSS contributors. Shared rule sources, harness configuration, and AI-governance artefacts must be readable by any contributor regardless of language environment — therefore **Tier 1 paths are English-only prose**.
+The repository is contributor-facing for both internal teammates and external OSS contributors. Shared rule sources, harness configuration, and AI-governance artefacts must be readable by any contributor regardless of language environment.
 
-### Tier 1 paths (English-only prose)
+The driving failure mode is Korean prose leaking into Tier 1 files via AI sessions running in Korean conversational mode. Other-language leaks have not been observed in this repository, so the **machine-enforced scope today is Korean (Hangul) prose**. The intent of the policy is broader — Tier 1 paths should be English-only — but only Korean is currently detected and blocked. Other-language detection (Chinese, Japanese, etc.) and encoded payloads (base64, HTML entities) are tracked as out-of-scope for this PR; if leaks of those forms appear, expand the checker first, then update this policy text to match.
 
-All prose, comments, docstrings, log strings, and user-facing terminal output under the following paths must be written in English:
+### Tier 1 paths (Korean prose blocked; English encouraged for everything else)
+
+All new prose, comments, docstrings, log strings, and user-facing terminal output under the following paths should be written in English; **Korean prose is blocked by the pre-commit hook**:
 
 - `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`
 - `docs/ai/shared/**` (including `governor-review-log/**`)
@@ -57,7 +59,7 @@ All prose, comments, docstrings, log strings, and user-facing terminal output un
 - `.agents/**` (skills and the shared governor package)
 - `.github/pull_request_template.md` and `.github/workflows/**`
 
-This list mirrors Tier A + Tier B of [`governor-paths.md`](docs/ai/shared/governor-paths.md). When the two diverge, `governor-paths.md` is canonical for cross-tool review triggers; this section is canonical for prose-language enforcement.
+The path list above is the **canonical scope of the language-policy checker** (`tools/check_language_policy.py::TIER1_GLOBS`). It overlaps with — but is not identical to — Tier A + Tier B of [`governor-paths.md`](docs/ai/shared/governor-paths.md). The governor-paths file controls cross-tool review triggers (every file under `.claude/**`, `.codex/**`, `.agents/**` triggers); the language-policy checker scopes to *files where prose is realistic* — Markdown, Python, shell, and the PR template / CI workflows. Config files like `.codex/hooks.json`, `.claude/settings.json`, and `.codex/config.toml` are intentionally outside the language-policy scope today; if Korean leaks into a settings string, treat it as a checker-extension follow-up rather than a policy violation.
 
 ### The only exception — bilingual escape tokens
 
@@ -65,7 +67,7 @@ The escape-token vocabulary `[trivial]/[자명]`, `[hotfix]/[긴급]`, `[explora
 
 ### Two specific prohibitions
 
-1. **No hidden non-English rationale** in Tier 1 paths — whether in HTML comments, encoded payloads, attribute values, or other metadata. Hidden Korean rationale creates information asymmetry between Korean-reading and non-Korean-reading contributors, which is the exact failure mode this policy exists to prevent.
+1. **No hidden Korean rationale** in Tier 1 paths — Korean text inside HTML comments (`<!-- 한국어 -->`), backtick-quoted attribute values, or hand-written metadata is **blocked by the line-grep checker**. Korean smuggled through base64 / HTML entities / other encodings is **not** detected today; the policy intent rejects them, but enforcement is best-effort. Hidden Korean rationale recreates information asymmetry between Korean-reading and non-Korean-reading contributors — the exact failure mode this policy exists to prevent.
 2. **No new Korean prose lines, even when "just adding a translation for the team."** If translation matters for a specific document, create a sibling file (e.g. `docs/README.ko.md` is the existing reference pattern) and link to it. Tier 1 documents themselves stay English.
 
 ### Exemptions
@@ -78,10 +80,10 @@ The escape-token vocabulary `[trivial]/[자명]`, `[hotfix]/[긴급]`, `[explora
 
 When you (an AI agent — Claude or Codex) edit any Tier 1 path:
 
-- All new prose, comments, docstrings, log strings, error messages, and user-facing terminal output **must be English**, regardless of the language of the surrounding user prompt.
-- If the user instructs you in a non-English language to add a non-English note to a Tier 1 file, refuse and translate. Cite this section.
+- All new prose, comments, docstrings, log strings, error messages, and user-facing terminal output **must be English**, regardless of the language of the surrounding user prompt. Korean prose specifically is hard-blocked by the pre-commit hook.
+- If the user instructs you in Korean (or any other language) to add a non-English note to a Tier 1 file, refuse and translate. Cite this section.
 - The bilingual-token exception applies only to literal token vocabulary and references to it, in the per-file allowlist scope.
-- Hidden-rationale workarounds (HTML comments, encoded payloads, attribute values, metadata) are explicitly out of scope of the exception.
+- Hidden Korean rationale (in HTML comments, backtick-quoted attributes, or any other line-visible form) is out of scope of the exception. The checker does not currently decode base64 / HTML entities — but smuggling Korean through those layers still violates policy intent and will be removed if found.
 
 This rule is enforced by:
 
@@ -355,7 +357,7 @@ uv run alembic current
   - Claude workflow entry point: `/sync-guidelines`
   - Codex workflow: use `$sync-guidelines` or follow the documented verification steps in `README.md` / `CONTRIBUTING.md`
   - Both tools should run sync after architecture changes — not just the active tool
-- Language drift: any new prose in non-token contexts under paths listed in § Language Policy → Tier 1 must be English. Bilingual escape tokens are the only exception. Run `python tools/check_language_policy.py` before closing the work to confirm zero violations.
+- Language drift: any new prose in non-token contexts under paths listed in § Language Policy → Tier 1 must be English. Bilingual escape tokens are the only exception. Run `python3 tools/check_language_policy.py` before closing the work to confirm zero violations.
 
 ### Skill Split Convention (Hybrid C)
 

@@ -174,28 +174,38 @@ PRs must respect.
 
 - **IC-1 ~ IC-16** — preserved verbatim from pr-130. Hybrid
   Harness v1 contract still binding.
-- **IC-17 (NEW)** — *Tier 1 paths are English-only prose; the
-  bilingual escape-token vocabulary is the only exception, scoped
-  per-file in `tools/check_language_policy.py`.* Enforced by the
-  pre-commit hook `tier1-language-policy` plus
+- **IC-17 (NEW)** — *Tier 1 paths block Korean (Hangul) prose at
+  commit time; English is the intended writing language for
+  everything else.* The bilingual escape-token vocabulary is the
+  only exception and is scoped per-file in
+  `tools/check_language_policy.py::TOKEN_LITERALS_BY_FILE`.
+  Enforced by the pre-commit hook `tier1-language-policy` plus
   `tests/unit/agents_shared/test_language_policy.py`. AGENTS.md
-  § Language Policy is the canonical text.
+  § Language Policy is the canonical text. **Scope today is
+  Korean only**; other CJK languages and encoded payloads
+  (base64, HTML entities) are explicitly out of the checker's
+  enforcement surface — see AGENTS.md § Language Policy for the
+  full scoping note.
 - **IC-18 (NEW)** — *governor-review-log entries preserve
   original Korean lines as provenance only when they begin with
   one of three exact blockquote prefixes:
   `> Original user/owner statement (ko, verbatim):`,
   `> Original reviewer verdict (ko, verbatim):`,
-  `> Historical Korean excerpt (ko, verbatim):`.* English
-  normalised meaning must follow on the next line. Multi-line
+  `> Historical Korean excerpt (ko, verbatim):`.* The next
+  non-blank line after each provenance line must be Hangul-free
+  (the English normalised meaning); the checker enforces this
+  via a next-line scan added in commit 5 of this PR. Multi-line
   preserved Korean must repeat the prefix on every line.
-  Enforced by the same checker.
-- **IC-19 (NEW)** — *No hidden non-English rationale in Tier 1
-  paths (HTML comments, encoded payloads, attribute values,
-  metadata).* Hidden Korean rationale recreates the
-  information-asymmetry failure mode this policy exists to
-  prevent. The checker scans HTML-comment content the same as
-  prose because rendered comments still ship Korean to the
-  raw-file reader.
+- **IC-19 (NEW, scoped to line-visible forms)** — *No hidden
+  Korean rationale in Tier 1 paths in line-visible forms — HTML
+  comments (`<!-- 한국어 -->`), backtick-quoted attribute values,
+  or any Korean text the line-grep checker can read.* The checker
+  intentionally does **not** decode base64 / HTML entities /
+  other encodings today; smuggling Korean through those layers
+  still violates the policy intent and will be removed if found,
+  but it is best-effort enforcement, not a hard guarantee. If
+  encoded-payload leaks become a real failure mode, expand the
+  detector first and update this constraint to match.
 
 ## Self-application proof
 

@@ -1,16 +1,23 @@
 """Tier 1 Language Policy checker.
 
-Enforces AGENTS.md § Language Policy: shared-repo Tier 1 paths must be
-English-only prose. Bilingual escape tokens are the only exception, and they
-are scoped per-file so a token literal cannot launder Korean prose elsewhere.
+Enforces AGENTS.md § Language Policy: shared-repo Tier 1 paths must not
+contain Korean (Hangul) prose. Bilingual escape tokens are the only
+exception, and they are scoped per-file so a token literal cannot launder
+Korean prose elsewhere.
+
+Scope today is **Korean prose only**. Other-language detection (Chinese,
+Japanese, encoded payloads via base64 / HTML entities) is intentionally out
+of scope; if a leak appears in another form, expand the detector first and
+update AGENTS.md § Language Policy to match the new scope.
 
 Used by:
 - `.pre-commit-config.yaml` `tier1-language-policy` hook (filenames passed by argv)
 - `tests/unit/agents_shared/test_language_policy.py` (imported as a library)
-- Ad-hoc dry-run: `python tools/check_language_policy.py` (no argv = full repo scan)
+- Ad-hoc dry-run: `python3 tools/check_language_policy.py` (no argv = full repo scan)
 
 The checker is the single source of truth for the policy. Do not duplicate
-its logic in shell pipelines or yaml regexes.
+its logic in shell pipelines or yaml regexes. The pre-commit `files:` regex
+deliberately mirrors `TIER1_GLOBS`; a drift test asserts they stay aligned.
 """
 
 from __future__ import annotations
@@ -29,9 +36,13 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # ---------------------------------------------------------------------------
 # Hangul detection
 # ---------------------------------------------------------------------------
-# U+AC00-U+D7A3 : precomposed Hangul syllables
-# U+1100-U+11FF : Hangul Jamo
-# U+3130-U+318F : Hangul Compatibility Jamo
+# Three Unicode blocks cover Korean prose:
+#   U+AC00-U+D7A3 : precomposed Hangul syllables (the common case)
+#   U+1100-U+11FF : Hangul Jamo (decomposed form)
+#   U+3130-U+318F : Hangul Compatibility Jamo (legacy CJK input)
+#
+# The checker's enforcement scope is Korean only — see module docstring for
+# why other CJK languages and encoded payloads are intentionally out of scope.
 HANGUL_RE = re.compile(r"[가-힣ᄀ-ᇿ㄰-㆏]")
 
 # ---------------------------------------------------------------------------
@@ -106,7 +117,6 @@ TOKEN_LITERALS_BY_FILE: dict[str, set[str]] = {
         "긴급",
         "탐색",
     },
-    "docs/ai/shared/scaffolding-layers.md": {"[자명]", "[긴급]", "[탐색]"},
     # ADR 045 introduces the token vocabulary.
     "docs/history/045-hybrid-harness-target-architecture.md": {
         "[자명]",
@@ -155,7 +165,11 @@ REVIEW_LOG_GLOB = "docs/ai/shared/governor-review-log/"
 
 MARKDOWN_EXTENSIONS = {".md"}
 
-FENCED_CODE_RE = re.compile(r"^```", re.MULTILINE)
+# CommonMark allows up to 3 spaces of leading indentation before a fence.
+# Fences inside list items (commonly indented 2 or 4 spaces in this repo)
+# are intentionally not covered — pre-commit/CI will surface those as
+# violations and prompt the author to outdent the code block.
+FENCED_CODE_RE = re.compile(r"^[ ]{0,3}```", re.MULTILINE)
 INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
 
 
@@ -202,7 +216,10 @@ def _is_provenance_line(rel_path: str, line: str) -> bool:
 
 
 def _strip_fenced_blocks(text: str) -> str:
-    """Replace fenced code blocks with blank lines (preserves line numbers)."""
+    """Replace fenced code blocks with blank lines (preserves line numbers).
+
+    Tolerates up to 3 spaces of leading indentation per CommonMark §4.5.
+    """
     out_lines: list[str] = []
     in_fence = False
     for raw in text.splitlines():
@@ -212,6 +229,17 @@ def _strip_fenced_blocks(text: str) -> str:
             continue
         out_lines.append("" if in_fence else raw)
     return "\n".join(out_lines)
+
+
+def _next_non_blank_line(lines: list[str], idx: int) -> tuple[int, str] | None:
+    """Return (1-based line number, content) for the next non-blank line
+    after `lines[idx]` (idx is 0-based). None if EOF."""
+    j = idx + 1
+    while j < len(lines):
+        if lines[j].strip():
+            return (j + 1, lines[j])
+        j += 1
+    return None
 
 
 def find_violations(path: Path, *, repo_root: Path = REPO_ROOT) -> list[Violation]:
@@ -232,15 +260,40 @@ def find_violations(path: Path, *, repo_root: Path = REPO_ROOT) -> list[Violatio
         text = _strip_fenced_blocks(text)
 
     allowed_tokens = TOKEN_LITERALS_BY_FILE.get(rel_str, set())
+    raw_lines = text.splitlines()
 
     violations: list[Violation] = []
-    for idx, line in enumerate(text.splitlines(), start=1):
+    reported_lines: set[int] = set()
+    for idx, line in enumerate(raw_lines, start=1):
         check_line = _strip_inline_code(line) if is_markdown else line
 
         if not HANGUL_RE.search(check_line):
             continue
 
         if _is_provenance_line(rel_str, check_line):
+            # Provenance prefix is allowed, but the policy says an
+            # English normalised line must follow on the next non-blank
+            # line. Verify it (R132-IMPL.3).
+            next_line = _next_non_blank_line(raw_lines, idx - 1)
+            if next_line is None or HANGUL_RE.search(
+                _strip_inline_code(next_line[1]) if is_markdown else next_line[1]
+            ):
+                target_line = next_line[0] if next_line is not None else idx
+                target_content = next_line[1] if next_line is not None else ""
+                if target_line not in reported_lines:
+                    violations.append(
+                        Violation(
+                            path=rel_str,
+                            line_number=target_line,
+                            line_content=target_content.rstrip(),
+                            reason=(
+                                "missing English normalised line after provenance "
+                                "prefix on the previous line (AGENTS.md § Language "
+                                "Policy → Exemptions: governor-review-log/**)"
+                            ),
+                        )
+                    )
+                    reported_lines.add(target_line)
             continue
 
         if allowed_tokens:
@@ -248,6 +301,8 @@ def find_violations(path: Path, *, repo_root: Path = REPO_ROOT) -> list[Violatio
             if not HANGUL_RE.search(check_line):
                 continue
 
+        if idx in reported_lines:
+            continue
         violations.append(
             Violation(
                 path=rel_str,
@@ -256,6 +311,7 @@ def find_violations(path: Path, *, repo_root: Path = REPO_ROOT) -> list[Violatio
                 reason="non-allowlisted Hangul in Tier 1 path",
             )
         )
+        reported_lines.add(idx)
     return violations
 
 

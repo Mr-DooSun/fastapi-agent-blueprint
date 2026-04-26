@@ -139,8 +139,74 @@ def test_review_log_multiline_provenance_must_repeat_prefix(
         "두 번째 줄에는 prefix가 없음\n",
     )
     # The first line is allowed (prefixed). The second is not.
+    # R132-IMPL.3 also flags the missing English summary after the prefixed
+    # line, but the second-line Hangul violation lands on the same line.
     assert len(violations) == 1
     assert violations[0].line_number == 2
+
+
+def test_review_log_provenance_without_english_summary_is_violation(
+    tmp_path: Path,
+) -> None:
+    """R132-IMPL.3: AGENTS.md § Language Policy says an English normalised
+    line must follow each provenance prefix on the next non-blank line.
+    A provenance-only entry with no English summary is a violation."""
+    violations = _scan(
+        tmp_path,
+        "docs/ai/shared/governor-review-log/pr-999-example.md",
+        "> Original reviewer verdict (ko, verbatim): 보완 필요\n",
+    )
+    assert len(violations) == 1
+    assert "English normalised line" in violations[0].reason
+
+
+def test_review_log_provenance_with_blank_then_english_passes(
+    tmp_path: Path,
+) -> None:
+    """A blank line between the provenance prefix and the English summary
+    is acceptable — the next *non-blank* line is what the checker examines."""
+    violations = _scan(
+        tmp_path,
+        "docs/ai/shared/governor-review-log/pr-999-example.md",
+        "> Original reviewer verdict (ko, verbatim): 보완 필요\n\nneeds follow-up.\n",
+    )
+    assert violations == []
+
+
+def test_review_log_consecutive_provenance_lines_each_summarised(
+    tmp_path: Path,
+) -> None:
+    """Multi-line preserved Korean repeats the prefix on every line; each
+    such line gets its own English summary on the line after it. The
+    checker should not double-count the chain."""
+    content = (
+        "> Original user/owner statement (ko, verbatim): 첫 번째 한국어 줄\n"
+        "First English line.\n"
+        "> Original user/owner statement (ko, verbatim): 두 번째 한국어 줄\n"
+        "Second English line.\n"
+    )
+    violations = _scan(
+        tmp_path,
+        "docs/ai/shared/governor-review-log/pr-999-example.md",
+        content,
+    )
+    assert violations == []
+
+
+def test_review_log_adjacent_provenance_lines_still_need_english_summary(
+    tmp_path: Path,
+) -> None:
+    """A second provenance line is not an English summary for the first one."""
+    violations = _scan(
+        tmp_path,
+        "docs/ai/shared/governor-review-log/pr-999-example.md",
+        "> Original user/owner statement (ko, verbatim): 첫 번째 한국어 줄\n"
+        "> Original user/owner statement (ko, verbatim): 두 번째 한국어 줄\n"
+        "Second English line.\n",
+    )
+    assert len(violations) == 1
+    assert violations[0].line_number == 2
+    assert "English normalised line" in violations[0].reason
 
 
 # ---------------------------------------------------------------------------
@@ -169,6 +235,18 @@ def test_markdown_fenced_code_block_korean_is_exempt(tmp_path: Path) -> None:
         tmp_path,
         "docs/ai/shared/example.md",
         'Some prose.\n\n```\nprint("한국어")\n```\n\nMore prose.\n',
+    )
+    assert violations == []
+
+
+def test_markdown_indented_fenced_block_is_exempt(tmp_path: Path) -> None:
+    """CommonMark allows up to 3 spaces of leading indentation before a
+    fence (R132-IMPL.5). The checker tolerates the same so list-adjacent
+    code blocks containing Korean samples do not false-positive."""
+    violations = _scan(
+        tmp_path,
+        "docs/ai/shared/example.md",
+        'Intro prose.\n\n   ```\n   print("한국어 샘플")\n   ```\n\nOutro prose.\n',
     )
     assert violations == []
 
@@ -253,6 +331,53 @@ def test_tier1_globs_match_agents_md_policy_bullets() -> None:
     )
     assert not missing_from_globs, (
         f"TIER1_GLOBS is missing canonical paths: {missing_from_globs}"
+    )
+
+
+def test_pre_commit_regex_covers_canonical_anchor_paths() -> None:
+    """R132-IMPL.2 drift guard: the pre-commit `files:` regex must match
+    every canonical anchor path that TIER1_GLOBS covers. Without this
+    test, the YAML regex can silently drift from the checker's globs and
+    contributors would commit Korean prose to a Tier 1 file that the
+    pre-commit hook never opens.
+
+    Strategy: read the YAML, extract the regex from the
+    `tier1-language-policy` hook, and compile it against representative
+    sample paths drawn from each canonical anchor.
+    """
+    config_text = (REPO_ROOT / ".pre-commit-config.yaml").read_text(encoding="utf-8")
+    match = re.search(
+        r"id:\s*tier1-language-policy.*?files:\s*'([^']+)'",
+        config_text,
+        flags=re.DOTALL,
+    )
+    assert match, (
+        "tier1-language-policy hook with `files:` regex not found in .pre-commit-config.yaml"
+    )
+    files_regex = re.compile(match.group(1))
+
+    representative_paths = [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "CONTRIBUTING.md",
+        "SECURITY.md",
+        "docs/ai/shared/skills/sync-guidelines.md",
+        "docs/ai/shared/governor-review-log/pr-132-language-policy.md",
+        "docs/history/045-hybrid-harness-target-architecture.md",
+        ".claude/rules/commands.md",
+        ".claude/hooks/stop-sync-reminder.sh",
+        ".claude/skills/onboard/SKILL.md",
+        ".codex/rules/example.md",
+        ".codex/hooks/verify_first.py",
+        ".agents/shared/governor/verify.py",
+        ".agents/skills/onboard/SKILL.md",
+        ".github/pull_request_template.md",
+        ".github/workflows/ci.yml",
+    ]
+    not_matched = [p for p in representative_paths if not files_regex.match(p)]
+    assert not not_matched, (
+        "pre-commit `files:` regex does not match these canonical anchor "
+        f"paths (drift from TIER1_GLOBS): {not_matched}"
     )
 
 
