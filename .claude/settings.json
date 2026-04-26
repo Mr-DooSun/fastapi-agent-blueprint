@@ -44,6 +44,10 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/post-tool-format.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/verify-first.sh"
           }
         ]
       }
