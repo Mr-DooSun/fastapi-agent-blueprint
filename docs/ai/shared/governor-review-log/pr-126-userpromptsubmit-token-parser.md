@@ -41,7 +41,10 @@ Implements Phase 2 of [ADR 045](../../history/045-hybrid-harness-target-architec
 
 - **Target**: 4-commit working tree before push (`.claude/hooks/user_prompt_submit.py`, `.claude/hooks/user-prompt-submit.sh`, `.codex/hooks/user-prompt-submit.py` extension, `tests/unit/agents_shared/test_token_parser.py`, `.claude/settings.json`, `.gitignore`). Pytest 30/30 PASSED at submission time.
 - **Reviewer**: `codex exec -m gpt-5.5 --sandbox read-only`.
-- **Final Verdict**: `minor fixes recommended` (no merge blockers). 5 review angles flagged 보완 필요; 4 actionable + 1 deferred to Phase 4.
+- **Final Verdict**: `minor fixes recommended` (no merge blockers). 5 review angles flagged as needing follow-up; 4 actionable + 1 deferred to Phase 4.
+
+> Original reviewer verdict (ko, verbatim): 보완 필요
+> English normalised verdict: needs follow-up.
 - **R-points** (all addressed or explicitly deferred):
   - **R1.1** (Top 1) `harness-asset-matrix.md` Tier 3 not yet reflecting the new Claude hooks and the Codex role change. → **Applied**: Tier 3 11→13, Codex hook role updated, Bucket Distribution Summary 56→58, Counting note + Update Log refreshed (commit 4 `docs(governor): register Phase 2 hooks in matrix + repo-facts`).
   - **R1.2** (Top 2) marker filename uses `int(time.time() * 1000) % 1_000_000` — millisecond modulo collisions possible if two hook invocations land in the same UTC-second. → **Applied**: both sides switched to `uuid.uuid4().hex[:12]` suffix (48-bit random).
@@ -52,7 +55,10 @@ Implements Phase 2 of [ADR 045](../../history/045-hybrid-harness-target-architec
 ### Round 2 — Cross-Check on Round 1 (gate-on-gate, Claude self-administered stand-in)
 
 - **Target**: post-R1-fix working tree (4 commits + R1 deltas applied). Pytest 34/34 PASSED.
-- **Reviewer**: **Claude** (`gpt-5.5 --sandbox read-only` Codex run was attempted; the user reported "codex가 크레딧이 모두 소모돼서 클로드가 자체적으로 다시한번 확인해봐야할거 같아" mid-flight; the running Codex job and its monitor were stopped; Claude performed Round 2 as a self-administered cross-check using **PR #125 Round 7 R7.1 ~ R7.7 patterns** as the audit framework, since those patterns are the most recent record of *what self-review tends to miss*).
+- **Reviewer**: **Claude** (`gpt-5.5 --sandbox read-only` Codex run was attempted; the user reported mid-flight that Codex credit had been exhausted and asked Claude to self-administer a fresh check; the running Codex job and its monitor were stopped; Claude performed Round 2 as a self-administered cross-check using **PR #125 Round 7 R7.1 ~ R7.7 patterns** as the audit framework, since those patterns are the most recent record of *what self-review tends to miss*).
+
+> Original user/owner statement (ko, verbatim): "codex가 크레딧이 모두 소모돼서 클로드가 자체적으로 다시한번 확인해봐야할거 같아"
+> English normalised meaning: "Codex credit is exhausted, so Claude needs to do another self-administered check."
 - **Final Verdict**: `minor fixes recommended (no merge blockers)`. 2 open R-points; both close in the same commit set as this entry.
 - **Substitution caveat**: Self-administered Round 2 cannot replicate the cross-tool review's structural value (an independent reviewer with a different reasoning trace catching what Claude's reasoning trace systematically misses). The user's `feedback_codex_cross_review.md` memory captures this lesson explicitly. The substitution is recorded here so a future reader can re-run Round 2 with Codex once credit returns and compare findings; if the comparison surfaces additional R-points, those land as a follow-up commit on this same log entry per the log-only-backfill exclusion in [`governor-paths.md`](../governor-paths.md).
 - **R-points**:

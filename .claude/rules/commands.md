@@ -1,6 +1,6 @@
 # Suggested Commands
 
-> Last synced: 2026-04-26 via /sync-guidelines (added Default Flow cross-link for ADR 045; no command surface changes)
+> Last synced: 2026-04-27 via /sync-guidelines (translated Korean prose to English under Tier 1 Language Policy, #131; no command surface changes)
 > Purpose: Quick reference for Claude Code when executing shell commands.
 > Also referenced when running Skills.
 > Default Flow context: see [`AGENTS.md` § Default Coding Flow](../../AGENTS.md#default-coding-flow). The commands below are consulted by the `implement` and `verify` steps; this file is **not** a primary entry point in the Default Flow.
@@ -8,7 +8,7 @@
 
 ## Run
 ```bash
-# 개발환경 셋업 (admin + aws extras 포함 — #104)
+# Dev environment setup (includes admin + aws extras — #104)
 make setup
 
 # Zero-config quickstart (SQLite + InMemory broker, no external infra)
@@ -16,11 +16,11 @@ make quickstart
 make demo            # in a second terminal — runs curl CRUD walkthrough
 make demo-rag        # RAG end-to-end (seed 3 docs → list → query, #80)
 
-# 로컬 개발 (PostgreSQL via docker-compose.local.yml)
+# Local development (PostgreSQL via docker-compose.local.yml)
 make dev
 make worker
 
-# 직접 실행 (참고용)
+# Direct invocation (reference only)
 uvicorn src._apps.server.app:app --reload --host 127.0.0.1 --port 8001
 python run_server_local.py --env local
 python run_worker_local.py --env local
@@ -70,10 +70,10 @@ alembic history
 ```bash
 uv add <package>
 uv sync                                          # core only
-uv sync --group dev --extra admin --extra aws    # 개발 기본 (make setup과 동일, #104)
-uv sync --extra admin                            # NiceGUI 관리 대시보드만
+uv sync --group dev --extra admin --extra aws    # Dev default (same as make setup, #104)
+uv sync --extra admin                            # NiceGUI admin dashboard only
 uv sync --extra aws                              # S3/MinIO/DynamoDB/S3Vectors
-uv sync --extra pydantic-ai --extra aws          # Bedrock LLM/Embedding (aioboto3 포함)
+uv sync --extra pydantic-ai --extra aws          # Bedrock LLM/Embedding (includes aioboto3)
 ```
 
 ## Architecture Diagrams
@@ -86,15 +86,15 @@ make diagrams
 
 ## Logging (structlog, #9)
 ```bash
-# 로그 레벨 / 포맷 조정 — server/worker 공통
+# Log level / format tuning — shared by server and worker
 LOG_LEVEL=DEBUG make dev
-LOG_JSON_FORMAT=true make dev   # dev에서도 JSON 렌더러 강제 (파이프라인 확인용)
-LOG_JSON_FORMAT=false make dev  # stg/prod에서 일시적으로 console 렌더러로 디버깅
+LOG_JSON_FORMAT=true make dev   # Force JSON renderer in dev too (for pipeline inspection)
+LOG_JSON_FORMAT=false make dev  # Temporary console renderer in stg/prod for debugging
 ```
 
-- 기본: dev/local/quickstart → console, stg/prod → JSON (`settings.effective_log_json`)
-- 모든 신규 코드는 `structlog.stdlib.get_logger(__name__)` 사용
-- `DATABASE_ECHO=true`는 `logging.getLogger("sqlalchemy.engine").setLevel(INFO)`로 변환되어 structlog 파이프라인을 한 번만 경유
+- Default: dev/local/quickstart → console, stg/prod → JSON (`settings.effective_log_json`)
+- All new code uses `structlog.stdlib.get_logger(__name__)`
+- `DATABASE_ECHO=true` is mapped to `logging.getLogger("sqlalchemy.engine").setLevel(INFO)` so the structlog pipeline emits each query exactly once
 
 ## Architecture Verification
 ```bash
@@ -138,11 +138,11 @@ STORAGE_TYPE=s3 python run_server_local.py --env local
 
 ## Admin Dashboard
 ```bash
-# Admin 대시보드는 `admin` extra가 설치된 경우에만 마운트됨 (#104)
-uv sync --extra admin            # nicegui 설치
+# The admin dashboard mounts only when the `admin` extra is installed (#104)
+uv sync --extra admin            # install nicegui
 # → http://127.0.0.1:8001/admin (ADMIN_ID / ADMIN_PASSWORD from .env)
 
-# 미설치 시에는 서버는 정상 boot하고 구조화 로그만 남김:
+# When not installed, the server boots normally and emits a structured log line:
 #   event="admin_mount_skipped" reason="nicegui_not_installed"
 #   install_hint="uv sync --extra admin"
 ```

@@ -5,7 +5,7 @@
 - Related issue: #117
 - Related PRs: #115 / #116 (first philosophy port — `/plan-feature` Approach Options Phase)
 - Precursor memo: [archive/044](archive/044-superpowers-gstack-process-governor-evaluation.md) (superpowers / gstack / process-governor evaluation)
-- Constraints: ADR [040](040-rag-as-reusable-pattern.md), [042](042-optional-infrastructure-di-pattern.md), [043](043-responsibility-driven-refactor.md) — architecture / DI / responsibility 계층은 **불변**
+- Constraints: ADR [040](040-rag-as-reusable-pattern.md), [042](042-optional-infrastructure-di-pattern.md), [043](043-responsibility-driven-refactor.md) — the architecture / DI / responsibility layers are **immutable** for this ADR
 
 ## Summary
 

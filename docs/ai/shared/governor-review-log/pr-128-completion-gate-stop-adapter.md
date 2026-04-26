@@ -60,11 +60,14 @@ Phase 4 commits to **Option A — read-and-delete on Stop** with opportunistic 2
 
 7. **Self-application recursion** — OK. See angle 2 above.
 
-8. **`[trivial]`/`[hotfix]` cascade vs Pillar 7** — **보완 필요 → R1.1 below**.
+8. **`[trivial]`/`[hotfix]` cascade vs Pillar 7** — **needs follow-up → R1.1 below**.
+
+> Original reviewer verdict (ko, verbatim): 보완 필요
+> English normalised verdict: needs follow-up.
 
 9. **Phase 5 readiness** — OK. Claude `.sh`+`.py` pair preserved; Codex pure-py. `_within_24h` x4 + `_read_latest_token` near-duplication explicitly deferred to Phase 5 (New Inherited Constraints).
 
-10. **Acceptance test coverage** — OK. 31 cases cover: IC-2, parse_trigger_globs (real file + absent file), is_governor_changing (4 variants), is_log_only_backfill (2 variants), match_log_entry (5 variants), pr_number fail-open, 4 sample runs, IC-11 lifecycle (delete / idempotent / post-delete None / 24h filter), cleanup_stale_verify_logs (session isolation), Pillar 7 silence (exploration / 탐색 / no-PR-with-entry / no-changed-files).
+10. **Acceptance test coverage** — OK. 31 cases cover: IC-2, parse_trigger_globs (real file + absent file), is_governor_changing (4 variants), is_log_only_backfill (2 variants), match_log_entry (5 variants), pr_number fail-open, 4 sample runs, IC-11 lifecycle (delete / idempotent / post-delete None / 24h filter), cleanup_stale_verify_logs (session isolation), Pillar 7 silence (`exploration` token, `[탐색]` token, no-PR-with-entry, no-changed-files).
 
 **R-points:**
 

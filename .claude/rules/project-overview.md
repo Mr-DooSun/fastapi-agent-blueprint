@@ -1,6 +1,6 @@
 # Project Overview
 
-> Last synced: 2026-04-26 via /sync-guidelines (examples/todo + workflow doc updates; no infra/entrypoint changes)
+> Last synced: 2026-04-27 via /sync-guidelines (translated extras and logging notes to English under Tier 1 Language Policy, #131)
 > For tech stack, refer to project-dna.md §8; for layer structure, refer to §1.
 > For the Optional infra toggle surface (env var → disabled behavior per infra), see AGENTS.md "Optional Infrastructure" + [ADR 042](../../docs/history/042-optional-infrastructure-di-pattern.md).
 > This file only contains **project-level context** not covered in project-dna.md.
@@ -11,8 +11,8 @@ AI Agent Backend Platform built on FastAPI with DDD modular layered architecture
 ## App Entrypoints
 - Server: `src/_apps/server/` — FastAPI (uvicorn)
 - Worker: `src/_apps/worker/` — Taskiq (broker abstraction: SQS/RabbitMQ/InMemory)
-- Admin: `src/_apps/admin/` — NiceGUI (mounted on server via ui.run_with) — **`admin` extra 설치 시에만 마운트**; 미설치 시 `admin_mount_skipped` 구조화 로그만 남기고 서버는 정상 boot (#104)
-- AWS 인프라 (ObjectStorage/DynamoDB/S3Vectors)는 `aws` extra 필요; 관련 env var 미설정 시 lazy import가 발화하지 않아 extra 없이도 boot 가능 (#104 Part 2)
+- Admin: `src/_apps/admin/` — NiceGUI (mounted on server via ui.run_with) — **mounted only when the `admin` extra is installed**; otherwise the server boots normally and emits only an `admin_mount_skipped` structured log line (#104)
+- AWS infrastructure (ObjectStorage/DynamoDB/S3Vectors) requires the `aws` extra. If the relevant env vars are unset, the lazy import never fires, so boot succeeds without the extra (#104 Part 2)
 
 ## Dependency Direction
 Interface → Application → Domain ← Infrastructure
@@ -25,14 +25,14 @@ Interface → Application → Domain ← Infrastructure
 - Embedding: Optional (EMBEDDING_PROVIDER env var, PydanticAIEmbeddingAdapter — OpenAI/Bedrock/Google/Ollama)
 - LLM: Optional (LLM_PROVIDER env var, build_llm_model() — OpenAI/Anthropic/Bedrock)
 - Message Broker: SQS/RabbitMQ/InMemory (BROKER_TYPE env var)
-- Logging: structlog + asgi-correlation-id, 기본 INFO, LOG_LEVEL / LOG_JSON_FORMAT env var로 제어 (dev/local/quickstart → console, stg/prod → JSON, #9)
+- Logging: structlog + asgi-correlation-id; default level INFO; controlled via `LOG_LEVEL` / `LOG_JSON_FORMAT` env vars (dev/local/quickstart → console, stg/prod → JSON, #9)
 
 ## Environment Config Validation
 - Settings (pydantic-settings) with model_validator
 - stg/prod: unsafe defaults blocked, broker required, partial config groups rejected
 - STORAGE_TYPE-driven validation: S3/MinIO config group required when set
 - Partial config group validation: S3, MinIO, DynamoDB, S3Vectors, SQS, Embedding (OpenAI/Bedrock), LLM (OpenAI/Anthropic/Bedrock)
-- Logging: LOG_LEVEL (DEBUG/INFO/WARNING/ERROR), LOG_JSON_FORMAT (None → env 기반 자동 결정, True/False로 강제 override)
+- Logging: `LOG_LEVEL` (DEBUG/INFO/WARNING/ERROR), `LOG_JSON_FORMAT` (None → derive from ENV; True/False to force-override)
 
 ## Key Value Objects
 - QueryFilter: Immutable filter for paginated queries (sort/search). Used in BaseRepository.select_datas_with_count() and BaseService.get_datas().
