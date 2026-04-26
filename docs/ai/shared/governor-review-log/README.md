@@ -88,3 +88,4 @@ The prompt is a starting point; phase-specific reviews (Phase 2 token parser, Ph
 | PR | Title | Issue | Entry |
 |---|---|---|---|
 | #125 | hybrid harness target architecture + Phase 1 | #117 | [pr-125-hybrid-harness-target-architecture.md](pr-125-hybrid-harness-target-architecture.md) |
+| #126 | Phase 2: UserPromptSubmit exception-token parser | #121 | [pr-126-userpromptsubmit-token-parser.md](pr-126-userpromptsubmit-token-parser.md) |
