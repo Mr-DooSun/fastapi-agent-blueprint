@@ -140,3 +140,61 @@ def test_hooks_do_not_redeclare_canonical_reminder_lines() -> None:
                 f"{hook.name} re-declares canonical reminder line:\n{line}\n"
                 "Use governor.* import instead of inline literal."
             )
+
+
+# ---------------------------------------------------------------------------
+# 4. R2.2 — completion-gate shim must handle every GateStatus variant
+# ---------------------------------------------------------------------------
+COMPLETION_GATE_SHIMS = [
+    REPO_ROOT / ".claude" / "hooks" / "completion_gate.py",
+    REPO_ROOT / ".codex" / "hooks" / "completion_gate.py",
+]
+
+
+def test_gatestatus_variants_referenced_by_completion_gate_shims() -> None:
+    """If a future contributor adds a new GateStatus variant, the shim's
+    manual orchestration in ``governor_changing_segment`` must be
+    updated to handle it. This test fails when the closed Literal grows
+    a new variant that isn't reflected in the shim flow.
+
+    Heuristic: every silent_* status maps to an early ``return None``
+    branch in the shim; ``match`` / ``unknown`` collapse into the same
+    silence; ``missing`` / ``mismatch`` produce a reminder. We therefore
+    ensure each shim reads ``EXPLORATION_TOKENS`` (silent_exploration),
+    calls ``is_log_only_backfill`` (silent_log_only), checks empty
+    ``changed`` (silent_no_changes), calls ``is_governor_changing``
+    (silent_not_governor), and gates on ``match_log_entry`` returning
+    one of the four log-entry statuses.
+    """
+
+    from governor.completion_gate import GateStatus  # noqa: PLC0415
+
+    # Variants that warrant explicit shim handling.
+    expected_branch_signals = {
+        "silent_no_changes": "if not",  # `if not changed: return None`
+        "silent_log_only": "is_log_only_backfill",
+        "silent_exploration": "EXPLORATION_TOKENS",
+        "silent_not_governor": "is_governor_changing",
+        "match": "match_log_entry",  # match/mismatch/missing/unknown share entry
+    }
+    # Sanity: GateStatus must contain every variant we expect to see.
+    expected_variants = set(expected_branch_signals) | {
+        "mismatch",
+        "missing",
+        "unknown",
+    }
+    actual_variants = set(GateStatus.__args__)  # type: ignore[attr-defined]
+    assert actual_variants == expected_variants, (
+        f"GateStatus variants changed: {actual_variants ^ expected_variants}. "
+        "Update the shim flow in .{claude,codex}/hooks/completion_gate.py "
+        "and refresh this test."
+    )
+
+    for shim in COMPLETION_GATE_SHIMS:
+        text = shim.read_text(encoding="utf-8")
+        for variant, signal in expected_branch_signals.items():
+            assert signal in text, (
+                f"{shim.name}: missing branch signal for GateStatus={variant!r} "
+                f"(expected token {signal!r}). Add the corresponding silence "
+                "or render path before introducing the new variant."
+            )

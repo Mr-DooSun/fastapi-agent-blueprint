@@ -77,7 +77,19 @@ Three prompts on the 7-commit branch (pre-fix-commit), focused on commit-level d
 
 ### Round 2 — gate-on-gate (2026-04-27)
 
-Outcome: see `Round 2 results` section below (added after PR-create + Round 2 invocation).
+Single Codex prompt (`gpt-5.5 --sandbox read-only`) targeting the merged shape of this PR + Round 0/1 absorption + cascade-risk re-evaluation. Final Verdict: **마이너 fix 권장 (no merge block)**.
+
+Surfaced points:
+
+- **R2.1**: this entry's Round 2 placeholder + Self-Application Proof checkboxes were unfilled at PR-open. Backfilled in this commit (the Round 2 outcome is recorded inline below).
+- **R2.2**: completion-gate shims (`.claude/hooks/completion_gate.py`, `.codex/hooks/completion_gate.py`) keep a manual orchestration of `_changed_files → is_log_only_backfill → _read_latest_token → parse_trigger_globs → is_governor_changing → match_log_entry → render` rather than calling the shared `evaluate_gate` + `render_reminder` pair directly. The choice is intentional — existing tests in `tests/unit/agents_shared/test_completion_gate.py` monkeypatch `_changed_files` / `_read_latest_token` / `pr_number_from_branch` on the shim module, and routing through `evaluate_gate` would bypass those patches. Cascade risk: if a future PR adds a new `GateStatus` variant the shim flow must learn the new branch. **Mitigation shipped in this commit**: `tests/unit/agents_shared/test_governor_boundary.py::test_gatestatus_variants_referenced_by_completion_gate_shims` lock-steps `GateStatus.__args__` against an expected-branch-signal map for both shims; adding a variant fails the build until the shim is updated.
+- **R2.3**: `harness-asset-matrix.md` row for `.agents/shared/governor/` cited "200 unit tests"; PR + log say "202". Synced to 202 in this commit (R1 stale/malformed scenarios added two).
+
+Cascade-risk verdict: **sufficient for v1 closure**. The shared module + boundary tests + closed `GateStatus` Literal jointly produce a build-time signal whenever a future governor change tries to land outside the shared package or skip a shim flow update.
+
+### Round 2 backfill commit
+
+This commit applies R2.1/R2.2/R2.3 in a single PR-extending commit (not a follow-up PR) because all three are documentation/test-only and would otherwise trigger a Phase-4-style log-only-backfill mini-PR loop.
 
 ## Inherited Constraints
 
@@ -101,7 +113,9 @@ The following self-application steps were executed in the same branch on which t
 
 ## Round 2 results
 
-(Filled in after Round 2 cross-tool review against the merged shape of this PR. Round 2 focuses on gate-on-gate invariants — `/review-pr` and `/sync-guidelines` outputs against the PR itself, plus cascade-risk re-evaluation given that this is the last phase of #117.)
-
 - **Round 2 prompt focus**: cascade risk validation (does future governor-asset addition land naturally in `.agents/shared/governor/`?); R1 leftover R-points re-evaluation; dual-system window closure documentation.
-- **Outcome**: See PR conversation. Final verdict and any R-points captured here on commit-after-Round-2 (or an `R2-*` follow-up PR if substantive blocking findings appear, none expected at this stage).
+- **Outcome**: Final Verdict — **마이너 fix 권장 (no merge block)**. Three R-points (R2.1 / R2.2 / R2.3) all absorbed in the same commit that records this section, per Round 2's own "마이너 fix" classification.
+- **R2.1 — log entry backfill**: Round 2 §Round 2 review section above is now populated; Self-Application Proof checkboxes verified.
+- **R2.2 — cascade-risk lock**: `tests/unit/agents_shared/test_governor_boundary.py::test_gatestatus_variants_referenced_by_completion_gate_shims` lock-steps `GateStatus.__args__` against the shim manual-orchestration map. Adding a new variant requires updating both shims and this test in the same PR.
+- **R2.3 — figure sync**: `harness-asset-matrix.md` migration risk row updated 200 → 202.
+- **Cascade-risk verdict**: sufficient for v1 closure. The shared module + boundary tests + closed `GateStatus` Literal jointly produce a build-time signal whenever a future governor change tries to land outside the shared package or skip a shim flow update.
