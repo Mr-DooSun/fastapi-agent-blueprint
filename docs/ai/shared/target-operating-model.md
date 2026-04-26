@@ -180,7 +180,7 @@ The asymmetry in the last row is critical (Codex review R7). Phase 3 verificatio
 
 - **Claude side**: file edits trigger `PostToolUse Edit|Write`. Phase 3 verification-first hook attaches there to suggest test runs after a code edit.
 - **Codex side**: file edits do not surface in `PostToolUse`. Phase 3 detection runs on the **Stop side** by computing `git status --porcelain` over the working tree and triggering the verification reminder when changed source files exist without a corresponding test run.
-- **Both sides**: UserPromptSubmit recognises the exception-token vocabulary identically (Phase 2). The shared parser implementation lives in `.agents/shared/governor/` once Phase 5 lands; until then each side has a small per-tool implementation that must produce identical decisions on identical input.
+- **Both sides**: UserPromptSubmit recognises the exception-token vocabulary identically (Phase 2). As of Phase 5 (#124, Hybrid Harness v1 milestone), the shared parser, marker writer, lifecycle reader, verify-first decision, and completion-gate logic all live in [`.agents/shared/governor/`](../../../.agents/shared/governor/). Hook scripts under `.claude/hooks/` and `.codex/hooks/` are thin shims that import from this package; they cannot redeclare reminder strings or governor-paths globs inline (`tests/unit/agents_shared/test_governor_boundary.py`). The hybrid governance model — escape-token vocabulary, dual-tool adapters, governor-review-log discipline — is permanent; only the *implementation* moved into the shared module.
 
 ### Canonical-truth precedence
 
