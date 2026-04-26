@@ -307,3 +307,20 @@ def test_fail_open_missing_state_dir(claude_helper, tmp_path) -> None:
     assert (
         claude_helper.should_remind(payload, state_dir=tmp_path / "nonexistent") is True
     )
+
+
+# ---------------------------------------------------------------------------
+# 19. Codex post-tool-format.py null tool_input fail-open (R1.2 regression)
+# ---------------------------------------------------------------------------
+def test_codex_post_tool_format_null_tool_input_fail_open() -> None:
+    """R1.2: explicit null tool_input must not raise AttributeError — exits 0."""
+    codex_post_tool = REPO_ROOT / ".codex" / "hooks" / "post-tool-format.py"
+    result = subprocess.run(  # noqa: S603
+        [sys.executable, str(codex_post_tool)],
+        input='{"tool_name": "Bash", "tool_input": null}',
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**__import__("os").environ, "CODEX_THREAD_ID": "pytest-r1.2"},
+    )
+    assert result.returncode == 0

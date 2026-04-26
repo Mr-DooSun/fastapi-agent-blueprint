@@ -630,7 +630,7 @@ Sixteen hook scripts (6 Claude shell + 3 Claude Python implementations + 7 Codex
 - **Current role**: Phase 3 (#122) verify-first decision helper. Library module — NOT registered as its own hook (IC-2 single Stop event output). Imported by `stop-sync-reminder.py` (decision) and `post-tool-format.py` (verify-log writer).
 - **Why it exists**: Codex side cannot trigger reminders on `PostToolUse Bash` because `apply_patch` is invisible there (IC-5). Detection happens at Stop time using `_shared.changed_files()` + per-session verify-log freshness check.
 - **Bucket**: Overlay.
-- **Notes**: `REMINDER_TEXT` is string-equal to `.claude/hooks/verify_first.py`. `session_id()` = `CODEX_SESSION_ID` env var or `f"{ppid}-{pid}-{start_ns:016x}"` fallback (R0.2 — defeats PPID collision). Verify-log entries store `ts_epoch_ns` for subsecond freshness comparison against `Path.stat().st_mtime_ns` (R0.3). `read_latest_token_marker` duplicated from Claude side — consolidated by Phase 5 (#124).
+- **Notes**: `REMINDER_TEXT` is string-equal to `.claude/hooks/verify_first.py`. `session_id()` priority: `CODEX_THREAD_ID` (Codex CLI injects this into all hook processes in a session — R1.1) → `CODEX_SESSION_ID` (fallback alias) → `f"{ppid}-{pid}-{start_ns:016x}"` (non-Codex environments; writer/reader-incompatible across processes). Verify-log entries store `ts_epoch_ns` for subsecond freshness comparison against `Path.stat().st_mtime_ns` (R0.3). `read_latest_token_marker` duplicated from Claude side — consolidated by Phase 5 (#124).
 
 ---
 

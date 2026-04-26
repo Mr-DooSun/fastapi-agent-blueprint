@@ -13,7 +13,7 @@ Implements Phase 3 of [ADR 045](../../history/045-hybrid-harness-target-architec
 - **Claude side** — new `PostToolUse Edit|Write` sibling hook pair (`.claude/hooks/verify-first.sh` + `.claude/hooks/verify_first.py`). On every `.py` edit, reads the latest Phase 2 marker from `.claude/state/exception-token-*.json`; emits bilingual stderr reminder unless the token is `[exploration]`/`[탐색]`. Never blocks (HC-3.3). Fail-open on all error paths (HC-3.6).
 - **Codex side** — Stop hook segment merge pattern (IC-2). New library module `.codex/hooks/verify_first.py` imported by the existing `stop-sync-reminder.py` (no new hooks.json entry). `.codex/hooks/post-tool-format.py` extended with a verify-log writer that records `pytest` / `make test` / `make demo[-rag]` / `alembic upgrade` invocations as JSONL to `.codex/state/verify-log-{session_id}.json`. `stop-sync-reminder.py` refactored to a segments list (IC-2 single output) and appends a verify-first segment when changed `.py` files exist and the current-session verify-log is absent or stale.
 - Phase 2 `[exploration]`/`[탐색]` markers silence both adapters. Read-only on Phase 2 markers (IC-11; lifecycle is Phase 4 #123's responsibility). Informational only — never blocks commit or Stop (HC-3.3).
-- Tests: `tests/unit/agents_shared/test_verify_first.py` (25 cases). String-equality of `REMINDER_TEXT` across tools (IC-2 cornerstone). Silence on `[exploration]`/`[탐색]` markers (both Claude and Codex). Non-silence on `[trivial]`/`[hotfix]`. Non-Python edits silent. Codex verify-log freshness (recent → silent; stale → remind). Cross-session silence prevention (R0.2). Fail-open smokes. Marker read idempotency (IC-11). 7-case parametrised verify-log writer pattern suite.
+- Tests: `tests/unit/agents_shared/test_verify_first.py` (28 cases). String-equality of `REMINDER_TEXT` across tools (IC-2 cornerstone). Silence on `[exploration]`/`[탐색]` markers (both Claude and Codex). Non-silence on `[trivial]`/`[hotfix]`. Non-Python edits silent. Codex `should_remind()` marker silence direct tests (R1.3). Codex verify-log freshness (recent → silent; stale → remind). Cross-session silence prevention (R0.2 + R1.1 CODEX_THREAD_ID). Fail-open smokes. Marker read idempotency (IC-11). 7-case parametrised verify-log writer pattern suite. `tool_input: null` fail-open regression (R2.3).
 - Docs: `harness-asset-matrix.md` Tier 3 +3 rows (Total 58→61, Bucket Distribution updated); `repo-facts.md` registers `.codex/state/verify-log-{session_id}.json` surface.
 
 R0 reinforcement applied before any implementation file was touched: import fail-open (R0.1), current-session-only verify-log to defeat cross-session silence (R0.2), subsecond `ts_epoch_ns` freshness comparison (R0.3), top-level fail-open in `post-tool-format.py` (R0.4), Codex marker silence parity tests + test name correction (R0.5).
@@ -44,9 +44,13 @@ R0 reinforcement applied before any implementation file was touched: import fail
 
 ### Round 2 — Cross-Check (gate-on-gate)
 
-- **Target**: post-R1-fix working tree.
-- **Reviewer**: *(pending — to be run after Round 1 resolves its R-points)*
-- **Status**: In progress.
+- **Target**: 9-commit working tree (commits d143491 ~ 8bbf5a5). R1.1~R1.3 applied. Self-Application Proof committed.
+- **Reviewer**: `codex exec -m gpt-5.5 --sandbox read-only` (Codex CLI, read-only sandbox).
+- **Final Verdict**: `minor fixes recommended` → 3 R-points surfaced (R2.1~R2.3); all applied in next backfill commit.
+- **R-points** (all resolved):
+  - **R2.1** (doc drift): `harness-asset-matrix.md:633` described `session_id()` as `CODEX_SESSION_ID or fallback` — stale after R1.1 changed priority to `CODEX_THREAD_ID → CODEX_SESSION_ID → ppid-pid-startns`. → **Applied**: description updated to match actual priority chain.
+  - **R2.2** (log accuracy): `pr-127-verify-first-adapters.md:16` Summary said `25 cases` — stale after R1.3 brought count to 27. → **Applied**: updated to `27 cases` (R2.3 then added one more → `28 cases`).
+  - **R2.3** (optional test): `post-tool-format.py` `tool_input: null` path tested only by code inspection; no subprocess regression test. → **Applied**: `test_codex_post_tool_format_null_tool_input_fail_open` added; 28 tests total, all pass.
 
 ## Inherited Constraints
 
@@ -130,7 +134,7 @@ Findings:
   [OK][BLOCKING-class] IC-2: segments list → single systemMessage print
   [OK][HIGH] R1.1 CODEX_THREAD_ID priority; R1.2 null tool_input; R1.3 Codex marker silence tests
   [OK][MEDIUM] REMINDER_TEXT string equality + test assertion; R0.2 cross-session; R0.3 ts_epoch_ns
-  [OK][MEDIUM] 27 test cases; subprocess fail-open smokes; IC-11 marker idempotency
+  [OK][MEDIUM] 28 test cases; subprocess fail-open smokes; IC-11 marker idempotency; R1.2 null regression
   [OK][LOW] drift-checklist §1D: pr-127 filename match; README index row; matrix + repo-facts
   [NOTE] governor-review-log §Round1 + §Self-Application Proof pending → filled by this backfill commit
 Drift Candidates:
