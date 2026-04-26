@@ -90,7 +90,7 @@ repos:
         language: system
         entry: python3 tools/check_language_policy.py
         pass_filenames: true
-        files: '^(AGENTS\.md|CLAUDE\.md|CONTRIBUTING\.md|CODE_OF_CONDUCT\.md|SECURITY\.md|docs/ai/shared/.*\.md|docs/history/.*\.md|\.claude/rules/.*\.md|\.claude/hooks/.*|\.claude/skills/.*\.md|\.codex/rules/.*\.md|\.codex/hooks/.*|\.agents/.*\.(py|md)|\.github/pull_request_template\.md|\.github/workflows/.*\.ya?ml)$'
+        files: '^(AGENTS\.md|CLAUDE\.md|CONTRIBUTING\.md|CODE_OF_CONDUCT\.md|SECURITY\.md|docs/ai/shared/.*\.md|docs/history/.*\.md|\.claude/rules/.*\.md|\.claude/hooks/.*|\.claude/skills/.*\.md|\.codex/rules/.*|\.codex/hooks/.*|\.agents/.*\.(py|md)|\.github/pull_request_template\.md|\.github/workflows/.*\.ya?ml)$'
 
   # ==================== STAGE: COMMIT-MSG (commit message validation) ====================
   # Conventional Commits: type: description OR type(scope): description

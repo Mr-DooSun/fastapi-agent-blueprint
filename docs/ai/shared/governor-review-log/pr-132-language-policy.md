@@ -189,12 +189,15 @@ implementation, plus a pre-implementation dry run.
     checking hand-picked anchor paths. **Applied**: AGENTS.md policy
     bullets now compare as a normalised set against `TIER1_GLOBS`, and
     pre-commit regex coverage is generated from every `TIER1_GLOBS`
-    entry.
+    entry. **Tightened after re-review**: `.codex/rules/**/*` now
+    covers the live `.rules` prefix-rule file, with a regression test
+    proving non-Markdown Codex rule files are Tier 1-scanned.
   - **R6.3** (MEDIUM): the behaviour-invariance table overstated
     review-log Korean as only provenance-tagged; the README prompt
-    template still contains fenced Korean sample labels. **Applied**:
-    metric now distinguishes provenance lines from fenced prompt
-    samples.
+    template still contains fenced Korean sample labels. **Applied,
+    then tightened after re-review**: metric now distinguishes
+    provenance-bearing entries, token-only references, and the fenced
+    README prompt sample.
 
 ## Inherited constraints
 
@@ -288,10 +291,10 @@ Evidence checkpoint after commit 5 (`e8b9ec9`) and before commit 6
 
 | Metric | Pre-PR | Post-PR | Note |
 |---|---|---|---|
-| Tier 1 Korean violations (run by `tools/check_language_policy.py`) | 83 across 19 files | 0 across 158 scanned | Cleanup goal met. |
-| `tests/unit/agents_shared/` full suite | not used as the original PR metric | 223 passed | Includes 17 language-policy regression cases after commit 5. |
+| Tier 1 Korean violations (run by `tools/check_language_policy.py`) | 83 across 19 files | 0 across 159 scanned | Cleanup goal met. |
+| `tests/unit/agents_shared/` full suite | not used as the original PR metric | 226 passed | Includes 20 language-policy regression cases after Round 6 follow-up fixes. |
 | Existing reminder fixtures | 3 byte-equality assertions targeting Korean reminders | 3 byte-equality assertions targeting English reminders | `CANONICAL_KOREAN_LINES` renamed `CANONICAL_REMINDER_LINES`; intent unchanged (inline-redeclaration ban). |
-| `governor-review-log/*` files with Korean prose | 6 (pr-125 ~ pr-130, README) | 6 provenance-bearing entries + 1 fenced README prompt sample | Original Korean preserved verbatim under three blockquote prefixes; README keeps a fenced review-template sample, which the Markdown fence exemption intentionally ignores. |
+| `governor-review-log/*` files with Korean prose | 6 (pr-125 ~ pr-130, README) | 4 provenance-bearing entries + token-only references in pr-127/pr-132 + 1 fenced README prompt sample | Original Korean preserved verbatim under three blockquote prefixes; README keeps a fenced review-template sample, which the Markdown fence exemption intentionally ignores. |
 | Pre-commit configured hook count | 16 | 17 | +1 `tier1-language-policy` (15 commit-stage hooks, 1 manual mypy hook, 1 commit-msg hook). |
 | CI workflow file count | unchanged | unchanged | Existing `architecture` job picks up the new hook automatically. |
 | Bilingual escape-token regex | `^\s*\[(trivial\|hotfix\|exploration\|자명\|긴급\|탐색)\](?:\s\|$)` | identical | Token vocabulary unchanged; per-file allowlist preserves them in their canonical files. |

@@ -284,6 +284,17 @@ def test_python_source_korean_string_literal_is_violation(
     assert len(violations) == 1
 
 
+def test_codex_rules_file_is_tier1_scanned(tmp_path: Path) -> None:
+    """AGENTS.md lists `.codex/rules/**`, including non-Markdown rule files."""
+    target = tmp_path / ".codex/rules/example.rules"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text('justification = "한국어 rationale"\n', encoding="utf-8")
+
+    assert CHECKER.filter_to_tier1([target], repo_root=tmp_path) == [target]
+    violations = CHECKER.find_violations(target, repo_root=tmp_path)
+    assert len(violations) == 1
+
+
 # ---------------------------------------------------------------------------
 # 9. Drift test — TIER1_GLOBS vs AGENTS.md § Language Policy bullet list
 # ---------------------------------------------------------------------------

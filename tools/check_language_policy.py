@@ -61,7 +61,7 @@ TIER1_GLOBS: tuple[str, ...] = (
     ".claude/rules/**/*.md",
     ".claude/hooks/**/*",
     ".claude/skills/**/*.md",
-    ".codex/rules/**/*.md",
+    ".codex/rules/**/*",
     ".codex/hooks/**/*",
     ".agents/**/*.py",
     ".agents/**/*.md",
