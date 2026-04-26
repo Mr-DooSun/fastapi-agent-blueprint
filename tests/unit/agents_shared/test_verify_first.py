@@ -1,13 +1,14 @@
 """Phase 3 (#122) — verify-first parity tests.
 
 Mirrors `test_token_parser.py` structure: importlib-by-path + subprocess
-smokes. Covers (per plan §4.7 + R0.5):
+smokes. Covers (per plan §4.7 + R0.5 + R1.1~R1.3):
 - string-equality of REMINDER_TEXT across tools (IC-2)
 - silence on [exploration] / [탐색] markers (Claude AND Codex parity)
 - non-silence on [trivial] / [hotfix] (escape vocabulary semantics)
 - non-Python edits silent (Claude)
+- Codex should_remind() marker silence (R1.3 — direct test)
 - Codex verify-log freshness (recent → silent; stale → reminder)
-- Codex cross-session protection (R0.2 — current session only)
+- Codex cross-session protection via CODEX_THREAD_ID (R0.2 / R1.1)
 - subsecond ordering (R0.3 — ts_epoch_ns)
 - fail-open on missing state dir / corrupt marker / invalid JSON stdin
 - Phase 2 marker idempotency (read does not mutate file)
@@ -148,10 +149,30 @@ def test_codex_marker_read_parity(claude_helper, codex_helper, tmp_path) -> None
 
 
 # ---------------------------------------------------------------------------
-# 11~13. Codex side — verify-log freshness + changed-files logic
+# 11~15. Codex side — should_remind() marker silence + verify-log freshness
 # ---------------------------------------------------------------------------
 def test_codex_silent_when_no_python_changes(codex_helper, monkeypatch) -> None:
     monkeypatch.setattr(codex_helper, "changed_python_files", lambda: [])
+    assert codex_helper.should_remind() is False
+
+
+def test_codex_silent_on_exploration_marker_should_remind(
+    codex_helper, monkeypatch
+) -> None:
+    """R1.3: Codex should_remind() directly returns False on [exploration] token."""
+    monkeypatch.setattr(codex_helper, "changed_python_files", lambda: ["src/foo.py"])
+    monkeypatch.setattr(
+        codex_helper, "read_latest_token_marker", lambda *_: "exploration"
+    )
+    assert codex_helper.should_remind() is False
+
+
+def test_codex_silent_on_korean_탐색_marker_should_remind(
+    codex_helper, monkeypatch
+) -> None:
+    """R1.3: Codex should_remind() directly returns False on [탐색] token."""
+    monkeypatch.setattr(codex_helper, "changed_python_files", lambda: ["src/foo.py"])
+    monkeypatch.setattr(codex_helper, "read_latest_token_marker", lambda *_: "탐색")
     assert codex_helper.should_remind() is False
 
 
@@ -215,8 +236,9 @@ def test_codex_reminds_when_verify_log_older_than_py_mtime(
 def test_codex_verify_log_writer_patterns(
     codex_helper, tmp_path, monkeypatch, cmd, expected
 ) -> None:
-    # Force a deterministic session id so the test writes a known filename.
-    monkeypatch.setenv("CODEX_SESSION_ID", "pytest-fixture")
+    # Force a deterministic session id via CODEX_THREAD_ID (R1.1 — preferred env var).
+    monkeypatch.setenv("CODEX_THREAD_ID", "pytest-fixture")
+    monkeypatch.delenv("CODEX_SESSION_ID", raising=False)
     result = codex_helper.append_verify_log(cmd, state_dir=tmp_path)
     if expected:
         assert result is not None and result.exists()
@@ -248,8 +270,9 @@ def test_codex_cross_session_does_not_silence(
         + "\n",
         encoding="utf-8",
     )
-    # Force the current session id to NOT match the other session's filename.
-    monkeypatch.setenv("CODEX_SESSION_ID", "current-session")
+    # Force the current session id via CODEX_THREAD_ID (R1.1 — not matching the other file).
+    monkeypatch.setenv("CODEX_THREAD_ID", "current-session")
+    monkeypatch.delenv("CODEX_SESSION_ID", raising=False)
     monkeypatch.setattr(codex_helper, "STATE_DIR", tmp_path)
     # current_session_latest_verify_ns reads ONLY verify-log-{current}.json
     assert codex_helper.current_session_latest_verify_ns(state_dir=tmp_path) is None

@@ -9,6 +9,10 @@ Two responsibilities, both fail-open per HC-3.6:
 R0.4 reinforcement: the entire body is wrapped in a top-level fail-open so
 malformed stdin / missing dependencies / unexpected exceptions never crash
 the hook.
+
+R1.2 reinforcement: `tool_input` may be null even when the payload is valid
+JSON — use `(payload.get("tool_input") or {})` instead of `.get("tool_input", {})`
+so that None does not propagate to `.get("command")`. Outer broad except added.
 """
 
 from __future__ import annotations
@@ -52,21 +56,20 @@ def _record_verify_class(command: str) -> None:
 def main() -> int:
     try:
         payload = json.load(sys.stdin)
-    except (json.JSONDecodeError, ValueError):
-        return 0
-    if not isinstance(payload, dict):
-        return 0
-    command = payload.get("tool_input", {}).get("command", "")
-    if not isinstance(command, str) or not command:
-        return 0
+        if not isinstance(payload, dict):
+            return 0
+        command = (payload.get("tool_input") or {}).get("command", "")
+        if not isinstance(command, str) or not command:
+            return 0
 
-    # Both branches fail-open per HC-3.6: formatting / verify-log writer errors
-    # must never crash the hook.
-    with contextlib.suppress(Exception):
-        _format_python_paths(command)
-    with contextlib.suppress(Exception):
-        _record_verify_class(command)
-
+        # Both branches fail-open per HC-3.6: formatting / verify-log writer errors
+        # must never crash the hook.
+        with contextlib.suppress(Exception):
+            _format_python_paths(command)
+        with contextlib.suppress(Exception):
+            _record_verify_class(command)
+    except Exception:  # noqa: BLE001 — broad fail-open per HC-3.6 + R1.2
+        return 0
     return 0
 
 

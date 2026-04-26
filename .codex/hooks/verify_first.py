@@ -17,6 +17,13 @@ R0 reinforcement (post-Round-0 of PR #122):
   ordering when pytest and an edit land in the same wall-clock second
   (R0.3).
 
+R1 reinforcement (post-Round-1 of PR #127):
+- session_id prefers CODEX_THREAD_ID (injected by Codex CLI into ALL hook
+  processes in a session — same value for PostToolUse writer and Stop reader).
+  Falls back to CODEX_SESSION_ID, then to ppid-pid-startns. The ppid-pid-startns
+  fallback is writer/reader-incompatible (each hook process has a different PID
+  and startns) but is preserved for non-Codex test environments (R1.1).
+
 REMINDER_TEXT is frozen at Phase 3 and string-equal to
 `.claude/hooks/verify_first.py` REMINDER_TEXT.
 """
@@ -58,11 +65,11 @@ _PROCESS_START_NS = time.monotonic_ns()
 def session_id() -> str:
     """Stable id within one Codex CLI invocation.
 
-    Prefers ``CODEX_SESSION_ID`` env var; falls back to ``ppid-pid-startns``.
-    The ``startns`` suffix prevents PPID collisions across rapid Codex
-    re-invocations (R0.2).
+    Priority: CODEX_THREAD_ID (Codex-injected, same across all hook processes in
+    a session — R1.1) → CODEX_SESSION_ID (fallback alias) → ppid-pid-startns
+    (non-Codex environments only; writer/reader-incompatible in live Codex).
     """
-    explicit = os.environ.get("CODEX_SESSION_ID")
+    explicit = os.environ.get("CODEX_THREAD_ID") or os.environ.get("CODEX_SESSION_ID")
     if explicit:
         return explicit
     return f"{os.getppid()}-{os.getpid()}-{_PROCESS_START_NS:016x}"
