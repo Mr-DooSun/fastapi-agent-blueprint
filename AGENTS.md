@@ -79,7 +79,21 @@ Recognition regex: `^\s*\[(trivial|hotfix|exploration|자명|긴급|탐색)\](?:
 
 Use of an exception token carries a follow-up obligation: the next commit message must record the rationale (one line is enough).
 
-Auto-escapes (no token required): `changed_files == 0`, doc-only changes, comment-only changes.
+Auto-escapes (no token required): `changed_files == 0`, *general* doc-only changes, comment-only changes.
+
+> **Doc-only carve-out** (Pillar 3 / Codex review R8 — added to prevent governance loosening). The doc-only auto-escape applies only to **general docs** such as `README.md`, `CHANGELOG.md`, contributor guides, and `docs/` content that is not policy or harness governance. The auto-escape does **not** apply when the change touches any of:
+> `AGENTS.md`, `docs/ai/shared/**`, `docs/history/**`, `.claude/rules/**`, `.codex/rules/**`, `.github/pull_request_template.md`. Such changes go through normal `framing` → `plan` → `verify` → `self-review` even though they look doc-only, because they redefine the rules of the system.
+
+### Self-Review Step — Cross-Tool Review Trigger (Pillar 2)
+
+`self-review` is mandatory by default. When the change touches the **governor-changing trigger glob** (same list as the doc-only carve-out plus `.claude/**`, `.codex/**`, `.agents/**`, hook scripts, skill wrappers, governor modules), `self-review` must include a **cross-tool review** as a mandatory sub-step:
+
+- run `codex exec -m gpt-5.5 --sandbox read-only "<review prompt>"` (or any cross-tool reviewer of equivalent capability) on the change set;
+- capture the resulting `Findings` / `Drift Candidates` / `Sync Required` / Final Verdict in [`docs/ai/shared/governor-review-log/`](docs/ai/shared/governor-review-log/);
+- address surfaced R-points or explicitly defer with rationale;
+- the review artefact's location is link-cited from the PR description and the GitHub PR template's "Governor-Changing PR" section.
+
+Non-governor-changing PRs are **exempt** from cross-tool review (issue #117 Non-Goals: avoid heavy ceremony).
 
 ### Skill Mapping
 

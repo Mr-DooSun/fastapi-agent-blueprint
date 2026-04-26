@@ -101,8 +101,10 @@ The shared-policy part is identical across tools; the adapters differ because th
 
 **Acceptance**:
 - Output is merged with sync-reminder in a single Stop event (no duplicate Stop hooks).
-- Gate respects auto-escapes (changed_files == 0, doc-only, comment-only) and exception tokens.
+- Gate respects auto-escapes (changed_files == 0, **general** doc-only, comment-only) and exception tokens. Policy/harness doc paths are **not** auto-escaped (see `target-operating-model.md` §3 carve-out).
 - Sample workflow traces from `target-operating-model.md` Appendix B can be reproduced under the gate without false-positive warnings.
+- **Governor-changing PR check** (Pillar 7): when `changed_files` intersects the governor-changing trigger glob (`AGENTS.md`, `docs/ai/shared/**`, `docs/history/**`, `.claude/**`, `.codex/**`, `.agents/**`, hooks, skill wrappers, `.github/pull_request_template.md`) **AND** no `docs/ai/shared/governor-review-log/pr-*` entry exists or is being modified in the same session, the gate emits a hard reminder pointing to `governor-review-log/README.md` and `feedback_codex_cross_review.md` (memory). This is a reminder, not a hard block — consistent with issue #117 Non-Goals.
+- Sample run: a session that edits `AGENTS.md` without touching `governor-review-log/` must surface this reminder; a session that edits `governor-review-log/pr-NNN-...md` *as part of the same change* must not surface it.
 
 **Rollback**: revert the Phase 4 PR. The merge with sync-reminder is structured so the existing reminder remains if the gate logic is removed.
 

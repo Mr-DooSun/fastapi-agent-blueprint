@@ -49,6 +49,21 @@ Read CLAUDE.md and verify Claude-only guidance still matches the harness:
 - [ ] Verify each row's `Bucket` is one of `Keep` / `Replace` / `Overlay` / `Drop` and matches the bucket definitions at the top of the matrix
 - [ ] For any asset classified `Drop`: verify with `rg <asset> .claude/ .codex/` that no harness component still references it
 
+## 1D. `governor-review-log/` ↔ Governor-Changing PR Sync Check (ADR 045 Pillar 4)
+
+A "governor-changing PR" is one whose changed-files intersect the governor-changing trigger glob:
+`AGENTS.md`, `docs/ai/shared/**`, `docs/history/**`, `.claude/**`, `.codex/**`, `.agents/**`, `.github/pull_request_template.md`.
+
+- [ ] Enumerate merged PRs touching the trigger glob since the last sync run:
+  ```bash
+  gh pr list --state merged --search "merged:>=$(cat .last-sync-date 2>/dev/null || echo 2026-04-26)" --json number,title,files
+  ```
+- [ ] For every such PR, verify a `docs/ai/shared/governor-review-log/pr-{NNN}-{slug}.md` entry exists.
+- [ ] Verify `governor-review-log/README.md` Index table includes a row for every entry (no missing rows, no orphan rows).
+- [ ] Each entry contains the required sections: `Summary`, `Review Rounds`, `Inherited Constraints`, `Self-Application Proof`. (Empty sections are acceptable only when explicitly justified.)
+- [ ] If any entry is missing or incomplete: open an issue *Backfill governor-review-log for PR #NNN* and treat it as `REVIEW` drift, never silent `AUTO-FIX`.
+- [ ] If a PR was merged that touched the trigger glob *and* had no cross-tool review captured: surface as `DRIFT` and recommend re-running cross-tool review on the merged commit retrospectively.
+
 ## 2. Skills ↔ Code Consistency Check
 
 Read each skill's SKILL.md and compare against reference code:

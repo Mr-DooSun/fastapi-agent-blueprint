@@ -115,6 +115,25 @@ The matrix is a *living* inventory and must not be embedded in an ADR (which is 
 
 - Phase 0.5 Codex cross-tool review is now a documented step that any future cross-tool design change should follow. Not a binding rule, but a referenced precedent.
 
+## Self-Application Recovery (Pillar set, post-Round-3)
+
+A fourth Codex round (read-only, focused on self-coherence) surfaced that PR #125 itself, while introducing the governor, did not fully follow the governor it was introducing — `self-review` (`/review-architecture`) and `completion gate` (`/sync-guidelines`) skills were not explicitly invoked; the Codex review chain had filled those roles only because the user manually requested it. The diagnosis was *self-application proof is weak*, not *self-contradiction*: Phase 1 is the rule-creating phase, and Phase 2~4 hooks that would have made the rule self-enforcing did not yet exist.
+
+To prevent the gap from cascading into Phase 2~5, the following Pillars are added to this PR (Pillar 1~8). All are additive; no behaviour change to non-governor-changing PRs:
+
+| # | Pillar | Where it lives |
+|---|---|---|
+| 1 | PR #125 self-application proof — `/review-architecture` and `/sync-guidelines` outputs captured for the PR's own surface | [`governor-review-log/pr-125-...md`](../ai/shared/governor-review-log/pr-125-hybrid-harness-target-architecture.md) §Self-Application Proof |
+| 2 | Self-review step gains a *conditional* cross-tool review sub-step, triggered by governor-changing trigger glob | [`AGENTS.md` § Self-Review Step](../../AGENTS.md#default-coding-flow), [`target-operating-model.md` § Cross-Tool Review Cadence](../ai/shared/target-operating-model.md) |
+| 3 | `auto-escape: doc-only` carve-out so that policy/harness docs are **not** escaped | [`AGENTS.md` § Doc-only carve-out](../../AGENTS.md), [`target-operating-model.md` §3](../ai/shared/target-operating-model.md) |
+| 4 | `governor-review-log/` directory permanently archives review trails | [`docs/ai/shared/governor-review-log/`](../ai/shared/governor-review-log/) |
+| 5 | `.github/pull_request_template.md` adds Governor-Changing PR checklist (artefact-locks the cross-tool review and self-application proof) | [`.github/pull_request_template.md`](../../.github/pull_request_template.md) |
+| 6 | Follow-up issues #121~#124 bodies link the log entry under "Inherited Review Constraints" | gh issue bodies |
+| 7 | Phase 4 completion-gate Stop adapter checks for missing governor-review-log entry | [`migration-strategy.md` §1 Phase 4 Acceptance](../ai/shared/migration-strategy.md) |
+| 8 | Memory `feedback_codex_cross_review.md` generalised to phase-level review | claude-code memory feedback file |
+
+The Pillars together close the bootstrapping gap: from Phase 1 onward the governor produces evidence of its own application, and any subsequent governor-changing PR encounters the trigger via PR template (Pillar 5) → review-log requirement (Pillar 4) → drift-checklist §1D verification → Phase 4 hard reminder (Pillar 7), so user vigilance is no longer the only enforcement layer.
+
 ## Alternatives Considered
 
 - **Full superpowers adoption** — Rejected in archive/044. Replaces our shared constitution and project-specific architecture canon; collides with ADR 040 / 042 / 043 boundaries.

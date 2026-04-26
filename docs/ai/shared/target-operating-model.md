@@ -108,10 +108,22 @@ This obligation is enforced informally in Phase 1 (skill bodies request it) and 
 The Default Flow does not impose mandatory steps when:
 
 - `changed_files == 0` (read-only review, planning-only)
-- All changed files are under `docs/`, `*.md`, or contain only comment / whitespace edits
+- All changed files are *general* docs (`README.md`, `CHANGELOG.md`, contributor guides, ordinary content under `docs/` outside the carve-out below), or contain only comment / whitespace edits
 - The session was opened with read-only sandbox mode (e.g. `codex exec --sandbox read-only`)
 
 Auto-escape detection is best-effort; the user may always restate their intent via an explicit token if the auto-detection fails.
+
+#### Policy / harness doc carve-out (governance-loosening guard)
+
+The doc-only auto-escape **does not apply** to policy or harness docs. The following paths are *not* escaped even if the diff is "doc-only":
+
+- `AGENTS.md`
+- `docs/ai/shared/**`
+- `docs/history/**` (ADRs and archive)
+- `.claude/rules/**`, `.codex/rules/**`
+- `.github/pull_request_template.md` and other repo-level governance artefacts
+
+When any path above is in `changed_files`, the change is treated as governor-changing: full `framing` → `plan` → `verify` → `self-review` (with cross-tool review sub-step, see §5) → `completion gate`. The rationale (Codex review R8): a governor that is strict on code but lax on its own rule sources will silently drift away from its own discipline.
 
 ### What exceptions cannot do
 
@@ -187,11 +199,32 @@ When tool runtime config conflicts with shared rules, shared rules in `AGENTS.md
 | `AGENTS.md` § Default Coding Flow | 1 (this PR) | Constitutional guidance |
 | `target-operating-model.md` (this file) | 1 | Long-form reference |
 | Skill body (3-layer) | 1 | Per-skill mandatory phase + Default Flow Position |
+| `.github/pull_request_template.md` § Governor-Changing PR | 1 (this PR, Pillar 5) | Repo-level checklist that artefact-locks cross-tool review and self-application proof |
+| `docs/ai/shared/governor-review-log/` | 1 (this PR, Pillar 4) | Permanent review-trail archive; new entry per governor-changing PR |
 | Session-start | 2 | Optional banner reminder |
 | UserPromptSubmit hook | 2 | Token-recognition + soft route hint |
 | PostToolUse / Stop side | 3 | Verification reminder (tool-specific adapter) |
-| Stop completion gate | 4 | Hard reminder (commit-time) when verification was skipped without an exception token |
+| Stop completion gate | 4 | Hard reminder (commit-time) when verification was skipped without an exception token; **and** when policy/harness paths were touched without a governor-review-log entry |
 | Shared parser/policy module | 5 | Single source for both adapters |
+
+### Cross-Tool Review Cadence (Pillar 2)
+
+Cross-tool review is a sub-step of `self-review`, mandatory **only** when the change is governor-changing (the doc-only carve-out paths plus `.claude/**`, `.codex/**`, `.agents/**`, hook scripts, skill wrappers, governor modules). Non-governor-changing PRs are exempt to avoid heavy ceremony.
+
+Per round (each PR may need one or several):
+
+1. **Trigger detection** — Stop or UserPromptSubmit hook (Phases 2~4) detects that `changed_files` intersects the governor-changing trigger glob. Until those hooks land, the trigger detection is performed manually by the author against the glob list above.
+2. **Reviewer invocation** — `codex exec -m gpt-5.5 --sandbox read-only "<review prompt>"` (or any cross-tool reviewer with equivalent capability). The prompt template lives at `governor-review-log/README.md` "Entry shape".
+3. **R-points capture** — review output is annotated with `R1`, `R2`, … per finding, and recorded in the new entry under `governor-review-log/pr-{NNN}-{slug}.md`.
+4. **Resolution discipline** — every R-point is either fixed in the PR or explicitly deferred with a rationale; deferred items become "Inherited Constraints" for downstream phases.
+5. **Self-application proof** — the same entry records the `/review-architecture` and `/sync-guidelines` outputs against the PR's own changed surface.
+6. **Final Verdict** — `merge-ready` / `minor fixes recommended` / `block merge`. Captured in PR body and entry.
+
+Two recurring rounds are common and recommended for large governor-changing PRs:
+- *Plan-stage round* — review the plan or design document before implementation.
+- *Implementation round* — review the change set after implementation, before merge.
+
+The same PR may iterate (Round 1 → fix → Round 2 → fix → Round 3) until Final Verdict is `merge-ready` or `minor fixes recommended` with no blockers.
 
 ## §6 Canonical Truth Map
 

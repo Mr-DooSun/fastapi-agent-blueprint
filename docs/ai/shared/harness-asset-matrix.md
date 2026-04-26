@@ -52,6 +52,7 @@ The shared constitution and the tool-level entry points. These files transitivel
 | `.claude/settings.local.json` | Keep | Low | Low |
 | `.mcp.json` | Keep | Low | Low |
 | `docs/history/045-hybrid-harness-target-architecture.md` | Keep | Low | High |
+| `.github/pull_request_template.md` | Keep | Low | High |
 
 ### `AGENTS.md`
 
@@ -133,6 +134,16 @@ The shared constitution and the tool-level entry points. These files transitivel
 - **Stability impact**: High (every later phase cites this ADR).
 - **Notes**: Self-classified — included in the matrix because the matrix is a living inventory and this ADR is itself a constitutional asset of the process layer.
 
+### `.github/pull_request_template.md`
+
+- **Current role**: GitHub PR template. Original purpose was simple change-summary + checklist. Round-4 (Pillar 5) added a "Governor-Changing PR" section that artefact-locks cross-tool review, self-application proof, and review-trail link.
+- **Why it exists**: Round-4 review found that user-memory-only enforcement of cross-tool review is insufficient for new contributors and new sessions. PR template moves the requirement into a repo artefact.
+- **Replacement feasibility**: None.
+- **Final location**: unchanged.
+- **Migration risk**: Low (additive section; non-governor-changing PRs delete the section).
+- **Stability impact**: High (every PR sees the template; governor-changing PRs cannot easily skip the checklist).
+- **Notes**: Pillar 5 of ADR 045's Self-Application Recovery.
+
 ---
 
 ## Tier 1 — Shared Reference Layer (`docs/ai/shared/`)
@@ -156,6 +167,7 @@ Twelve canonical reference documents that both Claude and Codex consume. Most ar
 | `harness-asset-matrix.md` | Keep | Low | High |
 | `target-operating-model.md` | Keep | Low | High |
 | `migration-strategy.md` | Keep | Low | High |
+| `governor-review-log/` (directory) | Keep | Low | High |
 
 ### `project-dna.md`
 
@@ -309,6 +321,16 @@ Twelve canonical reference documents that both Claude and Codex consume. Most ar
 - **Migration risk**: Low.
 - **Stability impact**: High (Phase 2~5 acceptance criteria copy from §1).
 - **Notes**: Self-classified.
+
+### `governor-review-log/` (directory)
+
+- **Current role**: Permanent archive of cross-tool review trails for every governor-changing PR (ADR 045 Pillar 4). Each PR adds `pr-{NNN}-{slug}.md` with Summary / Review Rounds / Inherited Constraints / Self-Application Proof.
+- **Why it exists**: Round-4 self-coherence review found that PR #125's review trail was only in PR body — not auto-transmitted to Phase 2~5 work. The directory makes review trails first-class repo artefacts.
+- **Replacement feasibility**: None.
+- **Final location**: unchanged.
+- **Migration risk**: Low (additive only — entries grow over time).
+- **Stability impact**: High (drift-checklist §1D verifies sync; Phase 4 hook reminds on missing entry).
+- **Notes**: Self-classified. Long-term retention; archive subdirectories (e.g. `2026/`) may be introduced by a future ADR if size becomes a problem.
 
 ---
 
@@ -620,13 +642,13 @@ Six rule files (5 Claude + 1 Codex). All `Keep` except `commands.md` which becom
 
 | Bucket | Count | Share | Notes |
 |---|---|---|---|
-| Keep | 45 | ~85% | Project-specific architecture / safety / reference value (incl. 4 self-classified process-governor docs) |
+| Keep | 47 | ~85% | Project-specific architecture / safety / reference value (incl. 4 design + 2 self-coherence-recovery process-governor artefacts) |
 | Overlay | 8 | ~15% | Process discipline now routed by Default Flow |
 | Replace | 0 | 0% | None in initial inventory; reserved for future passes |
 | Drop | 0 | 0% | Initial pass found no genuinely removable assets |
-| **Total** | **53** | 100% | |
+| **Total** | **55** | 100% | |
 
-Counting note: `Tier 0=8` (incl. ADR 045), `Tier 1=15` (12 reference + 3 self-classified living docs), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=11`, `Tier 4=6` — sum 54. The 53 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d (its row is recorded for completeness only). The bucket-share percentages use 53 as the denominator.
+Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=16` (12 reference + 3 design living docs + `governor-review-log/` directory), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=11`, `Tier 4=6` — sum 56. The 55 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d (its row is recorded for completeness only). The bucket-share percentages use 55 as the denominator.
 
 This distribution matches the "Mostly Local with Philosophy Overlay" model declared in [ADR 045 §D4](../../history/045-hybrid-harness-target-architecture.md). The `Replace` and `Drop` columns are both empty in the initial pass: no asset's content is being rewritten, and self-verification during cross-link work showed that the only `Drop` candidate identified during the first triage was actually an active component (a sh-wrapper `.py` pair).
 
