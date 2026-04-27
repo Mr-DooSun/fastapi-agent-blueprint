@@ -63,7 +63,7 @@ Use the template below as a starting point when invoking `codex exec -m gpt-5.5 
 - <one-paragraph summary of the change set>
 - Key files: <list 3~5 critical files>
 
-## Review angles (per item: OK / 보완 필요 / 재고 필요 / 머지 차단)
+## Review angles (per item: OK / needs fix / reconsider / block merge)
 
 1. Self-coherence — does this PR follow the governor it modifies?
 2. Path-list / trigger glob consistency — do AGENTS.md / TOM / migration / drift-checklist / PR template all link `governor-paths.md` correctly without re-declaring?
