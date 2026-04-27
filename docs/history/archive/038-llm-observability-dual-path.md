@@ -1,6 +1,6 @@
 # 038. LLM Observability — Dual-Path Architecture
 
-- Status: Accepted
+- Status: Superseded by [046](../046-otel-core-langfuse-recipe-prompt-domain-defer.md)
 - Date: 2026-04-15
 - Related issue: #15 (design), subsequent issues for Langfuse and AI Usage implementation
 - Related ADRs: [037](../037-pydanticai-agent-integration.md)(PydanticAI), [029](029-broker-abstraction-selector.md)(Selector pattern), [035](035-embedding-service-abstraction.md)(Embedding abstraction)
