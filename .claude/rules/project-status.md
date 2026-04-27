@@ -1,6 +1,6 @@
 # Project Status
 
-> Last synced: 2026-04-27 via /sync-guidelines (Phase 2 #121 UserPromptSubmit token parser + Phase 3 #122 verify-first adapters; migration-strategy.md §7 #NNN → actual issue numbers)
+> Last synced: 2026-04-27 via /sync-guidelines (Phase 4 #123 completion-gate Stop adapter + IC-11 Option A marker lifecycle)
 
 ## Current Version Context
 - Latest release: v0.4.0 (2026-04-21)
@@ -43,6 +43,7 @@
 | Hybrid Harness Target Architecture | #117 (ADR 045) | 7-step Default Coding Flow (`framing → approach options → plan → implement → verify → self-review → completion gate`)을 AGENTS.md § 신설. exception token vocabulary (`[trivial]`/`[hotfix]`/`[exploration]`/`[자명]`/`[긴급]`/`[탐색]`)으로 trivial work에만 escape. Default Flow는 sandbox/approval/`.codex/rules`/safety hook/Absolute Prohibitions 보다 하위. Phase 0+1: 4 design doc (matrix/operating-model/migration-strategy + ADR) + 14×3 skill wrapper에 Default Flow Position section 추가. Phase 2~5는 별도 issue (UserPromptSubmit token parser / Claude PostToolUse Edit\|Write + Codex Stop changed-files / Stop completion gate / shared governor module). |
 | Hybrid Harness Phase 2: UserPromptSubmit Token Parser | #121 (PR #126) | `UserPromptSubmit` 훅에 exception-token 파서 추가. `[trivial]`/`[hotfix]`/`[exploration]`/`[자명]`/`[긴급]`/`[탐색]` prefix 감지 → `.claude/state/` + `.codex/state/`에 Phase 2 마커 JSON 기록. 양쪽 훅 string-equality 보장(IC-2). 마커 lifecycle은 Phase 4(#123)로 유예 (IC-11). |
 | Hybrid Harness Phase 3: verify-first Adapters | #122 (PR #127) | `PostToolUse Edit\|Write` (Claude) / Stop hook (Codex) 양쪽에 verify-first informational reminder 추가. `.py` 수정 후 verify step 누락 시 stderr(Claude) / systemMessage(Codex) 경고. `[exploration]`/`[탐색]` 마커 및 verify-log freshness(`ts_epoch_ns`)로 silence. `CODEX_THREAD_ID` 기반 session-isolated verify-log. 절대 blocking 없음 (HC-3.3). 마커 read-only (IC-11). |
+| Hybrid Harness Phase 4: Completion-Gate Stop Adapter | #123 (PR in progress) | Stop hook 양쪽에 completion-gate 추가. **IC-11 결정**: Option A (read-and-delete on Stop) + 24h 방어 필터. **Pillar 7**: governor-paths.md Tier A/B/C 매칭 시 `governor-review-log/pr-{N}-*.md` 항목 없으면 reminder. `completion_gate.py` 양쪽에 신규 추가; `stop-sync-reminder.{sh,py}` 확장 (HC-4.2 단일 Stop entry). 절대 blocking 없음 (HC-4.1). |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN

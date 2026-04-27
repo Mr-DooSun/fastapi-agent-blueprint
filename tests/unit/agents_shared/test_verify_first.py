@@ -130,7 +130,7 @@ def test_marker_read_idempotent(claude_helper, tmp_path) -> None:
 # 9. Corrupt marker tolerance
 # ---------------------------------------------------------------------------
 def test_corrupt_marker_skipped(claude_helper, tmp_path) -> None:
-    _write_marker(tmp_path, "trivial", ts="2026-01-01T00:00:00Z")
+    _write_marker(tmp_path, "trivial")  # current ts — passes 24h filter (Phase 4)
     bad = tmp_path / "exception-token-bad.json"
     bad.write_text("{ this is not json", encoding="utf-8")
     assert claude_helper.read_latest_token_marker(tmp_path) == "trivial"
@@ -141,8 +141,10 @@ def test_corrupt_marker_skipped(claude_helper, tmp_path) -> None:
 # ---------------------------------------------------------------------------
 def test_codex_marker_read_parity(claude_helper, codex_helper, tmp_path) -> None:
     """Both helpers' read_latest_token_marker return the same token."""
-    _write_marker(tmp_path, "exploration", ts="2026-04-27T00:00:00Z")
-    _write_marker(tmp_path, "trivial", ts="2026-04-27T01:00:00Z")
+    ts_older = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 3600))
+    ts_newer = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    _write_marker(tmp_path, "exploration", ts=ts_older)
+    _write_marker(tmp_path, "trivial", ts=ts_newer)
     claude_token = claude_helper.read_latest_token_marker(tmp_path)
     codex_token = codex_helper.read_latest_token_marker(tmp_path)
     assert claude_token == codex_token == "trivial"

@@ -504,7 +504,7 @@ Bucket guideline:
 
 ## Tier 3 — Hooks
 
-Sixteen hook scripts (6 Claude shell + 3 Claude Python implementations + 7 Codex Python). Phase 2 (#121) added `.claude/hooks/user-prompt-submit.sh` + `.claude/hooks/user_prompt_submit.py` as the first Claude UserPromptSubmit hook surface; Phase 3 (#122) added `.claude/hooks/verify-first.{sh,py}` as a **sibling** hook in the existing `PostToolUse Edit|Write` matcher block, plus `.codex/hooks/verify_first.py` as a library module imported by the Stop hook (segment merge, IC-2). The Codex side `.codex/hooks/post-tool-format.py` was extended (behaviour-preserving) to record verify-class commands to `.codex/state/verify-log-{session}.json`. Phase 3 introduces the second *process-governor* hook surface (verify-first reminder).
+Eighteen hook scripts (6 Claude shell + 4 Claude Python implementations + 8 Codex Python). Phase 2 (#121) added `.claude/hooks/user-prompt-submit.sh` + `.claude/hooks/user_prompt_submit.py` as the first Claude UserPromptSubmit hook surface; Phase 3 (#122) added `.claude/hooks/verify-first.{sh,py}` + `.codex/hooks/verify_first.py`; Phase 4 (#123) added `.claude/hooks/completion_gate.py` + `.codex/hooks/completion_gate.py` as the completion-gate helper pair (IC-11 Option A + Pillar 7).
 
 | Asset | Bucket | Risk | Impact |
 |---|---|---|---|
@@ -632,6 +632,20 @@ Sixteen hook scripts (6 Claude shell + 3 Claude Python implementations + 7 Codex
 - **Bucket**: Overlay.
 - **Notes**: `REMINDER_TEXT` is string-equal to `.claude/hooks/verify_first.py`. `session_id()` priority: `CODEX_THREAD_ID` (Codex CLI injects this into all hook processes in a session — R1.1) → `CODEX_SESSION_ID` (fallback alias) → `f"{ppid}-{pid}-{start_ns:016x}"` (non-Codex environments; writer/reader-incompatible across processes). Verify-log entries store `ts_epoch_ns` for subsecond freshness comparison against `Path.stat().st_mtime_ns` (R0.3). `read_latest_token_marker` duplicated from Claude side — consolidated by Phase 5 (#124).
 
+### `.claude/hooks/completion_gate.py` (Phase 4 / #123 — NEW)
+
+- **Current role**: Completion-gate helper (Claude side). Called as subprocess by `stop-sync-reminder.sh`; stdout captured and appended. Emits Pillar 7 reminder when governor-changing changes lack a matching `governor-review-log/pr-{N}-*.md` entry. Reads governor-paths.md at runtime (IC-10 — no inline glob re-declaration). Also runs IC-11 Option A lifecycle: deletes all `.claude/state/exception-token-*.json` on Stop.
+- **Why it exists**: Phase 4 completion-gate check. Separate Python helper keeps the `.sh` entry point minimal while providing full Python glob-matching and `gh` CLI integration.
+- **Bucket**: Overlay.
+- **Notes**: `GOVERNOR_REMINDER_WITH_PR` / `GOVERNOR_REMINDER_NO_PR` are string-equal to `.codex/hooks/completion_gate.py` (IC-2). Fail-open per HC-4.7. `_within_24h` filter on Phase 2 marker read (defensive against Stop-failure leftovers). Phase 5 (#124) absorbs into `.agents/shared/governor/`.
+
+### `.codex/hooks/completion_gate.py` (Phase 4 / #123 — NEW)
+
+- **Current role**: Completion-gate helper (Codex side). Imported by `stop-sync-reminder.py` inside the segments list (IC-2 single Stop event output). Same Pillar 7 + IC-11 lifecycle as Claude side. Also opportunistically cleans up stale verify-log-*.json files from OTHER sessions (>24h).
+- **Why it exists**: Phase 4 completion-gate check. Mirrors Claude side public API (matching function signatures for Phase 5 consolidation path).
+- **Bucket**: Overlay.
+- **Notes**: `GOVERNOR_REMINDER_*` string-equal to Claude side. `cleanup_stale_verify_logs` preserves current session's log; only prunes other sessions' 24h-old files. Fail-open per HC-4.7.
+
 ---
 
 ## Tier 4 — Rule Files
@@ -693,13 +707,13 @@ Six rule files (5 Claude + 1 Codex). All `Keep` except `commands.md` which becom
 
 | Bucket | Count | Share | Notes |
 |---|---|---|---|
-| Keep | 50 | ~82% | Project-specific architecture / safety / reference value (incl. 4 design + 3 self-coherence-recovery process-governor artefacts + 2 Phase 2 #121 hooks) |
-| Overlay | 11 | ~18% | Process discipline now routed by Default Flow (Phase 3 #122 adds 3 verify-first hooks) |
+| Keep | 50 | ~79% | Project-specific architecture / safety / reference value (incl. 4 design + 3 self-coherence-recovery process-governor artefacts + 2 Phase 2 #121 hooks) |
+| Overlay | 13 | ~21% | Process discipline now routed by Default Flow (Phase 3 #122 adds 3 verify-first; Phase 4 #123 adds 2 completion-gate hooks) |
 | Replace | 0 | 0% | None in initial inventory; reserved for future passes |
 | Drop | 0 | 0% | Initial pass found no genuinely removable assets |
-| **Total** | **61** | 100% | |
+| **Total** | **63** | 100% | |
 
-Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=17` (12 reference + 3 design living docs + `governor-review-log/` directory + `governor-paths.md`), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=16` (Phase 3 #122 added `.claude/hooks/verify-first.{sh,py}` + `.codex/hooks/verify_first.py`; previously 13 after Phase 2), `Tier 4=6` — sum 62. The 61 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d (its row is recorded for completeness only). The bucket-share percentages use 61 as the denominator.
+Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=17` (12 reference + 3 design living docs + `governor-review-log/` directory + `governor-paths.md`), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=18` (Phase 4 #123 added `.claude/hooks/completion_gate.py` + `.codex/hooks/completion_gate.py`; Phase 3 = 16, Phase 2 = 13, Phase 1 = 10), `Tier 4=6` — sum 64. The 63 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d. The bucket-share percentages use 63 as the denominator.
 
 This distribution matches the "Mostly Local with Philosophy Overlay" model declared in [ADR 045 §D4](../../history/045-hybrid-harness-target-architecture.md). The `Replace` and `Drop` columns are both empty in the initial pass: no asset's content is being rewritten, and self-verification during cross-link work showed that the only `Drop` candidate identified during the first triage was actually an active component (a sh-wrapper `.py` pair).
 
@@ -733,4 +747,5 @@ The following self-checks must pass before this matrix is treated as authoritati
 
 - 2026-04-26 — Initial inventory under ADR 045 / Phase 1.
 - 2026-04-26 — Phase 2 (#121): added `.claude/hooks/user-prompt-submit.sh` + `.claude/hooks/user_prompt_submit.py` to Tier 3; updated `.codex/hooks/user-prompt-submit.py` role to include exception-token parsing (behaviour-preserving). Total 56 → 58.
-- 2026-04-27 — Phase 3 (#122): added `.claude/hooks/verify-first.{sh,py}` (sibling in existing `PostToolUse Edit|Write` matcher) + `.codex/hooks/verify_first.py` library to Tier 3; extended `.codex/hooks/post-tool-format.py` with verify-class command logger and top-level fail-open (R0.4); extended `.codex/hooks/stop-sync-reminder.py` to merge a verify-first segment (import inside try-block per R0.1). Total 58 → 61. Bucket-share shifted Keep 86% → 82% / Overlay 14% → 18% as the 3 new hooks all classify as Overlay (process-governor verify-first reminder).
+- 2026-04-27 — Phase 3 (#122): added `.claude/hooks/verify-first.{sh,py}` (sibling in existing `PostToolUse Edit|Write` matcher) + `.codex/hooks/verify_first.py` library to Tier 3; extended `.codex/hooks/post-tool-format.py` with verify-class command logger and top-level fail-open (R0.4); extended `.codex/hooks/stop-sync-reminder.py` to merge a verify-first segment (import inside try-block per R0.1). Total 58 → 61. Bucket-share shifted Keep 86% → 82% / Overlay 14% → 18%.
+- 2026-04-27 — Phase 4 (#123): added `.claude/hooks/completion_gate.py` + `.codex/hooks/completion_gate.py` to Tier 3 (completion-gate Stop adapter, Pillar 7 + IC-11 Option A). Total 61 → 63. Bucket-share shifted Keep 82% → 79% / Overlay 18% → 21% as both new hooks classify as Overlay.
