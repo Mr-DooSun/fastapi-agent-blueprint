@@ -21,6 +21,7 @@ Read AGENTS.md and compare each section against the actual code:
   - Model → DTO: `model_validate(model, from_attributes=True)`
   - DTO → Response: `model_dump(exclude={...})`
 - [ ] **Write DTO criteria**: Verify current Request/DTO usage matches the defined criteria
+- [ ] **Language Policy** (AGENTS.md § Language Policy): Run `python3 tools/check_language_policy.py` and confirm zero violations across Tier 1 paths. Bilingual escape tokens (`[자명]`/`[긴급]`/`[탐색]`) are the sole exception, scoped per-file in the checker. Flag any new non-English prose insertion as a sync-required drift candidate.
 
 ## 1A. CLAUDE.md ↔ Claude Harness Consistency Check
 
@@ -94,28 +95,28 @@ Read each skill's SKILL.md and compare against reference code:
 Read each `.claude/rules/` file and compare against current code:
 
 ### architecture_conventions
-- [ ] Data flow: RDB + DynamoDB 양쪽 variant 포함?
-- [ ] BaseService/BaseDynamoService generic signature가 실제 코드와 일치?
-- [ ] Object Roles: DTO, Schema, Model, DynamoModel, Admin Page 모두 포함?
-- [ ] Broker Selection 섹션이 core_container.py Selector 설정과 일치?
+- [ ] Data flow: covers both RDB and DynamoDB variants?
+- [ ] BaseService / BaseDynamoService generic signatures match the actual code?
+- [ ] Object Roles: includes DTO, Schema, Model, DynamoModel, and Admin Page?
+- [ ] Broker Selection section matches the Selector wiring in `core_container.py`?
 
 ### project_status
-- [ ] Recent Major Changes: "Last synced" 이후 머지된 주요 PR/feature 포함?
-- [ ] Architecture Violation Status: grep 체크 실행 결과와 일치?
-- [ ] Not Yet Implemented: project-dna.md §8 "Not implemented" 항목과 일치?
+- [ ] Recent Major Changes includes every notable PR / feature merged since the documented "Last synced" date?
+- [ ] Architecture Violation Status matches the live grep results?
+- [ ] Not Yet Implemented matches project-dna.md §8 "Not implemented"?
 
 ### project_overview
-- [ ] Infrastructure Options: `src/_core/infrastructure/` 하위 디렉터리와 일치?
-- [ ] App Entrypoints: `src/_apps/` 하위 디렉터리와 일치?
-- [ ] Environment Config: `src/_core/config.py` Settings validators와 일치?
+- [ ] Infrastructure Options matches the subdirectories under `src/_core/infrastructure/`?
+- [ ] App Entrypoints matches the subdirectories under `src/_apps/`?
+- [ ] Environment Config matches the Settings validators in `src/_core/config.py`?
 
 ### commands (`.claude/rules/commands.md`)
-- [ ] Run 명령: 현재 entrypoint 파일과 일치?
-- [ ] Architecture 검증 grep: 현행 위반 규칙 탐지 (구시대 패턴 아님)?
-- [ ] Test 명령: 인프라 variant별 커버 (RDB, DynamoDB, Broker)?
+- [ ] Run commands still target the current entrypoint files?
+- [ ] Architecture-verification greps still target current violation patterns (not legacy ones)?
+- [ ] Test commands still cover each infra variant (RDB, DynamoDB, Broker)?
 
 ### All rules files
-- [ ] 각 rules 파일의 "Last synced" 날짜가 2주 이내?
+- [ ] "Last synced" date of every rules file is within the last two weeks?
 
 ## 4. project-dna.md ↔ Code Consistency Check
 

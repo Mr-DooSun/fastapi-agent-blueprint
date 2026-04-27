@@ -31,8 +31,8 @@ from .tokens import EXPLORATION_TOKENS
 
 REMINDER_TEXT = "\n".join(
     [
-        "[verify-first] verify 단계가 누락된 것 같습니다. 변경된 .py 파일에 대해 테스트/검증을 권장합니다.",
         "[verify-first] Verify step appears to be missing for the changed .py files.",
+        "Run a test or static check before continuing.",
         "Suggested next: `/test-domain run <domain>` (or `pytest tests/unit/<domain>/`)",
         "Silence with `[exploration]` / `[탐색]` prefix when intentionally exploring.",
     ]

@@ -28,7 +28,10 @@ Key files:
 Prompt split into 3 short shots to avoid the hung pattern observed in Phase 4 Round 0. All three returned within ~3 minutes each.
 
 **R0-A — module API design** (`codex exec -m gpt-5.5 --sandbox read-only`)
-- Verdict: 보완 필요.
+- Verdict: needs follow-up.
+
+> Original reviewer verdict (ko, verbatim): 보완 필요
+> English normalised verdict: needs follow-up.
 - Surfaced points:
   - **R0-A.1 (merge-block)**: shim modules must NOT carry top-level `sys.exit` / `raise SystemExit`. `.codex/hooks/stop-sync-reminder.py` imports siblings inside `contextlib.suppress(Exception)`, which does NOT catch `SystemExit` (BaseException subclass). Top-level exits would crash the entire Stop hook.
   - **R0-A.2**: Codex-only assets (`session_id`, verify-log writer/reader, `cleanup_stale_verify_logs`, `_shared.py`) should stay per-tool, not migrate.
@@ -36,7 +39,10 @@ Prompt split into 3 short shots to avoid the hung pattern observed in Phase 4 Ro
 - All three integrated into the plan before any code shipped (plan §D2/D3 + §Verification Strategy).
 
 **R0-B — invariance + fail-open**
-- Verdict: 보완 필요.
+- Verdict: needs follow-up.
+
+> Original reviewer verdict (ko, verbatim): 보완 필요
+> English normalised verdict: needs follow-up.
 - Surfaced points:
   - **R0-B.1**: parity baseline must capture `pytest --collect-only -q` nodeids + count + skip/xfail/warning + exit code, not only `PASSED` lines.
   - **R0-B.2**: parity 5 scenarios must be named explicitly (empty/invalid stdin / NFKC + Korean marker / Codex safety-block-first / verify-first exploration·stale / completion-gate four branches).
@@ -44,7 +50,10 @@ Prompt split into 3 short shots to avoid the hung pattern observed in Phase 4 Ro
 - Integrated into the plan §Verification Strategy + Step 5 test list.
 
 **R0-C — HC-1 + IC-12 + cascade**
-- Verdict: 보완 필요.
+- Verdict: needs follow-up.
+
+> Original reviewer verdict (ko, verbatim): 보완 필요
+> English normalised verdict: needs follow-up.
 - Surfaced points:
   - **R0-C.1**: HC-1 must be enforced by a single-entry function (`safe_parse_exception_token(prompt) -> Blocked | ParsedToken`), not a callable-injection signature like `check_safety_first(prompt, then_parse)`. The latter leaves a bypass surface where a shim can call the parser without ever invoking safety.
   - **R0-C.2**: `MarkerLifecycle` must be a closed enum with an exhaustive coverage test so adding a new variant fails the build until `read_latest_token` is wired and the test updated.
@@ -56,7 +65,10 @@ Prompt split into 3 short shots to avoid the hung pattern observed in Phase 4 Ro
 Three prompts on the 7-commit branch (pre-fix-commit), focused on commit-level diff vs `main`, fail-open coverage, and documentation accuracy.
 
 **R1-A — diff + invariance**
-- Verdict: 보완 필요 (no merge block).
+- Verdict: needs follow-up (no merge block).
+
+> Original reviewer verdict (ko, verbatim): 보완 필요 (no merge block)
+> English normalised verdict: needs follow-up (no merge block).
 - Surfaced points:
   - **R1-A.1 (parity restore)**: `markers.read_latest_token` introduced a `if not data.get('matched')` filter that pre-Phase-5 readers did not have. Even though `write_marker` only persists matched payloads, the filter is a behaviour delta vs the frozen contract.
   - **R1-A.2**: `GateResult.status` should be a closed `Literal` rather than a free-form `str` to prevent invalid status drift.
@@ -69,7 +81,10 @@ Three prompts on the 7-commit branch (pre-fix-commit), focused on commit-level d
 - Stale-marker scenario was added in the same R1 fix commit. The Tier 2 / boundary reinforcements are tracked but not shipped here — they tighten the existing safety net rather than add new coverage; deferred to a follow-up if needed.
 
 **R1-C — docs + cascade**
-- Verdict: 보완 필요 (no merge block).
+- Verdict: needs follow-up (no merge block).
+
+> Original reviewer verdict (ko, verbatim): 보완 필요 (no merge block)
+> English normalised verdict: needs follow-up (no merge block).
 - Surfaced points:
   - **R1-C.1 (stale figures)**: `~86/14`, `58 assets` figures left over in `target-operating-model.md` and matrix verification checklist. Updated to `~80/20` and `64 active assets` in the R1 fix commit.
   - R1-C.2: Tier 1 placement of the shared package is sensible if the boundary note ("policy package, not passive reference") is preserved — kept.
@@ -77,7 +92,10 @@ Three prompts on the 7-commit branch (pre-fix-commit), focused on commit-level d
 
 ### Round 2 — gate-on-gate (2026-04-27)
 
-Single Codex prompt (`gpt-5.5 --sandbox read-only`) targeting the merged shape of this PR + Round 0/1 absorption + cascade-risk re-evaluation. Final Verdict: **마이너 fix 권장 (no merge block)**.
+Single Codex prompt (`gpt-5.5 --sandbox read-only`) targeting the merged shape of this PR + Round 0/1 absorption + cascade-risk re-evaluation. Final Verdict: **minor fixes recommended (no merge block)**.
+
+> Original reviewer verdict (ko, verbatim): 마이너 fix 권장 (no merge block)
+> English normalised verdict: minor fixes recommended (no merge block).
 
 Surfaced points:
 
@@ -127,7 +145,10 @@ Plan §Verification mandated a 4-artifact pre/post diff, not a single PASSED cou
 ## Round 2 results
 
 - **Round 2 prompt focus**: cascade risk validation (does future governor-asset addition land naturally in `.agents/shared/governor/`?); R1 leftover R-points re-evaluation; dual-system window closure documentation.
-- **Outcome**: Final Verdict — **마이너 fix 권장 (no merge block)**. Three R-points (R2.1 / R2.2 / R2.3) all absorbed in the same commit that records this section, per Round 2's own "마이너 fix" classification.
+- **Outcome**: Final Verdict — **minor fixes recommended (no merge block)**. Three R-points (R2.1 / R2.2 / R2.3) all absorbed in the same commit that records this section, per Round 2's own "minor fixes" classification.
+
+> Original reviewer verdict (ko, verbatim): 마이너 fix 권장 (no merge block)
+> English normalised verdict: minor fixes recommended (no merge block).
 - **R2.1 — log entry backfill**: Round 2 §Round 2 review section above is now populated; Self-Application Proof checkboxes verified.
 - **R2.2 — cascade-risk lock**: `tests/unit/agents_shared/test_governor_boundary.py::test_gatestatus_variants_referenced_by_completion_gate_shims` lock-steps `GateStatus.__args__` against the shim manual-orchestration map. Adding a new variant requires updating both shims and this test in the same PR.
 - **R2.3 — figure sync**: `harness-asset-matrix.md` migration risk row updated 200 → 202.

@@ -1,6 +1,6 @@
 # Architecture Conventions
 
-> Last synced: 2026-04-26 via /sync-guidelines (added Default Flow cross-link for ADR 045; verified clean against ADR 042/043 baseline)
+> Last synced: 2026-04-27 via /sync-guidelines (translated Structured Logging section to English under Tier 1 Language Policy, #131)
 > For Absolute Prohibitions, Conversion Patterns, Write DTO criteria, Responsibility Matrix, Error Translation, Optional AI Infra Pattern, Admin Service Contract, and **Default Coding Flow** (process layer, ADR 045), refer to AGENTS.md.
 > This file only contains **structural context** that supplements AGENTS.md for Claude.
 
@@ -77,14 +77,14 @@ Key differences from RDB/DynamoDB:
 
 ## Structured Logging (#9)
 
-- 파이프라인: `structlog` ProcessorFormatter + `asgi-correlation-id`. JSON(stg/prod) / console(dev/local/quickstart) 자동 전환 (`settings.effective_log_json`)
-- Server: `configure_logging()` → `TrustedHost → CORS → RequestLogMiddleware → CorrelationIdMiddleware` (Starlette는 늦게 `add_middleware`한 것이 외곽이 되므로, 의도적으로 CorrelationId를 가장 마지막에 추가해 요청 최상위에 둠)
-- Worker: `configure_logging()` → `app.add_middlewares(StructlogContextMiddleware())`가 task id / correlation id를 contextvars에 바인딩 (dispatcher가 `with_labels(correlation_id=...)`로 넘긴 값도 자동 lift)
-- Logger 획득 규칙: 모든 애플리케이션 코드는 `structlog.stdlib.get_logger(__name__)` 사용
-  - 기존 `logging.getLogger(__name__)` 호출도 ProcessorFormatter 브리지 덕분에 동일 파이프라인을 타지만, 신규 코드는 structlog API로 통일
-- 민감정보 로깅 금지: `password`, `token`, `access_key`, `secret_key` 등 Response에서 `model_dump(exclude={...})`로 제외하는 필드는 `logger.info(event, password=...)` / `logger.bind(...)` 형태로도 기록 금지
-- SQLAlchemy echo: `DATABASE_ECHO=true`는 `logging.getLogger("sqlalchemy.engine").setLevel(INFO)`로 변환 (engine handler 중복 등록 방지 — 동일 쿼리가 stdlib + structlog 양쪽에서 double-emit 되지 않도록)
-- Env vars: `LOG_LEVEL` (DEBUG/INFO/WARNING/ERROR), `LOG_JSON_FORMAT` (None/True/False — None이면 ENV에서 자동 결정)
+- Pipeline: `structlog` ProcessorFormatter + `asgi-correlation-id`. JSON (stg/prod) / console (dev/local/quickstart) renderer auto-selected via `settings.effective_log_json`.
+- Server: `configure_logging()` → `TrustedHost → CORS → RequestLogMiddleware → CorrelationIdMiddleware`. Starlette wraps later-added middlewares around earlier ones, so `CorrelationIdMiddleware` is added last on purpose to sit outermost on the request.
+- Worker: `configure_logging()` → `app.add_middlewares(StructlogContextMiddleware())` binds task id / correlation id into contextvars; values passed through `with_labels(correlation_id=...)` on the dispatcher are lifted automatically.
+- Logger acquisition rule: all application code uses `structlog.stdlib.get_logger(__name__)`.
+  - Existing `logging.getLogger(__name__)` callers still flow through the ProcessorFormatter bridge, but new code unifies on the structlog API.
+- No sensitive-field logging: fields excluded from Response via `model_dump(exclude={...})` (e.g. `password`, `token`, `access_key`, `secret_key`) must not appear in `logger.info(event, password=...)` / `logger.bind(...)` calls either.
+- SQLAlchemy echo: `DATABASE_ECHO=true` is mapped to `logging.getLogger("sqlalchemy.engine").setLevel(INFO)`. The engine handler is registered exactly once so the same query is not double-emitted by stdlib and structlog simultaneously.
+- Env vars: `LOG_LEVEL` (DEBUG/INFO/WARNING/ERROR), `LOG_JSON_FORMAT` (None/True/False — `None` derives the renderer from ENV automatically).
 
 ## Object Roles
 

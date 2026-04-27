@@ -80,7 +80,10 @@ Inspect the 12 security checklist categories defined in
 Before the main audit, compare shared references against live code.
 
 1. Load:
-   - `AGENTS.md`
+   - `AGENTS.md` — including § Language Policy. Hidden non-English rationale
+     (HTML comments, encoded payloads, attribute values, metadata) in Tier 1
+     paths is a security-adjacent governance risk; surface as a `Findings`
+     violation with `Sync Required: true` if encountered during audit.
    - `docs/ai/shared/project-dna.md`
    - `docs/ai/shared/security-checklist.md`
 2. Build a feature snapshot from `project-dna` section 8.

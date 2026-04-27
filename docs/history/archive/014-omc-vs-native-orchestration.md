@@ -205,7 +205,7 @@ unlike OMC's npm package + 20 hook scripts.
 
 - CLAUDE.md, `.cursorrules`, `AGENTS.md` are becoming standard project-level AI configuration files
 - Gartner predicts 40% of enterprise apps will integrate task-specific AI agents by 2026
-- The practice of configuring AI agents for projects = **DX (Developer Experience) Engineering** or **개발환경 구성**
+- The practice of configuring AI agents for projects = **DX (Developer Experience) Engineering** or **dev-environment provisioning**
 - Current project's 15 skills + security hooks + project-dna.md = **Platform Engineering level** customization
 
 Realistic distribution of who does this:

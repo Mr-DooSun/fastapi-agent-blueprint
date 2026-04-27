@@ -94,7 +94,7 @@ src/{name}/
 
 ### DynamoDB Domain Variant
 
-DynamoDB를 사용하는 도메인은 `infrastructure/database/` 대신 `infrastructure/dynamodb/`를 사용:
+A domain backed by DynamoDB uses `infrastructure/dynamodb/` instead of `infrastructure/database/`:
 
 ```
 src/{name}/
@@ -103,7 +103,7 @@ src/{name}/
 │   │   └── models/{name}_model.py    # extends DynamoModel
 │   ├── repositories/{name}_repository.py  # extends BaseDynamoRepository
 │   └── di/{name}_container.py        # dynamodb_client=core_container.dynamodb_client
-└── (나머지 동일)
+└── (everything else identical)
 ```
 
 ## §2. Base Class Import Path
@@ -509,9 +509,9 @@ class {Name}Container(containers.DeclarativeContainer):
 | Admin page | `@ui.page(...)` | — | — | `bootstrap` injects `_service_provider` into `BaseAdminPage` |
 | Worker task | `@broker.task(...)` | `@inject` | `Provide[...]` | `wire(modules=[...task])` |
 
-- `Depends()` 래퍼는 FastAPI Router 전용 (FastAPI가 파라미터를 query/body로 해석하는 것을 방지)
-- Worker는 bare `Provide[...]` 사용 (프레임워크가 자체적으로 DI 파라미터를 해석하지 않음)
-- Admin은 `BaseAdminPage._service_provider`에 provider를 주입하여 내부에서 service를 resolve
+- The `Depends()` wrapper is FastAPI-Router-only — it prevents FastAPI from interpreting the parameter as a query/body value.
+- Worker tasks use bare `Provide[...]` because the framework does not interpret DI parameters on its own.
+- Admin injects the provider into `BaseAdminPage._service_provider` and resolves the service internally.
 
 ## §6. Conversion Patterns
 
@@ -549,10 +549,10 @@ class {Name}Container(containers.DeclarativeContainer):
 
 ### Claude Hook
 
-- SessionStart (check-required-plugins): pyright-lsp 플러그인 설치 확인, CONTEXT7_API_KEY 환경변수 검증
-- PreToolUse (pre-tool-security): SQL injection, hardcoded secrets, Domain→Infra import, sensitive data logging check
-- PostToolUse (post-tool-format): Edit/Write 후 `.py` 파일 자동 포맷팅 (ruff format + ruff check)
-- Stop (stop-sync-reminder): git diff 기반으로 변경 파일을 Foundation/Structure로 분류하여 /sync-guidelines 실행 권고
+- SessionStart (check-required-plugins): verifies the pyright-lsp plugin is installed and the `CONTEXT7_API_KEY` env var is set.
+- PreToolUse (pre-tool-security): SQL injection, hardcoded secrets, Domain→Infra import, sensitive data logging check.
+- PostToolUse (post-tool-format): auto-formats `.py` files after Edit/Write (ruff format + ruff check).
+- Stop (stop-sync-reminder): classifies the changed files (via `git diff`) into Foundation / Structure buckets and recommends running `/sync-guidelines`.
 
 ## §8. Active Features
 
@@ -578,7 +578,7 @@ class {Name}Container(containers.DeclarativeContainer):
 | Rate Limiting (slowapi) | Not implemented | |
 | WebSocket | Not implemented | |
 
-> Extras note (#104, ADR 042): `nicegui`는 `admin` extra, `boto3` / `aioboto3` / `types-aiobotocore-*`는 `aws` extra에 속함. 필요한 배포에서만 `uv sync --extra admin --extra aws` — `make setup`은 둘 다 기본 설치. 미설치 시 관련 Selector는 `None` / `StubEmbedder` / `TestModel`로 graceful degradation.
+> Extras note (#104, ADR 042): `nicegui` belongs to the `admin` extra; `boto3` / `aioboto3` / `types-aiobotocore-*` belong to the `aws` extra. Deployments install only what they need — `uv sync --extra admin --extra aws`; `make setup` installs both by default. When an extra is missing, the corresponding Selector branch returns `None` / `StubEmbedder` / `TestModel` for graceful degradation.
 
 ## §9. Router Pattern
 
@@ -801,7 +801,7 @@ src/{name}/
 │   │   └── models/{name}_model.py    # extends VectorModel
 │   ├── repositories/{name}_vector_store.py  # extends BaseS3VectorStore
 │   └── di/{name}_container.py        # s3vector_client + embedding_client injection
-└── (나머지 동일)
+└── (everything else identical)
 ```
 
 ## §13. Embedding Pattern

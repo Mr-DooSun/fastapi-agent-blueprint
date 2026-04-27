@@ -76,6 +76,22 @@ repos:
         entry: "\\.to_entity\\(|\\.from_entity\\(|from src\\._core\\.domain\\.entities"
         files: "\\.py$"
 
+      # Tier 1 Language Policy (AGENTS.md § Language Policy):
+      # shared governance/harness/contributor-facing files must not contain
+      # Korean prose. Bilingual escape tokens are the only exception, scoped
+      # per file in tools/check_language_policy.py::TOKEN_LITERALS_BY_FILE.
+      #
+      # The `files:` regex must mirror TIER1_GLOBS in
+      # tools/check_language_policy.py. The drift test in
+      # tests/unit/agents_shared/test_language_policy.py asserts the two
+      # stay in sync via a shared anchor-path set.
+      - id: tier1-language-policy
+        name: "Tier 1 paths: no Korean prose (AGENTS.md § Language Policy)"
+        language: system
+        entry: python3 tools/check_language_policy.py
+        pass_filenames: true
+        files: '^(AGENTS\.md|CLAUDE\.md|CONTRIBUTING\.md|CODE_OF_CONDUCT\.md|SECURITY\.md|docs/ai/shared/.*\.md|docs/history/.*\.md|\.claude/rules/.*\.md|\.claude/hooks/.*|\.claude/skills/.*\.md|\.codex/rules/.*|\.codex/hooks/.*|\.agents/.*\.(py|md)|\.github/pull_request_template\.md|\.github/workflows/.*\.ya?ml)$'
+
   # ==================== STAGE: COMMIT-MSG (commit message validation) ====================
   # Conventional Commits: type: description OR type(scope): description
   - repo: https://github.com/compilerla/conventional-pre-commit
@@ -84,4 +100,3 @@ repos:
       - id: conventional-pre-commit
         stages: [commit-msg]
         args: [feat, fix, refactor, docs, chore, test, ci, perf, style, i18n]
-

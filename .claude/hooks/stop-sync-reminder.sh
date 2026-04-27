@@ -29,18 +29,18 @@ STRUCTURE=$(echo "$CHANGED" | grep -E '^src/[^_].*/((infrastructure/di/|interfac
 
 if [ -n "$FOUNDATION" ]; then
     echo ""
-    echo "=== /sync-guidelines 강력 권고 ==="
-    echo "프로젝트 기반 파일이 변경되었습니다:"
+    echo "=== /sync-guidelines strongly recommended ==="
+    echo "Foundation files changed:"
     echo "$FOUNDATION" | sed 's/^/  - /'
-    echo "Claude: /sync-guidelines 실행"
-    echo "Codex 사용 시: \$sync-guidelines도 실행 필요"
-    echo "================================="
+    echo "Claude: run /sync-guidelines"
+    echo "Codex: also run \$sync-guidelines"
+    echo "============================================="
 elif [ -n "$STRUCTURE" ]; then
     echo ""
-    echo "=== /sync-guidelines 권고 ==="
-    echo "도메인 구조 파일이 변경되었습니다:"
+    echo "=== /sync-guidelines recommended ==="
+    echo "Domain structure files changed:"
     echo "$STRUCTURE" | sed 's/^/  - /'
-    echo "================================="
+    echo "===================================="
 fi
 
 # Phase 4 completion-gate (Pillar 7 + IC-11 marker lifecycle).

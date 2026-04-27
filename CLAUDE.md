@@ -16,6 +16,7 @@ This file intentionally keeps only Claude-specific setup and workflow guidance.
 - Before changing shared rules or structure, follow the drift management rules in `AGENTS.md`
 - Shared workflow references now live under `docs/ai/shared/`; Claude skills should point there instead of keeping private copies
 - When delegating to agents, explicitly pass the list of changed files
+- Tier 1 shared/governance files are English-only; bilingual escape tokens are the sole exception. See [AGENTS.md § Language Policy](AGENTS.md#language-policy) for the path list, hidden-rationale prohibition, and AI-when-editing rule. Conversation language is user-local (set by your global CLAUDE.md); file artefacts are governed strictly by the path policy.
 
 ## Skills (slash commands)
 - `/plan-feature {description}` — Feature implementation planning (requirements interview → architecture analysis → security check → task decomposition)

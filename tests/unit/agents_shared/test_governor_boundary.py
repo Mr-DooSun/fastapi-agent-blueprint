@@ -11,8 +11,10 @@ hooks. These tests defend that boundary:
    declare governor-paths.md globs inline; they must call
    ``parse_trigger_globs`` from the shared module.
 3. Inline reminder redeclaration ban — hook scripts MUST NOT carry the
-   canonical Korean reminder lines anymore; they must import
-   ``REMINDER_TEXT`` / ``GOVERNOR_REMINDER_*`` from the shared module.
+   canonical reminder lines anymore; they must import ``REMINDER_TEXT``
+   / ``GOVERNOR_REMINDER_*`` from the shared module. (Originally Korean;
+   translated to English in PR #131 under AGENTS.md § Language Policy.
+   The ban itself is language-agnostic.)
 """
 
 from __future__ import annotations
@@ -122,20 +124,25 @@ def test_hooks_do_not_redeclare_governor_paths_globs() -> None:
 # ---------------------------------------------------------------------------
 # 3. Inline reminder redeclaration ban (R0-C.3)
 # ---------------------------------------------------------------------------
-CANONICAL_KOREAN_LINES = [
-    "PR #{pr}에 매칭되는 governor-review-log 항목이 없습니다.",
-    "PR 번호 미확인 — PR 생성 후 governor-review-log/ 항목을 추가하세요.",
-    "[verify-first] verify 단계가 누락된 것 같습니다. 변경된 .py 파일에 대해 테스트/검증을 권장합니다.",
+# Canonical reminder strings live ONLY in the shared governor module. Hooks
+# must import them instead of duplicating literal strings inline. PR #131
+# (Tier 1 Language Policy) translated the original Korean strings to English;
+# the test target is "no inline redeclaration of any reminder text", which is
+# language-agnostic — only the canonical literal moves.
+CANONICAL_REMINDER_LINES = [
+    "No governor-review-log entry matches PR #{pr}.",
+    "PR number unknown — open the PR first, then add the governor-review-log/ entry.",
+    "[verify-first] Verify step appears to be missing for the changed .py files.",
 ]
 
 
 def test_hooks_do_not_redeclare_canonical_reminder_lines() -> None:
-    """Each canonical Korean reminder line must live ONLY in the shared
-    module — hooks must import constants instead of duplicating strings."""
+    """Each canonical reminder line must live ONLY in the shared module —
+    hooks must import constants instead of duplicating strings."""
 
     for hook in HOOK_FILES:
         text = hook.read_text(encoding="utf-8")
-        for line in CANONICAL_KOREAN_LINES:
+        for line in CANONICAL_REMINDER_LINES:
             assert line not in text, (
                 f"{hook.name} re-declares canonical reminder line:\n{line}\n"
                 "Use governor.* import instead of inline literal."

@@ -265,7 +265,7 @@ This is not a balanced 50/50 hybrid. It is 80%-local-with-a-process-shell. That 
 
 ## Appendix B — Sample Workflow Traces
 
-Three traces demonstrate the model on representative tasks. These traces are the validation evidence required by issue #117 ("샘플 워크플로 3개에 대해 새 구조를 적용해 설명할 수 있어야 한다").
+Three traces demonstrate the model on representative tasks. These traces are the validation evidence required by issue #117 (the issue asks the contributor to "apply the new structure to three sample workflows and walk through each").
 
 ### Trace 1 — Feature Planning (`add OAuth login to user domain`)
 
@@ -320,7 +320,7 @@ This trace is a meta-trace: the present PR's Phase 0.5 was itself a sample of cr
 | plan | Add Phase 0.5 step to plan; list questions to ask Codex. | direct edit of plan file |
 | implement | Install codex CLI; run `codex exec -m gpt-5.5 --sandbox read-only` with structured review prompt. | `codex exec` |
 | verify | Read codex review output; cross-check 7 review points against the plan. | manual reading |
-| self-review | Apply the 7 review points to the plan as a "Codex Review 반영 사항" section. | direct plan edit |
+| self-review | Apply the 7 review points to the plan as a "Codex Review feedback applied" section. | direct plan edit |
 | completion gate | Save the trace as Appendix B Trace 4 here so future cross-tool design has a precedent. | this entry |
 
 This trace shows that the model accommodates non-coding workflows (design review is "implementation" of a plan document).

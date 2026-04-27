@@ -10,11 +10,11 @@ import sys
 
 
 def _extract_bash_write(command: str) -> tuple[str, str] | None:
-    """Bash 명령에서 .py 파일 쓰기를 감지하여 (path, content) 반환.
+    """Detect a write to a .py file in a Bash command and return (path, content).
 
-    쓰기가 없으면 None.
+    Returns None when the command does not perform such a write.
     """
-    # > 또는 >> 리다이렉트
+    # > or >> redirect
     m = re.search(r">{1,2}\s*(\S+\.py)\b", command)
     if m:
         return (m.group(1), command)

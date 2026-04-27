@@ -146,7 +146,10 @@ These OK observations support the `Completion State: PASSED`. They are evidence,
 ### Round 7 — Cross-Check on Round 6 (gate-on-gate, Codex)
 
 - **Target**: Round 6 emit captured immediately above, plus the rest of this log entry and the in-flight working tree.
-- **Reviewer**: Codex `gpt-5.5 --sandbox read-only`. Triggered by user signal — *"Claude Code가 놓치는 게 생각보다 많다"* — to validate that the Claude-side gate did not miss substantive issues.
+- **Reviewer**: Codex `gpt-5.5 --sandbox read-only`. Triggered by an explicit user signal that Claude was missing more than expected, used to validate that the Claude-side gate did not skip substantive issues.
+
+> Original user/owner statement (ko, verbatim): "Claude Code가 놓치는 게 생각보다 많다"
+> English normalised meaning: "Claude Code is missing more than I expected."
 - **Why this exists (Option C)**: When Claude reviews its own change set, self-review bias risks treating `Findings: none` as conclusive. Round 7 is the gate-on-gate axis: a different reviewer audits whether the Claude-side gate output is itself defensible.
 - **Final Verdict**: `still needs reinforcement` → all R7.1~R7.7 fixes applied in the same commit set as this Round 7 entry.
 - **R-points surfaced**:

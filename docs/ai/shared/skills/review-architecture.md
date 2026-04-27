@@ -81,7 +81,9 @@ Inspect the 9 architecture checklist categories defined in
 
 1. Resolve the audit target and enumerate the domains included in the run.
 2. Load:
-   - `AGENTS.md`
+   - `AGENTS.md` — including § Language Policy. If audited files in Tier 1
+     contain non-English prose outside the bilingual-token allowlist,
+     surface as a `Findings` violation with `Sync Required: true`.
    - `docs/ai/shared/project-dna.md`
    - `docs/ai/shared/architecture-review-checklist.md`
 3. Use `docs/ai/shared/security-checklist.md` only when an architecture issue

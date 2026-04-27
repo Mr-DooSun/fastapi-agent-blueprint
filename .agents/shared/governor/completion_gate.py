@@ -50,9 +50,8 @@ GOVERNOR_REVIEW_LOG_PREFIX = "docs/ai/shared/governor-review-log/"
 # Parity is asserted by tests/unit/agents_shared/test_completion_gate.py.
 GOVERNOR_REMINDER_WITH_PR = "\n".join(
     [
-        "[completion-gate] governor-changing 변경이 감지됨 (Pillar 7).",
         "[completion-gate] Governor-changing changes detected (Pillar 7).",
-        "PR #{pr}에 매칭되는 governor-review-log 항목이 없습니다.",
+        "No governor-review-log entry matches PR #{pr}.",
         "Expected: docs/ai/shared/governor-review-log/pr-{pr}-<slug>.md",
         "See: docs/ai/shared/governor-review-log/README.md",
     ]
@@ -60,9 +59,8 @@ GOVERNOR_REMINDER_WITH_PR = "\n".join(
 
 GOVERNOR_REMINDER_NO_PR = "\n".join(
     [
-        "[completion-gate] governor-changing 변경이 감지됨 (Pillar 7).",
         "[completion-gate] Governor-changing changes detected (Pillar 7).",
-        "PR 번호 미확인 — PR 생성 후 governor-review-log/ 항목을 추가하세요.",
+        "PR number unknown — open the PR first, then add the governor-review-log/ entry.",
         "See: docs/ai/shared/governor-review-log/README.md",
     ]
 )
