@@ -1,9 +1,10 @@
 """Tier 1 Language Policy checker.
 
 Enforces AGENTS.md § Language Policy: shared-repo Tier 1 paths must not
-contain Korean (Hangul) prose. Bilingual escape tokens are the only
-exception, and they are scoped per-file so a token literal cannot launder
-Korean prose elsewhere.
+contain Korean (Hangul) prose. Bilingual escape tokens and locale data
+files (LOCALE_DATA_FILES) are the two narrowly-scoped exceptions, and they
+are scoped per-file so a token literal cannot launder Korean prose
+elsewhere.
 
 Scope today is **Korean prose only**. Other-language detection (Chinese,
 Japanese, encoded payloads via base64 / HTML entities) is intentionally out
@@ -440,7 +441,8 @@ def run(argv_paths: list[str], *, repo_root: Path = REPO_ROOT) -> int:
             print(v.format(), file=sys.stderr)
         print(
             "\nSee AGENTS.md § Language Policy for the rule. "
-            "Bilingual escape tokens [자명]/[긴급]/[탐색] are the only exception.",
+            "Bilingual escape tokens [자명]/[긴급]/[탐색] and locale data files "
+            "(LOCALE_DATA_FILES) are the two narrowly-scoped exceptions.",
             file=sys.stderr,
         )
         return 1

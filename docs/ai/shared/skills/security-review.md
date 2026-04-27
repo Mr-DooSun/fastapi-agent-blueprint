@@ -84,6 +84,10 @@ Before the main audit, compare shared references against live code.
      (HTML comments, encoded payloads, attribute values, metadata) in Tier 1
      paths is a security-adjacent governance risk; surface as a `Findings`
      violation with `Sync Required: true` if encountered during audit.
+     Korean translation strings inside files listed in
+     `tools/check_language_policy.py::LOCALE_DATA_FILES` (currently
+     `.agents/shared/governor/locale.py`) are intentional locale data, not
+     hidden rationale; do not flag them as governance violations.
    - `docs/ai/shared/project-dna.md`
    - `docs/ai/shared/security-checklist.md`
 2. Build a feature snapshot from `project-dna` section 8.

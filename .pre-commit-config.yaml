@@ -78,8 +78,9 @@ repos:
 
       # Tier 1 Language Policy (AGENTS.md § Language Policy):
       # shared governance/harness/contributor-facing files must not contain
-      # Korean prose. Bilingual escape tokens are the only exception, scoped
-      # per file in tools/check_language_policy.py::TOKEN_LITERALS_BY_FILE.
+      # Korean prose. Bilingual escape tokens and locale data files
+      # (LOCALE_DATA_FILES) are the two narrowly-scoped exceptions, both
+      # scoped per file in tools/check_language_policy.py.
       #
       # The `files:` regex must mirror TIER1_GLOBS in
       # tools/check_language_policy.py. The drift test in
