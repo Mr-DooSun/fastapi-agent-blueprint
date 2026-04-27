@@ -157,7 +157,7 @@ This is the primary cross-tool clarification: what comes from the upstream "supe
 
 ### Model identity
 
-This is **Mostly Local with Philosophy Overlay**, matching the bucket distribution in [harness-asset-matrix.md](harness-asset-matrix.md): ~86% Keep / ~14% Overlay / 0% Replace / 0% Drop (post Round-7; matrix is canonical). The philosophy port adds the framing / governance layer; the substantive content is and remains local.
+This is **Mostly Local with Philosophy Overlay**, matching the bucket distribution in [harness-asset-matrix.md](harness-asset-matrix.md): ~80% Keep / ~20% Overlay / 0% Replace / 0% Drop (Phase 5 #124 closure; matrix is canonical). The philosophy port adds the framing / governance layer; the substantive content is and remains local.
 
 ## §5 Claude / Codex Alignment
 
@@ -180,7 +180,7 @@ The asymmetry in the last row is critical (Codex review R7). Phase 3 verificatio
 
 - **Claude side**: file edits trigger `PostToolUse Edit|Write`. Phase 3 verification-first hook attaches there to suggest test runs after a code edit.
 - **Codex side**: file edits do not surface in `PostToolUse`. Phase 3 detection runs on the **Stop side** by computing `git status --porcelain` over the working tree and triggering the verification reminder when changed source files exist without a corresponding test run.
-- **Both sides**: UserPromptSubmit recognises the exception-token vocabulary identically (Phase 2). The shared parser implementation lives in `.agents/shared/governor/` once Phase 5 lands; until then each side has a small per-tool implementation that must produce identical decisions on identical input.
+- **Both sides**: UserPromptSubmit recognises the exception-token vocabulary identically (Phase 2). As of Phase 5 (#124, Hybrid Harness v1 milestone), the shared parser, marker writer, lifecycle reader, verify-first decision, and completion-gate logic all live in [`.agents/shared/governor/`](../../../.agents/shared/governor/). Hook scripts under `.claude/hooks/` and `.codex/hooks/` are thin shims that import from this package; they cannot redeclare reminder strings or governor-paths globs inline (`tests/unit/agents_shared/test_governor_boundary.py`). The hybrid governance model — escape-token vocabulary, dual-tool adapters, governor-review-log discipline — is permanent; only the *implementation* moved into the shared module.
 
 ### Canonical-truth precedence
 
@@ -243,7 +243,7 @@ When two locations could plausibly host the same fact, the table above resolves 
 
 The Target Operating Model is **Mostly Local with Philosophy Overlay**.
 
-- "Mostly Local" because the bucket distribution is ~86% Keep / ~14% Overlay / 0% Replace / 0% Drop. The substantive content of the harness remains local.
+- "Mostly Local" because the bucket distribution is ~80% Keep / ~20% Overlay / 0% Replace / 0% Drop (Phase 5 #124 closure; 64 active assets). The substantive content of the harness remains local.
 - "Philosophy Overlay" because the *governance* layer — Default Flow, mandatory subset, exception vocabulary, completion-gate idea — is borrowed from the superpowers philosophy and grafted on top.
 
 This is not a balanced 50/50 hybrid. It is 80%-local-with-a-process-shell. That ratio is the answer to issue #117's Key Design Question 7 ("How should Claude and Codex stay aligned without duplicating too much harness logic?"): they share the philosophy overlay; the substantive content is the same per-tool because both read identical shared documents.

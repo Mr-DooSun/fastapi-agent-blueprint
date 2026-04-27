@@ -169,6 +169,7 @@ Twelve canonical reference documents that both Claude and Codex consume. Most ar
 | `migration-strategy.md` | Keep | Low | High |
 | `governor-review-log/` (directory) | Keep | Low | High |
 | `governor-paths.md` | Keep | Low | High |
+| `.agents/shared/governor/` (package) | Keep | Low | High |
 
 ### `project-dna.md`
 
@@ -342,6 +343,16 @@ Twelve canonical reference documents that both Claude and Codex consume. Most ar
 - **Migration risk**: Low.
 - **Stability impact**: High — every path-classification decision in Phase 2~5 hooks resolves to this file.
 - **Notes**: Itself governor-changing. Editing it requires a fresh `governor-review-log/` entry per the file's own §Updating section.
+
+### `.agents/shared/governor/` (Phase 5 / #124 — NEW)
+
+- **Current role**: Shared governor *policy* package consumed by Claude/Codex hook adapters as a thin shim. Eight modules: `__init__.py` (public API + `__all__`), `paths.py` (REPO_ROOT discovery + GOVERNOR_PATHS_MD), `time_window.py` (single `_within_24h`), `tokens.py` (Phase 2 parser + EXPLORATION_TOKENS), `markers.py` (write_marker + read_latest_token + MarkerLifecycle enum + consume_phase2_markers per IC-11/IC-12), `safety.py` (HC-1 single-entry `safe_parse_exception_token` returning `Blocked | ParsedToken`), `verify.py` (Phase 3 REMINDER_TEXT + should_remind_claude), `completion_gate.py` (Phase 4 GateResult dataclass + evaluate_gate + render_reminder + parse_trigger_globs + match_log_entry).
+- **Why it exists**: Phase 4 retrospective surfaced `_within_24h` × 4, `_read_latest_token` × 4, `EXPLORATION_TOKENS` × 2, and reminder-text duplicates whose silent drift would risk governor incidents. Phase 5 (#124) consolidates them into a single Tier B `.agents/shared/governor/` package per ADR 045 / target-operating-model §5. Hooks become thin shims (commit 5).
+- **Replacement feasibility**: None — this is the consolidation target itself.
+- **Final location**: `.agents/shared/governor/`. `pyproject.toml` registers `[tool.pytest.ini_options].pythonpath = [".agents/shared"]` so tests import `governor.*` directly.
+- **Migration risk**: Low. Behaviour-invariance proven by 202 unit tests (93 baseline + 109 added; Round 1 R-points added 2 stale/malformed marker scenarios) and three-tier fail-open coverage including the R0-A.1 invariant (importing a shim under `contextlib.suppress(Exception)` MUST NOT raise SystemExit).
+- **Stability impact**: High. Single source of truth for governor policy; closes the inline-redeclaration loophole asserted by `test_governor_boundary.py`.
+- **Notes**: Boundary contract (R0-C.3): this package owns *policy*; tool-specific runtime utilities (`.codex/hooks/_shared.py` git/subprocess helpers, Codex `session_id()` / verify-log writer / `cleanup_stale_verify_logs`) remain per-tool. `__all__` declared in `__init__.py` enforces stability — `test_governor_boundary.py::test_governor_all_does_not_drop_known_names` fails the build if a public name is removed without deliberate review.
 
 ---
 
@@ -575,9 +586,9 @@ Eighteen hook scripts (6 Claude shell + 4 Claude Python implementations + 8 Code
 
 ### `.codex/hooks/user-prompt-submit.py`
 
-- **Current role**: Prompt safety check (rule-bypass / destructive git / destructive shell) **plus** Phase 2 (#121) exception-token parser. Order: safety check first; on `decision: block`, return without parsing or writing a marker (HC-1 from PR #121). Only after safety has passed does the parser run; its output is informational and never blocks submission.
-- **Bucket**: Keep — Phase 2 (#121) extension is behaviour-preserving.
-- **Notes**: Codex R3 — exception-token recognition never overrides safety / sandbox / Absolute Prohibitions (IC-1). Safety still wins (D1.3). Marker file location: `.codex/state/exception-token-{ts}-{seq}.json` (gitignored).
+- **Current role**: Phase 5 (#124) thin shim. HC-1 ordering (`safety-block-first → parser-second`) is now enforced inside `.agents/shared/governor/safety.py::safe_parse_exception_token`, a single-entry function returning `Blocked | ParsedToken`. The shim cannot reach the parser past a destructive-prompt block (R0-C.1 — callable-injection rejected as bypass-prone).
+- **Bucket**: Keep — Phase 5 consolidation preserves behaviour byte-identically.
+- **Notes**: Codex R3 / IC-1 still hold: exception-token recognition never overrides safety / sandbox / Absolute Prohibitions. Marker file location: `.codex/state/exception-token-{ts}-{seq}.json` (gitignored). Phase 5 invariant: no top-level `sys.exit` (R0-A.1). HC-1 unit-test coverage: `test_safe_parse_does_not_invoke_parser_when_blocked`.
 
 ### `.claude/hooks/user-prompt-submit.sh`
 
@@ -588,10 +599,10 @@ Eighteen hook scripts (6 Claude shell + 4 Claude Python implementations + 8 Code
 
 ### `.claude/hooks/user_prompt_submit.py`
 
-- **Current role**: Phase 2 (#121) parser helper. NFKC normalisation + canonical regex `^\s*\[(trivial|hotfix|exploration|자명|긴급|탐색)\](?:\s|$)` (case-insensitive). Emits `{matched, token, rationale_required}` JSON to stderr; on match, writes a marker file under `.claude/state/`.
-- **Why it exists**: Sh wrapper + py helper split (matches the `pre-tool-security.sh` + `pre_tool_security.py` pattern). Avoids shell-escaping NFKC + regex inline.
+- **Current role**: Phase 5 (#124) thin shim — the parser body now lives in `.agents/shared/governor/tokens.py`. This file imports `parse_exception_token` and `write_marker` from the shared module, exposes them as module attributes (back-compat for tests that monkeypatch `STATE_DIR`), and orchestrates stdin/stderr.
+- **Why it exists**: Sh wrapper + py helper split + Phase 5 consolidation. Avoids shell-escaping NFKC + regex inline.
 - **Bucket**: Keep.
-- **Notes**: Output is identical to `.codex/hooks/user-prompt-submit.py` parser. Parity asserted by `tests/unit/agents_shared/test_token_parser.py` (silent-divergence safety net for D1=B).
+- **Notes**: Phase 5 invariant: no top-level `sys.exit` / `raise SystemExit` (R0-A.1). Output identical to Codex side because both shims import the same shared helper. Parity asserted by `tests/unit/agents_shared/test_token_parser.py` and `test_shared_module_parity.py`.
 
 ### `.claude/hooks/verify-first.sh`
 
@@ -602,10 +613,10 @@ Eighteen hook scripts (6 Claude shell + 4 Claude Python implementations + 8 Code
 
 ### `.claude/hooks/verify_first.py`
 
-- **Current role**: Phase 3 (#122) verify-first decision helper. Reads PostToolUse Edit|Write payload from stdin; if the changed `file_path` ends with `.py` AND the latest Phase 2 marker is not `[exploration]/[탐색]`, prints a frozen `REMINDER_TEXT` to stderr.
-- **Why it exists**: Reminds the user that the Default Coding Flow `verify` step is missing for the changed Python file. Read-only on Phase 2 markers (IC-11 from PR #126; Phase 4 #123 owns lifecycle).
+- **Current role**: Phase 5 (#124) thin shim — the verify-first decision body now lives in `.agents/shared/governor/verify.py`. The shim imports `REMINDER_TEXT`, `is_python_source`, `extract_file_path`, and the marker reader, then exposes `read_latest_token_marker` (READ_ONLY lifecycle wrapper) and `should_remind` for the existing test surface.
+- **Why it exists**: Reminds the user that the Default Coding Flow `verify` step is missing for the changed Python file. Read-only on Phase 2 markers (IC-11 — verify-first reads with `MarkerLifecycle.READ_ONLY`; Phase 4 #123 owns lifecycle).
 - **Bucket**: Overlay.
-- **Notes**: `REMINDER_TEXT` constant is string-equal to `.codex/hooks/verify_first.py`. Parity asserted by `tests/unit/agents_shared/test_verify_first.py::test_reminder_text_string_equality`. Fail-open on every error path (HC-3.6).
+- **Notes**: `REMINDER_TEXT` is now a single shared constant — string-equality is intrinsic, not asserted. Phase 5 invariant: no top-level `sys.exit` (R0-A.1). Fail-open on every error path (HC-3.6 / HC-5.5).
 
 ### `.codex/hooks/pre-tool-security.py`
 
@@ -627,24 +638,24 @@ Eighteen hook scripts (6 Claude shell + 4 Claude Python implementations + 8 Code
 
 ### `.codex/hooks/verify_first.py`
 
-- **Current role**: Phase 3 (#122) verify-first decision helper. Library module — NOT registered as its own hook (IC-2 single Stop event output). Imported by `stop-sync-reminder.py` (decision) and `post-tool-format.py` (verify-log writer).
-- **Why it exists**: Codex side cannot trigger reminders on `PostToolUse Bash` because `apply_patch` is invisible there (IC-5). Detection happens at Stop time using `_shared.changed_files()` + per-session verify-log freshness check.
+- **Current role**: Phase 5 (#124) thin shim — verify-first *policy* (REMINDER_TEXT, marker reader) imported from `.agents/shared/governor/verify.py`. Codex-only runtime adapters retained: `session_id()`, `verify_log_path`, `append_verify_log`, `current_session_latest_verify_ns`, `changed_python_files`, `max_changed_py_mtime_ns`, `should_remind` (Codex-specific verify-log freshness logic).
+- **Why it exists**: Codex side cannot trigger reminders on `PostToolUse Bash` because `apply_patch` is invisible there (IC-5). Detection happens at Stop time using `_shared.changed_files()` + per-session verify-log freshness check. The session-tracking machinery is intrinsically Codex-only (depends on `CODEX_THREAD_ID`).
 - **Bucket**: Overlay.
-- **Notes**: `REMINDER_TEXT` is string-equal to `.claude/hooks/verify_first.py`. `session_id()` priority: `CODEX_THREAD_ID` (Codex CLI injects this into all hook processes in a session — R1.1) → `CODEX_SESSION_ID` (fallback alias) → `f"{ppid}-{pid}-{start_ns:016x}"` (non-Codex environments; writer/reader-incompatible across processes). Verify-log entries store `ts_epoch_ns` for subsecond freshness comparison against `Path.stat().st_mtime_ns` (R0.3). `read_latest_token_marker` duplicated from Claude side — consolidated by Phase 5 (#124).
+- **Notes**: `REMINDER_TEXT` is now imported from the shared module — string-equality is intrinsic. `session_id()` priority: `CODEX_THREAD_ID` (Codex CLI injects this into all hook processes in a session) → `CODEX_SESSION_ID` (fallback alias) → `f"{ppid}-{pid}-{start_ns:016x}"` (non-Codex environments). Verify-log entries store `ts_epoch_ns` for subsecond freshness comparison against `Path.stat().st_mtime_ns`. Phase 5 invariant: no top-level `sys.exit` (R0-A.1).
 
-### `.claude/hooks/completion_gate.py` (Phase 4 / #123 — NEW)
+### `.claude/hooks/completion_gate.py`
 
-- **Current role**: Completion-gate helper (Claude side). Called as subprocess by `stop-sync-reminder.sh`; stdout captured and appended. Emits Pillar 7 reminder when governor-changing changes lack a matching `governor-review-log/pr-{N}-*.md` entry. Reads governor-paths.md at runtime (IC-10 — no inline glob re-declaration). Also runs IC-11 Option A lifecycle: deletes all `.claude/state/exception-token-*.json` on Stop.
-- **Why it exists**: Phase 4 completion-gate check. Separate Python helper keeps the `.sh` entry point minimal while providing full Python glob-matching and `gh` CLI integration.
+- **Current role**: Phase 5 (#124) thin shim. Pillar 7 logic (governor-paths matching, log-entry classification, reminder rendering) imported from `.agents/shared/governor/completion_gate.py`; IC-11 Option A lifecycle imported from `.agents/shared/governor/markers.py::consume_phase2_markers`. The shim manually orchestrates `_changed_files`, `_read_latest_token`, and `pr_number_from_branch` so the existing test suite's monkeypatches keep working.
+- **Why it exists**: Phase 4 completion-gate check. Phase 5 consolidation preserves behaviour byte-identically while collapsing the duplicate per-tool implementations.
 - **Bucket**: Overlay.
-- **Notes**: `GOVERNOR_REMINDER_WITH_PR` / `GOVERNOR_REMINDER_NO_PR` are string-equal to `.codex/hooks/completion_gate.py` (IC-2). Fail-open per HC-4.7. `_within_24h` filter on Phase 2 marker read (defensive against Stop-failure leftovers). Phase 5 (#124) absorbs into `.agents/shared/governor/`.
+- **Notes**: `GOVERNOR_REMINDER_WITH_PR` / `GOVERNOR_REMINDER_NO_PR` are imported from the shared module — string-equality is intrinsic, no longer asserted via cross-file scrape (R0-C.3). Fail-open per HC-4.7 / HC-5.5. `_within_24h` filter retained inside `read_latest_token`. Phase 5 invariant: no top-level `sys.exit` (R0-A.1).
 
-### `.codex/hooks/completion_gate.py` (Phase 4 / #123 — NEW)
+### `.codex/hooks/completion_gate.py`
 
-- **Current role**: Completion-gate helper (Codex side). Imported by `stop-sync-reminder.py` inside the segments list (IC-2 single Stop event output). Same Pillar 7 + IC-11 lifecycle as Claude side. Also opportunistically cleans up stale verify-log-*.json files from OTHER sessions (>24h).
-- **Why it exists**: Phase 4 completion-gate check. Mirrors Claude side public API (matching function signatures for Phase 5 consolidation path).
+- **Current role**: Phase 5 (#124) thin shim. Pillar 7 logic imported from `.agents/shared/governor/completion_gate.py`; IC-11 Option A lifecycle imported from `.agents/shared/governor/markers.py`. `cleanup_stale_verify_logs` retained as Codex-only runtime adapter because it depends on `verify_first.session_id()` to know which verify-log file belongs to the current session.
+- **Why it exists**: Phase 4 completion-gate check. Codex side keeps the cleanup helper because session lifecycle is intrinsically Codex-only.
 - **Bucket**: Overlay.
-- **Notes**: `GOVERNOR_REMINDER_*` string-equal to Claude side. `cleanup_stale_verify_logs` preserves current session's log; only prunes other sessions' 24h-old files. Fail-open per HC-4.7.
+- **Notes**: `GOVERNOR_REMINDER_*` imported from shared module. `cleanup_stale_verify_logs` preserves current session's log; only prunes other sessions' 24h-old files. Fail-open per HC-4.7 / HC-5.5. Phase 5 invariant: no top-level `sys.exit` (R0-A.1).
 
 ---
 
@@ -707,17 +718,17 @@ Six rule files (5 Claude + 1 Codex). All `Keep` except `commands.md` which becom
 
 | Bucket | Count | Share | Notes |
 |---|---|---|---|
-| Keep | 50 | ~79% | Project-specific architecture / safety / reference value (incl. 4 design + 3 self-coherence-recovery process-governor artefacts + 2 Phase 2 #121 hooks) |
-| Overlay | 13 | ~21% | Process discipline now routed by Default Flow (Phase 3 #122 adds 3 verify-first; Phase 4 #123 adds 2 completion-gate hooks) |
+| Keep | 51 | ~80% | Project-specific architecture / safety / reference value (incl. 4 design + 3 self-coherence-recovery process-governor artefacts + 2 Phase 2 #121 hooks + Phase 5 #124 shared governor package) |
+| Overlay | 13 | ~20% | Process discipline now routed by Default Flow (Phase 3 #122 adds 3 verify-first; Phase 4 #123 adds 2 completion-gate hooks; Phase 5 #124 reduces those hooks to thin shims without changing buckets) |
 | Replace | 0 | 0% | None in initial inventory; reserved for future passes |
 | Drop | 0 | 0% | Initial pass found no genuinely removable assets |
-| **Total** | **63** | 100% | |
+| **Total** | **64** | 100% | |
 
-Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=17` (12 reference + 3 design living docs + `governor-review-log/` directory + `governor-paths.md`), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=18` (Phase 4 #123 added `.claude/hooks/completion_gate.py` + `.codex/hooks/completion_gate.py`; Phase 3 = 16, Phase 2 = 13, Phase 1 = 10), `Tier 4=6` — sum 64. The 63 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d. The bucket-share percentages use 63 as the denominator.
+Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=18` (12 reference + 3 design living docs + `governor-review-log/` directory + `governor-paths.md` + `.agents/shared/governor/` package added by Phase 5 #124), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=18` (Phase 4 #123 added `.claude/hooks/completion_gate.py` + `.codex/hooks/completion_gate.py`; Phase 3 = 16, Phase 2 = 13, Phase 1 = 10; Phase 5 #124 converts 6 of these to thin shims without changing the count), `Tier 4=6` — sum 65. The 64 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d. The bucket-share percentages use 64 as the denominator.
 
 This distribution matches the "Mostly Local with Philosophy Overlay" model declared in [ADR 045 §D4](../../history/045-hybrid-harness-target-architecture.md). The `Replace` and `Drop` columns are both empty in the initial pass: no asset's content is being rewritten, and self-verification during cross-link work showed that the only `Drop` candidate identified during the first triage was actually an active component (a sh-wrapper `.py` pair).
 
-If a future `Replace` candidate emerges, the threshold is: Keep+Overlay would otherwise force the asset into structural inconsistency with the Default Flow. None of the current 58 assets meet that.
+If a future `Replace` candidate emerges, the threshold is: Keep+Overlay would otherwise force the asset into structural inconsistency with the Default Flow. None of the current 64 active assets meet that.
 
 ## Verification
 
@@ -741,7 +752,7 @@ The following self-checks must pass before this matrix is treated as authoritati
 - [ ] Every skill has a consistent bucket across its three wrapper layers (Phase 1 update preserves this invariant).
 - [ ] No asset is classified `Replace` while other Phase 1 work treats it as `Keep`.
 - [ ] Any `Drop` candidate has been verified to have zero callers (`rg <name> .claude/ .codex/`). Self-verification during cross-link work overturned the only initial Drop candidate; the principle remains: a Drop classification requires positive evidence of zero callers.
-- [ ] Bucket-share ratio matches §Bucket Distribution Summary (~86% Keep / ~14% Overlay / 0% Replace / 0% Drop) within ±10%.
+- [ ] Bucket-share ratio matches §Bucket Distribution Summary (~80% Keep / ~20% Overlay / 0% Replace / 0% Drop) within ±10%.
 
 ## Update Log
 
@@ -749,3 +760,4 @@ The following self-checks must pass before this matrix is treated as authoritati
 - 2026-04-26 — Phase 2 (#121): added `.claude/hooks/user-prompt-submit.sh` + `.claude/hooks/user_prompt_submit.py` to Tier 3; updated `.codex/hooks/user-prompt-submit.py` role to include exception-token parsing (behaviour-preserving). Total 56 → 58.
 - 2026-04-27 — Phase 3 (#122): added `.claude/hooks/verify-first.{sh,py}` (sibling in existing `PostToolUse Edit|Write` matcher) + `.codex/hooks/verify_first.py` library to Tier 3; extended `.codex/hooks/post-tool-format.py` with verify-class command logger and top-level fail-open (R0.4); extended `.codex/hooks/stop-sync-reminder.py` to merge a verify-first segment (import inside try-block per R0.1). Total 58 → 61. Bucket-share shifted Keep 86% → 82% / Overlay 14% → 18%.
 - 2026-04-27 — Phase 4 (#123): added `.claude/hooks/completion_gate.py` + `.codex/hooks/completion_gate.py` to Tier 3 (completion-gate Stop adapter, Pillar 7 + IC-11 Option A). Total 61 → 63. Bucket-share shifted Keep 82% → 79% / Overlay 18% → 21% as both new hooks classify as Overlay.
+- 2026-04-27 — Phase 5 (#124): added `.agents/shared/governor/` package to Tier 1 (8 modules consolidating Phase 2~4 duplicates: paths / time_window / tokens / markers / safety / verify / completion_gate / `__init__`). Updated Tier 3 hook role descriptions for the 6 hooks now operating as thin shims (`.claude/hooks/{user_prompt_submit,verify_first,completion_gate}.py` + `.codex/hooks/{user-prompt-submit,verify_first,completion_gate}.py`). Total 63 → 64. Bucket-share Keep 79% → 80% (1 net Keep added) / Overlay 21% → 20%. Closes #117 "Hybrid Harness v1" milestone — escape token vocabulary and hybrid governance remain permanent (target-operating-model §3 / §7).

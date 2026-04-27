@@ -91,3 +91,4 @@ The prompt is a starting point; phase-specific reviews (Phase 2 token parser, Ph
 | #126 | Phase 2: UserPromptSubmit exception-token parser | #121 | [pr-126-userpromptsubmit-token-parser.md](pr-126-userpromptsubmit-token-parser.md) |
 | #127 | Phase 3: verify-first adapters (Claude PostToolUse + Codex Stop) | #122 | [pr-127-verify-first-adapters.md](pr-127-verify-first-adapters.md) |
 | #128 | Phase 4: completion-gate Stop adapter (IC-11 Option A + Pillar 7) | #123 | [pr-128-completion-gate-stop-adapter.md](pr-128-completion-gate-stop-adapter.md) |
+| #130 | Phase 5: shared governor module + thin shims (Hybrid Harness v1 closure) | #124 | [pr-130-shared-governor-module.md](pr-130-shared-governor-module.md) |

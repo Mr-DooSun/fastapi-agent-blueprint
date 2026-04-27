@@ -1,78 +1,64 @@
-"""PostToolUse Edit|Write — verify-first reminder (Phase 3 of #117 / #122).
+"""PostToolUse Edit|Write — verify-first reminder shim (Phase 5 of #117 / #124).
 
-Emits a stderr reminder when a `.py` file is edited and the latest Phase 2
-marker is NOT an [exploration]/[탐색] token. Read-only on Phase 2 markers
-(IC-11 from PR #126; Phase 4 #123 owns lifecycle). Fail-open on every error
-path (HC-3.6).
+Thin shim over ``.agents/shared/governor``. Preserves the Phase 3
+contract:
 
-REMINDER_TEXT is frozen at Phase 3 and string-equal to the Codex side's
-`.codex/hooks/verify_first.py` constant. Parity is asserted by
-`tests/unit/agents_shared/test_verify_first.py::test_reminder_text_string_equality`.
+* Read-only on Phase 2 markers (IC-11) — uses
+  ``MarkerLifecycle.READ_ONLY`` so verify-first never consumes markers.
+* ``REMINDER_TEXT`` is imported from the shared module so it is
+  byte-equal to the Codex side automatically.
+* Module-level ``sys.exit`` is forbidden (Plan §D3) — shared import
+  failure → ``_SHARED_OK = False`` and ``main()`` returns 0 silently.
 """
 
 from __future__ import annotations
 
 import json
 import sys
-from datetime import UTC, datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 STATE_DIR = REPO_ROOT / ".claude" / "state"
 
-EXPLORATION_TOKENS = frozenset({"exploration", "탐색"})
+_SHARED = REPO_ROOT / ".agents" / "shared"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
 
+try:
+    from governor import (  # noqa: E402 — sys.path adjusted above
+        EXPLORATION_TOKENS,
+        REMINDER_TEXT,
+        MarkerLifecycle,
+        _within_24h,
+        extract_file_path,
+        is_python_source,
+        read_latest_token,
+    )
 
-def _within_24h(ts: str) -> bool:
-    """Return True if ISO 8601 UTC timestamp is within the last 24 hours."""
-    try:
-        dt = datetime.fromisoformat(ts.rstrip("Z")).replace(tzinfo=UTC)
-        return (datetime.now(tz=UTC) - dt).total_seconds() < 86400
-    except Exception:
+    _SHARED_OK = True
+except Exception:  # noqa: BLE001 — HC-5.5 fail-open
+    EXPLORATION_TOKENS = frozenset()
+    REMINDER_TEXT = ""
+    MarkerLifecycle = None  # type: ignore[assignment,misc]
+    read_latest_token = None  # type: ignore[assignment]
+    _SHARED_OK = False
+
+    def _within_24h(ts: str) -> bool:  # type: ignore[no-redef]
         return True
 
+    def extract_file_path(payload: dict) -> str | None:  # type: ignore[no-redef]
+        return None
 
-REMINDER_TEXT = "\n".join(
-    [
-        "[verify-first] verify 단계가 누락된 것 같습니다. 변경된 .py 파일에 대해 테스트/검증을 권장합니다.",
-        "[verify-first] Verify step appears to be missing for the changed .py files.",
-        "Suggested next: `/test-domain run <domain>` (or `pytest tests/unit/<domain>/`)",
-        "Silence with `[exploration]` / `[탐색]` prefix when intentionally exploring.",
-    ]
-)
+    def is_python_source(file_path: str | None) -> bool:  # type: ignore[no-redef]
+        return False
 
 
 def read_latest_token_marker(state_dir: Path) -> str | None:
-    """Return token of the most-recent valid Phase 2 marker, or None.
+    """Backward-compat wrapper — read with READ_ONLY lifecycle (IC-11)."""
 
-    Most-recent = max by `ts` field (ISO 8601 UTC; lexically chronological).
-    Read-only — never deletes/mutates (IC-11). Phase 4 owns lifecycle.
-    """
-    if not state_dir.exists():
+    if not _SHARED_OK or read_latest_token is None or MarkerLifecycle is None:
         return None
-    candidates: list[tuple[str, str]] = []
-    for path in state_dir.glob("exception-token-*.json"):
-        try:
-            record = json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            continue
-        ts = record.get("ts")
-        token = record.get("token")
-        if isinstance(ts, str) and isinstance(token, str) and _within_24h(ts):
-            candidates.append((ts, token))
-    if not candidates:
-        return None
-    return max(candidates, key=lambda item: item[0])[1]
-
-
-def extract_file_path(payload: dict) -> str | None:
-    tool_input = payload.get("tool_input") or {}
-    file_path = tool_input.get("file_path")
-    return file_path if isinstance(file_path, str) else None
-
-
-def is_python_source(file_path: str | None) -> bool:
-    return bool(file_path) and file_path.endswith(".py")
+    return read_latest_token(state_dir, MarkerLifecycle.READ_ONLY)
 
 
 def should_remind(payload: dict, state_dir: Path = STATE_DIR) -> bool:
@@ -83,10 +69,8 @@ def should_remind(payload: dict, state_dir: Path = STATE_DIR) -> bool:
 
 
 def main() -> int:
-    """Read PostToolUse Edit|Write payload from stdin; emit reminder if needed.
-
-    Fail-open: any unexpected exception returns 0 with no output.
-    """
+    if not _SHARED_OK:
+        return 0
     try:
         raw = sys.stdin.read()
         if not raw.strip():
@@ -96,7 +80,7 @@ def main() -> int:
             return 0
         if should_remind(payload):
             print(REMINDER_TEXT, file=sys.stderr)
-    except Exception:  # noqa: BLE001 — fail-open per HC-3.6
+    except Exception:  # noqa: BLE001 — fail-open per HC-5.5
         return 0
     return 0
 

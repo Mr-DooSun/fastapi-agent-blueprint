@@ -21,6 +21,8 @@ Issue #117 introduced a hybrid local process governor. The four documents below,
 - [`docs/ai/shared/target-operating-model.md`](docs/ai/shared/target-operating-model.md) — the target workflow, exception model, Claude/Codex alignment, and sample-workflow traces
 - [`docs/ai/shared/migration-strategy.md`](docs/ai/shared/migration-strategy.md) — phased migration plan, rollback rules, and the asset-move ordering
 
+Status (2026-04-27): Phase 5 (#124) ships the **Hybrid Harness v1** milestone. Governor *policy* now lives in a single shared package at [`.agents/shared/governor/`](.agents/shared/governor/); Claude / Codex hook scripts under `.claude/hooks/` and `.codex/hooks/` operate as thin shims that import from it. The hybrid governance model itself — escape-token vocabulary, dual-tool adapters, governor-review-log discipline — remains permanent (target-operating-model §3 / §7). Future governor changes belong in the shared package, not in per-tool inline copies (`tests/unit/agents_shared/test_governor_boundary.py` enforces this).
+
 ## Project Scale
 
 This project is an AI Agent Backend Platform targeting enterprise-grade services with 10+ domains and 5+ team members.
