@@ -83,6 +83,15 @@ This entry inherits IC-1 ~ IC-10 from [`pr-125-hybrid-harness-target-architectur
 
 - **IC-11** (Phase 2 R1.3 deferral) **Marker lifecycle is unspecified at Phase 2.** The Phase 2 hooks write `.claude/state/exception-token-{ts}-{uuid}.json` / `.codex/state/...` markers when an exception token is recognised, but the markers accumulate across sessions with no consumed / age / session-id field. Phase 4 (#123) **must commit to a lifecycle policy** before promoting the completion gate from informational to harder reminder. Candidate policies (not exhaustive): (a) read-and-delete by the completion-gate hook on each Stop; (b) age-based filter (e.g. only consider markers within the last N minutes); (c) session-id correlation (require `session_id` field added to the marker schema and matched against the current session). Whichever Phase 4 picks, the marker schema may grow new fields — Phase 5 (#124) will then consolidate the writer in `.agents/shared/governor/`. Until Phase 4 lands, users may delete `.claude/state/*.json` and `.codex/state/*.json` manually (both are gitignored).
 
+### IC-11 Resolution (closed by Phase 4 / PR #128)
+
+Phase 4 commits to **Option A — read-and-delete on Stop** with opportunistic 24h cleanup:
+- Stop hook (both Claude and Codex sides) reads the latest marker, applies `[exploration]`/`[탐색]` silence to its own segments, then deletes ALL `exception-token-*.json` files in the state dir.
+- `read_latest_token_marker` skips markers older than 24h (defensive against Stop-failure leftovers).
+- Marker schema unchanged from Phase 2 (no `session_id` field added; PR #126 schema remains valid).
+- Rationale: Stop is the sole consumer-deleter; PostToolUse readers (Phase 3 Claude) and Stop pre-segment readers (Phase 3 Codex) all run before Stop's delete, so within one prompt all reads see the same file.
+- Open question absorbed by Phase 5 (#124): should `.codex/state/verify-log-*.json` cleanup also be Stop-driven, or thread-aware via `CODEX_THREAD_ID` lifecycle? Phase 4 only does opportunistic 24h cleanup of *other* sessions' logs.
+
 ## Self-Application Proof
 
 PR #126 is governor-changing. The governor's own self-review and completion-gate steps are recorded here.
