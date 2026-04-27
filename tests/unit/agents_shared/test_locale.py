@@ -671,11 +671,23 @@ def test_shell_resolver_callsites_have_single_quoted_fallback() -> None:
 def _load_codex_stop_sync():
     """Re-import the codex stop-sync module fresh (its top-level was
     refactored to define build_segments + main; importing is now safe
-    because nothing executes at top level except function definitions)."""
-    return _load_module(
-        "codex_stop_sync_test",
-        REPO_ROOT / ".codex" / "hooks" / "stop-sync-reminder.py",
-    )
+    because nothing executes at top level except function definitions).
+
+    Codex stop-sync does `from _shared import REPO_ROOT, changed_files`
+    at import time, so we install Codex `_shared` under the canonical
+    name first (same pattern as _load_codex_completion_gate)."""
+    codex_hooks = REPO_ROOT / ".codex" / "hooks"
+    saved_shared = sys.modules.pop("_shared", None)
+    try:
+        _load_module("_shared", codex_hooks / "_shared.py")
+        return _load_module(
+            "codex_stop_sync_test", codex_hooks / "stop-sync-reminder.py"
+        )
+    finally:
+        if saved_shared is not None:
+            sys.modules["_shared"] = saved_shared
+        else:
+            sys.modules.pop("_shared", None)
 
 
 def test_codex_stop_sync_build_segments_default_english_byte_identical() -> None:
@@ -701,7 +713,7 @@ def test_codex_stop_sync_build_segments_ko(
     m = _load_codex_stop_sync()
     segments = m.build_segments(changed=["src/_core/x.py"])
     seg0 = segments[0]
-    assert "계속 진행하기 전에 가이드라인 동기화가 필요합니다" in seg0
+    assert "이 작업을 마무리하기 전에 가이드라인 동기화가 필요합니다" in seg0
     assert "변경된 Foundation 파일:" in seg0
     assert "src/_core/x.py" in seg0  # path stays as-is
     assert "Codex: $sync-guidelines 실행" in seg0  # command token preserved
@@ -789,7 +801,7 @@ def test_codex_completion_gate_emits_ko_segment(
 
     seg = cg.governor_changing_segment()
     assert seg is not None
-    assert "거버너 변경 사항이 감지" in seg
+    assert "거버너 관련 변경이 감지" in seg
     assert "PR #999" in seg
     assert "{pr}" not in seg
 
@@ -833,7 +845,7 @@ def test_claude_completion_gate_emits_ko_segment(
 
     seg = cg.governor_changing_segment()
     assert seg is not None
-    assert "거버너 변경 사항이 감지" in seg
+    assert "거버너 관련 변경이 감지" in seg
     assert "PR #999" in seg
 
 
@@ -892,7 +904,7 @@ def test_claude_stop_sync_shell_emits_ko(tmp_path: Path) -> None:
     assert "변경된 Foundation 파일:" in result.stdout
     assert "src/_core/x.py" in result.stdout  # path preserved
     assert "Claude: /sync-guidelines 실행" in result.stdout
-    assert "Codex: $sync-guidelines도 함께 실행" in result.stdout
+    assert "Codex: $sync-guidelines도 실행" in result.stdout
 
 
 # ---------------------------------------------------------------------------

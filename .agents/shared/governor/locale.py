@@ -76,15 +76,15 @@ _LOCALE_EN: dict[str, str] = {
 _LOCALE_KO: dict[str, str] = {
     "REMINDER_TEXT": "\n".join(
         [
-            "[verify-first] 변경된 .py 파일에 대한 검증 단계가 누락된 것 같습니다.",
-            "계속하기 전에 테스트 또는 정적 검사를 실행하세요.",
+            "[verify-first] 변경된 .py 파일에 대한 검증 단계가 빠진 것 같습니다.",
+            "계속하기 전에 테스트나 정적 검사를 실행하세요.",
             "Suggested next: `/test-domain run <domain>` (또는 `pytest tests/unit/<domain>/`)",
-            "※ `[exploration]` / `[탐색]` 접두사로 이 알림을 끌 수 있습니다.",
+            "의도적으로 탐색 중이라면 `[exploration]` / `[탐색]` 접두사로 이 알림을 숨길 수 있습니다.",
         ]
     ),
     "GOVERNOR_REMINDER_WITH_PR": "\n".join(
         [
-            "[completion-gate] 거버너 변경 사항이 감지되었습니다 (Pillar 7).",
+            "[completion-gate] 거버너 관련 변경이 감지되었습니다 (Pillar 7).",
             "PR #{pr}에 해당하는 governor-review-log 항목이 없습니다.",
             "예상 경로: docs/ai/shared/governor-review-log/pr-{pr}-<slug>.md",
             "참조: docs/ai/shared/governor-review-log/README.md",
@@ -92,8 +92,8 @@ _LOCALE_KO: dict[str, str] = {
     ),
     "GOVERNOR_REMINDER_NO_PR": "\n".join(
         [
-            "[completion-gate] 거버너 변경 사항이 감지되었습니다 (Pillar 7).",
-            "PR 번호를 알 수 없습니다 — 먼저 PR을 열고 governor-review-log/ 항목을 추가하세요.",
+            "[completion-gate] 거버너 관련 변경이 감지되었습니다 (Pillar 7).",
+            "PR 번호를 알 수 없습니다. 먼저 PR을 연 뒤 governor-review-log/ 항목을 추가하세요.",
             "참조: docs/ai/shared/governor-review-log/README.md",
         ]
     ),
@@ -104,19 +104,19 @@ _LOCALE_KO: dict[str, str] = {
     "SYNC_FOUNDATION_FILES_HEADER": "변경된 Foundation 파일:",
     "SYNC_STRUCTURE_FILES_HEADER": "변경된 도메인 구조 파일:",
     "SYNC_CLAUDE_RUN": "Claude: /sync-guidelines 실행",
-    "SYNC_CODEX_RUN_ALSO": "Codex: $sync-guidelines도 함께 실행",
+    "SYNC_CODEX_RUN_ALSO": "Codex: $sync-guidelines도 실행",
     "SYNC_CODEX_RUN_PRIMARY": "Codex: $sync-guidelines 실행",
-    "SYNC_CLAUDE_RUN_ALSO": "Claude Code: /sync-guidelines도 함께 실행",
+    "SYNC_CLAUDE_RUN_ALSO": "Claude Code: /sync-guidelines도 실행",
     "SYNC_INCOMPLETE_NOTE": (
-        "project-dna, AUTO-FIX, REVIEW, Remaining이 모두 보고되어야 동기화가 완료됩니다."
+        "project-dna, AUTO-FIX, REVIEW, Remaining을 모두 보고해야 동기화가 완료됩니다."
     ),
     "SYNC_REVIEW_TARGETS_NOTE": (
         "자동 문서 편집이 없는 경우에도 REVIEW 대상은 반드시 보고해야 합니다."
     ),
     "SYNC_REPORT_BOTH_NOTE": (
-        "sync 실행 시 종료 전에 AUTO-FIX와 REVIEW 대상을 모두 보고하세요."
+        "동기화 실행 후 마무리하기 전에 AUTO-FIX와 REVIEW 대상을 모두 보고하세요."
     ),
-    "SYNC_FOUNDATION_LEAD": "계속 진행하기 전에 가이드라인 동기화가 필요합니다.",
+    "SYNC_FOUNDATION_LEAD": "이 작업을 마무리하기 전에 가이드라인 동기화가 필요합니다.",
     "SYNC_STRUCTURE_LEAD": "가이드라인 동기화를 권장합니다.",
 }
 
