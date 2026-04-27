@@ -19,7 +19,11 @@ that is only meaningful inside the Codex Stop hook.
 
 Behaviour invariance (HC-5.1): ``REMINDER_TEXT`` is byte-for-byte
 identical to the pre-Phase-5 constant; ``should_remind_claude`` mirrors
-the original predicate ordering.
+the original predicate ordering. AGENT_LOCALE rendering (issue #133)
+is applied at the hook's emit call site via
+``governor.locale.get_locale_string`` — this constant remains the
+English canonical and the locale.py table re-exports it by reference
+so default-locale output stays byte-identical.
 """
 
 from __future__ import annotations

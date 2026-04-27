@@ -48,6 +48,10 @@ GOVERNOR_REVIEW_LOG_PREFIX = "docs/ai/shared/governor-review-log/"
 
 # IC-2: byte-for-byte string-equal between Claude/Codex hook adapters.
 # Parity is asserted by tests/unit/agents_shared/test_completion_gate.py.
+# AGENT_LOCALE rendering (issue #133) is applied at the hook's emit call
+# site via governor.locale.get_locale_string; both hooks share the same
+# resolver and these constants remain the English canonical, so byte
+# equality (and the parity test) hold for the default locale.
 GOVERNOR_REMINDER_WITH_PR = "\n".join(
     [
         "[completion-gate] Governor-changing changes detected (Pillar 7).",
