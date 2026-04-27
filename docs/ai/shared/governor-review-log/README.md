@@ -94,3 +94,4 @@ The prompt is a starting point; phase-specific reviews (Phase 2 token parser, Ph
 | #130 | Phase 5: shared governor module + thin shims (Hybrid Harness v1 closure) | #124 | [pr-130-shared-governor-module.md](pr-130-shared-governor-module.md) |
 | #132 | Tier 1 language policy + Korean prose cleanup + 3-layer enforcement | #131 | [pr-132-language-policy.md](pr-132-language-policy.md) |
 | #134 | AGENT_LOCALE: localized hook reminders + locale data exception | #133 | [pr-134-agent-locale.md](pr-134-agent-locale.md) |
+| #138 | ADR 046 follow-up: Status Accepted + issue backfill #136/#137 + project-status sync | #74 / #135 | [pr-138-adr-046-followup.md](pr-138-adr-046-followup.md) |
