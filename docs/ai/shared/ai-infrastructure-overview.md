@@ -101,7 +101,7 @@ Note: `#74-A` and `#74-B` are placeholder names; actual issue numbers assigned a
 - `docs/history/037-pydanticai-agent-integration.md`
 - `docs/history/archive/038-llm-observability-dual-path.md` ← superseded by ADR 046
 
-### Issue #74-A / #136: OTEL Core Setup (SHIPPED — PR #136)
+### Issue #74-A / #136: OTEL Core Setup (SHIPPED — PR #141)
 
 **Modified**:
 - `src/_core/config.py` — `otel_enabled`, `otel_exporter_otlp_endpoint` fields + partial-config validator

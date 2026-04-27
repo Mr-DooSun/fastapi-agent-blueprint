@@ -1,6 +1,6 @@
 # Project Status
 
-> Last synced: 2026-04-28 via #136 OTEL core (PR TBD)
+> Last synced: 2026-04-28 via #136 OTEL core (PR #141)
 
 ## Current Version Context
 - Latest release: v0.4.0 (2026-04-21)

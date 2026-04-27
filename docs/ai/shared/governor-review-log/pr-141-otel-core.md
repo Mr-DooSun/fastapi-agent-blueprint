@@ -1,10 +1,10 @@
-# pr-136: OTEL core — `[otel]` extra + settings + bootstrap wiring + recipe doc
+# pr-141: OTEL core — `[otel]` extra + settings + bootstrap wiring + recipe doc
 
 ## Summary
 
 ADR 046 (merged in PR #135, 2026-04-28) established OTEL as the standard
 backend-agnostic trace output for PydanticAI Agents but deferred the bootstrap
-wiring to this issue. PR #136 completes ADR 046 Pillar 1:
+wiring to Issue #136. PR #141 (Issue #136) completes ADR 046 Pillar 1:
 
 - New `[otel]` optional extra (`opentelemetry-api/sdk/exporter-otlp-proto-grpc >=1.40.0`)
 - `OTEL_ENABLED` + `OTEL_EXPORTER_OTLP_ENDPOINT` Settings fields + partial-config validator
@@ -15,7 +15,7 @@ wiring to this issue. PR #136 completes ADR 046 Pillar 1:
 Tier A files touched: `.claude/rules/project-status.md`,
 `docs/ai/shared/ai-infrastructure-overview.md`.
 
-GitHub PR: TBD (branch: feat/136-otel-core)
+GitHub PR: https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/141
 
 ## Review Rounds
 

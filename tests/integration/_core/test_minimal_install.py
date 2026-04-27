@@ -175,6 +175,7 @@ class TestMinimalInstall:
         the assertion loses meaning — the CI minimal-install job is
         authoritative).
         """
+        import os
         import pathlib
         import subprocess
         import sys
@@ -193,12 +194,19 @@ class TestMinimalInstall:
             "    sys.exit(1)\n"
             "print('CLEAN')\n"
         )
+        # Build a clean env: inherit the parent but force OTEL off so that
+        # if the developer's .env has OTEL_ENABLED=true the subprocess does
+        # not try to validate an endpoint and fail at Settings init.
+        clean_env = {**os.environ, "OTEL_ENABLED": "false"}
+        clean_env.pop("OTEL_EXPORTER_OTLP_ENDPOINT", None)
+
         result = subprocess.run(
             [sys.executable, "-c", script],
             capture_output=True,
             text=True,
             check=False,
             cwd=repo_root,
+            env=clean_env,
         )
         if "opentelemetry.sdk" in (
             result.stdout + result.stderr
