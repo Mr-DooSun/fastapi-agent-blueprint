@@ -93,3 +93,4 @@ The prompt is a starting point; phase-specific reviews (Phase 2 token parser, Ph
 | #128 | Phase 4: completion-gate Stop adapter (IC-11 Option A + Pillar 7) | #123 | [pr-128-completion-gate-stop-adapter.md](pr-128-completion-gate-stop-adapter.md) |
 | #130 | Phase 5: shared governor module + thin shims (Hybrid Harness v1 closure) | #124 | [pr-130-shared-governor-module.md](pr-130-shared-governor-module.md) |
 | #132 | Tier 1 language policy + Korean prose cleanup + 3-layer enforcement | #131 | [pr-132-language-policy.md](pr-132-language-policy.md) |
+| #134 | AGENT_LOCALE: localized hook reminders + locale data exception | #133 | [pr-134-agent-locale.md](pr-134-agent-locale.md) |
