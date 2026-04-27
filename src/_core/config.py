@@ -247,6 +247,30 @@ class Settings(BaseSettings):
     )
 
     # ----------------------------------------------------------------
+    # Observability (OpenTelemetry — Optional)
+    # ----------------------------------------------------------------
+    otel_enabled: bool = Field(
+        default=False,
+        validation_alias="OTEL_ENABLED",
+        description=(
+            "When True, configure_otel() runs at server/worker bootstrap, "
+            "installs a global TracerProvider with OTLP gRPC exporter, and "
+            "calls Agent.instrument_all() so PydanticAI Agents emit GenAI "
+            "semantic-convention spans. Default False — quickstart works "
+            "unchanged. Requires the [otel] extra: uv sync --extra otel."
+        ),
+    )
+    otel_exporter_otlp_endpoint: str | None = Field(
+        default=None,
+        validation_alias="OTEL_EXPORTER_OTLP_ENDPOINT",
+        description=(
+            "OTLP collector endpoint. Defaults to gRPC (e.g. "
+            "http://localhost:4317). Required when OTEL_ENABLED=true. "
+            "See docs/operations/observability-otel.md for HTTP exporter swap."
+        ),
+    )
+
+    # ----------------------------------------------------------------
     # Network Policy
     # ----------------------------------------------------------------
     allowed_hosts: list[str] = Field(
@@ -489,6 +513,11 @@ class Settings(BaseSettings):
                     f"[Embedding/Bedrock] EMBEDDING_PROVIDER=bedrock requires: "
                     f"{', '.join(missing)} missing"
                 )
+
+        if self.otel_enabled and not self.otel_exporter_otlp_endpoint:
+            errors.append(
+                "[OTEL] OTEL_ENABLED=true requires: otel_exporter_otlp_endpoint missing"
+            )
 
         if errors:
             bullet_list = "\n  - ".join(errors)

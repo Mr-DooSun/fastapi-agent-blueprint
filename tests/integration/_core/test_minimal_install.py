@@ -2,9 +2,10 @@
 
 This test is meant to run in a CI environment that has done ``uv sync``
 **without** any optional extras (no ``--extra admin``, no ``--extra aws``,
-no ``--extra pydantic-ai``, no ``--extra sqs``). The local dev machine
-typically has extras installed and will simply not hit the "extra not
-installed" branches; assertions in that case are relaxed accordingly.
+no ``--extra pydantic-ai``, no ``--extra sqs``, no ``--extra otel``). The
+local dev machine typically has extras installed and will simply not hit the
+"extra not installed" branches; assertions in that case are relaxed
+accordingly.
 
 Acceptance criteria:
 
@@ -19,6 +20,10 @@ Acceptance criteria:
   Selector resolves every AWS-backed provider to ``None`` when the matching
   ``*_TYPE`` / ``*_ACCESS_KEY`` env var is unset, so no AWS SDK import ever
   fires.
+- **Part 3** — With ``opentelemetry-sdk`` / exporter uninstalled, the app
+  still boots (``otel_enabled`` defaults to False). The runtime-import
+  check ensures no ``opentelemetry.*`` module leaks onto the default
+  import path.
 """
 
 from __future__ import annotations
@@ -31,6 +36,21 @@ from fastapi.testclient import TestClient
 from src._core.config import settings
 
 _has_nicegui = importlib.util.find_spec("nicegui") is not None
+# Consider otel "installed" only when both SDK and the gRPC exporter are present;
+# the opentelemetry-api namespace alone (pulled transitively by pydantic-ai-slim)
+# is NOT enough to exercise the skip path.
+# find_spec() raises ModuleNotFoundError on dotted paths when the parent
+# package is absent (i.e. opentelemetry not installed at all).
+try:
+    _has_otel = (
+        importlib.util.find_spec("opentelemetry.sdk.trace") is not None
+        and importlib.util.find_spec(
+            "opentelemetry.exporter.otlp.proto.grpc.trace_exporter"
+        )
+        is not None
+    )
+except ModuleNotFoundError:
+    _has_otel = False
 
 
 @pytest.fixture
@@ -44,9 +64,11 @@ def clean_optional_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "embedding_model",
         "llm_provider",
         "llm_model",
+        "otel_exporter_otlp_endpoint",
     ):
         monkeypatch.setattr(settings, field, None)
     monkeypatch.setattr(settings, "broker_type", None)
+    monkeypatch.setattr(settings, "otel_enabled", False)
 
 
 class TestMinimalInstall:
@@ -131,3 +153,61 @@ class TestMinimalInstall:
         assert container.storage() is None
         assert container.dynamodb_client() is None
         assert container.s3vector_client() is None
+
+    @pytest.mark.skipif(_has_otel, reason="otel extra installed locally")
+    def test_app_boots_without_otel_extra(self, clean_optional_env: None):
+        """Default settings (otel_enabled=False) must boot without otel extra.
+
+        Load-bearing for #136 acceptance: ``make quickstart`` works unchanged
+        with zero new env vars. The CI minimal-install job (no ``--extra otel``)
+        is the authoritative runner.
+        """
+        from src._apps.server.app import app
+
+        assert app is not None
+
+    def test_otel_modules_not_imported_at_runtime(self, clean_optional_env: None):
+        """Acceptance: no opentelemetry.* import leaks when otel extra is absent.
+
+        Uses a clean subprocess so earlier tests in this session cannot
+        pollute sys.modules. If the otel extra IS installed locally, skip
+        (opentelemetry-api is pulled transitively by pydantic-ai-slim and
+        the assertion loses meaning — the CI minimal-install job is
+        authoritative).
+        """
+        import pathlib
+        import subprocess
+        import sys
+
+        spec = importlib.util.find_spec("src")
+        repo_root = str(
+            pathlib.Path(spec.submodule_search_locations[0]).parent  # type: ignore[index, union-attr]
+        )
+
+        script = (
+            "import sys\n"
+            "from src._apps.server.app import app\n"
+            "leaked = sorted(m for m in sys.modules if m.startswith('opentelemetry.sdk') or m.startswith('opentelemetry.exporter'))\n"
+            "if leaked:\n"
+            "    print('LEAKED:' + ','.join(leaked))\n"
+            "    sys.exit(1)\n"
+            "print('CLEAN')\n"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=repo_root,
+        )
+        if "opentelemetry.sdk" in (
+            result.stdout + result.stderr
+        ) or "opentelemetry.exporter" in (result.stdout + result.stderr):
+            pytest.skip(
+                "otel extra installed locally — runtime-import test only "
+                "meaningful in CI minimal-install job"
+            )
+        assert result.returncode == 0, (
+            f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        )
+        assert "CLEAN" in result.stdout

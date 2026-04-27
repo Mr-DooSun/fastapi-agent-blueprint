@@ -17,6 +17,7 @@ _logger = structlog.stdlib.get_logger("src._apps.worker.bootstrap")
 
 def bootstrap_app(app: AsyncBroker) -> None:
     _configure_logging_pipeline()
+    _maybe_configure_otel(service_name="fastapi-agent-blueprint-worker")
     _install_middleware(app)
     _register_startup_event(app)
 
@@ -44,6 +45,27 @@ def _register_startup_event(app: AsyncBroker) -> None:
     async def startup(state: TaskiqState):
         worker_container = create_worker_container(core_container=container)
         _bootstrap_domains(worker_container=worker_container)
+
+
+def _maybe_configure_otel(service_name: str) -> None:
+    """Configure OpenTelemetry tracing if enabled and the otel extra is installed.
+
+    If the extra is missing the worker still boots; the skip is recorded as a
+    structured log line so operators can diagnose without re-reading the README.
+    """
+    if not settings.otel_enabled:
+        return
+    try:
+        from src._core.infrastructure.observability.otel_setup import configure_otel
+    except ModuleNotFoundError as exc:
+        if exc.name and not exc.name.startswith("opentelemetry"):
+            raise
+        _logger.warning(
+            "otel_extra_not_installed",
+            install_hint="uv sync --extra otel",
+        )
+        return
+    configure_otel(settings, service_name=service_name)
 
 
 def _bootstrap_domains(worker_container) -> None:

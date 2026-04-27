@@ -101,18 +101,18 @@ Note: `#74-A` and `#74-B` are placeholder names; actual issue numbers assigned a
 - `docs/history/037-pydanticai-agent-integration.md`
 - `docs/history/archive/038-llm-observability-dual-path.md` ← superseded by ADR 046
 
-### Issue #74-A: OTEL Core Setup (PENDING)
+### Issue #74-A / #136: OTEL Core Setup (SHIPPED — PR #136)
 
 **Modified**:
-- `src/_core/config.py` — `otel_enabled`, `otel_exporter_otlp_endpoint` fields
-- `src/_apps/server/bootstrap.py` — `_maybe_configure_otel()` call
-- `src/_apps/worker/bootstrap.py` — `_maybe_configure_otel()` call
-- `pyproject.toml` — `otel` optional extra
+- `src/_core/config.py` — `otel_enabled`, `otel_exporter_otlp_endpoint` fields + partial-config validator
+- `src/_apps/server/bootstrap.py` — `_maybe_configure_otel(service_name)` call
+- `src/_apps/worker/bootstrap.py` — `_maybe_configure_otel(service_name)` call
+- `pyproject.toml` — `otel` optional extra (`opentelemetry-api/sdk/exporter-otlp-proto-grpc >=1.40.0`)
 
 **New**:
-- `src/_core/infrastructure/observability/otel_setup.py` — `configure_otel(settings)` + `Agent.instrument_all()`
-- `.env.example` — `OTEL_ENABLED`, `OTEL_EXPORTER_OTLP_ENDPOINT`
-- Recipe doc: Jaeger/Tempo quickstart
+- `src/_core/infrastructure/observability/otel_setup.py` — `configure_otel(settings, service_name)` + `Agent.instrument_all()`
+- `_env/local.env.example` + `_env/quickstart.env.example` — `OTEL_ENABLED`, `OTEL_EXPORTER_OTLP_ENDPOINT`
+- `docs/operations/observability-otel.md` — Jaeger/Tempo/Phoenix quickstart + HTTP exporter swap
 
 ### Issue #74-B: Langfuse Opt-in Recipe (PENDING, depends on #74-A)
 

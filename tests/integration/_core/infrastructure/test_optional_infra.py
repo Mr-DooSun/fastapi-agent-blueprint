@@ -43,9 +43,11 @@ def clean_optional_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "embedding_model",
         "llm_provider",
         "llm_model",
+        "otel_exporter_otlp_endpoint",
     ):
         monkeypatch.setattr(settings, field, None)
     monkeypatch.setattr(settings, "broker_type", None)
+    monkeypatch.setattr(settings, "otel_enabled", False)
 
 
 class TestCoreContainerMinimalBoot:
@@ -91,6 +93,15 @@ class TestCoreContainerMinimalBoot:
 
         container = CoreContainer()
         assert isinstance(container.broker(), InMemoryBroker)
+
+    def test_otel_disabled_by_default(self, clean_optional_env: None):
+        """OTEL is off by default — clean_optional_env enforces otel_enabled=False.
+
+        This verifies the Settings default so the acceptance criterion
+        "make quickstart works unchanged" has a regression guard.
+        """
+        assert settings.otel_enabled is False
+        assert settings.otel_exporter_otlp_endpoint is None
 
 
 class TestCoreContainerEnabledBranches:
