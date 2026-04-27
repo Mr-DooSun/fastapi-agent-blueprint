@@ -22,10 +22,22 @@ GitHub PR: https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/138
 
 | Point | Severity | Surface | Disposition |
 |-------|----------|---------|-------------|
-| R1.1 | (to be filled after review) | (to be filled) | (to be filled) |
+| R1.1 | BLOCKER | Korean review-angle labels in review-angle heading at `docs/ai/shared/governor-review-log/README.md:66` (pre-existing, surfaced when this PR touched the file) | `a287770 review-fix(R1.1): translate Korean review-angle labels in governor-review-log README template` |
+| R1.2 | MINOR | Angle-bracket template placeholders in README prompt-template section (README:52-64) may trigger a naive all-file placeholder gate | Resolved by design: the leakage gate explicitly exempts the README prompt-template section (only the Index row is checked); no file change needed |
 
-- Final Verdict: (to be filled after review)
-- Fix commits introduced for this round: (none yet)
+- Final Verdict: merge-ready (after R1.1 fix commit)
+- Fix commits introduced for this round: `a287770 review-fix(R1.1): translate Korean review-angle labels in governor-review-log README template`
+
+### Round 2 — Codex re-review after R1.1 fix
+- Reviewer: `codex exec --skip-git-repo-check --sandbox read-only` (default model)
+- Trigger: BLOCKER in Round 1
+
+| Point | Severity | Surface | Disposition |
+|-------|----------|---------|-------------|
+| (none) | — | README:66 Korean confirmed absent; remaining Korean in project-status.md is allowlisted escape-token vocabulary | — |
+
+- Final Verdict: merge-ready
+- Fix commits: (none)
 
 ## Inherited Constraints
 
@@ -48,24 +60,26 @@ Scope: docs/history/046-otel-core-langfuse-recipe-prompt-domain-defer.md,
        .claude/rules/project-status.md,
        docs/ai/shared/governor-review-log/pr-138-adr-046-followup.md,
        docs/ai/shared/governor-review-log/README.md
-Sources Loaded: ADR 046, project-status.md, governor-paths.md, AGENTS.md §Language Policy
-Findings: (to be filled after /review-architecture run)
-Drift Candidates: (to be filled)
-Next Actions: (to be filled)
-Completion State: (to be filled)
-Sync Required: (to be filled)
+Sources Loaded: AGENTS.md §Language Policy, docs/ai/shared/architecture-review-checklist.md,
+                governor-paths.md §1D drift-checklist
+Findings: none (§1-9 checklist categories N/A to doc-only changes; Language Policy: 0 violations
+          per tools/check_language_policy.py across 164 files)
+Drift Candidates: none
+Next Actions: none
+Completion State: Pass
+Sync Required: false
 ```
 
 ### `/sync-guidelines` (closure run after /review-architecture)
 
 ```
-Mode: (to be filled)
-Input Drift Candidates: (to be filled)
-project-dna: (to be filled)
-AUTO-FIX: (to be filled)
-REVIEW: (to be filled)
-Remaining: (to be filled)
-Next Actions: (to be filled)
+Mode: review follow-up
+Input Drift Candidates: none
+project-dna: Unchanged (no architectural pattern or code-layer changes)
+AUTO-FIX: none
+REVIEW: none
+Remaining: none
+Next Actions: none — gate closed
 ```
 
 ### Mechanical checks (run before merge)
