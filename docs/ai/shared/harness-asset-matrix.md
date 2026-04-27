@@ -504,7 +504,7 @@ Bucket guideline:
 
 ## Tier 3 — Hooks
 
-Thirteen hook scripts (5 Claude shell + 2 Claude Python implementations + 6 Codex Python). Phase 2 (#121) added `.claude/hooks/user-prompt-submit.sh` + `.claude/hooks/user_prompt_submit.py` as the first Claude UserPromptSubmit hook surface; the Codex side `.codex/hooks/user-prompt-submit.py` was extended (behaviour-preserving) with the same exception-token parser. Pre-Phase-2 every hook handled **safety, formatting, or drift reminders**; Phase 2 introduced the first *process-governor* hook (token recognition).
+Sixteen hook scripts (6 Claude shell + 3 Claude Python implementations + 7 Codex Python). Phase 2 (#121) added `.claude/hooks/user-prompt-submit.sh` + `.claude/hooks/user_prompt_submit.py` as the first Claude UserPromptSubmit hook surface; Phase 3 (#122) added `.claude/hooks/verify-first.{sh,py}` as a **sibling** hook in the existing `PostToolUse Edit|Write` matcher block, plus `.codex/hooks/verify_first.py` as a library module imported by the Stop hook (segment merge, IC-2). The Codex side `.codex/hooks/post-tool-format.py` was extended (behaviour-preserving) to record verify-class commands to `.codex/state/verify-log-{session}.json`. Phase 3 introduces the second *process-governor* hook surface (verify-first reminder).
 
 | Asset | Bucket | Risk | Impact |
 |---|---|---|---|
@@ -513,14 +513,17 @@ Thirteen hook scripts (5 Claude shell + 2 Claude Python implementations + 6 Code
 | `.claude/hooks/post-tool-format.sh` | Keep | Low | Medium |
 | `.claude/hooks/stop-sync-reminder.sh` | Keep | Low | Medium |
 | `.claude/hooks/user-prompt-submit.sh` | Keep | Low | Medium |
+| `.claude/hooks/verify-first.sh` | Overlay | Low | Low |
 | `.claude/hooks/pre_tool_security.py` | Keep | Low | Medium |
 | `.claude/hooks/user_prompt_submit.py` | Keep | Low | Medium |
+| `.claude/hooks/verify_first.py` | Overlay | Low | Low |
 | `.codex/hooks/_shared.py` | Keep | Low | Low |
 | `.codex/hooks/session-start.py` | Keep | Low | Low |
 | `.codex/hooks/user-prompt-submit.py` | Keep | Low | Medium |
 | `.codex/hooks/pre-tool-security.py` | Keep | Low | Medium |
 | `.codex/hooks/post-tool-format.py` | Keep | Low | Medium |
 | `.codex/hooks/stop-sync-reminder.py` | Keep | Low | Medium |
+| `.codex/hooks/verify_first.py` | Overlay | Low | Low |
 
 ### `.claude/hooks/check-required-plugins.sh`
 
@@ -541,7 +544,7 @@ Thirteen hook scripts (5 Claude shell + 2 Claude Python implementations + 6 Code
 - **Current role**: PostToolUse on Edit / Write; runs `ruff format` + `ruff check --fix` on `.py` files.
 - **Why it exists**: Format consistency without manual invocation.
 - **Bucket**: Keep.
-- **Notes**: Phase 3 verification-first hook will be **adjacent** to this hook (different matcher), not a replacement.
+- **Notes**: Phase 3 (#122) verification-first hook (`.claude/hooks/verify-first.sh`) lives in the *same* `PostToolUse Edit|Write` matcher block as a sibling, not a separate matcher. SoC: this hook mutates files (ruff), the verify-first hook is informational stderr only.
 
 ### `.claude/hooks/stop-sync-reminder.sh`
 
@@ -590,6 +593,20 @@ Thirteen hook scripts (5 Claude shell + 2 Claude Python implementations + 6 Code
 - **Bucket**: Keep.
 - **Notes**: Output is identical to `.codex/hooks/user-prompt-submit.py` parser. Parity asserted by `tests/unit/agents_shared/test_token_parser.py` (silent-divergence safety net for D1=B).
 
+### `.claude/hooks/verify-first.sh`
+
+- **Current role**: Phase 3 (#122) PostToolUse `Edit|Write` sibling wrapper. Pipes stdin to `verify_first.py`; always exits 0 (HC-3.3 informational only).
+- **Why it exists**: New SoC surface — formatting (`post-tool-format.sh`) is mutating; verify-first is advisory. Mixing them in one script complicates failure modes.
+- **Bucket**: Overlay.
+- **Notes**: Mirrors the `pre-tool-security.sh` + `pre_tool_security.py` shape. Phase 5 (#124) consolidates with `.codex/hooks/verify_first.py` into `.agents/shared/governor/`.
+
+### `.claude/hooks/verify_first.py`
+
+- **Current role**: Phase 3 (#122) verify-first decision helper. Reads PostToolUse Edit|Write payload from stdin; if the changed `file_path` ends with `.py` AND the latest Phase 2 marker is not `[exploration]/[탐색]`, prints a frozen `REMINDER_TEXT` to stderr.
+- **Why it exists**: Reminds the user that the Default Coding Flow `verify` step is missing for the changed Python file. Read-only on Phase 2 markers (IC-11 from PR #126; Phase 4 #123 owns lifecycle).
+- **Bucket**: Overlay.
+- **Notes**: `REMINDER_TEXT` constant is string-equal to `.codex/hooks/verify_first.py`. Parity asserted by `tests/unit/agents_shared/test_verify_first.py::test_reminder_text_string_equality`. Fail-open on every error path (HC-3.6).
+
 ### `.codex/hooks/pre-tool-security.py`
 
 - **Current role**: PreToolUse Bash matcher; checks destructive commands, SQL injection patterns, secret leakage.
@@ -598,15 +615,22 @@ Thirteen hook scripts (5 Claude shell + 2 Claude Python implementations + 6 Code
 
 ### `.codex/hooks/post-tool-format.py`
 
-- **Current role**: PostToolUse Bash matcher; runs ruff after a Bash invocation that touched Python files.
-- **Bucket**: Keep — but Codex R7 is critical: this hook **does not see** edits that bypass Bash (e.g. `apply_patch`). Phase 3 verification-first must rely on Stop-side change detection for Codex, not on extending this hook.
-- **Notes**: Largest Codex-side blind spot identified during Phase 0.5 review.
+- **Current role**: PostToolUse Bash matcher. Two responsibilities: (1) runs ruff after a Bash invocation that touched Python files; (2) Phase 3 (#122) — records verify-class commands (`pytest`, `make test`, `make demo[-rag]`, `alembic upgrade`) to `.codex/state/verify-log-{session}.json` so the Stop hook can detect whether verify happened in this session.
+- **Bucket**: Keep — but Codex R7 is critical: this hook **does not see** edits that bypass Bash (e.g. `apply_patch`). Phase 3 verification-first reminder relies on Stop-side change detection for Codex (`.codex/hooks/stop-sync-reminder.py` extension), not on extending this hook to emit reminders.
+- **Notes**: Largest Codex-side blind spot identified during Phase 0.5 review. Phase 3 R0.4 wraps the file in a top-level fail-open so invalid stdin / ruff-missing / verify-log writer failures all return exit 0.
 
 ### `.codex/hooks/stop-sync-reminder.py`
 
-- **Current role**: Stop reminder for drift detection.
+- **Current role**: Stop hook with two segments merged into a single `{"systemMessage": "..."}` JSON output (IC-2): (1) sync-reminder for foundation/structure path drift; (2) Phase 3 (#122) verify-first segment via `verify_first.should_remind()` import (current-session log read only — R0.2; subsecond freshness — R0.3).
 - **Bucket**: Keep.
-- **Notes**: Phase 4 completion-gate output is merged into this hook's existing output; Codex R2.
+- **Notes**: Phase 4 completion-gate output is merged as a third segment in the same hook output; Codex R2. Phase 3 R0.1: the verify-first import is performed inside the same `try` block that calls `should_remind` so an ImportError leaves the existing sync-reminder behaviour intact (HC-3.6 fail-open).
+
+### `.codex/hooks/verify_first.py`
+
+- **Current role**: Phase 3 (#122) verify-first decision helper. Library module — NOT registered as its own hook (IC-2 single Stop event output). Imported by `stop-sync-reminder.py` (decision) and `post-tool-format.py` (verify-log writer).
+- **Why it exists**: Codex side cannot trigger reminders on `PostToolUse Bash` because `apply_patch` is invisible there (IC-5). Detection happens at Stop time using `_shared.changed_files()` + per-session verify-log freshness check.
+- **Bucket**: Overlay.
+- **Notes**: `REMINDER_TEXT` is string-equal to `.claude/hooks/verify_first.py`. `session_id()` priority: `CODEX_THREAD_ID` (Codex CLI injects this into all hook processes in a session — R1.1) → `CODEX_SESSION_ID` (fallback alias) → `f"{ppid}-{pid}-{start_ns:016x}"` (non-Codex environments; writer/reader-incompatible across processes). Verify-log entries store `ts_epoch_ns` for subsecond freshness comparison against `Path.stat().st_mtime_ns` (R0.3). `read_latest_token_marker` duplicated from Claude side — consolidated by Phase 5 (#124).
 
 ---
 
@@ -669,13 +693,13 @@ Six rule files (5 Claude + 1 Codex). All `Keep` except `commands.md` which becom
 
 | Bucket | Count | Share | Notes |
 |---|---|---|---|
-| Keep | 50 | ~86% | Project-specific architecture / safety / reference value (incl. 4 design + 3 self-coherence-recovery process-governor artefacts + 2 Phase 2 #121 hooks) |
-| Overlay | 8 | ~14% | Process discipline now routed by Default Flow |
+| Keep | 50 | ~82% | Project-specific architecture / safety / reference value (incl. 4 design + 3 self-coherence-recovery process-governor artefacts + 2 Phase 2 #121 hooks) |
+| Overlay | 11 | ~18% | Process discipline now routed by Default Flow (Phase 3 #122 adds 3 verify-first hooks) |
 | Replace | 0 | 0% | None in initial inventory; reserved for future passes |
 | Drop | 0 | 0% | Initial pass found no genuinely removable assets |
-| **Total** | **58** | 100% | |
+| **Total** | **61** | 100% | |
 
-Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=17` (12 reference + 3 design living docs + `governor-review-log/` directory + `governor-paths.md`), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=13` (Phase 2 #121 added `.claude/hooks/user-prompt-submit.sh` + `.claude/hooks/user_prompt_submit.py`; previously 11), `Tier 4=6` — sum 59. The 58 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d (its row is recorded for completeness only). The bucket-share percentages use 58 as the denominator.
+Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=17` (12 reference + 3 design living docs + `governor-review-log/` directory + `governor-paths.md`), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=16` (Phase 3 #122 added `.claude/hooks/verify-first.{sh,py}` + `.codex/hooks/verify_first.py`; previously 13 after Phase 2), `Tier 4=6` — sum 62. The 61 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d (its row is recorded for completeness only). The bucket-share percentages use 61 as the denominator.
 
 This distribution matches the "Mostly Local with Philosophy Overlay" model declared in [ADR 045 §D4](../../history/045-hybrid-harness-target-architecture.md). The `Replace` and `Drop` columns are both empty in the initial pass: no asset's content is being rewritten, and self-verification during cross-link work showed that the only `Drop` candidate identified during the first triage was actually an active component (a sh-wrapper `.py` pair).
 
@@ -709,3 +733,4 @@ The following self-checks must pass before this matrix is treated as authoritati
 
 - 2026-04-26 — Initial inventory under ADR 045 / Phase 1.
 - 2026-04-26 — Phase 2 (#121): added `.claude/hooks/user-prompt-submit.sh` + `.claude/hooks/user_prompt_submit.py` to Tier 3; updated `.codex/hooks/user-prompt-submit.py` role to include exception-token parsing (behaviour-preserving). Total 56 → 58.
+- 2026-04-27 — Phase 3 (#122): added `.claude/hooks/verify-first.{sh,py}` (sibling in existing `PostToolUse Edit|Write` matcher) + `.codex/hooks/verify_first.py` library to Tier 3; extended `.codex/hooks/post-tool-format.py` with verify-class command logger and top-level fail-open (R0.4); extended `.codex/hooks/stop-sync-reminder.py` to merge a verify-first segment (import inside try-block per R0.1). Total 58 → 61. Bucket-share shifted Keep 86% → 82% / Overlay 14% → 18% as the 3 new hooks all classify as Overlay (process-governor verify-first reminder).
