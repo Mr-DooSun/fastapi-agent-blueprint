@@ -1,19 +1,28 @@
-"""Taskiq middleware that wires structlog context for every task run (#9).
+"""Taskiq middleware for worker context, failure logging, and retry (#9/#120).
 
-On ``pre_execute`` the middleware binds the task identifier into the
-current async context so every log emitted from within the task
-carries ``taskiq_task_id`` / ``taskiq_task_name``. If the dispatcher
-attached a ``correlation_id`` label (e.g. the HTTP request that kicked
-the task), it is re-bound here too — that's how request → task
-correlation is preserved across the process boundary.
+``StructlogContextMiddleware`` binds the task identifier into the current
+async context so every log emitted from within the task carries
+``taskiq_task_id`` / ``taskiq_task_name``. If the dispatcher attached a
+``correlation_id`` label (e.g. the HTTP request that kicked the task), it is
+re-bound here too. That's how request-to-task correlation is preserved across
+the process boundary.
 
-On ``post_execute`` the keys this middleware owns are cleared so the
-next task picked up by the same worker loop starts with a clean
-context. Middleware registration:
+``TaskErrorLoggingMiddleware`` emits one structured ``taskiq_task_failed``
+record for every failed execution attempt. ``PermanentAwareSmartRetryMiddleware``
+uses Taskiq's smart retry path for transient errors and lets permanent errors
+fail immediately.
+
+On ``post_execute`` the keys ``StructlogContextMiddleware`` owns are cleared so
+the next task picked up by the same worker loop starts with a clean context.
+Middleware registration:
 
 ```python
 # src/_apps/worker/app.py
-broker.add_middlewares(StructlogContextMiddleware())
+broker.add_middlewares(
+    StructlogContextMiddleware(),
+    PermanentAwareSmartRetryMiddleware(),
+    TaskErrorLoggingMiddleware(),
+)
 ```
 
 Dispatcher side, pass the correlation ID through labels:
