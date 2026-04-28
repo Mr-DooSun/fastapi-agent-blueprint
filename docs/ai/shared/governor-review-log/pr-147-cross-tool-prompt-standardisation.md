@@ -31,7 +31,7 @@ specialisations.
   separation from issues #145 and #146.
 - **Result**: not executed. Claude Code returned
   `Not logged in - Please run /login`.
-- **Final Verdict**: deferred with rationale. The implementation proceeded
+- **Final Verdict**: Deferred-with-rationale. The implementation proceeded
   after local verification because the blocker was authentication state, not a
   finding against the plan.
 
@@ -45,9 +45,29 @@ specialisations.
   pointer-only behavior, and Tier 1 English-only policy.
 - **Result**: not executed. Claude Code returned
   `Not logged in - Please run /login`.
-- **Final Verdict**: deferred with rationale. The blocker must be closed by
+- **Final Verdict**: Deferred-with-rationale. The blocker must be closed by
   re-running Claude cross-review after login before this draft PR is marked
   ready for merge.
+
+### Round 2 - Claude Opus Implementation Review
+
+- **Target**: current PR #147 workspace after the implementation commit and
+  review-log backfill commit.
+- **Reviewer**: Claude Opus 4.7 through Claude Code CLI, run after local
+  authentication was restored.
+- **Prompt focus**: #144 acceptance criteria, canonical shared-source
+  placement, wrapper pointer-only behavior, exact closure vocabulary, exclusion
+  of #145 / #146 work, and truthfulness of this review-log entry.
+- **Final Verdict**: minor fixes recommended. Claude confirmed that the four
+  shared skill procedures contain the required prompt templates and that the
+  wrappers are pointer-only. It surfaced three review-log hygiene points:
+  canonicalise the prose spelling of `Deferred-with-rationale`, record the
+  actual Claude review outcome now that it has run, and optionally defer the
+  README starter-template round-numbering mismatch (`1/2/3` vs `0/1/2`) as a
+  follow-up drift candidate.
+- **Outcome**: prose verdict spelling and actual-review capture were fixed in
+  this entry. The README round-numbering mismatch is deferred because it
+  predates the per-skill template shape and does not block #144 acceptance.
 
 ### Local Verification
 
@@ -86,9 +106,9 @@ No new inherited constraint is introduced by this PR.
 - **Scope check**: no linter, parser, retrospective audit script, or legacy
   review-log backfill from issues #145 or #146 is included.
 - **Language-policy check**: Tier 1 language policy passes with 0 violations.
-- **Cross-tool limitation**: Claude Opus review is still required before merge
-  readiness because both attempted Claude rounds were blocked by local
-  authentication state.
+- **Cross-tool review**: Claude Opus Round 2 completed after login and found
+  only review-log hygiene issues. This entry records the completed review and
+  closes the stale blocked-review wording.
 
 ## R-points Closure Table
 
@@ -99,3 +119,6 @@ No new inherited constraint is introduced by this PR.
 | Local verification | Tier 1 language policy | **Fixed** | `python3 tools/check_language_policy.py` and pre-commit language hook passed |
 | Local verification | Required prompt slots present | **Fixed** | Four templates include original question, success metric, sources, R-points, final verdict, and closure vocabulary |
 | Scope control | Issue #145 and #146 work not implemented | **Fixed** | This PR only adds text prompt templates and wrapper pointers |
+| Round 2 | Claude implementation review outcome missing from this entry | **Fixed** | Round 2 now records the actual Claude Opus review after login |
+| Round 2 | Non-canonical prose spelling of `Deferred-with-rationale` | **Fixed** | Round 0 and Round 1 final verdict prose now uses the canonical spelling |
+| Round 2 | README starter-template round numbering differs from per-skill templates | **Deferred-with-rationale** | Existing README template uses `1/2/3`; per-skill templates use `0/1/2`; deferrable follow-up because #144 acceptance is about per-skill specialisations |
