@@ -47,11 +47,23 @@ class AiUsageRepository(BaseRepository[AiUsageDTO]):
             try:
                 await session.commit()
                 await session.refresh(data)
-            except IntegrityError as exc:
+            except IntegrityError:
                 await session.rollback()
                 existing = await self._select_existing_by_call_id(entity.call_id)
                 if existing is None:
                     raise
+                differing_fields = _differing_usage_fields(entity, existing)
+                if differing_fields:
+                    _logger.warning(
+                        "ai_usage_idempotent_collision",
+                        call_id=entity.call_id,
+                        differing_fields=differing_fields,
+                    )
+                else:
+                    _logger.info(
+                        "ai_usage_idempotent_replay",
+                        call_id=entity.call_id,
+                    )
                 return existing
             return AiUsageDTO.model_validate(data, from_attributes=True)
 
@@ -201,6 +213,18 @@ def _apply_filters(
     if end_at is not None:
         query = query.where(AiUsageModel.occurred_at <= end_at)
     return query
+
+
+def _differing_usage_fields(
+    entity: CreateAiUsageRequest, existing: AiUsageDTO
+) -> list[str]:
+    entity_data = entity.model_dump(exclude={"usage_metadata"})
+    existing_data = existing.model_dump(include=set(entity_data))
+    return [
+        field_name
+        for field_name, entity_value in entity_data.items()
+        if existing_data.get(field_name) != entity_value
+    ]
 
 
 def _summary_columns():
