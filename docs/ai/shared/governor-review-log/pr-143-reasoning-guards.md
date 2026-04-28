@@ -174,6 +174,13 @@ base for the four failure modes the guards encode.
 - **Outcome**: nine fixes applied in a follow-up commit on this
   branch. PR description updated to flip the cross-tool review
   item to include `plan stage and implementation stage`.
+  After the round-6 commit, the user asked whether
+  `/sync-guidelines` would give a different result; a quick
+  shared-docs scan found `.claude/rules/project-status.md`
+  missing the PR #143 row (R6-K) and the `Remaining: 0` sync
+  claim therefore drifted (R6-J). Both fixed in a sync
+  follow-up commit on this branch (4th commit). Closure totals
+  rolled forward from 31 / 4 / 6 to 33 / 4 / 6.
 
 ## Inherited Constraints
 
@@ -219,11 +226,11 @@ self-contained verifiable artefact.
   than trusting the round-1 system-prompt snapshot.
 - **G (Closure classification)** — applied. Every R-point from
   the six rounds (rounds 1–4 evaluation, round 5 plan review,
-  round 6 implementation review) was assigned one of the three
-  closure categories in the R-points Closure Table at the
-  bottom of this entry. Totals across the table after round 6
-  fixes were folded back in: Fixed (31),
-  Deferred-with-rationale (4), Rejected (6).
+  round 6 implementation review) plus the round-6 sync
+  follow-up was assigned one of the three closure categories
+  in the R-points Closure Table at the bottom of this entry.
+  Totals across the table after all fixes were folded back in:
+  Fixed (33), Deferred-with-rationale (4), Rejected (6).
 - **H (Effect vs process discrimination)** — applied. The user's
   final approval question ("then how should we do it?") was
   classified as a process question, and answered with a plan
@@ -261,9 +268,17 @@ self-contained verifiable artefact.
 - **Mode**: standalone closure for this Tier A change.
 - **Input Drift Candidates**: 0 from `/review-architecture`.
 - **AUTO-FIX**: 0 — no auto-fixable drift was found.
-- **REVIEW**: 0 — no manual reconciliation needed beyond the new
-  section itself.
-- **Remaining**: 0.
+- **REVIEW**: 1 at first capture — `.claude/rules/project-status.md`
+  `Recent Major Changes` table missing a row for PR #143
+  (the prior governor PRs #128 / #130 / #132 / #134 / #141 are
+  all listed). Detected by the user during follow-up after
+  round 6 ("does codex `/sync-guidelines` give a different
+  result?"). Round 6 itself missed this because its scope was
+  the PR diff, not a shared-docs scan.
+- **Remaining**: 0 after the sync follow-up commit on this branch
+  (project-status.md row added under `Recent Major Changes` and
+  `Last synced` line bumped to `2026-04-29 via PR #143
+  reasoning-level guards`).
 - **Next Actions**: file Phase 2 work (G mechanical linter) as a
   separate issue when sample governor-review-log entries
   accumulate enough to write the linter against; this PR does
@@ -314,3 +329,5 @@ self-contained verifiable artefact.
 | Round 6 | R6-G — stale AGENTS line numbers | **Fixed** | F Self-Application Proof acknowledges the 91-line shift and gives the post-PR location |
 | Round 6 | R6-H — stale scanned-file count | **Fixed** | `162` → `163 scanned files post-PR` |
 | Round 6 | R6-I — `4-round` wording | **Fixed** | AGENTS.md § Source line rewritten to mention four evaluation rounds + plan-review round + implementation-stage round |
+| Round 6 (sync follow-up) | R6-J — Self-Application Proof sync claim drift | **Fixed** | initial `Remaining: 0` claim contradicted by the project-status.md row gap; Self-Application Proof rewritten to `REVIEW: 1 at first capture, Remaining: 0 after follow-up commit` |
+| Round 6 (sync follow-up) | R6-K — project-status.md missing PR #143 row | **Fixed** | row appended to `Recent Major Changes`; `Last synced` updated to `2026-04-29 via PR #143 reasoning-level guards` |
