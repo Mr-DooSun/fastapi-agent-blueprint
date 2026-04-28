@@ -55,7 +55,13 @@ class AgentUsageRecord(ValueObject):
     trace_id: str | None = Field(default=None, max_length=64)
     span_id: str | None = Field(default=None, max_length=64)
     error_code: str | None = Field(default=None, max_length=50)
-    usage_metadata: dict[str, Any] = Field(default_factory=dict)
+    usage_metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description=(
+            "Provider usage metadata only; must not contain raw prompts, model "
+            "outputs, message bodies, user input, or raw provider error text."
+        ),
+    )
 
     @model_validator(mode="after")
     def _validate_provider_cost(self) -> Self:

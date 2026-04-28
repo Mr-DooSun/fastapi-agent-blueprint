@@ -48,7 +48,11 @@ class AiUsageDTO(BaseModel):
     span_id: str | None = Field(default=None, description="Optional span ID")
     error_code: str | None = Field(default=None, description="Sanitized error code")
     usage_metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Provider usage metadata"
+        default_factory=dict,
+        description=(
+            "Provider usage metadata only; excludes raw prompts, model outputs, "
+            "message bodies, user input, and raw provider error text."
+        ),
     )
     created_at: datetime = Field(..., description="Row creation timestamp")
 

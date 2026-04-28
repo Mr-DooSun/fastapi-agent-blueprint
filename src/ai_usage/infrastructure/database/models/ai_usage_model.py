@@ -103,7 +103,13 @@ class AiUsageModel(Base):
     span_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     error_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
     usage_metadata: Mapped[dict[str, Any]] = mapped_column(
-        JSON, nullable=False, default=dict
+        JSON,
+        nullable=False,
+        default=dict,
+        comment=(
+            "Provider usage metadata only; excludes raw prompts, model outputs, "
+            "message bodies, user input, and raw provider error text."
+        ),
     )
     created_at: Mapped[DateTime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False

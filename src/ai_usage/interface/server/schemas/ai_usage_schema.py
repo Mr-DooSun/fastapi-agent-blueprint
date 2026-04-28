@@ -48,7 +48,13 @@ class CreateAiUsageRequest(BaseRequest):
     trace_id: str | None = Field(default=None, max_length=64)
     span_id: str | None = Field(default=None, max_length=64)
     error_code: str | None = Field(default=None, max_length=50)
-    usage_metadata: dict[str, Any] = Field(default_factory=dict)
+    usage_metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description=(
+            "Provider usage metadata only; excludes raw prompts, model outputs, "
+            "message bodies, user input, and raw provider error text."
+        ),
+    )
 
     @model_validator(mode="after")
     def _validate_provider_cost(self) -> Self:
@@ -111,7 +117,13 @@ class AiUsageResponse(BaseResponse):
     trace_id: str | None = None
     span_id: str | None = None
     error_code: str | None = None
-    usage_metadata: dict[str, Any]
+    usage_metadata: dict[str, Any] = Field(
+        ...,
+        description=(
+            "Provider usage metadata only; excludes raw prompts, model outputs, "
+            "message bodies, user input, and raw provider error text."
+        ),
+    )
     created_at: datetime
 
 

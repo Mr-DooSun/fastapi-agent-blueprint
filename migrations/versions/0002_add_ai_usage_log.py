@@ -53,7 +53,15 @@ def upgrade() -> None:
         sa.Column("trace_id", sa.String(length=64), nullable=True),
         sa.Column("span_id", sa.String(length=64), nullable=True),
         sa.Column("error_code", sa.String(length=50), nullable=True),
-        sa.Column("usage_metadata", sa.JSON(), nullable=False),
+        sa.Column(
+            "usage_metadata",
+            sa.JSON(),
+            nullable=False,
+            comment=(
+                "Provider usage metadata only; excludes raw prompts, model outputs, "
+                "message bodies, user input, and raw provider error text."
+            ),
+        ),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),
         sa.CheckConstraint(
             "status IN ('ok', 'error', 'timeout', 'rate_limited')",
