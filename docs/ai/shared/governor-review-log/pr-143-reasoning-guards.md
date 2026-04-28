@@ -208,6 +208,35 @@ canonical body) must respect:
   justified in the PR description and the bundled scope stays
   narrow enough for a single coherent review.
 
+### Follow-up issues
+
+PR #143 was merged with three follow-up issues opened for the
+deferred work named in this entry's R-points table:
+
+- [#144](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/144)
+  — Cross-tool prompt template standardisation for the four
+  quality-gate review skills. Sourced from the round-1 / round-2
+  prompt drift observed across the six rounds; not strictly an
+  IC-RG-X deferred item but a direct follow-up of the cross-tool
+  review experience captured here.
+- [#145](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/145)
+  — Phase 2: governor-review-log closure-status mechanical
+  linter (G rule enforcement). Sourced from R5.3 deferral and
+  Round 6 R6-A / R6-B (closure count drift, non-canonical
+  labels) — Claude self-review missed the G self-violation, so
+  a mechanical check is warranted.
+- [#146](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/146)
+  — Phase 3: reasoning-level guards retrospective audit
+  (time-gated). Sourced from R5.4 deferral. Triggered after
+  PR #143 merge plus 3–5 governor-changing PRs accumulate, plus
+  Issue #144 / #145 merge (so the audit measures the integrated
+  Layer-2 system, not PR #143 in isolation).
+
+These three issues inherit IC-RG-1 through IC-RG-5 from this
+entry. Each issue body is a self-contained Cold-Start Kit that
+mirrors the #122 pattern; cold-context contributors can begin
+work from the issue body alone.
+
 ## Self-Application Proof
 
 This PR was constructed under the four guards it lands. Each guard's
