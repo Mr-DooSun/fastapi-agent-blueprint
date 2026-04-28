@@ -2,8 +2,49 @@
 # Stop Hook: Recommend /sync-guidelines when foundation/structure files changed
 # Uses git diff to detect ALL changes (Edit, Write, Bash, Subagent)
 # Always exit 0 (advisory only)
+#
+# AGENT_LOCALE rendering (issue #133): translated headers/labels are
+# resolved by invoking `python3 -m governor.locale KEY` from the canonical
+# locale data file. This shell file itself contains no Korean — every
+# fallback string is the canonical English source per Issue AC.
 
 set -euo pipefail
+
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "${HOOK_DIR}/../.." && pwd)"
+SHARED_DIR="${REPO_ROOT}/.agents/shared"
+
+# bash 3.2 (macOS default) compatible lowercase. ${var,,} is bash 4+ only.
+_agent_locale_lc=""
+if [ -n "${AGENT_LOCALE:-}" ]; then
+    _agent_locale_lc=$(printf '%s' "$AGENT_LOCALE" | tr '[:upper:]' '[:lower:]')
+fi
+
+_resolve_locale() {
+    # $1 = locale key, $2 = English fallback (caller MUST single-quote any
+    # arg containing $ to avoid set -u "unbound variable" on $sync-guidelines).
+    local resolved=""
+    if [ -n "$_agent_locale_lc" ] && [ "$_agent_locale_lc" != "en" ]; then
+        resolved=$(PYTHONPATH="$SHARED_DIR" python3 -m governor.locale "$1" 2>/dev/null) || resolved=""
+    fi
+    if [ -n "$resolved" ]; then
+        printf '%s\n' "$resolved"
+    else
+        printf '%s\n' "$2"
+    fi
+}
+
+# Resolve all 8 advisory strings up-front so the if/elif emit blocks stay
+# straightforward. Fallbacks are single-quoted to keep $sync-guidelines /
+# /sync-guidelines literal under set -u.
+_SYNC_STRONG_HEADER=$(_resolve_locale SYNC_STRONG_HEADER '=== /sync-guidelines strongly recommended ===')
+_SYNC_STRONG_FOOTER=$(_resolve_locale SYNC_STRONG_FOOTER '=============================================')
+_SYNC_NORM_HEADER=$(_resolve_locale SYNC_NORM_HEADER '=== /sync-guidelines recommended ===')
+_SYNC_NORM_FOOTER=$(_resolve_locale SYNC_NORM_FOOTER '====================================')
+_SYNC_FOUNDATION_FILES_HEADER=$(_resolve_locale SYNC_FOUNDATION_FILES_HEADER 'Foundation files changed:')
+_SYNC_STRUCTURE_FILES_HEADER=$(_resolve_locale SYNC_STRUCTURE_FILES_HEADER 'Domain structure files changed:')
+_SYNC_CLAUDE_RUN=$(_resolve_locale SYNC_CLAUDE_RUN 'Claude: run /sync-guidelines')
+_SYNC_CODEX_RUN_ALSO=$(_resolve_locale SYNC_CODEX_RUN_ALSO 'Codex: also run $sync-guidelines')
 
 # 1) Uncommitted changes (staged + unstaged) + untracked files
 UNCOMMITTED=$(git diff --name-only HEAD 2>/dev/null || true)
@@ -29,23 +70,22 @@ STRUCTURE=$(echo "$CHANGED" | grep -E '^src/[^_].*/((infrastructure/di/|interfac
 
 if [ -n "$FOUNDATION" ]; then
     echo ""
-    echo "=== /sync-guidelines strongly recommended ==="
-    echo "Foundation files changed:"
+    echo "$_SYNC_STRONG_HEADER"
+    echo "$_SYNC_FOUNDATION_FILES_HEADER"
     echo "$FOUNDATION" | sed 's/^/  - /'
-    echo "Claude: run /sync-guidelines"
-    echo "Codex: also run \$sync-guidelines"
-    echo "============================================="
+    echo "$_SYNC_CLAUDE_RUN"
+    echo "$_SYNC_CODEX_RUN_ALSO"
+    echo "$_SYNC_STRONG_FOOTER"
 elif [ -n "$STRUCTURE" ]; then
     echo ""
-    echo "=== /sync-guidelines recommended ==="
-    echo "Domain structure files changed:"
+    echo "$_SYNC_NORM_HEADER"
+    echo "$_SYNC_STRUCTURE_FILES_HEADER"
     echo "$STRUCTURE" | sed 's/^/  - /'
-    echo "===================================="
+    echo "$_SYNC_NORM_FOOTER"
 fi
 
 # Phase 4 completion-gate (Pillar 7 + IC-11 marker lifecycle).
 # Fail-open: helper crash → sync-reminder still emitted above (HC-4.7).
-HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
 COMPLETION_OUT=$(python3 "${HOOK_DIR}/completion_gate.py" 2>/dev/null || true)
 if [ -n "$COMPLETION_OUT" ]; then
     echo ""

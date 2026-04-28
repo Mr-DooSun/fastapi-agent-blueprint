@@ -61,20 +61,23 @@ All new prose, comments, docstrings, log strings, and user-facing terminal outpu
 
 The path list above is the **canonical scope of the language-policy checker** (`tools/check_language_policy.py::TIER1_GLOBS`). It overlaps with — but is not identical to — Tier A + Tier B of [`governor-paths.md`](docs/ai/shared/governor-paths.md). The governor-paths file controls cross-tool review triggers (every file under `.claude/**`, `.codex/**`, `.agents/**` triggers); the language-policy checker scopes to *files where prose is realistic* — Markdown, Python, shell, and the PR template / CI workflows. Config files like `.codex/hooks.json`, `.claude/settings.json`, and `.codex/config.toml` are intentionally outside the language-policy scope today; if Korean leaks into a settings string, treat it as a checker-extension follow-up rather than a policy violation.
 
-### The only exception — bilingual escape tokens
+### Two narrowly-scoped exceptions
 
-The escape-token vocabulary `[trivial]/[자명]`, `[hotfix]/[긴급]`, `[exploration]/[탐색]` (see § Default Coding Flow → Exception Tokens) is machine-parseable and pinned by `^\s*\[(trivial|hotfix|exploration|자명|긴급|탐색)\](?:\s|$)`. The Korean half of each token, and references to that vocabulary in parser source, docstrings, and the token table itself, are **the only Korean strings allowed** in Tier 1 paths. The allowlist is scoped per-file in `tools/check_language_policy.py` so a token literal cannot launder Korean prose elsewhere.
+The escape-token vocabulary `[trivial]/[자명]`, `[hotfix]/[긴급]`, `[exploration]/[탐색]` (see § Default Coding Flow → Exception Tokens) is machine-parseable and pinned by `^\s*\[(trivial|hotfix|exploration|자명|긴급|탐색)\](?:\s|$)`. The Korean half of each token, and references to that vocabulary in parser source, docstrings, and the token table itself, are permitted in Tier 1 paths under this token-scoped allowlist. The allowlist is scoped per-file in `tools/check_language_policy.py::TOKEN_LITERALS_BY_FILE` so a token literal cannot launder Korean prose elsewhere.
+
+A second, narrowly-scoped carve-out covers **locale data files** explicitly listed in `tools/check_language_policy.py::LOCALE_DATA_FILES` (currently only `.agents/shared/governor/locale.py`). These files are the canonical runtime source for translated terminal output and may contain Korean (and future other-language) translation strings by design — see § Exemptions below for invariants.
 
 ### Two specific prohibitions
 
 1. **No hidden Korean rationale** in Tier 1 paths — Korean text inside HTML comments, backtick-quoted attribute values, or hand-written metadata is **blocked by the line-grep checker**. Korean smuggled through base64 / HTML entities / other encodings is **not** detected today; the policy intent rejects them, but enforcement is best-effort. Hidden Korean rationale recreates information asymmetry between Korean-reading and non-Korean-reading contributors — the exact failure mode this policy exists to prevent.
-2. **No new Korean prose lines, even when "just adding a translation for the team."** If translation matters for a specific document, create a sibling file (e.g. `docs/README.ko.md` is the existing reference pattern) and link to it. Tier 1 documents themselves stay English.
+2. **No new Korean prose lines, even when "just adding a translation for the team"** — except inside files explicitly listed in `tools/check_language_policy.py::LOCALE_DATA_FILES`. If translation matters for a specific document, create a sibling file (e.g. `docs/README.ko.md` is the existing reference pattern) and link to it. Tier 1 documents themselves stay English.
 
 ### Exemptions
 
 - `README.md` — the Korean-language link label pointing to `docs/README.ko.md` is an i18n affordance pointing to a deliberately translated sibling document. `README.md` is intentionally not in the Tier 1 glob.
 - `docs/README.ko.md` itself and any future `docs/*.{lang}.md` translation files (parallel translations, not in-line bilingualism).
 - `docs/ai/shared/governor-review-log/**` — Korean text inside a line prefixed with `> Original user/owner statement (ko, verbatim):`, `> Original reviewer verdict (ko, verbatim):`, or `> Historical Korean excerpt (ko, verbatim):` is preserved provenance. English normalised meaning must follow on the next line. Multi-line preserved Korean must repeat the prefix on every line.
+- Locale data files listed in `tools/check_language_policy.py::LOCALE_DATA_FILES` (currently `.agents/shared/governor/locale.py`) — these files are the canonical runtime source for locale translations. Korean translation strings are permitted *only* inside the language mapping values (enforced by `tests/unit/agents_shared/test_locale.py::test_locale_py_korean_only_in_locale_ko_dict_values`); comments, docstrings, identifiers, and the English table must remain ASCII. Adding a new locale data file requires updating `LOCALE_DATA_FILES`, this bullet, and adding a regression test.
 
 ### AI-when-editing rule
 
@@ -82,7 +85,7 @@ When you (an AI agent — Claude or Codex) edit any Tier 1 path:
 
 - All new prose, comments, docstrings, log strings, error messages, and user-facing terminal output **must be English**, regardless of the language of the surrounding user prompt. Korean prose specifically is hard-blocked by the pre-commit hook.
 - If the user instructs you in Korean (or any other language) to add a non-English note to a Tier 1 file, refuse and translate. Cite this section.
-- The bilingual-token exception applies only to literal token vocabulary and references to it, in the per-file allowlist scope.
+- The bilingual-token exception applies only to literal token vocabulary and references to it, in the per-file allowlist scope (`TOKEN_LITERALS_BY_FILE`). The locale-data-file exception (`LOCALE_DATA_FILES`) applies only to the language-mapping values inside `.agents/shared/governor/locale.py`; comments, docstrings, and English-table values must remain ASCII.
 - Hidden Korean rationale (in HTML comments, backtick-quoted attributes, or any other line-visible form) is out of scope of the exception. The checker does not currently decode base64 / HTML entities — but smuggling Korean through those layers still violates policy intent and will be removed if found.
 
 This rule is enforced by:
@@ -130,7 +133,7 @@ A prompt may opt out of mandatory-by-default steps by carrying a leading excepti
 
 Recognition regex: `^\s*\[(trivial|hotfix|exploration|자명|긴급|탐색)\](?:\s|$)`.
 
-> The bilingual entries above (`[자명]`, `[긴급]`, `[탐색]`) are the **only** exception to § Language Policy. They are machine-parseable and pinned by the regex; the per-file allowlist in `tools/check_language_policy.py` keeps Korean token references scoped to the files that legitimately need them.
+> The bilingual entries above (`[자명]`, `[긴급]`, `[탐색]`) and the locale-data carve-out (§ Language Policy → Exemptions → `LOCALE_DATA_FILES`) are the two narrowly-scoped exceptions to § Language Policy. The bilingual entries are machine-parseable and pinned by the regex; the per-file allowlist in `tools/check_language_policy.py` keeps Korean token references scoped to the files that legitimately need them.
 
 Use of an exception token carries a follow-up obligation: the next commit message must record the rationale (one line is enough).
 
@@ -357,7 +360,7 @@ uv run alembic current
   - Claude workflow entry point: `/sync-guidelines`
   - Codex workflow: use `$sync-guidelines` or follow the documented verification steps in `README.md` / `CONTRIBUTING.md`
   - Both tools should run sync after architecture changes — not just the active tool
-- Language drift: any new prose in non-token contexts under paths listed in § Language Policy → Tier 1 must be English. Bilingual escape tokens are the only exception. Run `python3 tools/check_language_policy.py` before closing the work to confirm zero violations.
+- Language drift: any new prose in non-token contexts under paths listed in § Language Policy → Tier 1 must be English. Bilingual escape tokens and locale data files (`LOCALE_DATA_FILES`) are the two narrowly-scoped exceptions. Run `python3 tools/check_language_policy.py` before closing the work to confirm zero violations.
 
 ### Skill Split Convention (Hybrid C)
 

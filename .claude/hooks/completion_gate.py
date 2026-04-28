@@ -87,6 +87,18 @@ except Exception:  # noqa: BLE001 — HC-5.5 fail-open
         return None
 
 
+# AGENT_LOCALE resolver (issue #133) — separate try block so a locale.py
+# import failure cannot silence the shared-governor path.
+try:
+    from governor.locale import (  # noqa: E402 — sys.path adjusted above
+        get_locale_string as _resolve_locale_string,
+    )
+except Exception:  # noqa: BLE001 — HC-5.5 fail-open
+
+    def _resolve_locale_string(key: str) -> str:  # type: ignore[no-redef]
+        return ""
+
+
 def _changed_files() -> list[str]:
     """Module-level wrapper so tests can monkeypatch ``_changed_files``."""
 
@@ -133,9 +145,19 @@ def governor_changing_segment() -> str | None:
         status = match_log_entry(changed, current_pr)
         if status in ("match", "unknown"):
             return None
+        # IC-19: combine resolver result with canonical English fallback
+        # BEFORE .format() — empty resolver → "".format(pr=...) is also "",
+        # so we'd silently emit nothing without the `or KEY` combinator.
         if current_pr is None:
-            return GOVERNOR_REMINDER_NO_PR
-        return GOVERNOR_REMINDER_WITH_PR.format(pr=current_pr)
+            return (
+                _resolve_locale_string("GOVERNOR_REMINDER_NO_PR")
+                or GOVERNOR_REMINDER_NO_PR
+            )
+        template = (
+            _resolve_locale_string("GOVERNOR_REMINDER_WITH_PR")
+            or GOVERNOR_REMINDER_WITH_PR
+        )
+        return template.format(pr=current_pr)
     except Exception:  # noqa: BLE001 — HC-5.5 fail-open
         return None
 

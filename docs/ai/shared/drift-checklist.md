@@ -21,7 +21,7 @@ Read AGENTS.md and compare each section against the actual code:
   - Model → DTO: `model_validate(model, from_attributes=True)`
   - DTO → Response: `model_dump(exclude={...})`
 - [ ] **Write DTO criteria**: Verify current Request/DTO usage matches the defined criteria
-- [ ] **Language Policy** (AGENTS.md § Language Policy): Run `python3 tools/check_language_policy.py` and confirm zero violations across Tier 1 paths. Bilingual escape tokens (`[자명]`/`[긴급]`/`[탐색]`) are the sole exception, scoped per-file in the checker. Flag any new non-English prose insertion as a sync-required drift candidate.
+- [ ] **Language Policy** (AGENTS.md § Language Policy): Run `python3 tools/check_language_policy.py` and confirm zero violations across Tier 1 paths. Bilingual escape tokens (`[자명]`/`[긴급]`/`[탐색]`) and locale data files (`LOCALE_DATA_FILES`) are the two narrowly-scoped exceptions, scoped per-file in the checker. Flag any new non-English prose insertion as a sync-required drift candidate.
 
 ## 1A. CLAUDE.md ↔ Claude Harness Consistency Check
 

@@ -53,6 +53,20 @@ except Exception:  # noqa: BLE001 — HC-5.5 fail-open
         return False
 
 
+# AGENT_LOCALE resolver (issue #133) — separate try block so a locale.py
+# import failure cannot silence the shared-governor path. Fallback returns
+# "" and the caller combines the result with the canonical English
+# constant via `or REMINDER_TEXT` (IC-19).
+try:
+    from governor.locale import (  # noqa: E402 — sys.path adjusted above
+        get_locale_string as _resolve_locale_string,
+    )
+except Exception:  # noqa: BLE001 — HC-5.5 fail-open
+
+    def _resolve_locale_string(key: str) -> str:  # type: ignore[no-redef]
+        return ""
+
+
 def read_latest_token_marker(state_dir: Path) -> str | None:
     """Backward-compat wrapper — read with READ_ONLY lifecycle (IC-11)."""
 
@@ -79,7 +93,12 @@ def main() -> int:
         if not isinstance(payload, dict):
             return 0
         if should_remind(payload):
-            print(REMINDER_TEXT, file=sys.stderr)
+            # IC-19: always combine resolver result with canonical English
+            # fallback so an empty locale lookup never emits a blank line.
+            print(
+                _resolve_locale_string("REMINDER_TEXT") or REMINDER_TEXT,
+                file=sys.stderr,
+            )
     except Exception:  # noqa: BLE001 — fail-open per HC-5.5
         return 0
     return 0

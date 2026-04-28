@@ -54,6 +54,24 @@ except Exception:  # noqa: BLE001 — HC-5.5 fail-open
         return True
 
 
+# AGENT_LOCALE resolver (issue #133) — separate try block so a locale.py
+# import failure cannot silence the shared-governor path. Stop hook reads
+# REMINDER_TEXT via localized_reminder_text() below.
+try:
+    from governor.locale import (  # noqa: E402 — sys.path adjusted above
+        get_locale_string as _resolve_locale_string,
+    )
+except Exception:  # noqa: BLE001 — HC-5.5 fail-open
+
+    def _resolve_locale_string(key: str) -> str:  # type: ignore[no-redef]
+        return ""
+
+
+def localized_reminder_text() -> str:
+    """Return REMINDER_TEXT in the current locale; English fallback (IC-19)."""
+    return _resolve_locale_string("REMINDER_TEXT") or REMINDER_TEXT
+
+
 VERIFY_PATTERNS = (
     r"\bpytest\b",
     r"\bmake\s+test\b",

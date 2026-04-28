@@ -1,9 +1,10 @@
 """Tier 1 Language Policy checker.
 
 Enforces AGENTS.md § Language Policy: shared-repo Tier 1 paths must not
-contain Korean (Hangul) prose. Bilingual escape tokens are the only
-exception, and they are scoped per-file so a token literal cannot launder
-Korean prose elsewhere.
+contain Korean (Hangul) prose. Bilingual escape tokens and locale data
+files (LOCALE_DATA_FILES) are the two narrowly-scoped exceptions, and they
+are scoped per-file so a token literal cannot launder Korean prose
+elsewhere.
 
 Scope today is **Korean prose only**. Other-language detection (Chinese,
 Japanese, encoded payloads via base64 / HTML entities) is intentionally out
@@ -186,6 +187,20 @@ TOKEN_LITERALS_BY_FILE: dict[str, set[str]] = {
 }
 
 # ---------------------------------------------------------------------------
+# Locale data files — file-wide skip (issue #133, AGENT_LOCALE)
+# ---------------------------------------------------------------------------
+# Files listed here are the canonical runtime source for translated terminal
+# output. Korean (and future other-language) translation strings are
+# permitted by design. ``find_violations()`` returns ``[]`` for any path in
+# this set without scanning content. Adding a new locale data file requires:
+#   1. Add the path here.
+#   2. Add a bullet to AGENTS.md § Language Policy → Exemptions.
+#   3. Update the expected key set in tests/unit/agents_shared/test_locale.py.
+#   4. Add an AST/tokenize guard for Hangul placement inside the new file.
+LOCALE_DATA_FILES: frozenset[str] = frozenset({".agents/shared/governor/locale.py"})
+
+
+# ---------------------------------------------------------------------------
 # Provenance prefixes — only valid in governor-review-log/*.md
 # ---------------------------------------------------------------------------
 # Korean text is allowed on a single line if and only if that line starts
@@ -295,6 +310,12 @@ def find_violations(path: Path, *, repo_root: Path = REPO_ROOT) -> list[Violatio
     except ValueError:
         rel = path
     rel_str = rel.as_posix()
+
+    # Locale data files are exempt: their entire purpose is to carry
+    # translated strings. Hangul placement inside the file is enforced by
+    # tests/unit/agents_shared/test_locale.py (AST + tokenize guard).
+    if rel_str in LOCALE_DATA_FILES:
+        return []
 
     try:
         text = path.read_text(encoding="utf-8")
@@ -420,7 +441,8 @@ def run(argv_paths: list[str], *, repo_root: Path = REPO_ROOT) -> int:
             print(v.format(), file=sys.stderr)
         print(
             "\nSee AGENTS.md § Language Policy for the rule. "
-            "Bilingual escape tokens [자명]/[긴급]/[탐색] are the only exception.",
+            "Bilingual escape tokens [자명]/[긴급]/[탐색] and locale data files "
+            "(LOCALE_DATA_FILES) are the two narrowly-scoped exceptions.",
             file=sys.stderr,
         )
         return 1
