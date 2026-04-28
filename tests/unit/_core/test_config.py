@@ -679,3 +679,33 @@ class TestWarnDefaults:
             with warnings.catch_warnings():
                 warnings.simplefilter("error")
                 _create_settings()
+
+
+class TestOtelConfig:
+    def test_otel_disabled_by_default_accepted(self):
+        env = {"ENV": "local", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.otel_enabled is False
+            assert s.otel_exporter_otlp_endpoint is None
+
+    def test_otel_enabled_without_endpoint_rejected(self):
+        env = {"ENV": "local", "OTEL_ENABLED": "true", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(
+                ValidationError,
+                match=r"OTEL.*otel_exporter_otlp_endpoint missing",
+            ):
+                _create_settings()
+
+    def test_otel_enabled_with_endpoint_accepted(self):
+        env = {
+            "ENV": "local",
+            "OTEL_ENABLED": "true",
+            "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.otel_enabled is True
+            assert s.otel_exporter_otlp_endpoint == "http://localhost:4317"
