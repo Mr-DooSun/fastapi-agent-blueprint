@@ -15,9 +15,12 @@ cross-review R-points), H (effect vs process question
 discrimination), I (self-licensing detection before defending a
 challenged conclusion). The body is canonical only in AGENTS.md;
 `CLAUDE.md` and `.codex/hooks/session-start.py` carry one-line
-cross-references so both tool harnesses surface the new guards on
-session start without duplicating the body (drift risk explicitly
-rejected during round-5 review, R8.2).
+cross-references so both tool harnesses surface a *pointer* to the
+new guards on session start; full application still depends on
+each tool reading AGENTS.md when the pointer is followed. This is
+pointer visibility, not body auto-load, and the duplicate-body
+alternative was explicitly rejected during round 5 (plan-level
+Rejected list, drift risk outweighs benefit).
 
 The guards are sourced from documented failure modes captured
 during a five-round cross-review on 2026-04-28: (1) Claude treated
@@ -127,6 +130,51 @@ base for the four failure modes the guards encode.
 - **Outcome**: this PR's body, location choices, and four guard
   texts all reflect the round-5 fixes.
 
+### Round 6 — implementation review on PR diff
+
+- **Target**: the merged PR diff (5 files, 344 insertions). Plan
+  stage rounds 1–5 reviewed designs; round 6 reviewed the
+  text actually committed to the branch.
+- **Reviewer**: Claude `/review-pr` self-review followed by
+  `codex exec -m gpt-5.5 --sandbox read-only` cross-check
+  (gate-on-gate per ADR 045 § Self-Application Recovery
+  Pillar 2).
+- **Final Verdict**: **merge-ready after applying 8 fixes**.
+- **R-points** surfaced (closure column appears in the table
+  below):
+
+  - **R6-A (HIGH)** — Self-Application Proof reported closure
+    counts as `Fixed (12) / Deferred (2) / Rejected (3)`,
+    inconsistent with the table totals.
+  - **R6-B (HIGH)** — table contained non-canonical closure
+    labels (`Rejected after correction`, `Fixed (retracted)`)
+    instead of the three categories G mandates.
+  - **R6-C (MEDIUM)** — IC-RG-1 cited "Round-5 R8.2" for the
+    drift-risk rationale, but R8.2 is the single-PR-vs-split
+    point; the duplicate-body rejection lives in the round-5
+    plan-level Rejected list.
+  - **R6-D (MEDIUM)** — Self-Application Proof claimed a
+    "verifiable artefact in this PR's history" without
+    transcript or command output inside PR artefacts.
+  - **R6-E (MEDIUM)** — Summary said cross-refs "surface the
+    new guards" while in fact they surface a *pointer* whose
+    application depends on the tool reading AGENTS.md.
+  - **R6-F (MEDIUM)** — IC-RG-5 banned all hybrid PRs that
+    combine text rule changes with mechanical enforcement,
+    which is too rigid for small linter additions.
+  - **R6-G (LOW)** — F's Self-Application claim cited
+    AGENTS.md line numbers that the same PR had already
+    shifted by 91 lines.
+  - **R6-H (LOW)** — Language Policy scanned-file count
+    `162` was stale (post-PR is `163`).
+  - **R6-I (LOW)** — AGENTS.md § Source line said
+    "4-round cross-review", but the trail is five rounds
+    plan-side plus this implementation round.
+
+- **Outcome**: nine fixes applied in a follow-up commit on this
+  branch. PR description updated to flip the cross-tool review
+  item to include `plan stage and implementation stage`.
+
 ## Inherited Constraints
 
 Future governor-changing PRs that touch reasoning-level guards
@@ -135,7 +183,9 @@ canonical body) must respect:
 
 - **IC-RG-1**: Body stays in AGENTS.md only. Visibility surfaces
   (`CLAUDE.md`, `.codex/hooks/session-start.py`) carry pointers
-  only; never duplicate the body. Round-5 R8.2 (drift risk).
+  only; never duplicate the body. Source: round-5 plan-level
+  Rejected list (duplicate-body proposal — drift risk outweighs
+  benefit).
 - **IC-RG-2**: New guards must be sourced from a documented
   failure mode in the review-log, not from speculation.
 - **IC-RG-3**: Guard triggers must be narrow enough not to fire
@@ -145,28 +195,35 @@ canonical body) must respect:
   (Fixed / Deferred-with-rationale / Rejected). Adding a fourth
   category requires its own governor-changing PR with explicit
   rationale.
-- **IC-RG-5**: Phase 2 mechanical checks (G's closure-status
-  presence linter is the most amenable) belong in a separate PR.
-  Phase 1 PRs must not carry mechanical enforcement and text rule
-  changes together — they have different review surfaces.
+- **IC-RG-5**: By default, mechanical enforcement and text rule
+  changes ship in separate PRs to keep review surfaces distinct.
+  Bundling them in a single PR is acceptable when explicitly
+  justified in the PR description and the bundled scope stays
+  narrow enough for a single coherent review.
 
 ## Self-Application Proof
 
-This PR was constructed under the four guards it lands. Each guard
-has a verifiable artefact in this PR's history.
+This PR was constructed under the four guards it lands. Each guard's
+application during construction is reported below; the full transcript
+and command output live in the conversation that produced this PR,
+not inside PR artefacts, so what follows is a *report* rather than a
+self-contained verifiable artefact.
 
 - **F (Volatile facts verification)** — applied. AGENTS.md line
-  numbers (Self-Review Step at line 144, Layer Architecture at
-  line 163) were re-verified by `grep -n` before quoting in the
-  plan and PR body. The current branch (`main` at the time of
-  evaluation, then `feat/reasoning-level-guards` for the
-  implementation) was confirmed by `git status` rather than
-  trusting the round-1 system-prompt snapshot.
+  numbers (Self-Review Step and Layer Architecture) were
+  re-verified by `grep -n` at plan time, before this PR's
+  91-line insertion shifted them; the current location of
+  `## Layer Architecture` is line 254. The current branch
+  (`main` at evaluation time, then `feat/reasoning-level-guards`
+  for the implementation) was confirmed by `git status` rather
+  than trusting the round-1 system-prompt snapshot.
 - **G (Closure classification)** — applied. Every R-point from
-  round 5 was assigned one of the three closure categories in the
-  plan file's "Round 5 R-points Closure Table". Categories used
-  in this PR: Fixed (12), Deferred-with-rationale (2),
-  Rejected (3).
+  the six rounds (rounds 1–4 evaluation, round 5 plan review,
+  round 6 implementation review) was assigned one of the three
+  closure categories in the R-points Closure Table at the
+  bottom of this entry. Totals across the table after round 6
+  fixes were folded back in: Fixed (31),
+  Deferred-with-rationale (4), Rejected (6).
 - **H (Effect vs process discrimination)** — applied. The user's
   final approval question ("then how should we do it?") was
   classified as a process question, and answered with a plan
@@ -190,7 +247,7 @@ has a verifiable artefact in this PR's history.
   Default Coding Flow + Self-Review Step structure; no new
   Domain → Infrastructure import surface; no Tier 1 Language
   Policy violations (`tools/check_language_policy.py` reports 0
-  violations across 162 scanned files).
+  violations across 163 scanned files post-PR).
 - **Drift Candidates**: `governor-review-log/README.md` Entry
   shape currently does not require closure-status presence; this
   is a known gap and the canonical entry shape may be tightened
@@ -220,13 +277,13 @@ has a verifiable artefact in this PR's history.
 | Round 1 | "100 % achieved" self-licensing risk | **Fixed** | this PR splits implementation-scope vs operational-effect explicitly |
 | Round 1 | Phase 5 underweighted | **Rejected** | `pr-130` log already records v1 closure with acceptance proof |
 | Round 1 | AGENT_LOCALE underweighted | **Rejected** | `#133` belongs to a separate axis; not an ADR 045 closure defect |
-| Round 1 | OTEL ≠ governor observability | **Rejected after correction** | one-line clarification; not load-bearing |
+| Round 1 | OTEL ≠ governor observability | **Rejected** | rejected after one-line clarification; not load-bearing |
 | Round 1 | KPI not declared | **Deferred-with-rationale** | not load-bearing at sample size of 1 dogfooder |
 | Round 2 | A / B ordering | **Fixed** | reflected in plan |
 | Round 2 | KPI count too high (4 → 2) | **Fixed** | reflected in plan; runbook-class scope |
 | Round 2 | counter location wrong | **Fixed** | reflected in plan |
 | Round 2 | eval-2026-04-28 violates naming | **Fixed** | this entry is `pr-143-...`, conventional |
-| Round 3 | round-2 six recommendations | **Fixed (retracted)** | replaced by 0 user-facing actions; only `#140` placeholder remains |
+| Round 3 | round-2 six recommendations | **Fixed** | retracted in round 3 and replaced by 0 user-facing actions; only `#140` placeholder remains |
 | Round 4 | Layer 2 (reasoning-level) uncovered | **Fixed** | this PR is the response |
 | Round 5 | R1.2 — auto-load chain assumption | **Fixed** | plan's "Auto-load Chain" section corrected |
 | Round 5 | R1.3 — Codex `.rules` cross-ref unsuitable | **Fixed** | cross-ref moved to `.codex/hooks/session-start.py` |
@@ -248,3 +305,12 @@ has a verifiable artefact in this PR's history.
 | Round 5 | R8.3 — eval-only entry vs PR entry | **Fixed** | this is a PR-numbered entry; the four-round trail is folded into Review Rounds above |
 | Plan-level | duplicate body in `.claude/rules` and `.codex/rules` | **Rejected** | drift risk outweighs benefit |
 | Plan-level | new ADR 047 | **Rejected** | live collaboration rule, not an immutable architecture decision |
+| Round 6 | R6-A — closure count discrepancy | **Fixed** | totals normalized to `22 / 4 / 6` (then `31 / 4 / 6` after Round 6 R-points are appended) |
+| Round 6 | R6-B — non-canonical closure labels | **Fixed** | `Rejected after correction` and `Fixed (retracted)` collapsed into the three canonical categories; qualifiers moved to Note column |
+| Round 6 | R6-C — IC-RG-1 citation | **Fixed** | citation rewritten to `round-5 plan-level Rejected list (duplicate-body proposal)` |
+| Round 6 | R6-D — `verifiable artefact` overclaim | **Fixed** | Self-Application Proof header reworded to "report rather than self-contained verifiable artefact" |
+| Round 6 | R6-E — cross-ref pointer vs body | **Fixed** | Summary clarified that visibility surfaces carry a *pointer*, not auto-loaded body |
+| Round 6 | R6-F — IC-RG-5 over-rigidity | **Fixed** | IC-RG-5 narrowed to "default separate; bundle when explicitly justified and review surface stays narrow" |
+| Round 6 | R6-G — stale AGENTS line numbers | **Fixed** | F Self-Application Proof acknowledges the 91-line shift and gives the post-PR location |
+| Round 6 | R6-H — stale scanned-file count | **Fixed** | `162` → `163 scanned files post-PR` |
+| Round 6 | R6-I — `4-round` wording | **Fixed** | AGENTS.md § Source line rewritten to mention four evaluation rounds + plan-review round + implementation-stage round |

@@ -162,7 +162,7 @@ This document is canonical. Tool-specific enforcement adapters are defined per m
 
 ## Reasoning-Level Consistency Guards
 
-> Source: 4-round cross-review captured in [`governor-review-log/`](docs/ai/shared/governor-review-log/) (entry for the introducing PR). This section is the canonical Tier 1 surface; extend the log entry first when adding new guards.
+> Source: cross-review trail captured in [`governor-review-log/`](docs/ai/shared/governor-review-log/) (entry for the introducing PR — four evaluation rounds plus a fifth plan-review round, with an implementation-stage round on the PR diff itself). This section is the canonical Tier 1 surface; extend the log entry first when adding new guards.
 
 This section applies to **every reasoning step — conversation, cross-review, document generation — across all tools**. It complements the PR-level governor (§ Default Coding Flow + `.agents/shared/governor/`), which operates on changed files. The guards here address miss patterns at the conversation level — patterns the PR-level governor does not cover.
 
