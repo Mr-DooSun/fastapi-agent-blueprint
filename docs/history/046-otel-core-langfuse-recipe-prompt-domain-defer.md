@@ -1,6 +1,6 @@
 # 046. LLM Observability — OTEL Core + Langfuse Opt-in Recipe + Prompt Domain Defer
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-04-28
 - Related issues: #74 (Langfuse integration — superseded), #75 (AI Usage domain), #97 (simple-chatbot example)
 - Related ADRs: [037](037-pydanticai-agent-integration.md)(PydanticAI), [042](042-optional-infrastructure-di-pattern.md)(Optional Infra DI), [038 (archive)](archive/038-llm-observability-dual-path.md)(superseded by this ADR)
@@ -213,7 +213,7 @@ Langfuse remains the best opt-in tool for teams who need prompt-to-trace linkage
 
 This ADR governs the following issue updates (execute after this ADR merges):
 
-1. Close #74 (superseded). Create split follow-up issues for OTEL core setup and Langfuse opt-in recipe. Backfill actual issue numbers here once created.
+1. #74 closed (superseded by PR #135). Split follow-ups: #136 (OTEL core setup), #137 (Langfuse opt-in recipe).
 2. Update #75 acceptance: replace `prompt_id FK` with the four nullable columns above + the "usage metadata only" disclaimer.
 3. Update #97 acceptance: inline system prompt, no prompt domain dependency, `tokens_used` retained as educational output.
 
