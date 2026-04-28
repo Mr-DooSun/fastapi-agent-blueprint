@@ -172,3 +172,62 @@ Sync Required
 
 When there are no security findings, still emit all sections. In particular, do
 not omit `Drift Candidates` or `Sync Required`.
+
+## Cross-Tool Review Prompt Template
+
+Use this template when another tool or reviewer cross-checks a
+`/security-review` result, an audited file/domain, or a security-related
+freshness preflight. The purpose is a consistent input and output frame; the
+reviewer should prefer live code evidence when it conflicts with cached shared
+references.
+
+```text
+Cross-tool review for /security-review (read-only). Do not modify files. Do not
+run git commands.
+
+Context
+- Repo: fastapi-agent-blueprint
+- Audit target: <all / domain / file>
+- Issue link: <#NNN or none>
+- Round: <0 plan / 1 implementation / 2 gate-on-gate / N>
+- original user question: <verbatim or concise restatement>
+- success metric: <what the user said would count as success>
+- Inherited constraints: <links to relevant governor-review-log entries>
+
+What you are reviewing
+- Security surface: <auth, credentials, logging, storage, AI provider, worker,
+  file handling, or other surface>
+- Prior audit result: <Findings / Drift Candidates / Sync Required summary>
+- Important exclusions: <tests, examples, inactive optional infra, or none>
+
+Sources Loaded
+- AGENTS.md
+- docs/ai/shared/project-dna.md
+- docs/ai/shared/security-checklist.md
+- Live code evidence from audited files and relevant wiring
+- Related shared references when the audit reports stale-reference drift
+
+Review Angles
+1. Feature freshness: did the audit compare `project-dna` expectations with
+   live imports, settings, DI wiring, and interface surfaces?
+2. OWASP coverage: were all applicable security checklist categories audited,
+   and were inactive categories skipped only after live-code confirmation?
+3. Sensitive data handling: are logs, responses, errors, credentials, and
+   provider settings free of accidental exposure?
+4. Drift decision: did secure-but-undocumented behavior become a drift
+   candidate instead of a fake code finding?
+5. Volatile facts: are file paths, line references, active-feature claims, and
+   dependency claims verified from current evidence?
+
+Output format
+- Scope
+- Sources Loaded
+- Findings: open issues only, each with severity, rule source, file:line,
+  impact, and recommended fix
+- Drift Candidates: target, reason, auto-fix, sync-required
+- R-points: every cross-review point must include one closure category:
+  Fixed, Deferred-with-rationale, or Rejected. Do not use non-canonical labels.
+- Final Verdict: clean / minor fixes recommended / still needs security review /
+  block merge
+- Sync Required: true or false
+```

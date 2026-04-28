@@ -24,6 +24,8 @@ Target: $ARGUMENTS (PR number, GitHub URL, or empty for current branch)
 5. Post to GitHub only after user confirmation (Phase 4)
 
 Read `docs/ai/shared/skills/review-pr.md` for detailed steps and output format.
+For cross-tool review prompts, use that shared procedure's
+`Cross-Tool Review Prompt Template` section; do not duplicate the template here.
 
 ## Claude-Specific: Rule Sources
 You may cross-check the final wording against `.claude/rules/architecture-conventions.md`,

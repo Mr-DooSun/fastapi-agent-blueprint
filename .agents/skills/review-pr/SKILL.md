@@ -20,3 +20,6 @@ metadata:
 5. Determine `Drift Candidates` and whether `Sync Required` is `true` or `false` (Phase 2).
 6. Report using the shared review contract: `Scope`, `Sources Loaded`, `Findings`, `Drift Candidates`, `Next Actions`, `Completion State`, `Sync Required` (Phase 3).
 7. Optionally post the final review after user confirmation (Phase 4).
+
+For cross-tool review prompts, use the `Cross-Tool Review Prompt Template`
+section in `docs/ai/shared/skills/review-pr.md`; do not duplicate it here.

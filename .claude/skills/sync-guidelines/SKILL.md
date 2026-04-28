@@ -25,6 +25,8 @@ Read `docs/ai/shared/skills/sync-guidelines.md` for detailed steps.
 Also refer to `docs/ai/shared/drift-checklist.md` for inspection items.
 
 Closing summary must include: `Mode`, `Input Drift Candidates`, `project-dna`, `AUTO-FIX`, `REVIEW`, `Remaining`, `Next Actions` - see "Sync Contract" in the shared procedure.
+For cross-tool review prompts, use the shared procedure's
+`Cross-Tool Review Prompt Template` section; do not duplicate the template here.
 
 ## Claude-Specific Post-Steps
 

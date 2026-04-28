@@ -138,3 +138,64 @@ REVIEW: 1 item (security checklist wording changed and needs human approval)
 Remaining: none
 Next Actions: rerun the originating review or acknowledge the open review item
 ```
+
+## Cross-Tool Review Prompt Template
+
+Use this template when another tool or reviewer cross-checks a
+`/sync-guidelines` result, a shared-docs scan, or a drift-closure decision. The
+purpose is a consistent input and output frame; reviewers may surface new drift
+when current repository evidence supports it.
+
+```text
+Cross-tool review for /sync-guidelines (read-only). Do not modify files. Do not
+run git commands.
+
+Context
+- Repo: fastapi-agent-blueprint
+- Review target: <shared-docs scan, PR diff, or drift candidate set>
+- Issue link: <#NNN or none>
+- Round: <0 plan / 1 implementation / 2 gate-on-gate / N>
+- original user question: <verbatim or concise restatement>
+- success metric: <what the user said would count as success>
+- Inherited constraints: <links to relevant governor-review-log entries>
+
+What you are reviewing
+- Mode: <standalone inspection / review follow-up>
+- Input Drift Candidates: <none or summarized candidates>
+- Changed shared surfaces: <AGENTS.md, docs/ai/shared, wrappers, harness docs>
+- Claimed closure: <AUTO-FIX / REVIEW / Remaining / Next Actions summary>
+
+Sources Loaded
+- AGENTS.md
+- docs/ai/shared/project-dna.md
+- docs/ai/shared/drift-checklist.md
+- docs/ai/shared/governor-paths.md
+- docs/ai/shared/harness-asset-matrix.md
+- docs/ai/shared/repo-facts.md
+- Affected shared procedures, wrappers, checklists, and harness docs
+
+Review Angles
+1. Candidate reconciliation: were incoming drift candidates consumed, closed,
+   or promoted instead of silently re-reported or dropped?
+2. Shared-source consistency: do AGENTS.md, shared docs, wrappers, and harness
+   docs agree without re-declaring governor-path globs?
+3. Hybrid C parity: do shared procedures and both wrapper families point to the
+   same canonical source without duplicating bodies?
+4. Volatile facts: are file existence, path lists, index rows, and changed
+   surfaces verified from current repository state?
+5. Closure discipline: are AUTO-FIX, REVIEW, Remaining, and Next Actions
+   separated without calling unresolved policy judgment "done"?
+
+Output format
+- Mode
+- Sources Loaded
+- Drift Candidates: target, reason, auto-fix, sync-required
+- AUTO-FIX
+- REVIEW
+- Remaining
+- R-points: every cross-review point must include one closure category:
+  Fixed, Deferred-with-rationale, or Rejected. Do not use non-canonical labels.
+- Final Verdict: closed / closed after minor fixes / still needs review /
+  block merge
+- Sync Required: true or false
+```

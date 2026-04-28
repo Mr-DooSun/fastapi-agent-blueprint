@@ -81,7 +81,11 @@ Each review angle: assessment + 1~3 paragraph analysis citing file:line where po
 - **Open questions** for the user
 ```
 
-The prompt is a starting point; phase-specific reviews (Phase 2 token parser, Phase 3 verify adapter, Phase 4 completion gate, Phase 5 shared module) extend it with phase-specific angles.
+The prompt is a starting point; phase-specific reviews (Phase 2 token parser,
+Phase 3 verify adapter, Phase 4 completion gate, Phase 5 shared module) extend
+it with phase-specific angles. For quality-gate skills, use the per-skill
+specialisations in
+`docs/ai/shared/skills/{review-pr,sync-guidelines,security-review,review-architecture}.md`.
 
 ## Index
 

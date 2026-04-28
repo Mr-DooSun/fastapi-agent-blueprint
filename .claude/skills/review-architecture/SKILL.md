@@ -24,3 +24,5 @@ Target: $ARGUMENTS (domain name or "all")
 
 Read `docs/ai/shared/skills/review-architecture.md` for detailed steps and output format.
 Also refer to `docs/ai/shared/architecture-review-checklist.md` for the full checklist.
+For cross-tool review prompts, use the shared procedure's
+`Cross-Tool Review Prompt Template` section; do not duplicate the template here.

@@ -19,3 +19,6 @@ metadata:
 4. Audit the target against the 9 architecture checklist categories (Phase 1).
 5. Determine `Drift Candidates` and whether `Sync Required` is `true` or `false` (Phase 2).
 6. Report using the shared review contract: `Scope`, `Sources Loaded`, `Findings`, `Drift Candidates`, `Next Actions`, `Completion State`, `Sync Required` (Phase 3).
+
+For cross-tool review prompts, use the `Cross-Tool Review Prompt Template`
+section in `docs/ai/shared/skills/review-architecture.md`; do not duplicate it here.
