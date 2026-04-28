@@ -271,6 +271,19 @@ class Settings(BaseSettings):
     )
 
     # ----------------------------------------------------------------
+    # AI Usage public API (Optional)
+    # ----------------------------------------------------------------
+    ai_usage_public_api_enabled: bool = Field(
+        default=False,
+        validation_alias="AI_USAGE_PUBLIC_API_ENABLED",
+        description=(
+            "Enable unauthenticated /v1/usage read endpoints. Default False; "
+            "NiceGUI admin remains the safe default read surface until the "
+            "project has tenant-aware API authentication."
+        ),
+    )
+
+    # ----------------------------------------------------------------
     # Network Policy
     # ----------------------------------------------------------------
     allowed_hosts: list[str] = Field(
@@ -517,6 +530,12 @@ class Settings(BaseSettings):
         if self.otel_enabled and not self.otel_exporter_otlp_endpoint:
             errors.append(
                 "[OTEL] OTEL_ENABLED=true requires: otel_exporter_otlp_endpoint missing"
+            )
+
+        if env in STRICT_ENVS and self.ai_usage_public_api_enabled:
+            errors.append(
+                "[AI Usage] AI_USAGE_PUBLIC_API_ENABLED=true is forbidden in "
+                f"'{self.env}' until tenant-aware API authentication exists"
             )
 
         if errors:
