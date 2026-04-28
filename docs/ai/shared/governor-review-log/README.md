@@ -129,3 +129,4 @@ specialisations in
 | #141 | OTEL core: `[otel]` extra + settings + bootstrap wiring + recipe doc | #136 | [pr-141-otel-core.md](pr-141-otel-core.md) |
 | #143 | Reasoning-Level Consistency Guards (F / G / H / I) — Tier 1 Layer 2 governor | — | [pr-143-reasoning-guards.md](pr-143-reasoning-guards.md) |
 | #147 | Cross-tool prompt template standardisation for review skills | #144 | [pr-147-cross-tool-prompt-standardisation.md](pr-147-cross-tool-prompt-standardisation.md) |
+| #148 | G closure linter for governor review-log entries | #145 | [pr-148-g-closure-linter.md](pr-148-g-closure-linter.md) |
