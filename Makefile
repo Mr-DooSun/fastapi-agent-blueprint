@@ -1,10 +1,10 @@
-.PHONY: help setup quickstart demo demo-rag dev test lint format check clean diagrams
+.PHONY: help setup quickstart demo demo-rag dev worker observability-langfuse observability-langfuse-down test lint format check clean diagrams
 
 ## Show available commands
 help:
 	@echo "Usage: make <command>"
 	@echo ""
-	@awk '/^## /{desc=substr($$0,4)} /^[a-zA-Z_-]+:/{if(desc){printf "  \033[36m%-15s\033[0m %s\n", $$1, desc; desc=""}}' $(MAKEFILE_LIST)
+	@awk '/^## /{desc=substr($$0,4)} /^[a-zA-Z_-]+:/{if(desc){printf "  \033[36m%-32s\033[0m %s\n", $$1, desc; desc=""}}' $(MAKEFILE_LIST)
 
 .DEFAULT_GOAL := help
 
@@ -48,6 +48,14 @@ dev:
 ## Start worker locally
 worker:
 	uv run python run_worker_local.py
+
+## Start the opt-in Langfuse observability stack
+observability-langfuse:
+	docker compose -f docker-compose.langfuse.yml up -d
+
+## Stop the opt-in Langfuse observability stack
+observability-langfuse-down:
+	docker compose -f docker-compose.langfuse.yml down
 
 ## Run all tests (SQLite in-memory by default)
 test:
