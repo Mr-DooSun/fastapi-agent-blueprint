@@ -96,3 +96,4 @@ The prompt is a starting point; phase-specific reviews (Phase 2 token parser, Ph
 | #134 | AGENT_LOCALE: localized hook reminders + locale data exception | #133 | [pr-134-agent-locale.md](pr-134-agent-locale.md) |
 | #138 | ADR 046 follow-up: Status Accepted + issue backfill #136/#137 + project-status sync | #74 / #135 | [pr-138-adr-046-followup.md](pr-138-adr-046-followup.md) |
 | #141 | OTEL core: `[otel]` extra + settings + bootstrap wiring + recipe doc | #136 | [pr-141-otel-core.md](pr-141-otel-core.md) |
+| #143 | Reasoning-Level Consistency Guards (F / G / H / I) — Tier 1 Layer 2 governor | — | [pr-143-reasoning-guards.md](pr-143-reasoning-guards.md) |

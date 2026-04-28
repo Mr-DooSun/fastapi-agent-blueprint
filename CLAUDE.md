@@ -17,6 +17,7 @@ This file intentionally keeps only Claude-specific setup and workflow guidance.
 - Shared workflow references now live under `docs/ai/shared/`; Claude skills should point there instead of keeping private copies
 - When delegating to agents, explicitly pass the list of changed files
 - Tier 1 shared/governance files are English-only; bilingual escape tokens and locale data files (`LOCALE_DATA_FILES`) are the two narrowly-scoped exceptions. See [AGENTS.md § Language Policy](AGENTS.md#language-policy) for the path list, hidden-rationale prohibition, and AI-when-editing rule. Conversation language is user-local (set by your global CLAUDE.md); file artefacts are governed strictly by the path policy.
+- Reasoning-Level Consistency Guards (F / G / H / I) apply to every conversation, cross-review, and document-generation step — not only to PR-level work. See [AGENTS.md § Reasoning-Level Consistency Guards](AGENTS.md#reasoning-level-consistency-guards) for the canonical surface.
 
 ## Skills (slash commands)
 - `/plan-feature {description}` — Feature implementation planning (requirements interview → architecture analysis → security check → task decomposition)

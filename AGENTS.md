@@ -160,6 +160,97 @@ Each step routes to one or more skills. The shared procedure for each skill (und
 
 This document is canonical. Tool-specific enforcement adapters are defined per migration phase in [`migration-strategy.md`](docs/ai/shared/migration-strategy.md). In particular, Codex enforcement is built around prompt-time routing and changed-file completion checks, not Bash-only `PostToolUse` matchers — skill-body instructions alone are insufficient because Codex does not read a skill until it is invoked.
 
+## Reasoning-Level Consistency Guards
+
+> Source: cross-review trail captured in [`governor-review-log/`](docs/ai/shared/governor-review-log/) (entry for the introducing PR — four evaluation rounds plus a fifth plan-review round, with an implementation-stage round on the PR diff itself). This section is the canonical Tier 1 surface; extend the log entry first when adding new guards.
+
+This section applies to **every reasoning step — conversation, cross-review, document generation — across all tools**. It complements the PR-level governor (§ Default Coding Flow + `.agents/shared/governor/`), which operates on changed files. The guards here address miss patterns at the conversation level — patterns the PR-level governor does not cover.
+
+The four guards (F, G, H, I) are constitutional guidance enforced by tool / human discipline. Phase 2 may add mechanical checks where feasible (G is the most amenable; F / H / I require natural-language analysis and remain text-only).
+
+### Application order
+
+```
+H (intent classification) → F (evidence verification)
+  → [if challenged conclusion] I (self-licensing check)
+  → [for review output] G (closure classification)
+```
+
+Order is the natural flow, not a strict priority. The four guards are largely independent.
+
+### F. Volatile Workspace Facts — Verify Before Consequential Assertion
+
+**Policy.** Re-verify with tools immediately before making *consequential assertions*:
+
+- corrective claims ("the user is mistaken")
+- user-premise challenges ("that premise is wrong")
+- exact line / path / PR-number / test-count claims
+- mutable workspace facts (branch, git status, changed files, file existence)
+
+System-prompt snapshots, prior memory entries, and prior-round summaries are evidence pointers, *not* current facts. Verify separately before quoting or asserting.
+
+**Why.** During the 2026-04-28 evaluation, Claude treated a system-prompt snapshot ("Current branch: feat/121-…") as fact and challenged the user's premise; the actual current branch was `main`. The codex round-2 review (R6.1) caught this.
+
+**How to apply.**
+
+- Before issuing a corrective or challenging assertion, re-run the appropriate tool (`git status`, `gh pr view`, `Read`, `find`).
+- Always re-verify before saying "the user is mistaken".
+- Does not fire on general or exploratory questions — only on consequential cases.
+
+### G. Cross-Review Results — Closure Classification
+
+**Policy.** Every R-point produced by cross-review, cross-check, or external verification must be closed in one of three categories:
+
+1. **Fixed** — handled by commit / edit / documentation.
+2. **Explicitly deferred with rationale** — not handled, with the reason recorded.
+3. **Rejected as non-issue** — reviewed and judged not to be a defect.
+
+"Preserve" / "maintain" / "leave as-is" are **not** closure categories. A legitimate decision to retain something must still be classified as Deferred-with-rationale or Rejected.
+
+**Why.** During the 2026-04-28 round-2 review, Claude framed an unaddressed gap as "preserved as cross-review asset"; the user corrected this in round 3 — cross-review exists to close gaps, not to preserve them.
+
+**How to apply.** When recording a `governor-review-log` entry or reporting cross-review results, attach a closure status to every R-point. Saying "we will leave this as is" in prose is fine; the *category label* must be one of the three.
+
+### H. Effect vs Process Question Discrimination
+
+**Policy.** Classify each user question into one of two kinds:
+
+- **Effect questions** — "is it working?", "did the error rate go down?", "what's the result?" (asking about state / quality / outcome).
+- **Process questions** — "what should we do?", "what's next?", "what's the method?" (asking about action / plan / approach).
+
+Effect questions must not be answered with process content (new actions, more ceremony). Mixed questions ("is it working, and what should we do next?") must be answered effect-first with evidence, then process options separately.
+
+**Multi-round preservation.** For multi-round conversations, restate the original user question and stated success metric before proposing process changes. The original question must not be lost as round count grows.
+
+**Why.** During the 2026-04-28 round 3, the user asked an effect question ("is the error rate going down?"); Claude answered with process content. Round 4's retrospective evidence (186 logged R / F points) demonstrated the effect question could in fact be answered with data.
+
+**How to apply.**
+
+- Classify before composing the response.
+- Effect questions: answer with evidence or data. If no data exists, say so explicitly. Do not substitute process content.
+- Process questions: answer with action candidates.
+- Mixed questions: effect first, process second, separately labelled.
+
+### I. Self-Licensing Detection — Sanity Check Before Defending a Challenged Conclusion
+
+**Trigger.** This guard fires only when the user pushes back on a stated conclusion: a *correction*, *challenge*, or *evidence request* directed at that conclusion. General follow-up or clarifying questions do not fire it.
+
+**Policy.** Before defending the conclusion, explicitly check:
+
+1. Did the conclusion start from a stale or incorrect premise?
+2. Is the reasoning circular — am I evaluating my own output by criteria I authored, or stacking new recommendations to defend earlier ones?
+3. Could the user's intuition be a real domain signal that I am missing?
+
+State the result of this check as the first sentence of the response, before any defence.
+
+**Why.** During the 2026-04-28 evaluation, rounds 1 and 2 drifted toward adding ceremony; Claude defended this drift. Only when the user pushed back at round 3 ("is that really the conclusion?") did codex retract the entire round-2 list ("none of the six recommendations from round 2 should be retained as-is").
+
+**How to apply.**
+
+- On detected pushback, run the three-step check first, surface the result, then proceed.
+- Re-verifying premises is the default; defence is conditional.
+- General questions or requests for additional information do not fire this guard.
+
 ## Layer Architecture (3-Tier Hybrid)
 
 - Default: Router → Service (extends `BaseService`) → Repository (extends `BaseRepository`)
