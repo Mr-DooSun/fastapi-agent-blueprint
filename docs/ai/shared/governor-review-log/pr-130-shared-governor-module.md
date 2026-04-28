@@ -109,6 +109,31 @@ Cascade-risk verdict: **sufficient for v1 closure**. The shared module + boundar
 
 This commit applies R2.1/R2.2/R2.3 in a single PR-extending commit (not a follow-up PR) because all three are documentation/test-only and would otherwise trigger a Phase-4-style log-only-backfill mini-PR loop.
 
+## R-points Closure Table
+
+| Source | R-point | Closure | Note |
+|---|---|---|---|
+| Round 0A | R0-A.1: shims must not carry top-level SystemExit | Fixed | Fail-open invariant added and tested. |
+| Round 0A | R0-A.2: Codex-only runtime assets should stay per-tool | Fixed | Runtime adapters remained outside the shared policy package. |
+| Round 0A | R0-A.3: GateResult should expose structured fields | Fixed | Shared completion gate returns structured `GateResult`. |
+| Round 0B | R0-B.1: parity baseline too shallow | Fixed | Collect-only and scenario baselines were added to the plan. |
+| Round 0B | R0-B.2: parity scenarios not explicit | Fixed | Five scenario families were named and tested. |
+| Round 0B | R0-B.3: fail-open coverage incomplete | Fixed | Top-level, in-call, and SystemExit fail-open invariants were covered. |
+| Round 0C | R0-C.1: safety parser callable-injection bypass | Fixed | Single-entry `safe_parse_exception_token` adopted. |
+| Round 0C | R0-C.2: marker lifecycle should be closed enum | Fixed | `MarkerLifecycle` added with exhaustive tests. |
+| Round 0C | R0-C.3: shared API and cascade boundary risk | Fixed | `__all__`, reminder-string, and governor-path boundary tests added. |
+| Round 1A | R1-A.1: matched-marker filter parity delta | Fixed | Parity restored against the frozen contract. |
+| Round 1A | R1-A.2: free-form GateResult status | Fixed | Status narrowed to a closed literal type. |
+| Round 1A | R1-A.3: missing malformed marker scenarios | Fixed | Malformed, missing-matched, and timezone-offset marker cases added. |
+| Round 1B | Tier 2 and boundary reinforcements | Deferred-with-rationale | Initial R1-B review accepted no merge block; extra reinforcements were tracked for later polish. |
+| Round 1C | R1-C.1: stale asset figures | Fixed | Figures synced in the R1 fix commit. |
+| Round 1C | R1-C.2: Tier 1 placement of shared policy package | Rejected | Review judged the placement sensible when boundary notes are preserved. |
+| Round 1C | R1-C.3: future-governor-addition rule | Fixed | AGENTS.md and target-operating-model gained the policy-vs-runtime rule. |
+| Round 2 | R2.1: unfilled Round 2 and self-application proof | Fixed | Round 2 section and proof were populated. |
+| Round 2 | R2.2: completion-gate shim cascade risk | Fixed | Boundary test locks GateStatus variants to both shims. |
+| Round 2 | R2.3: stale 200-test figure | Fixed | Matrix figure updated to 202. |
+| Round 2 | R1-B leftover absorption | Fixed | Tier 2 fail-open and positive import-shape tests were added. |
+
 ## Inherited Constraints
 
 This PR carries the following constraints forward into any subsequent governor-changing PR. Future PRs must cite these by **IC-tag** when their review trail interacts with them.

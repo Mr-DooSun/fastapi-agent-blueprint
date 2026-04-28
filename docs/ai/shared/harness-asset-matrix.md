@@ -1,6 +1,6 @@
 # Harness Asset Inventory Matrix
 
-> Last synced: 2026-04-26 (initial inventory, ADR 045 + Phase 1)
+> Last synced: 2026-04-29 (#145 G closure linter)
 > Source of truth: this is a **living inventory**. Update when assets are added, renamed, or removed. `/sync-guidelines` validates that this file matches the actual filesystem.
 > Sibling docs: [ADR 045](../../history/045-hybrid-harness-target-architecture.md) · [target-operating-model.md](target-operating-model.md) · [migration-strategy.md](migration-strategy.md)
 
@@ -146,9 +146,12 @@ The shared constitution and the tool-level entry points. These files transitivel
 
 ---
 
-## Tier 1 — Shared Reference Layer (`docs/ai/shared/`)
+## Tier 1 — Shared Reference and Enforcement Layer
 
-Twelve canonical reference documents that both Claude and Codex consume. Most are factual or architecture references (`Keep`). Three are process-discipline checklists that become *consulted* by the Default Coding Flow rather than primary entry points (`Overlay`).
+Canonical reference documents and shared enforcement assets that both Claude and
+Codex consume. Most are factual or architecture references (`Keep`). Three are
+process-discipline checklists that become *consulted* by the Default Coding Flow
+rather than primary entry points (`Overlay`).
 
 | Asset | Bucket | Risk | Impact |
 |---|---|---|---|
@@ -170,6 +173,7 @@ Twelve canonical reference documents that both Claude and Codex consume. Most ar
 | `governor-review-log/` (directory) | Keep | Low | High |
 | `governor-paths.md` | Keep | Low | High |
 | `.agents/shared/governor/` (package) | Keep | Low | High |
+| `tools/check_g_closure.py` | Keep | Low | High |
 
 ### `project-dna.md`
 
@@ -353,6 +357,16 @@ Twelve canonical reference documents that both Claude and Codex consume. Most ar
 - **Migration risk**: Low. Behaviour-invariance proven by 202 unit tests (93 baseline + 109 added; Round 1 R-points added 2 stale/malformed marker scenarios) and three-tier fail-open coverage including the R0-A.1 invariant (importing a shim under `contextlib.suppress(Exception)` MUST NOT raise SystemExit).
 - **Stability impact**: High. Single source of truth for governor policy; closes the inline-redeclaration loophole asserted by `test_governor_boundary.py`.
 - **Notes**: Boundary contract (R0-C.3): this package owns *policy*; tool-specific runtime utilities (`.codex/hooks/_shared.py` git/subprocess helpers, Codex `session_id()` / verify-log writer / `cleanup_stale_verify_logs`) remain per-tool. `__all__` declared in `__init__.py` enforces stability — `test_governor_boundary.py::test_governor_all_does_not_drop_known_names` fails the build if a public name is removed without deliberate review.
+
+### `tools/check_g_closure.py` (#145)
+
+- **Current role**: Mechanical checker for AGENTS.md guard G. Scans `docs/ai/shared/governor-review-log/pr-*.md` and enforces exactly one canonical `## R-points Closure Table` with `Fixed`, `Deferred-with-rationale`, or `Rejected` closure labels.
+- **Why it exists**: Issue #145 turns the reasoning-level G closure rule from text-only discipline into a local pre-commit / CI-enforced guard for governor review-log entries.
+- **Replacement feasibility**: None. It is repository-specific enforcement for the local governor-review-log shape.
+- **Final location**: unchanged.
+- **Migration risk**: Low. Scope is bounded to review-log PR entries; V1 intentionally does not validate summary counts, Source format, R-point ID format, or semantic correctness.
+- **Stability impact**: High. Prevents non-canonical labels such as `Fixed (retracted)` or `Rejected after correction` from silently weakening closure discipline.
+- **Notes**: Registered in `.pre-commit-config.yaml` as `governor-review-log-g-closure`; regression-covered by `tests/unit/agents_shared/test_g_closure.py`.
 
 ---
 
@@ -718,17 +732,17 @@ Six rule files (5 Claude + 1 Codex). All `Keep` except `commands.md` which becom
 
 | Bucket | Count | Share | Notes |
 |---|---|---|---|
-| Keep | 51 | ~80% | Project-specific architecture / safety / reference value (incl. 4 design + 3 self-coherence-recovery process-governor artefacts + 2 Phase 2 #121 hooks + Phase 5 #124 shared governor package) |
+| Keep | 52 | ~80% | Project-specific architecture / safety / reference value (incl. 4 design + 3 self-coherence-recovery process-governor artefacts + 2 Phase 2 #121 hooks + Phase 5 #124 shared governor package + #145 G closure linter) |
 | Overlay | 13 | ~20% | Process discipline now routed by Default Flow (Phase 3 #122 adds 3 verify-first; Phase 4 #123 adds 2 completion-gate hooks; Phase 5 #124 reduces those hooks to thin shims without changing buckets) |
 | Replace | 0 | 0% | None in initial inventory; reserved for future passes |
 | Drop | 0 | 0% | Initial pass found no genuinely removable assets |
-| **Total** | **64** | 100% | |
+| **Total** | **65** | 100% | |
 
-Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=18` (12 reference + 3 design living docs + `governor-review-log/` directory + `governor-paths.md` + `.agents/shared/governor/` package added by Phase 5 #124), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=18` (Phase 4 #123 added `.claude/hooks/completion_gate.py` + `.codex/hooks/completion_gate.py`; Phase 3 = 16, Phase 2 = 13, Phase 1 = 10; Phase 5 #124 converts 6 of these to thin shims without changing the count), `Tier 4=6` — sum 65. The 64 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d. The bucket-share percentages use 64 as the denominator.
+Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=19` (12 reference + 3 design living docs + `governor-review-log/` directory + `governor-paths.md` + `.agents/shared/governor/` package added by Phase 5 #124 + #145 G closure linter), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=18` (Phase 4 #123 added `.claude/hooks/completion_gate.py` + `.codex/hooks/completion_gate.py`; Phase 3 = 16, Phase 2 = 13, Phase 1 = 10; Phase 5 #124 converts 6 of these to thin shims without changing the count), `Tier 4=6` — sum 66. The 65 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d. The bucket-share percentages use 65 as the denominator.
 
-This distribution matches the "Mostly Local with Philosophy Overlay" model declared in [ADR 045 §D4](../../history/045-hybrid-harness-target-architecture.md). The `Replace` and `Drop` columns are both empty in the initial pass: no asset's content is being rewritten, and self-verification during cross-link work showed that the only `Drop` candidate identified during the first triage was actually an active component (a sh-wrapper `.py` pair).
+This distribution matches the "Mostly Local with Philosophy Overlay" model declared in [ADR 045 §D4](../../history/045-hybrid-harness-target-architecture.md). The `Replace` and `Drop` columns are both empty: no asset's content is being rewritten, and self-verification during cross-link work showed that the only `Drop` candidate identified during the first triage was actually an active component (a sh-wrapper `.py` pair).
 
-If a future `Replace` candidate emerges, the threshold is: Keep+Overlay would otherwise force the asset into structural inconsistency with the Default Flow. None of the current 64 active assets meet that.
+If a future `Replace` candidate emerges, the threshold is: Keep+Overlay would otherwise force the asset into structural inconsistency with the Default Flow. None of the current 65 active assets meet that.
 
 ## Verification
 
@@ -741,6 +755,7 @@ The following self-checks must pass before this matrix is treated as authoritati
      .claude/settings.json .claude/settings.local.json .mcp.json
   # Tier 1
   ls docs/ai/shared/*.md
+  ls tools/check_g_closure.py
   # Tier 2 (3 layers per skill)
   ls docs/ai/shared/skills/*.md .claude/skills/*/SKILL.md .agents/skills/*/SKILL.md
   # Tier 3 (exclude gitignored caches such as __pycache__/*.pyc)
@@ -761,3 +776,4 @@ The following self-checks must pass before this matrix is treated as authoritati
 - 2026-04-27 — Phase 3 (#122): added `.claude/hooks/verify-first.{sh,py}` (sibling in existing `PostToolUse Edit|Write` matcher) + `.codex/hooks/verify_first.py` library to Tier 3; extended `.codex/hooks/post-tool-format.py` with verify-class command logger and top-level fail-open (R0.4); extended `.codex/hooks/stop-sync-reminder.py` to merge a verify-first segment (import inside try-block per R0.1). Total 58 → 61. Bucket-share shifted Keep 86% → 82% / Overlay 14% → 18%.
 - 2026-04-27 — Phase 4 (#123): added `.claude/hooks/completion_gate.py` + `.codex/hooks/completion_gate.py` to Tier 3 (completion-gate Stop adapter, Pillar 7 + IC-11 Option A). Total 61 → 63. Bucket-share shifted Keep 82% → 79% / Overlay 18% → 21% as both new hooks classify as Overlay.
 - 2026-04-27 — Phase 5 (#124): added `.agents/shared/governor/` package to Tier 1 (8 modules consolidating Phase 2~4 duplicates: paths / time_window / tokens / markers / safety / verify / completion_gate / `__init__`). Updated Tier 3 hook role descriptions for the 6 hooks now operating as thin shims (`.claude/hooks/{user_prompt_submit,verify_first,completion_gate}.py` + `.codex/hooks/{user-prompt-submit,verify_first,completion_gate}.py`). Total 63 → 64. Bucket-share Keep 79% → 80% (1 net Keep added) / Overlay 21% → 20%. Closes #117 "Hybrid Harness v1" milestone — escape token vocabulary and hybrid governance remain permanent (target-operating-model §3 / §7).
+- 2026-04-29 — #145: added `tools/check_g_closure.py` to Tier 1 as the mechanical AGENTS.md guard G closure-table checker for governor review-log entries. Total 64 → 65. Bucket-share remains ~80% Keep / ~20% Overlay.

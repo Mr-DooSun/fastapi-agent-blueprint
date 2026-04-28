@@ -163,6 +163,30 @@ These OK observations support the `Completion State: PASSED`. They are evidence,
 
 - **Self-Coherence Note (gate-on-gate verdict)**: Round 7 vindicates the user's Option-C decision. Claude Round 6 emitted a clean output that *looked* contract-faithful but actually contained four substantive issues (R7.1, R7.2, R7.3, R7.5) plus three handoff/artefact issues (R7.4, R7.6, R7.7). All would have shipped silently without a cross-tool gate. The pattern — *Claude reviews itself; Codex catches what Claude missed* — is now part of the Cross-Tool Review Cadence (§5 of `target-operating-model.md`) and the user's memory feedback (`feedback_codex_cross_review.md`).
 
+## R-points Closure Table
+
+| Source | R-point | Closure | Note |
+|---|---|---|---|
+| Round 1 | R1: Default Flow precedence explicitness | Fixed | Captured in AGENTS.md and target-operating-model precedence rules. |
+| Round 1 | R2: shared policy split from per-tool adapters | Fixed | Carried into migration phases and IC-2. |
+| Round 1 | R3: leading-line NFKC exception-token recognition | Fixed | Captured in parser acceptance criteria and IC-3. |
+| Round 1 | R4: keep ADR 045 concise and move long-form detail out | Fixed | ADR stays high-level while living docs carry detail. |
+| Round 1 | R5: three-layer skill-wrapper invariant | Fixed | Shared and tool wrappers gained Default Flow Position coverage. |
+| Round 1 | R6: Codex git-push rule justification | Fixed | Codex rule text updated to mention verification and self-review. |
+| Round 1 | R7: Codex Stop-time changed-file enforcement | Fixed | Codex enforcement design moved away from Bash-only PostToolUse. |
+| Round 2 | R1 through R7 implementation gaps | Fixed | Round-2 findings were all fixed before readiness review. |
+| Round 3 | Minor readiness drift findings | Fixed | Round-3 findings were applied and no blockers remained. |
+| Round 4 | R4.1: Self-Application Proof freshness | Fixed | Round verdicts and freshness note added. |
+| Round 4 | R4.2: repo-invisible Pillar 8 memory feedback | Fixed | Pillar 8 demoted to optional supplemental. |
+| Round 4 | R4.3: duplicated trigger-glob list | Fixed | `governor-paths.md` became canonical and consumers linked it. |
+| Round 4 | R4.4: completion gate did not match current PR number | Fixed | Phase 4 acceptance and drift checklist require current `pr-{N}-` filename. |
+| Round 4 | R4.5: log-only backfill recursion risk | Fixed | `governor-paths.md` gained the log-only backfill exclusion. |
+| Round 4 | R4.6: missing explicit cross-tool prompt template | Fixed | README gained a reusable prompt template. |
+| Round 4 | R4.7: PR template noise risk | Deferred-with-rationale | Delete-section instruction was judged sufficient pending first non-governor PR feedback. |
+| Round 5 | R5.1 through R5.4 residual path-list and freshness drift | Fixed | Remaining redeclarations and stale count wording were removed. |
+| Round 6 | Claude-side completion gate output | Fixed | Completion gate passed with no open findings. |
+| Round 7 | R7.1 through R7.7 gate-on-gate findings | Fixed | Evidence separation, asset counts, denominator drift, issue handoff, and PR checklist were corrected. |
+
 ## Inherited Constraints (for Phase 2~5 and any future governor-changing PR)
 
 These items are referenced from follow-up issue bodies. They are not optional reading.

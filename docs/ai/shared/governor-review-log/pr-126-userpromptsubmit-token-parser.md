@@ -83,6 +83,29 @@ These OK observations support the verdict; they are not findings.
 
 Round 2 final verdict was `minor fixes recommended (no merge blockers)` and both R2 R-points close in the same commit set as this entry. No conditional Round 3 needed per the plan §"Cross-Tool Review Cadence" rule. If a future Codex re-run of Round 2 (after credit returns) surfaces additional R-points, that becomes Round 3 and lands in this same log entry as a backfill commit per the log-only-backfill exclusion.
 
+## R-points Closure Table
+
+| Source | R-point | Closure | Note |
+|---|---|---|---|
+| Round 0 | R0.1: Codex safety block preservation missing | Fixed | HC-1 added and verification checks safety preservation. |
+| Round 0 | R0.2: hyphen filename import and CLI smoke risk | Fixed | Import strategy and smoke coverage reflected into the plan. |
+| Round 0 | R0.3: hook stdin schema uncertainty | Fixed | SDK schema confirmation required before implementation. |
+| Round 0 | R0.4: regex fixture corrections | Fixed | Fixtures covered no-match, CRLF, leading newline, and decomposed-jamo scope. |
+| Round 0 | R0.5: PR number and log filename ordering | Fixed | Scratch-first then rename-after-PR workflow adopted. |
+| Round 0 | R0.6: self-application proof skill mismatch | Fixed | `/review-architecture` and `/sync-guidelines` became required proof. |
+| Round 0 | R0.7: verification gaps | Fixed | Marker schema, state directory, empty stdin, and invalid JSON checks added. |
+| Round 0 | R0.8: additive-only wording overclaim | Fixed | Reframed as behaviour-preserving extension. |
+| Round 0 | R0.9: cold-start reads too narrow | Fixed | Cold-start reads expanded. |
+| Round 0 | R0.10: missing new-session start prompt | Fixed | Plan gained the start prompt. |
+| Round 0 | R0.11: stale plan filename | Fixed | Filename clarified. |
+| Round 1 | R1.1: harness-asset-matrix Tier 3 drift | Fixed | Matrix and repo-facts updated for Phase 2 hooks. |
+| Round 1 | R1.2: marker filename collision risk | Fixed | Both tools switched to UUID suffixes. |
+| Round 1 | R1.3: marker lifecycle unspecified | Deferred-with-rationale | Deferred explicitly to Phase 4 as IC-11 and linked into issue #123. |
+| Round 1 | R1.4: subprocess and marker parse test gaps | Fixed | Four fail-open tests and JSON-parse validation added. |
+| Round 1 | R1.5: Codex stdin fail-open asymmetry | Fixed | Codex hook now returns 0 on empty, invalid, or non-dict stdin. |
+| Round 2 | R2.1: IC-11 carry-forward missing from Phase 4 issue | Fixed | Issue #123 body gained the inherited-constraint note. |
+| Round 2 | R2.2: behaviour-preserving framing tension | Fixed | Self-Coherence Note explains the safety-preserving crash-path change. |
+
 ## Inherited Constraints (carried forward to Phase 3~5 and any future governor-changing PR)
 
 This entry inherits IC-1 ~ IC-10 from [`pr-125-hybrid-harness-target-architecture.md`](pr-125-hybrid-harness-target-architecture.md) verbatim and adds one new constraint:

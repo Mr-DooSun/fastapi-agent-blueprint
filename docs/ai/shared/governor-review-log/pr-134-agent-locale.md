@@ -287,6 +287,20 @@ of findings:
     Form 2.
 - **Final Verdict**: **GREEN — implementable as specified**.
 
+## R-points Closure Table
+
+| Source | R-point | Closure | Note |
+|---|---|---|---|
+| Round 1 | R1-F1 through R1-F10: initial locale plan defects | Fixed | Later plan rounds absorbed all blocking, high, and medium defects. |
+| Round 2 | R2-F11 through R2-F18: follow-up locale design defects | Fixed | Later plan rounds resolved all carried defects before implementation. |
+| Round 3 | R3-F1 through R3-F8: completion-gate, sync-target, callable-entry, and checker gaps | Fixed | Plan v4 and later revisions addressed the full R3 set. |
+| Round 4 | R4-F1 through R4-F7: segment-builder, sync, emission-map, AST guard, and test gaps | Fixed | Plan v5 and later revisions addressed the full R4 set. |
+| Round 5 | R5-F1 through R5-F5: main fallback, phrasing drift, default-flow wording, and guard specificity gaps | Fixed | Plan v6 and later revisions addressed the full R5 set. |
+| Round 6 | R6-F1 through R6-F5: regex false-positive and implementation-specificity gaps | Fixed | Plan v7 addressed the R6 set. |
+| Round 7 | R7-BLOCKING: exact replacement wording missing | Fixed | Plan v8 inlined exact replacement wording. |
+| Round 7 | R7-non-blocking: security-review insertion location | Fixed | Insertion location was sharpened. |
+| Round 8 | GREEN regex simulation | Fixed | Round 8 reported zero remaining findings. |
+
 ## Inherited constraints
 
 This PR carries forward IC-13 through IC-17 from PR #130 / #132 and
