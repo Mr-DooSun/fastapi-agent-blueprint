@@ -97,6 +97,9 @@ class TaskErrorLoggingMiddleware(TaskiqMiddleware):
 class PermanentAwareSmartRetryMiddleware(SmartRetryMiddleware):
     """Retry transient task errors while letting permanent errors fail."""
 
+    # ValueError and TypeError are treated as programming/configuration errors
+    # that retry cannot repair. Transient task failures should raise exceptions
+    # outside this permanent set.
     PERMANENT_ERROR_TYPES: tuple[type[BaseException], ...] = (
         BaseCustomException,
         ValueError,

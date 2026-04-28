@@ -234,6 +234,7 @@ class TestPermanentAwareSmartRetryMiddleware:
         exception = RuntimeError("still failing")
         result = _make_result(exception)
 
+        # _retries is SmartRetryMiddleware's retry-counter label.
         await mw.on_error(
             _make_message(labels={"_retries": 2, "max_retries": 3}),
             result,
