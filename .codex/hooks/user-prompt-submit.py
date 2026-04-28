@@ -16,6 +16,7 @@ from the shared governor module. Behaviour preserves Phase 2 invariants:
 
 from __future__ import annotations
 
+import contextlib
 import json
 import sys
 from pathlib import Path
@@ -96,7 +97,8 @@ def main() -> int:
         return 0
 
     if ParsedToken is not None and isinstance(result, ParsedToken):
-        write_marker(result.payload)
+        with contextlib.suppress(Exception):  # HC-5.5 fail-open
+            write_marker(result.payload)
         print(json.dumps(result.payload, ensure_ascii=False), file=sys.stderr)
     return 0
 

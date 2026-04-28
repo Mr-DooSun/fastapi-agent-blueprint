@@ -183,6 +183,76 @@ def test_tier2_completion_gate_entry_points_safe_default(monkeypatch, tmp_path) 
 
 
 # ---------------------------------------------------------------------------
+# A-1 regression — Codex write_marker OSError must not block exit-0
+# (HC-5.5 fail-open; fix in governor hardening followup)
+# ---------------------------------------------------------------------------
+def test_codex_write_marker_oserror_still_returns_zero() -> None:
+    """Codex hook: write_marker raising OSError must not prevent main()
+    from returning 0 (HC-5.5 fail-open)."""
+    import io  # noqa: PLC0415
+
+    codex_hook = REPO_ROOT / ".codex" / "hooks" / "user-prompt-submit.py"
+    spec = importlib.util.spec_from_file_location("codex_ups_a1", str(codex_hook))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    try:
+
+        def _boom(payload: dict) -> None:
+            raise OSError("disk full simulated A-1")
+
+        mod.write_marker = _boom
+        orig_stdin = sys.stdin
+        sys.stdin = io.StringIO('{"prompt": "[trivial] A-1 regression"}')
+        try:
+            rc = mod.main()
+        finally:
+            sys.stdin = orig_stdin
+        assert rc == 0
+    finally:
+        sys.modules.pop("codex_ups_a1", None)
+
+
+def test_codex_write_marker_oserror_does_not_silence_stderr_payload() -> None:
+    """After write_marker raises, the stderr payload print must still execute
+    so the hook's informational output is not lost."""
+    import io  # noqa: PLC0415
+    import json as _json  # noqa: PLC0415
+
+    codex_hook = REPO_ROOT / ".codex" / "hooks" / "user-prompt-submit.py"
+    spec = importlib.util.spec_from_file_location("codex_ups_a1s", str(codex_hook))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    try:
+
+        def _boom(payload: dict) -> None:
+            raise OSError("disk full simulated A-1 stderr")
+
+        mod.write_marker = _boom
+        captured = io.StringIO()
+        orig_stdin, orig_stderr = sys.stdin, sys.stderr
+        sys.stdin = io.StringIO('{"prompt": "[trivial] A-1 stderr check"}')
+        sys.stderr = captured
+        try:
+            mod.main()
+        finally:
+            sys.stdin = orig_stdin
+            sys.stderr = orig_stderr
+        output = captured.getvalue()
+        found = False
+        for line in output.splitlines():
+            try:
+                payload = _json.loads(line)
+            except _json.JSONDecodeError:
+                continue
+            if payload.get("matched") is True and payload.get("token") is not None:
+                found = True
+                break
+        assert found, "Expected matched-token JSON in stderr, got: " + repr(output)
+    finally:
+        sys.modules.pop("codex_ups_a1s", None)
+
+
+# ---------------------------------------------------------------------------
 # Tier 3 — R0-A.1 invariant (no SystemExit at module-import)
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize("hook", CLAUDE_HOOKS + CODEX_HOOKS)
