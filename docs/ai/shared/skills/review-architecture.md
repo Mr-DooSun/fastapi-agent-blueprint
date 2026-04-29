@@ -157,3 +157,62 @@ Sync Required
 
 When the audit is clean, still emit `Findings: none`, `Drift Candidates: none`,
 and `Sync Required: false`.
+
+## Cross-Tool Review Prompt Template
+
+Use this template when another tool or reviewer cross-checks a
+`/review-architecture` result, an audited domain, or an architecture-related
+readiness decision. The purpose is a consistent input and output frame; findings
+must remain grounded in shared architecture sources and live code evidence.
+
+```text
+Cross-tool review for /review-architecture (read-only). Do not modify files. Do
+not run git commands.
+
+Context
+- Repo: fastapi-agent-blueprint
+- Audit target: <all / domain / examples/name>
+- Issue link: <#NNN or none>
+- Round: <0 plan / 1 implementation / 2 gate-on-gate / N>
+- original user question: <verbatim or concise restatement>
+- success metric: <what the user said would count as success>
+- Inherited constraints: <links to relevant governor-review-log entries>
+
+What you are reviewing
+- Architecture surface: <layers, DTO conversion, DI, repository, worker,
+  admin, bootstrap, DynamoDB, or examples profile>
+- Prior audit result: <Findings / Drift Candidates / Sync Required summary>
+- Important exclusions: <examples profile, inactive optional infra, or none>
+
+Sources Loaded
+- AGENTS.md
+- docs/ai/shared/project-dna.md
+- docs/ai/shared/architecture-review-checklist.md
+- docs/ai/shared/security-checklist.md when the architecture issue overlaps a
+  security boundary
+- Live code evidence from audited files and relevant wiring
+
+Review Angles
+1. Layer and dependency rules: did the audit verify Domain, Service,
+   Repository, Infrastructure, and Interface boundaries from current code?
+2. Conversion and DTO integrity: did it check Request, DTO, Response, Model,
+   and DynamoModel flow without inventing mapper or entity patterns?
+3. DI and bootstrap correctness: did it inspect container providers, selectors,
+   task wiring, and admin/service contracts where applicable?
+4. Drift decision: did documented-pattern changes become drift candidates
+   instead of being hidden inside a clean architecture verdict?
+5. Volatile facts: are domains, file paths, line references, and optional
+   feature claims verified from current repository evidence?
+
+Output format
+- Scope
+- Sources Loaded
+- Findings: open issues only, each with severity, rule source, file:line,
+  impact, and recommended fix
+- Drift Candidates: target, reason, auto-fix, sync-required
+- R-points: every cross-review point must include one closure category:
+  Fixed, Deferred-with-rationale, or Rejected. Do not use non-canonical labels.
+- Final Verdict: clean / minor fixes recommended / still needs architecture
+  review / block merge
+- Sync Required: true or false
+```

@@ -19,3 +19,6 @@ metadata:
 4. Audit the target against the 12 security checklist categories using the shared applicability rules (Phase 1).
 5. Determine stale-reference drift, other `Drift Candidates`, and whether `Sync Required` is `true` or `false` (Phase 2).
 6. Report using the shared review contract: `Scope`, `Sources Loaded`, `Findings`, `Drift Candidates`, `Next Actions`, `Completion State`, `Sync Required` (Phase 3).
+
+For cross-tool review prompts, use the `Cross-Tool Review Prompt Template`
+section in `docs/ai/shared/skills/security-review.md`; do not duplicate it here.

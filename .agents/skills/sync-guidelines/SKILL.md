@@ -19,3 +19,6 @@ metadata:
 3. Reconcile drift candidates with code, shared references, harness docs, and wrappers (Phase 1).
 4. Refresh `project-dna` and dependent shared references as needed (Phase 2).
 5. Verify Hybrid C parity for both Claude and Codex wrappers, then close with the sync contract (Phase 3).
+
+For cross-tool review prompts, use the `Cross-Tool Review Prompt Template`
+section in `docs/ai/shared/skills/sync-guidelines.md`; do not duplicate it here.

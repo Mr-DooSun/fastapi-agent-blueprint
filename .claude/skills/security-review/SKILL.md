@@ -24,3 +24,5 @@ Target: $ARGUMENTS (domain name, file path, or "all")
 
 Read `docs/ai/shared/skills/security-review.md` for detailed steps and output format.
 Also refer to `docs/ai/shared/security-checklist.md` for the full checklist.
+For cross-tool review prompts, use the shared procedure's
+`Cross-Tool Review Prompt Template` section; do not duplicate the template here.

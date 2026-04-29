@@ -156,3 +156,61 @@ Ask before posting.
 
 If `Sync Required: true`, do not treat the review as fully closed until the
 follow-up sync path is acknowledged.
+
+## Cross-Tool Review Prompt Template
+
+Use this template when another tool or reviewer cross-checks a `/review-pr`
+result, a PR diff, or a readiness decision. The purpose is a consistent input
+and output frame; reviewers may disagree with the original review when the
+evidence supports it.
+
+```text
+Cross-tool review for /review-pr (read-only). Do not modify files. Do not run
+git commands.
+
+Context
+- Repo: fastapi-agent-blueprint
+- Review target: <PR number, branch, or diff scope>
+- Issue link: <#NNN or none>
+- Round: <0 plan / 1 implementation / 2 gate-on-gate / N>
+- original user question: <verbatim or concise restatement>
+- success metric: <what the user said would count as success>
+- Inherited constraints: <links to relevant governor-review-log entries>
+
+What you are reviewing
+- Summary: <one-paragraph change summary>
+- Changed files: <3-8 highest-signal paths>
+- Prior review result: <Findings / Drift Candidates / Sync Required summary>
+
+Sources Loaded
+- AGENTS.md
+- docs/ai/shared/project-dna.md
+- docs/ai/shared/architecture-review-checklist.md
+- docs/ai/shared/security-checklist.md
+- docs/ai/shared/governor-paths.md when the change may be governor-changing
+- Relevant changed files and surrounding code
+
+Review Angles
+1. Diff-scope correctness: did the review inspect the changed files and enough
+   surrounding code to judge the shared rules?
+2. Architecture and security rule grounding: are all findings backed by the
+   shared sources above, with no tool-local rule invention?
+3. Drift decision: is `Sync Required` correct, especially for shared rule
+   sources, skill procedures, wrappers, and documented patterns?
+4. Volatile facts: are branch, PR number, changed-file counts, file paths, and
+   line references verified from current evidence?
+5. Completion-gate closure: does the review distinguish open findings,
+   resolved items, and follow-up sync work without masking risk?
+
+Output format
+- Scope
+- Sources Loaded
+- Findings: open issues only, each with severity, rule source, file:line,
+  impact, and recommended fix
+- Drift Candidates: target, reason, auto-fix, sync-required
+- R-points: every cross-review point must include one closure category:
+  Fixed, Deferred-with-rationale, or Rejected. Do not use non-canonical labels.
+- Final Verdict: merge-ready / minor fixes recommended / still needs
+  reinforcement / block merge
+- Sync Required: true or false
+```
