@@ -39,6 +39,10 @@ make dev
 
 Open <http://localhost:8000/docs-swagger> to explore the API.
 
+For the first Alembic rollout in an environment that already has tables
+created outside Alembic, see the
+[RDB migration runbook](operations/rdb-migrations.md).
+
 ## Manual setup (without Make)
 
 ```bash

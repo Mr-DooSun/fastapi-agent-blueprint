@@ -98,6 +98,14 @@ class TestStrictEnvRejectsUnsafeDefaults:
             error_message = str(exc_info.value)
             assert "5 error(s)" in error_message
 
+    @pytest.mark.parametrize("env_name", ["prod", "stg"])
+    def test_strict_env_rejects_ai_usage_public_api(self, env_name):
+        safe_env = _make_safe_env(env_name)
+        safe_env["AI_USAGE_PUBLIC_API_ENABLED"] = "true"
+        with patch.dict(os.environ, safe_env, clear=True):
+            with pytest.raises(ValidationError, match="AI_USAGE_PUBLIC_API_ENABLED"):
+                _create_settings()
+
 
 class TestUnknownEnv:
     def test_unknown_env_rejected(self):
