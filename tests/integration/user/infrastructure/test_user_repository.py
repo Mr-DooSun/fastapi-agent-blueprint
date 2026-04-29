@@ -22,6 +22,10 @@ async def test_insert_and_select(test_db):
     assert fetched.id == created.id
     assert fetched.email == request.email
 
+    by_username = await repo.select_data_by_username(request.username)
+    assert by_username is not None
+    assert by_username.id == created.id
+
 
 @pytest.mark.asyncio
 async def test_update(test_db):

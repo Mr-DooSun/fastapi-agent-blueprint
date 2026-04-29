@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from sqlalchemy import select
 
 from src._core.domain.validation import collect_unique_field_errors
 from src._core.infrastructure.persistence.rdb.base_repository import BaseRepository
@@ -44,6 +45,16 @@ class UserRepository(BaseRepository[UserDTO]):
                 exclude_id=data_id,
             )
             raise
+
+    async def select_data_by_username(self, username: str) -> UserDTO | None:
+        async with self.database.session() as session:
+            result = await session.execute(
+                select(UserModel).where(UserModel.username == username)
+            )
+            data = result.scalar_one_or_none()
+            if data is None:
+                return None
+            return UserDTO.model_validate(data, from_attributes=True)
 
     async def _raise_user_unique_conflict_if_present(
         self,
