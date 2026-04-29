@@ -146,7 +146,7 @@ Findings
 - [OPEN][BLOCKING] Security checklist - src/user/interface/server/routers/user_router.py:19
   Impact: write endpoint has no authentication dependency and is exposed to unauthenticated callers.
   Recommended fix: add the project's auth dependency before allowing create/update/delete actions.
-- [OK][BLOCKING] Security checklist §2 - Admin dashboard: require_auth() present in all @ui.page handlers
+- [OK][BLOCKING] Security checklist §2 - Admin dashboard: require_auth() awaited in all @ui.page handlers
 - [SKIP] Security checklist §4.2 - File Upload input validation: project-dna §8 and live code both confirm feature inactive
 
 Drift Candidates

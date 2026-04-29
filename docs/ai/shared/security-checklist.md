@@ -55,7 +55,7 @@ Check router files and configuration files:
   - When not implemented: treat as `[OPEN][BLOCKING]` and require production-safe auth before release
 ### Admin Dashboard Security
 - [ ] [Always][BLOCKING] Admin endpoint access restriction verified
-  - Grep: Every `@ui.page("/admin/` function calls `require_auth()` before any rendering
+  - Grep: Every `@ui.page("/admin/` function awaits `require_auth()` before any rendering
 - [ ] [Always][HIGH] Admin authentication delegates credential checks to the auth domain
   - Grep: Verify `AdminAuthProvider` calls `AuthUseCase.admin_login()` and password verification stays in `AuthService.verify_credentials()`
 - [ ] [Always][HIGH] Sensitive fields masked in admin grid
