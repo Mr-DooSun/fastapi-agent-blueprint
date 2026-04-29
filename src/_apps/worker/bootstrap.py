@@ -9,7 +9,9 @@ from src._core.config import settings
 from src._core.infrastructure.discovery import discover_domains
 from src._core.infrastructure.logging.configure import configure_logging
 from src._core.infrastructure.logging.taskiq_middleware import (
+    PermanentAwareSmartRetryMiddleware,
     StructlogContextMiddleware,
+    TaskErrorLoggingMiddleware,
 )
 
 _logger = structlog.stdlib.get_logger("src._apps.worker.bootstrap")
@@ -36,8 +38,12 @@ def _configure_logging_pipeline() -> None:
 
 
 def _install_middleware(app: AsyncBroker) -> None:
-    """Bind correlation IDs and task identifiers on every task execution."""
-    app.add_middlewares(StructlogContextMiddleware())
+    """Bind task context, log failures, and retry transient task errors."""
+    app.add_middlewares(
+        StructlogContextMiddleware(),
+        PermanentAwareSmartRetryMiddleware(),
+        TaskErrorLoggingMiddleware(),
+    )
 
 
 def _register_startup_event(app: AsyncBroker) -> None:
