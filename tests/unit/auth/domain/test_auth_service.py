@@ -105,6 +105,23 @@ async def test_access_token_returns_current_user(auth_service, user):
 
 
 @pytest.mark.asyncio
+async def test_token_claims_do_not_include_role(auth_service, user):
+    token_config = make_auth_token_config()
+    access_token, refresh_token = await auth_service.issue_token_pair(user)
+
+    for token in (access_token, refresh_token):
+        payload = jwt.decode(
+            token,
+            token_config.secret_key,
+            algorithms=[token_config.algorithm],
+            audience=token_config.audience,
+            issuer=token_config.issuer,
+        )
+        assert set(payload) == {"sub", "jti", "type", "iat", "exp", "iss", "aud"}
+        assert "role" not in payload
+
+
+@pytest.mark.asyncio
 async def test_refresh_token_is_rejected_on_access_dependency(auth_service, user):
     _, refresh_token = await auth_service.issue_token_pair(user)
 

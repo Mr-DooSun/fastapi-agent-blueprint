@@ -1,3 +1,7 @@
-from src.auth.domain.dtos.auth_dto import RefreshTokenCreateDTO, RefreshTokenDTO
+from src.auth.domain.dtos.auth_dto import (
+    AdminSessionDTO,
+    RefreshTokenCreateDTO,
+    RefreshTokenDTO,
+)
 
-__all__ = ["RefreshTokenCreateDTO", "RefreshTokenDTO"]
+__all__ = ["AdminSessionDTO", "RefreshTokenCreateDTO", "RefreshTokenDTO"]
