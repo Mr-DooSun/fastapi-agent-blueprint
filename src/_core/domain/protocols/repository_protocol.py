@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, TypeVar
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar
 
 from pydantic import BaseModel
 
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
 
 
-class BaseRepositoryProtocol(Generic[ReturnDTO]):
+class BaseRepositoryProtocol(Protocol, Generic[ReturnDTO]):
     async def insert_data(self, entity: BaseModel) -> ReturnDTO: ...
 
     async def insert_datas(self, entities: list[BaseModel]) -> list[ReturnDTO]: ...
@@ -20,6 +21,23 @@ class BaseRepositoryProtocol(Generic[ReturnDTO]):
     async def select_data_by_id(self, data_id: int) -> ReturnDTO: ...
 
     async def select_datas_by_ids(self, data_ids: list[int]) -> list[ReturnDTO]: ...
+
+    async def exists_by_id(self, data_id: int) -> bool: ...
+
+    async def exists_by_fields(
+        self,
+        filters: Mapping[str, Any],
+        *,
+        exclude_id: int | None = None,
+    ) -> bool: ...
+
+    async def existing_values_by_field(
+        self,
+        field: str,
+        values: list[Any],
+        *,
+        exclude_id: int | None = None,
+    ) -> set[Any]: ...
 
     async def select_datas_with_count(
         self,
