@@ -132,3 +132,4 @@ specialisations in
 | #148 | G closure linter for governor review-log entries | #145 | [pr-148-g-closure-linter.md](pr-148-g-closure-linter.md) |
 | #151 | Architecture review follow-up | — | [pr-151-architecture-review-followup.md](pr-151-architecture-review-followup.md) |
 | #152 | CRUD Data Validation Sync | #10 | [pr-152-crud-data-validation-sync.md](pr-152-crud-data-validation-sync.md) |
+| #153 | JWT authentication domain | #4 | [pr-153-jwt-auth-domain.md](pr-153-jwt-auth-domain.md) |
