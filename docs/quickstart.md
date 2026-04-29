@@ -47,15 +47,16 @@ update → delete. Raw script is at [`scripts/demo.sh`](../scripts/demo.sh).
 | `BROKER_TYPE` | `inmemory` (no queue server needed) |
 | `STORAGE_TYPE` | _(unset — object storage disabled)_ |
 | `LLM_PROVIDER` / `EMBEDDING_PROVIDER` | _(unset — AI features disabled)_ |
-| `ADMIN_ID` / `ADMIN_PASSWORD` | `admin` / `admin` |
+| `ADMIN_BOOTSTRAP_USERNAME` / `ADMIN_BOOTSTRAP_PASSWORD` | `admin` / `admin` |
 
 On startup the server auto-creates the SQLite schema from `Base.metadata`
 (see [`src/_apps/server/bootstrap.py`](../src/_apps/server/bootstrap.py)) —
 no migrations required.
 
-**This path is for evaluation only.** `ADMIN_PASSWORD=admin` and the shared
-`ADMIN_STORAGE_SECRET` will not pass the `stg`/`prod` safety check in
-[`src/_core/config.py`](../src/_core/config.py).
+**This path is for evaluation only.** `ADMIN_BOOTSTRAP_PASSWORD=admin` and
+the shared `ADMIN_STORAGE_SECRET` will not pass the `stg`/`prod` safety check
+in [`src/_core/config.py`](../src/_core/config.py). NiceGUI admin login uses
+the DB-backed auth domain after the bootstrap user is created or promoted.
 
 ## Next steps
 
