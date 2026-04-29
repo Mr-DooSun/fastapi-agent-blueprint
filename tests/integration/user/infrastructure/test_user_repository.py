@@ -123,3 +123,37 @@ async def test_unique_constraints_reject_duplicate_username_and_email(test_db):
             },
         ]
     }
+
+
+@pytest.mark.asyncio
+async def test_unique_constraint_update_conflict_returns_user_exception(test_db):
+    repo = UserRepository(database=test_db)
+    first = await repo.insert_data(
+        entity=make_create_user_request(
+            username="repo_upd_one",
+            email="repo_unique_update_one@example.com",
+        )
+    )
+    second = await repo.insert_data(
+        entity=make_create_user_request(
+            username="repo_upd_two",
+            email="repo_unique_update_two@example.com",
+        )
+    )
+
+    with pytest.raises(UserAlreadyExistsException) as exc_info:
+        await repo.update_data_by_data_id(
+            data_id=second.id,
+            entity=UpdateUserRequest(email=first.email),
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.details == {
+        "errors": [
+            {
+                "field": "email",
+                "message": "email already exists",
+                "type": "unique",
+            }
+        ]
+    }

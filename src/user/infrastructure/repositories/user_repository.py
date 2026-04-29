@@ -34,13 +34,31 @@ class UserRepository(BaseRepository[UserDTO]):
                 await self._raise_user_unique_conflict_if_present(entity, exc)
             raise
 
+    async def update_data_by_data_id(self, data_id: int, entity: BaseModel) -> UserDTO:
+        try:
+            return await super().update_data_by_data_id(data_id=data_id, entity=entity)
+        except DatabaseException as exc:
+            await self._raise_user_unique_conflict_if_present(
+                entity,
+                exc,
+                exclude_id=data_id,
+            )
+            raise
+
     async def _raise_user_unique_conflict_if_present(
         self,
         entity: BaseModel,
         exc: DatabaseException,
+        *,
+        exclude_id: int | None = None,
     ) -> None:
         if exc.error_code != "DB_INTEGRITY_ERROR":
             return
-        errors = await collect_unique_field_errors(self, entity, _USER_UNIQUE_FIELDS)
+        errors = await collect_unique_field_errors(
+            self,
+            entity,
+            _USER_UNIQUE_FIELDS,
+            exclude_id=exclude_id,
+        )
         if errors:
             raise UserAlreadyExistsException(errors=errors) from exc
