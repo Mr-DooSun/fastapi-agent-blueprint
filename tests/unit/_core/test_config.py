@@ -5,8 +5,6 @@ import pytest
 from pydantic import ValidationError
 
 _REQUIRED_VARS = {
-    "ADMIN_ID": "admin",
-    "ADMIN_PASSWORD": "admin",
     "ADMIN_STORAGE_SECRET": "change-me-in-production",
     "DATABASE_ENGINE": "postgresql",
     "DATABASE_USER": "postgres",
@@ -21,8 +19,6 @@ def _make_safe_env(env_name: str = "prod") -> dict[str, str]:
     return {
         **_REQUIRED_VARS,
         "ENV": env_name,
-        "ADMIN_ID": "prod-admin",
-        "ADMIN_PASSWORD": "s3cure-p@ss!",
         "ADMIN_STORAGE_SECRET": "a-real-secret-key-here",
         "DATABASE_USER": "app_user",
         "DATABASE_PASSWORD": "db-s3cure-p@ss",
@@ -70,7 +66,6 @@ class TestStrictEnvRejectsUnsafeDefaults:
     @pytest.mark.parametrize(
         "field_name,unsafe_value",
         [
-            ("ADMIN_PASSWORD", "admin"),
             ("ADMIN_STORAGE_SECRET", "change-me-in-production"),
             ("DATABASE_PASSWORD", "postgres"),
             ("DATABASE_HOST", "localhost"),
@@ -98,7 +93,22 @@ class TestStrictEnvRejectsUnsafeDefaults:
             with pytest.raises(ValidationError) as exc_info:
                 _create_settings()
             error_message = str(exc_info.value)
-            assert "6 error(s)" in error_message
+            assert "5 error(s)" in error_message
+
+    def test_admin_bootstrap_requires_password_when_enabled(self):
+        env = {"ENV": "local", "ADMIN_BOOTSTRAP_ENABLED": "true", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match="ADMIN_BOOTSTRAP_PASSWORD"):
+                _create_settings()
+
+    @pytest.mark.parametrize("env_name", ["prod", "stg"])
+    def test_strict_env_rejects_unsafe_admin_bootstrap_password(self, env_name):
+        safe_env = _make_safe_env(env_name)
+        safe_env["ADMIN_BOOTSTRAP_ENABLED"] = "true"
+        safe_env["ADMIN_BOOTSTRAP_PASSWORD"] = "admin"
+        with patch.dict(os.environ, safe_env, clear=True):
+            with pytest.raises(ValidationError, match="admin_bootstrap_password"):
+                _create_settings()
 
     @pytest.mark.parametrize("env_name", ["prod", "stg"])
     def test_strict_env_requires_explicit_jwt_secret(self, env_name):

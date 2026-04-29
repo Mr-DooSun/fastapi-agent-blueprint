@@ -7,7 +7,11 @@ from pydantic import BaseModel
 from src._core.application.dtos.base_response import PaginationInfo
 from src._core.common.security import verify_password
 from src._core.domain.validation import ValidationFailed
-from src.user.domain.dtos.user_dto import UserDTO
+from src.user.domain.dtos.user_dto import (
+    USER_ROLE_ADMIN,
+    BootstrapAdminUserDTO,
+    UserDTO,
+)
 from src.user.domain.exceptions.user_exceptions import UserAlreadyExistsException
 from src.user.domain.services.user_service import UserService
 from src.user.interface.server.schemas.user_schema import UpdateUserRequest
@@ -119,6 +123,47 @@ async def test_create_user(user_service):
     assert result.email == request.email
     assert result.role == "user"
     assert verify_password(request.password, result.password)
+
+
+@pytest.mark.asyncio
+async def test_ensure_admin_user_creates_admin_user(user_service):
+    result = await user_service.ensure_admin_user(
+        BootstrapAdminUserDTO(
+            username="admin",
+            full_name="Admin User",
+            email="admin@example.com",
+            password="secret",
+        )
+    )
+
+    assert result.username == "admin"
+    assert result.role == USER_ROLE_ADMIN
+    assert verify_password("secret", result.password)
+
+
+@pytest.mark.asyncio
+async def test_ensure_admin_user_promotes_without_overwriting_password(user_service):
+    created = await user_service.create_data(
+        entity=make_create_user_request(
+            username="admin",
+            email="admin-promote@example.com",
+            password="old-secret",
+        )
+    )
+
+    result = await user_service.ensure_admin_user(
+        BootstrapAdminUserDTO(
+            username="admin",
+            full_name="Admin User",
+            email="admin@example.com",
+            password="new-secret",
+        )
+    )
+
+    assert result.id == created.id
+    assert result.role == USER_ROLE_ADMIN
+    assert verify_password("old-secret", result.password)
+    assert not verify_password("new-secret", result.password)
 
 
 @pytest.mark.asyncio
