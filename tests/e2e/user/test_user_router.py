@@ -54,6 +54,7 @@ async def test_create_user_with_token():
     assert data["success"] is True
     assert data["data"]["username"] == "e2euser"
     assert "password" not in data["data"]
+    assert "role" not in data["data"]
 
 
 @pytest.mark.asyncio

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from src.user.domain.dtos.user_dto import UserDTO
+from src.user.domain.dtos.user_dto import USER_ROLE_USER, UserDTO, UserRole
 from src.user.interface.server.schemas.user_schema import (
     CreateUserRequest,
     UpdateUserRequest,
@@ -14,6 +14,7 @@ def make_user_dto(
     full_name: str = "Test User",
     email: str = "test@example.com",
     password: str = "hashed_password",
+    role: UserRole = USER_ROLE_USER,
     created_at: datetime | None = None,
     updated_at: datetime | None = None,
 ) -> UserDTO:
@@ -24,6 +25,7 @@ def make_user_dto(
         full_name=full_name,
         email=email,
         password=password,
+        role=role,
         created_at=created_at or now,
         updated_at=updated_at or now,
     )

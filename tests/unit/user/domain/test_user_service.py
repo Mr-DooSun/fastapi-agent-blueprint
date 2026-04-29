@@ -117,6 +117,7 @@ async def test_create_user(user_service):
     assert result.id == 1
     assert result.username == request.username
     assert result.email == request.email
+    assert result.role == "user"
     assert verify_password(request.password, result.password)
 
 
