@@ -16,14 +16,14 @@ class UserResponse(BaseResponse):
 
 
 class CreateUserRequest(BaseRequest):
-    username: str = Field(max_length=20)
-    full_name: str = Field(max_length=255)
+    username: str = Field(min_length=1, max_length=20)
+    full_name: str = Field(min_length=1, max_length=255)
     email: EmailStr = Field(max_length=255)
-    password: str = Field(max_length=255)
+    password: str = Field(min_length=1, max_length=255)
 
 
 class UpdateUserRequest(BaseRequest):
-    username: str | None = Field(default=None, max_length=20)
-    full_name: str | None = Field(default=None, max_length=255)
+    username: str | None = Field(default=None, min_length=1, max_length=20)
+    full_name: str | None = Field(default=None, min_length=1, max_length=255)
     email: EmailStr | None = Field(default=None, max_length=255)
-    password: str | None = Field(default=None, max_length=255)
+    password: str | None = Field(default=None, min_length=1, max_length=255)

@@ -18,6 +18,8 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from src._core.infrastructure.persistence.rdb.database import Database
+from src.auth.interface.server.dependencies.auth_dependencies import get_current_user
+from src.user.domain.dtos.user_dto import UserDTO
 
 
 def override_database(app: FastAPI, test_db: Database) -> None:
@@ -28,6 +30,20 @@ def override_database(app: FastAPI, test_db: Database) -> None:
 def reset_database_override(app: FastAPI) -> None:
     """Restore the original Database singleton."""
     _core(app).database.reset_override()
+
+
+def override_current_user(app: FastAPI, current_user: UserDTO) -> None:
+    """Replace the auth dependency with a fixed user for e2e tests."""
+
+    async def _current_user_override() -> UserDTO:
+        return current_user
+
+    app.dependency_overrides[get_current_user] = _current_user_override
+
+
+def reset_current_user_override(app: FastAPI) -> None:
+    """Restore the real auth dependency."""
+    app.dependency_overrides.pop(get_current_user, None)
 
 
 def _core(app: FastAPI):
