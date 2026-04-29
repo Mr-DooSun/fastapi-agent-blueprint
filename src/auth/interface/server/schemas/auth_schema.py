@@ -19,11 +19,11 @@ class LoginRequest(BaseRequest):
 
 
 class RefreshTokenRequest(BaseRequest):
-    refresh_token: str = Field(min_length=1)
+    refresh_token: str = Field(min_length=1, max_length=4096)
 
 
 class LogoutRequest(BaseRequest):
-    refresh_token: str = Field(min_length=1)
+    refresh_token: str = Field(min_length=1, max_length=4096)
 
 
 class TokenPairData(BaseResponse):
