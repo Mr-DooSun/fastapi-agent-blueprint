@@ -68,8 +68,7 @@ jobs:
       - name: Run tests
         env:
           ENV: local
-          ADMIN_ID: admin
-          ADMIN_PASSWORD: admin
+          ADMIN_BOOTSTRAP_ENABLED: "false"
           ADMIN_STORAGE_SECRET: ci-test-secret
           DATABASE_ENGINE: postgresql
           DATABASE_USER: postgres
@@ -105,8 +104,7 @@ jobs:
       - name: Run no-extras boot regression tests
         env:
           ENV: quickstart
-          ADMIN_ID: admin
-          ADMIN_PASSWORD: admin
+          ADMIN_BOOTSTRAP_ENABLED: "false"
           ADMIN_STORAGE_SECRET: ci-test-secret
           DATABASE_ENGINE: sqlite
           DATABASE_NAME: ":memory:"
