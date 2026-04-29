@@ -62,8 +62,12 @@ async def test_register_login_me_refresh_and_logout():
     assert me.status_code == 200
     assert me.json()["data"]["username"] == "authflow"
     assert "password" not in me.json()["data"]
+    assert "role" not in me.json()["data"]
     assert login.status_code == 200
     assert refresh.status_code == 200
+    assert "role" not in registered["user"]
+    assert "role" not in login.json()["data"]["user"]
+    assert "role" not in refresh.json()["data"]["user"]
     assert reused.status_code == 401
     assert reused.json()["errorCode"] == "REFRESH_TOKEN_REVOKED"
     assert logout.status_code == 200
