@@ -9,6 +9,10 @@ from src._apps.admin.pages import (
     login,  # noqa: F401 (registers @ui.page)
 )
 from src._core.config import settings
+from src._core.infrastructure.admin.auth import (
+    AdminAuthProvider,
+    configure_admin_auth_provider,
+)
 from src._core.infrastructure.admin.base_admin_page import BaseAdminPage
 from src._core.infrastructure.discovery import discover_domains
 
@@ -16,6 +20,12 @@ from src._core.infrastructure.discovery import discover_domains
 def bootstrap_admin(fastapi_app: FastAPI) -> None:
     """Bootstrap NiceGUI admin dashboard onto the existing FastAPI app."""
     admin_container = create_admin_container()
+    fastapi_app.state.admin_container = admin_container
+    configure_admin_auth_provider(
+        AdminAuthProvider(
+            auth_use_case_provider=admin_container.auth_container.auth_use_case
+        )
+    )
 
     # Shared list — domain pages and dashboard both reference this same object.
     # Pages are rendered at request time, so all entries are present by then.
