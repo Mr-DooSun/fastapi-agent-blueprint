@@ -31,7 +31,7 @@ Check across all domain files.
 - [ ] [BLOCKING] Persistence models (`Model`, `DynamoModel`, `VectorModel`) are not imported or exposed outside Repository / VectorStore layers
 - [ ] [BLOCKING] Repository method return values are DTO types, not Model objects
 - [ ] [HIGH] Model -> DTO conversion uses `model_validate(..., from_attributes=True)`
-- [ ] [HIGH] Service classes use 3 TypeVars: `BaseService[Create{Name}Request, Update{Name}Request, {Name}DTO]`
+- [ ] [HIGH] Persistence service classes use 3 TypeVars: `BaseService[Create{Name}Request, Update{Name}Request, {Name}DTO]` or `BaseDynamoService[Create{Name}Request, Update{Name}Request, {Name}DTO]`; Protocol-delegating AI services that do not extend a base CRUD service are exempt.
 - [ ] [HIGH] Service method overrides match parent signature types and do not narrow parameters
 
 ## 3. DTO / Response Integrity
@@ -58,7 +58,7 @@ Check `infrastructure/di/` files and compare with `project-dna` section 5.
 Check required test paths for the audited domain.
 See `docs/ai/shared/test-files.md` for the canonical baseline and conditional file definitions.
 
-- [ ] [MEDIUM] All baseline test files exist (factories, domain service unit, repository integration)
+- [ ] [MEDIUM] All baseline test files exist (factories, domain service unit, repository integration — or Protocol + Adapter + Selector integration coverage for non-persistence AI domains; see `docs/ai/shared/test-files.md` for canonical definitions)
 - [ ] [MEDIUM] Applicable conditional test files exist (use_case unit when UseCase present, e2e router when API present, admin_config when admin present)
 
 ## 6. Worker Payload Compliance

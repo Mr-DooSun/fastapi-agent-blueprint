@@ -6,11 +6,17 @@
 
 ## Baseline (always required)
 
-These three files are required for every domain, regardless of shape:
+These three files are required for every persistence-backed domain:
 
 - `tests/factories/{name}_factory.py`
 - `tests/unit/{name}/domain/test_{name}_service.py`
 - `tests/integration/{name}/infrastructure/test_{name}_repository.py`
+
+For non-persistence AI domains that intentionally have no Repository
+(`BaseRepository` / `BaseDynamoRepository` subclass), replace the repository
+integration baseline with equivalent integration coverage for the domain's
+Protocol + Adapter + Selector behavior, for example
+`tests/integration/{name}/test_{name}_stub_fallback.py`.
 
 ## Conditional (required when the feature exists)
 

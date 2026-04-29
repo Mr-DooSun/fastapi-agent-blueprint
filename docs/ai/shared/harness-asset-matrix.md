@@ -1,6 +1,6 @@
 # Harness Asset Inventory Matrix
 
-> Last synced: 2026-04-29 (#145 G closure linter)
+> Last synced: 2026-04-29 (/sync-guidelines table parity pass + #145 G closure linter)
 > Source of truth: this is a **living inventory**. Update when assets are added, renamed, or removed. `/sync-guidelines` validates that this file matches the actual filesystem.
 > Sibling docs: [ADR 045](../../history/045-hybrid-harness-target-architecture.md) · [target-operating-model.md](target-operating-model.md) · [migration-strategy.md](migration-strategy.md)
 
@@ -542,6 +542,7 @@ Eighteen hook scripts (6 Claude shell + 4 Claude Python implementations + 8 Code
 | `.claude/hooks/pre_tool_security.py` | Keep | Low | Medium |
 | `.claude/hooks/user_prompt_submit.py` | Keep | Low | Medium |
 | `.claude/hooks/verify_first.py` | Overlay | Low | Low |
+| `.claude/hooks/completion_gate.py` | Overlay | Low | Low |
 | `.codex/hooks/_shared.py` | Keep | Low | Low |
 | `.codex/hooks/session-start.py` | Keep | Low | Low |
 | `.codex/hooks/user-prompt-submit.py` | Keep | Low | Medium |
@@ -549,6 +550,7 @@ Eighteen hook scripts (6 Claude shell + 4 Claude Python implementations + 8 Code
 | `.codex/hooks/post-tool-format.py` | Keep | Low | Medium |
 | `.codex/hooks/stop-sync-reminder.py` | Keep | Low | Medium |
 | `.codex/hooks/verify_first.py` | Overlay | Low | Low |
+| `.codex/hooks/completion_gate.py` | Overlay | Low | Low |
 
 ### `.claude/hooks/check-required-plugins.sh`
 
@@ -777,3 +779,4 @@ The following self-checks must pass before this matrix is treated as authoritati
 - 2026-04-27 — Phase 4 (#123): added `.claude/hooks/completion_gate.py` + `.codex/hooks/completion_gate.py` to Tier 3 (completion-gate Stop adapter, Pillar 7 + IC-11 Option A). Total 61 → 63. Bucket-share shifted Keep 82% → 79% / Overlay 18% → 21% as both new hooks classify as Overlay.
 - 2026-04-27 — Phase 5 (#124): added `.agents/shared/governor/` package to Tier 1 (8 modules consolidating Phase 2~4 duplicates: paths / time_window / tokens / markers / safety / verify / completion_gate / `__init__`). Updated Tier 3 hook role descriptions for the 6 hooks now operating as thin shims (`.claude/hooks/{user_prompt_submit,verify_first,completion_gate}.py` + `.codex/hooks/{user-prompt-submit,verify_first,completion_gate}.py`). Total 63 → 64. Bucket-share Keep 79% → 80% (1 net Keep added) / Overlay 21% → 20%. Closes #117 "Hybrid Harness v1" milestone — escape token vocabulary and hybrid governance remain permanent (target-operating-model §3 / §7).
 - 2026-04-29 — #145: added `tools/check_g_closure.py` to Tier 1 as the mechanical AGENTS.md guard G closure-table checker for governor review-log entries. Total 64 → 65. Bucket-share remains ~80% Keep / ~20% Overlay.
+- 2026-04-29 — `/sync-guidelines` table parity pass: added `.claude/hooks/completion_gate.py` and `.codex/hooks/completion_gate.py` to the Tier 3 quick-reference table. Detail sections and counts were already present from Phase 4, so there is no count change.
