@@ -1,6 +1,6 @@
 # Project Overview
 
-> Last synced: 2026-04-27 via /sync-guidelines (translated extras and logging notes to English under Tier 1 Language Policy, #131)
+> Last synced: 2026-04-30 via /sync-guidelines (#10 reviewed; no project-overview surface changes)
 > For tech stack, refer to project-dna.md §8; for layer structure, refer to §1.
 > For the Optional infra toggle surface (env var → disabled behavior per infra), see AGENTS.md "Optional Infrastructure" + [ADR 042](../../docs/history/042-optional-infrastructure-di-pattern.md).
 > This file only contains **project-level context** not covered in project-dna.md.

@@ -10,6 +10,7 @@
 
 ## Reference
 - Follow `src/user/` exactly. Read the corresponding user file before creating each file and replicate the pattern.
+- `src/user/domain/validators.py` is a validation reference, not a default scaffold file; add `{name}/domain/validators.py` only when explicit Service-layer write rules exist.
 - For **Base class import paths, Generic signatures, DI patterns**,
   refer to `docs/ai/shared/project-dna.md`.
 
@@ -39,15 +40,18 @@ src/{name}/
    - `class {Name}DTO(BaseModel)` — id, user-defined fields, created_at, updated_at
    - Use `Field(..., description="...")` for all fields
 2. `src/{name}/domain/protocols/{name}_repository_protocol.py`
+   - `from typing import Protocol`
    - `from src._core.domain.protocols.repository_protocol import BaseRepositoryProtocol`
    - Generic: `BaseRepositoryProtocol[{Name}DTO]` (see project-dna.md section 3)
-   - `class {Name}RepositoryProtocol(BaseRepositoryProtocol[{Name}DTO]): pass`
+   - `class {Name}RepositoryProtocol(BaseRepositoryProtocol[{Name}DTO], Protocol): pass`
 3. `src/{name}/domain/services/{name}_service.py`
    - `from src._core.domain.services.base_service import BaseService`
    - `class {Name}Service(BaseService[Create{Name}Request, Update{Name}Request, {Name}DTO])`
    - BaseService uses 3 TypeVars: `Generic[CreateDTO, UpdateDTO, ReturnDTO]` (background: ADR 011 update)
    - CRUD methods (create_data, get_datas, get_data_by_data_id, etc.) are inherited from BaseService
-   - Override methods only when custom business logic is needed
+   - Override CRUD methods only when custom business logic changes the write/read payload flow
+   - Override protected validation hooks (`_validate_create`, `_validate_create_many`, `_validate_update`, `_validate_delete`) only when explicit write validation rules exist
+   - For non-trivial validation rules, place domain composition in `src/{name}/domain/validators.py` and reuse `_core/domain/validation.py` helpers
    - Import Request types from `src/{name}/interface/server/schemas/{name}_schema.py`
 4. `src/{name}/domain/exceptions/{name}_exceptions.py`
    - `from src._core.exceptions.base_exception import BaseCustomException`

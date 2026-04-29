@@ -112,6 +112,8 @@ src/{name}/
 |---------|------------|
 | BaseRepositoryProtocol | `src._core.domain.protocols.repository_protocol.BaseRepositoryProtocol` |
 | BaseService | `src._core.domain.services.base_service.BaseService` |
+| ValidationErrorDetail | `src._core.domain.validation.ValidationErrorDetail` |
+| ValidationFailed | `src._core.domain.validation.ValidationFailed` |
 | BaseRepository | `src._core.infrastructure.persistence.rdb.base_repository.BaseRepository` |
 | Base (ORM DeclarativeBase) | `src._core.infrastructure.persistence.rdb.database.Base` |
 | Database | `src._core.infrastructure.persistence.rdb.database.Database` |
@@ -171,14 +173,14 @@ src/{name}/
 
 ```python
 # BaseRepositoryProtocol / BaseRepository — 1 TypeVar (ReturnDTO only)
-# Repository only calls entity.model_dump(), no field-specific access needed
+# Repository write inputs stay BaseModel; read primitives support Service-owned validation.
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
 
-class BaseRepositoryProtocol(Generic[ReturnDTO]): ...
+class BaseRepositoryProtocol(Protocol, Generic[ReturnDTO]): ...
 class BaseRepository(Generic[ReturnDTO], ABC): ...
 
 # BaseService — 3 TypeVars (CreateDTO, UpdateDTO, ReturnDTO)
-# Service overrides access specific fields (e.g., entity.password), so typed inputs are required
+# Service overrides access specific fields and validation hooks, so typed inputs are required
 # Background: ADR 011 Post-decision Update (2026-04-09)
 CreateDTO = TypeVar("CreateDTO", bound=BaseModel)
 UpdateDTO = TypeVar("UpdateDTO", bound=BaseModel)
@@ -190,7 +192,7 @@ ReturnType = TypeVar("ReturnType")
 class SuccessResponse(ApiConfig, Generic[ReturnType]): ...
 
 # Reference domain (user) usage example:
-class UserRepositoryProtocol(BaseRepositoryProtocol[UserDTO]): pass
+class UserRepositoryProtocol(BaseRepositoryProtocol[UserDTO], Protocol): pass
 class UserRepository(BaseRepository[UserDTO]): ...
 class UserService(BaseService[CreateUserRequest, UpdateUserRequest, UserDTO]): ...
 ```
@@ -260,6 +262,9 @@ def __init__(
 | select_datas | `async (page: int, page_size: int) -> list[ReturnDTO]` |
 | select_data_by_id | `async (data_id: int) -> ReturnDTO` |
 | select_datas_by_ids | `async (data_ids: list[int]) -> list[ReturnDTO]` |
+| exists_by_id | `async (data_id: int) -> bool` |
+| exists_by_fields | `async (filters: Mapping[str, Any], *, exclude_id: int \| None = None) -> bool` |
+| existing_values_by_field | `async (field: str, values: list[Any], *, exclude_id: int \| None = None) -> set[Any]` |
 | select_datas_with_count | `async (page: int, page_size: int, query_filter: QueryFilter \| None = None) -> tuple[list[ReturnDTO], int]` |
 | update_data_by_data_id | `async (data_id: int, entity: BaseModel) -> ReturnDTO` |
 | delete_data_by_data_id | `async (data_id: int) -> bool` |
@@ -272,14 +277,31 @@ def __init__(
 
 | BaseService Method | Signature | Repository Call |
 |-------------------|-----------|----------------|
-| create_data | `(entity: CreateDTO) -> ReturnDTO` | insert_data(entity=entity) |
-| create_datas | `(entities: list[CreateDTO]) -> list[ReturnDTO]` | insert_datas(entities=entities) |
+| create_data | `(entity: CreateDTO) -> ReturnDTO` | `_validate_create(entity)` then `insert_data(entity=entity)` |
+| create_datas | `(entities: list[CreateDTO]) -> list[ReturnDTO]` | `_validate_create_many(entities)` then `insert_datas(entities=entities)` |
 | get_datas | `(page, page_size, query_filter) -> (list[ReturnDTO], PaginationInfo)` | select_datas_with_count(...) |
 | get_data_by_data_id | `(data_id: int) -> ReturnDTO` | select_data_by_id(data_id=data_id) |
 | get_datas_by_data_ids | `(data_ids: list[int]) -> list[ReturnDTO]` | select_datas_by_ids(data_ids=data_ids) |
-| update_data_by_data_id | `(data_id: int, entity: UpdateDTO) -> ReturnDTO` | update_data_by_data_id(data_id, entity) |
-| delete_data_by_data_id | `(data_id: int) -> bool` | delete_data_by_data_id(data_id=data_id) |
+| update_data_by_data_id | `(data_id: int, entity: UpdateDTO) -> ReturnDTO` | `_validate_update(data_id, entity)` then `update_data_by_data_id(data_id, entity)` |
+| delete_data_by_data_id | `(data_id: int) -> bool` | `_validate_delete(data_id)` then `delete_data_by_data_id(data_id=data_id)` |
 | count_datas | `() -> int` | count_datas() |
+
+### BaseService Validation Hooks
+
+`BaseService` owns pre-write validation. Hooks are protected async methods with
+no-op defaults; domain Services override only the hooks that have explicit
+business rules.
+
+| Hook | Signature | Default |
+|------|-----------|---------|
+| _validate_create | `async (entity: CreateDTO) -> None` | no-op |
+| _validate_create_many | `async (entities: list[CreateDTO]) -> None` | no-op |
+| _validate_update | `async (data_id: int, entity: UpdateDTO) -> None` | no-op |
+| _validate_delete | `async (data_id: int) -> None` | no-op |
+
+Reusable validation helpers live in `_core/domain/validation.py`. Domain-specific
+composition belongs in `{domain}/domain/validators.py` when the rule set is
+non-trivial.
 
 ### BaseDynamoRepositoryProtocol Methods
 
