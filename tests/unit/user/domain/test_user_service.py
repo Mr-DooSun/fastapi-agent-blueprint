@@ -1,9 +1,14 @@
+from collections.abc import Mapping
+from typing import Any
+
 import pytest
 from pydantic import BaseModel
 
 from src._core.application.dtos.base_response import PaginationInfo
 from src._core.common.security import verify_password
+from src._core.domain.validation import ValidationFailed
 from src.user.domain.dtos.user_dto import UserDTO
+from src.user.domain.exceptions.user_exceptions import UserAlreadyExistsException
 from src.user.domain.services.user_service import UserService
 from src.user.interface.server.schemas.user_schema import UpdateUserRequest
 from tests.factories.user_factory import make_create_user_request, make_user_dto
@@ -37,6 +42,37 @@ class MockUserRepository:
 
     async def select_datas_by_ids(self, data_ids: list[int]) -> list[UserDTO]:
         return [self._store[i] for i in data_ids if i in self._store]
+
+    async def exists_by_id(self, data_id: int) -> bool:
+        return data_id in self._store
+
+    async def exists_by_fields(
+        self,
+        filters: Mapping[str, Any],
+        *,
+        exclude_id: int | None = None,
+    ) -> bool:
+        for data_id, dto in self._store.items():
+            if exclude_id is not None and data_id == exclude_id:
+                continue
+            if all(getattr(dto, field) == value for field, value in filters.items()):
+                return True
+        return False
+
+    async def existing_values_by_field(
+        self,
+        field: str,
+        values: list[Any],
+        *,
+        exclude_id: int | None = None,
+    ) -> set[Any]:
+        value_set = set(values)
+        return {
+            getattr(dto, field)
+            for data_id, dto in self._store.items()
+            if (exclude_id is None or data_id != exclude_id)
+            and getattr(dto, field) in value_set
+        }
 
     async def select_datas_with_count(
         self,
@@ -117,7 +153,10 @@ async def test_delete_user(user_service):
 async def test_get_datas_returns_pagination(user_service):
     for i in range(3):
         await user_service.create_data(
-            entity=make_create_user_request(username=f"user{i}")
+            entity=make_create_user_request(
+                username=f"user{i}",
+                email=f"user{i}@example.com",
+            )
         )
 
     datas, pagination = await user_service.get_datas(page=1, page_size=2)
@@ -128,3 +167,127 @@ async def test_get_datas_returns_pagination(user_service):
     assert pagination.total_pages == 2
     assert pagination.has_next is True
     assert pagination.has_previous is False
+
+
+@pytest.mark.asyncio
+async def test_create_user_rejects_duplicate_username_or_email(user_service):
+    await user_service.create_data(
+        entity=make_create_user_request(
+            username="duplicate",
+            email="duplicate@example.com",
+        )
+    )
+
+    with pytest.raises(UserAlreadyExistsException) as exc_info:
+        await user_service.create_data(
+            entity=make_create_user_request(
+                username="duplicate",
+                email="duplicate@example.com",
+            )
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.error_code == "USER_ALREADY_EXISTS"
+    assert exc_info.value.details == {
+        "errors": [
+            {
+                "field": "username",
+                "message": "username already exists",
+                "type": "unique",
+            },
+            {
+                "field": "email",
+                "message": "email already exists",
+                "type": "unique",
+            },
+        ]
+    }
+
+
+@pytest.mark.asyncio
+async def test_update_user_allows_own_unique_values(user_service):
+    created = await user_service.create_data(
+        entity=make_create_user_request(
+            username="selfuser",
+            email="self@example.com",
+        )
+    )
+
+    result = await user_service.update_data_by_data_id(
+        data_id=created.id,
+        entity=UpdateUserRequest(email="self@example.com"),
+    )
+
+    assert result.email == "self@example.com"
+
+
+@pytest.mark.asyncio
+async def test_update_user_rejects_another_users_email(user_service):
+    first = await user_service.create_data(
+        entity=make_create_user_request(
+            username="firstuser",
+            email="first@example.com",
+        )
+    )
+    second = await user_service.create_data(
+        entity=make_create_user_request(
+            username="seconduser",
+            email="second@example.com",
+        )
+    )
+
+    with pytest.raises(UserAlreadyExistsException):
+        await user_service.update_data_by_data_id(
+            data_id=second.id,
+            entity=UpdateUserRequest(email=first.email),
+        )
+
+
+@pytest.mark.asyncio
+async def test_create_users_rejects_payload_duplicates_without_insert(user_service):
+    with pytest.raises(ValidationFailed) as exc_info:
+        await user_service.create_datas(
+            [
+                make_create_user_request(
+                    username="batchdup",
+                    email="batch-one@example.com",
+                ),
+                make_create_user_request(
+                    username="batchdup",
+                    email="batch-two@example.com",
+                ),
+            ]
+        )
+
+    assert exc_info.value.status_code == 422
+    assert exc_info.value.details == {
+        "errors": [
+            {
+                "field": "username",
+                "message": "Duplicate username in request payload",
+                "type": "duplicate",
+            }
+        ]
+    }
+    assert await user_service.count_datas() == 0
+
+
+@pytest.mark.asyncio
+async def test_create_users_hashes_passwords(user_service):
+    requests = [
+        make_create_user_request(
+            username="batchuser1",
+            email="batchuser1@example.com",
+            password="plain-one",
+        ),
+        make_create_user_request(
+            username="batchuser2",
+            email="batchuser2@example.com",
+            password="plain-two",
+        ),
+    ]
+
+    results = await user_service.create_datas(entities=requests)
+
+    assert verify_password("plain-one", results[0].password)
+    assert verify_password("plain-two", results[1].password)
