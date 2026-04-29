@@ -34,6 +34,33 @@ Each entry must contain at minimum:
 3. **Inherited constraints** — the R-points and lessons that future governor-changing PRs must respect. This is the part that is link-cited from follow-up issues.
 4. **Self-application proof** — explicit invocation of `/review-architecture` and `/sync-guidelines` on the PR's own changed surface, with their canonical outputs (Findings / Drift Candidates / Sync Required / Remaining). Required so that the governor proves it followed itself.
 
+Each entry must also contain exactly one `## R-points Closure Table` section.
+The table is the mechanical record for AGENTS.md guard G: every R-point raised
+by cross-review, cross-check, or external verification must be closed as
+`Fixed`, `Deferred-with-rationale`, or `Rejected`.
+
+Canonical table shape:
+
+```markdown
+## R-points Closure Table
+
+| Source | R-point | Closure | Note |
+|---|---|---|---|
+| Round 1 | R1.1: concise finding title | Fixed | Commit or documentation reference. |
+```
+
+The `Closure` cell may use a plain label or bold exact label:
+`Fixed`, `Deferred-with-rationale`, `Rejected`, `**Fixed**`,
+`**Deferred-with-rationale**`, or `**Rejected**`. Non-canonical labels such as
+`Fixed (retracted)`, `Rejected after correction`, `Deferred`, lowercase
+variants, italic variants, and labels with extra words are invalid.
+
+`tools/check_g_closure.py` enforces this table shape for
+`docs/ai/shared/governor-review-log/pr-*.md` and is registered as the
+`governor-review-log-g-closure` pre-commit hook. V1 intentionally does not
+validate summary counts, `Source` format, R-point ID format, or whether the
+chosen closure category is semantically correct.
+
 ## Retention
 
 Entries are kept for the lifetime of the repository. The matrix and the migration-strategy document rely on this directory as a permanent reference.
@@ -102,3 +129,4 @@ specialisations in
 | #141 | OTEL core: `[otel]` extra + settings + bootstrap wiring + recipe doc | #136 | [pr-141-otel-core.md](pr-141-otel-core.md) |
 | #143 | Reasoning-Level Consistency Guards (F / G / H / I) — Tier 1 Layer 2 governor | — | [pr-143-reasoning-guards.md](pr-143-reasoning-guards.md) |
 | #147 | Cross-tool prompt template standardisation for review skills | #144 | [pr-147-cross-tool-prompt-standardisation.md](pr-147-cross-tool-prompt-standardisation.md) |
+| #148 | G closure linter for governor review-log entries | #145 | [pr-148-g-closure-linter.md](pr-148-g-closure-linter.md) |

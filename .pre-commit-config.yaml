@@ -93,6 +93,17 @@ repos:
         pass_filenames: true
         files: '^(AGENTS\.md|CLAUDE\.md|CONTRIBUTING\.md|CODE_OF_CONDUCT\.md|SECURITY\.md|docs/ai/shared/.*\.md|docs/history/.*\.md|\.claude/rules/.*\.md|\.claude/hooks/.*|\.claude/skills/.*\.md|\.codex/rules/.*|\.codex/hooks/.*|\.agents/.*\.(py|md)|\.github/pull_request_template\.md|\.github/workflows/.*\.ya?ml)$'
 
+      # Guard G closure enforcement:
+      # governor review-log entries must classify every R-point using the
+      # canonical closure table and closure labels documented in
+      # docs/ai/shared/governor-review-log/README.md.
+      - id: governor-review-log-g-closure
+        name: "Governor review-log: G closure table enforcement"
+        language: system
+        entry: python3 tools/check_g_closure.py
+        pass_filenames: false
+        files: '^(tools/check_g_closure\.py|docs/ai/shared/governor-review-log/(README\.md|pr-.*\.md))$'
+
   # ==================== STAGE: COMMIT-MSG (commit message validation) ====================
   # Conventional Commits: type: description OR type(scope): description
   - repo: https://github.com/compilerla/conventional-pre-commit

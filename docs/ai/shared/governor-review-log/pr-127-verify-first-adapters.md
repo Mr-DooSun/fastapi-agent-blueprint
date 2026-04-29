@@ -52,6 +52,22 @@ R0 reinforcement applied before any implementation file was touched: import fail
   - **R2.2** (log accuracy): `pr-127-verify-first-adapters.md:16` Summary said `25 cases` — stale after R1.3 brought count to 27. → **Applied**: updated to `27 cases` (R2.3 then added one more → `28 cases`).
   - **R2.3** (optional test): `post-tool-format.py` `tool_input: null` path tested only by code inspection; no subprocess regression test. → **Applied**: `test_codex_post_tool_format_null_tool_input_fail_open` added; 28 tests total, all pass.
 
+## R-points Closure Table
+
+| Source | R-point | Closure | Note |
+|---|---|---|---|
+| Round 0 | R0.1: Stop hook import fail-open risk | Fixed | Import moved inside a suppressed block. |
+| Round 0 | R0.2: verify-log cross-session contamination | Fixed | Codex reads only the current session log. |
+| Round 0 | R0.3: one-second timestamp precision false-negative | Fixed | Verify log stores and compares epoch nanoseconds. |
+| Round 0 | R0.4: post-tool-format top-level fail-open missing | Fixed | Main path wrapped with fail-open parsing and suppressed record branches. |
+| Round 0 | R0.5: test naming and marker-silence parity gaps | Fixed | Test names corrected and Codex exploration-marker silence tests added. |
+| Round 1 | R1.1: CODEX_THREAD_ID priority | Fixed | Session-id priority now uses CODEX_THREAD_ID before fallback aliases. |
+| Round 1 | R1.2: `tool_input: null` AttributeError | Fixed | Command extraction handles explicit null and adds fail-open regression coverage. |
+| Round 1 | R1.3: missing direct Codex exploration-marker tests | Fixed | Direct `should_remind` marker-silence tests added. |
+| Round 2 | R2.1: stale session-id priority in matrix | Fixed | Matrix wording updated to current priority chain. |
+| Round 2 | R2.2: stale test count in log summary | Fixed | Summary updated as test count changed. |
+| Round 2 | R2.3: missing subprocess regression for null tool input | Fixed | Subprocess fail-open regression test added. |
+
 ## Inherited Constraints
 
 Carried from prior governor-changing PRs (no new IC introduced by Phase 3 — by design):

@@ -199,6 +199,30 @@ implementation, plus a pre-implementation dry run.
     provenance-bearing entries, token-only references, and the fenced
     README prompt sample.
 
+## R-points Closure Table
+
+| Source | R-point | Closure | Note |
+|---|---|---|---|
+| Round 1 | Initial two-policy proposal failure modes | Fixed | Converted into the audience-tiered policy analysis. |
+| Round 2 | 4-tier overengineering under solo-repo assumption | Rejected | Later team-scale context invalidated the solo-repo simplification. |
+| Round 3 | Team-scale leak surface and review-log readability gaps | Fixed | Restored stronger Tier 1 policy, cleanup, and review-log backfill requirements. |
+| Round 4 | R4.1: pygrep cannot encode required exceptions | Fixed | Python checker implemented. |
+| Round 4 | R4.2: test breakage scope wider than planned | Fixed | Affected hook tests updated. |
+| Round 4 | R4.3: review-log preservation categories too narrow | Fixed | Three provenance prefixes adopted. |
+| Round 4 | R4.4: draft-PR ordering needed for PR-numbered log | Fixed | Commit workflow documented and followed. |
+| Round 4 | R4.5: misleading literal hidden-rationale marker | Fixed | Policy now describes hidden rationale generically. |
+| Round 4 | R4.6: AGENT_LOCALE follow-up must be created | Fixed | Follow-up issue was created during the PR lifecycle. |
+| Round 4 | R4.7: review-log Tier 1 exclude too coarse | Fixed | Review-log files are scanned with provenance-prefix exceptions only. |
+| Round 4 | R4.8: shell self-grep would drift | Fixed | Python checker became the single sanity-check tool. |
+| Round 4 | R-extra: governor-paths filename typo | Fixed | `.pre-commit-config.yaml` path corrected. |
+| Round 5 | R5.1: draft PR workflow needs final body update and ready step | Fixed | PR lifecycle was adjusted before final readiness. |
+| Round 5 | R5.2: checker design constants and argv robustness | Fixed | Constants and full-scan versus argv scan paths implemented. |
+| Round 5 | R5.3: code-block exemption must be Markdown-only | Fixed | Fenced-block stripping is gated by Markdown extensions. |
+| Round 5 | R5.4: pre-implementation dry run needed | Fixed | Dry run expanded cleanup scope from the original inventory. |
+| Round 6 | R6.1: inline-backtick Korean was being stripped | Fixed | Inline code is scanned and regressions were added. |
+| Round 6 | R6.2: drift tests overclaimed path alignment | Fixed | Tests compare normalized Tier 1 path sets and pre-commit coverage. |
+| Round 6 | R6.3: behaviour-invariance table overstated review-log Korean scope | Fixed | Metric split provenance, token-only references, and fenced prompt samples. |
+
 ## Inherited constraints
 
 This PR introduces three new ICs that future governor-changing

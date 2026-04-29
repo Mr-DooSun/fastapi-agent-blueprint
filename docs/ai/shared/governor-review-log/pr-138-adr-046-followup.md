@@ -39,6 +39,14 @@ GitHub PR: https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/138
 - Final Verdict: merge-ready
 - Fix commits: (none)
 
+## R-points Closure Table
+
+| Source | R-point | Closure | Note |
+|---|---|---|---|
+| Round 1 | R1.1: Korean review-angle labels in README template | Fixed | Labels were translated in `a287770`. |
+| Round 1 | R1.2: angle-bracket placeholders may trigger naive gate | Rejected | Existing leakage gate explicitly exempts the README prompt-template section. |
+| Round 2 | Post-R1.1 re-review | Fixed | Round 2 reported no new findings and a merge-ready verdict. |
+
 ## Inherited Constraints
 
 - Carries forward PR #135's IC stack (no new ICs introduced by this PR)

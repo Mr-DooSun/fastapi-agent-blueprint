@@ -62,6 +62,28 @@ GitHub PR: https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/141
 - Final Verdict: plan v2 requires 4 fixes; plan v3 is implementation-ready
 - Plan version after round: v3
 
+## R-points Closure Table
+
+| Source | R-point | Closure | Note |
+|---|---|---|---|
+| Round 1 | R1.1: nonexistent `settings.app_name` | Fixed | Plan v2 uses explicit `service_name` parameter. |
+| Round 1 | R1.2: OTEL extra missing event should be warning | Fixed | Plan v2 changed the event level to warning. |
+| Round 1 | R1.3: broad ImportError swallow | Fixed | Plan v2 narrowed handling to opentelemetry ModuleNotFoundError. |
+| Round 1 | R1.4: missing idempotency guard | Fixed | Plan v2 added an idempotency guard and test reset strategy. |
+| Round 1 | R1.5: namespace-only OTEL install detection | Fixed | Plan v2 checks SDK and exporter modules. |
+| Round 1 | R1.6: optional infra fixture missing OTEL fields | Fixed | Fixture clears OTEL settings. |
+| Round 1 | R1.7: lockfile update not planned | Fixed | `uv lock` step added. |
+| Round 1 | R1.8: env examples missing OTEL vars | Fixed | Commented OTEL blocks added to env examples. |
+| Round 1 | R1.9: CHANGELOG missing update | Fixed | Unreleased entry added. |
+| Round 1 | R1.10: missing governor review-log entry | Fixed | Governor review-log entry added. |
+| Round 1 | R1.11: instrument_all availability floor | Rejected | Existing dependency floor was sufficient; no bump needed. |
+| Round 2 | R2.1: idempotency guard direction wrong | Fixed | Plan v3 guards on non-proxy provider. |
+| Round 2 | R2.2: tracer provider reset internals mis-modeled | Fixed | Reset plan uses `None` and resets the once flag. |
+| Round 2 | R2.3: fallback note incomplete | Fixed | Fallback explicitly documents both reset attributes. |
+| Round 2 | R2.4: OTEL_SERVICE_NAME precedence claim wrong | Fixed | Plan v3 makes env service name win by design. |
+| Round 2 | R2.5: same-process module-loading false positive | Fixed | Test moved to a clean subprocess. |
+| Round 2 | R2.6: instrument_all floor re-check | Rejected | Confirmed safe with current dependency range. |
+
 ## Inherited Constraints
 
 - Carries forward PR #135's IC stack (no new ICs introduced by this PR)

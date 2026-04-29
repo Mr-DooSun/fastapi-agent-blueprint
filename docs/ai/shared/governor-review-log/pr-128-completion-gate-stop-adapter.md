@@ -89,6 +89,20 @@ Phase 4 commits to **Option A — read-and-delete on Stop** with opportunistic 2
 - **R7.6 (IC carry-forward into next phase)**: Open questions absorbed by Phase 5 documented in §New Inherited Constraints: (a) `verify-log-*.json` lifecycle; (b) `_within_24h` x4 consolidation. Phase 5 issue (#124) will read this entry on start. ✓
 - **R7.7 (PR template Governor-Changing section filled)**: PR #128 body includes Governor-Changing checklist with all items checked. ✓
 
+## R-points Closure Table
+
+| Source | R-point | Closure | Note |
+|---|---|---|---|
+| Round 0 | Codex Round 0 hung before output | Deferred-with-rationale | The failed read-only run produced no R-points; Round 1 and Round 2 covered the implementation surface. |
+| Round 1 | R1.1: trivial and hotfix tokens must not silence Pillar 7 | Fixed | Behaviour confirmed as correct and documented in this entry. |
+| Round 2 | R7.1: findings separated from evidence | Fixed | Round 1 findings and evidence were separated. |
+| Round 2 | R7.2: behaviour-preserving framing | Fixed | Phase 3 fixture updates recorded as additive and defensive. |
+| Round 2 | R7.3: safety preservation | Fixed | Completion gate kept safety checks untouched. |
+| Round 2 | R7.4: bucket-share consistency after asset-count drift | Deferred-with-rationale | Matrix was treated as canonical; stale percentage mentions in other docs were left as historical references. |
+| Round 2 | R7.5: tier count arithmetic | Fixed | Matrix counting note was internally consistent at merge time. |
+| Round 2 | R7.6: IC carry-forward into Phase 5 | Fixed | Phase 5 inherited constraints documented follow-up ownership. |
+| Round 2 | R7.7: PR template Governor-Changing section filled | Fixed | PR #128 body carried the filled checklist. |
+
 ### Self-Application Proof
 
 PR #128 is governor-changing (Tier B: `.claude/hooks/`, `.codex/hooks/`). The governor's own self-review and completion-gate steps are recorded here.
