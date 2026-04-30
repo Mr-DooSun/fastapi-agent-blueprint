@@ -1,6 +1,6 @@
 # Architecture Conventions
 
-> Last synced: 2026-04-27 via /sync-guidelines (translated Structured Logging section to English under Tier 1 Language Policy, #131)
+> Last synced: 2026-04-30 via /sync-guidelines (#10 CRUD write validation hooks and repository validation primitives)
 > For Absolute Prohibitions, Conversion Patterns, Write DTO criteria, Responsibility Matrix, Error Translation, Optional AI Infra Pattern, Admin Service Contract, and **Default Coding Flow** (process layer, ADR 045), refer to AGENTS.md.
 > This file only contains **structural context** that supplements AGENTS.md for Claude.
 
@@ -40,12 +40,13 @@ Key differences from RDB/DynamoDB:
 
 ## BaseService Generic Structure
 - `BaseService(Generic[CreateDTO, UpdateDTO, ReturnDTO])` — 3 TypeVars (ADR 011 update, 2026-04-09)
-- `BaseRepositoryProtocol(Generic[ReturnDTO])` / `BaseRepository(Generic[ReturnDTO])` — 1 TypeVar (Repository only calls model_dump, no field-specific access)
+- `BaseRepositoryProtocol(Protocol, Generic[ReturnDTO])` / `BaseRepository(Generic[ReturnDTO])` — 1 TypeVar plus read primitives for Service-owned validation
 - `BaseDynamoService(Generic[CreateDTO, UpdateDTO, ReturnDTO])` — mirrors BaseService
 - `BaseDynamoRepositoryProtocol(Generic[ReturnDTO])` / `BaseDynamoRepository(Generic[ReturnDTO])` — mirrors BaseRepository
 - `BaseVectorStoreProtocol(Generic[ReturnDTO])` / `BaseS3VectorStore(Generic[ReturnDTO])` — vector store pattern
 - Domain Service example: `UserService(BaseService[CreateUserRequest, UpdateUserRequest, UserDTO])`
 - DO NOT simplify back to 1 TypeVar — this was tried and reverted (see ADR 011 Post-decision Update)
+- Service-owned CRUD write validation hooks are canonical in `AGENTS.md` § CRUD Write Validation; keep rule details there.
 
 ## Broker Selection
 - providers.Selector in CoreContainer: SQS/RabbitMQ/InMemory by BROKER_TYPE env var

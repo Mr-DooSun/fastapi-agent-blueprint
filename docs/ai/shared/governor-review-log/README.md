@@ -131,3 +131,4 @@ specialisations in
 | #147 | Cross-tool prompt template standardisation for review skills | #144 | [pr-147-cross-tool-prompt-standardisation.md](pr-147-cross-tool-prompt-standardisation.md) |
 | #148 | G closure linter for governor review-log entries | #145 | [pr-148-g-closure-linter.md](pr-148-g-closure-linter.md) |
 | #151 | Architecture review follow-up | — | [pr-151-architecture-review-followup.md](pr-151-architecture-review-followup.md) |
+| #152 | CRUD Data Validation Sync | #10 | [pr-152-crud-data-validation-sync.md](pr-152-crud-data-validation-sync.md) |

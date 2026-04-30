@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Protocol
 
 from src._core.domain.protocols.repository_protocol import BaseRepositoryProtocol
 from src.ai_usage.domain.dtos.ai_usage_dto import (
@@ -11,7 +12,7 @@ from src.ai_usage.domain.dtos.ai_usage_dto import (
 from src.ai_usage.interface.server.schemas.ai_usage_schema import CreateAiUsageRequest
 
 
-class AiUsageRepositoryProtocol(BaseRepositoryProtocol[AiUsageDTO]):
+class AiUsageRepositoryProtocol(BaseRepositoryProtocol[AiUsageDTO], Protocol):
     async def insert_usage_once(self, entity: CreateAiUsageRequest) -> AiUsageDTO: ...
 
     async def select_usage_logs(

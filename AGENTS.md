@@ -388,6 +388,20 @@ Logging is always-on (unlike Optional Infrastructure) and shared across server +
 - When fields differ (auth context injection, derived fields, etc.): create a separate DTO in `domain/dtos/`
   - Example: `CreateUserDTO(**item.model_dump(), created_by=current_user.id)`
 
+## CRUD Write Validation
+
+RDB CRUD writes use Service-owned validation hooks, not Router checks, Repository business rules, or a central validation registry.
+
+- `BaseService` calls protected async hooks before all write paths:
+  - `_validate_create(entity)`
+  - `_validate_create_many(entities)`
+  - `_validate_update(data_id, entity)`
+  - `_validate_delete(data_id)`
+- Default hooks are no-ops. Domain Services override only the hooks that have explicit business rules.
+- Reusable helpers live in `_core/domain/validation.py`; domain-specific composition belongs in `{domain}/domain/validators.py` when the rules are non-trivial.
+- Repository read primitives used by validation belong on `BaseRepositoryProtocol` / `BaseRepository`: `exists_by_id`, `exists_by_fields`, and `existing_values_by_field`.
+- Database constraints remain the final integrity guard, but user-facing field validation should run in the Service layer first.
+
 ## Security Principles
 
 - Do not expose internal details (traceback, DB schema, raw query) in production error responses

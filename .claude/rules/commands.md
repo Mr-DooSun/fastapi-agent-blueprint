@@ -1,6 +1,6 @@
 # Suggested Commands
 
-> Last synced: 2026-04-27 via /sync-guidelines (translated Korean prose to English under Tier 1 Language Policy, #131; no command surface changes)
+> Last synced: 2026-04-30 via /sync-guidelines (#10 reviewed; no command surface changes)
 > Purpose: Quick reference for Claude Code when executing shell commands.
 > Also referenced when running Skills.
 > Default Flow context: see [`AGENTS.md` § Default Coding Flow](../../AGENTS.md#default-coding-flow). The commands below are consulted by the `implement` and `verify` steps; this file is **not** a primary entry point in the Default Flow.

@@ -1,6 +1,6 @@
 # Project Status
 
-> Last synced: 2026-04-29 via /sync-guidelines cross-review pass
+> Last synced: 2026-04-30 via /sync-guidelines (#10 CRUD data validation sync)
 
 ## Current Version Context
 - Latest release: v0.4.0 (2026-04-21)
@@ -17,6 +17,7 @@
 | DynamoDB Support | #13 | BaseDynamoRepository, DynamoModel, DynamoDBClient |
 | Broker Abstraction | #8 | providers.Selector for SQS/RabbitMQ/InMemory |
 | BaseService 3-TypeVar | ADR 011 | Generic[CreateDTO, UpdateDTO, ReturnDTO] restoration |
+| CRUD Write Validation | #10 | BaseService pre-write validation hooks, `_core/domain/validation.py` helpers, repository existence primitives, and User username/email uniqueness constraints |
 | Password Hashing | - | hash_password/verify_password in _core.common.security |
 | Serena Removal & Pyright Adoption | #63 | pyright-lsp as the default code-intelligence layer, PostToolUse formatting hook, transition to tool-agnostic skills |
 | Codex CLI Harness & Hybrid C Skills | #66 | Shared AGENTS.md, docs/ai/shared/ reference layer, 14 Hybrid C skill migrations |

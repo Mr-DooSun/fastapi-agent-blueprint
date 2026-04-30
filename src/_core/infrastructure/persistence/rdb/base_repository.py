@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Generic, TypeVar
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from pydantic import BaseModel
 from sqlalchemy import String, func, or_, select
@@ -67,9 +68,10 @@ class BaseRepository(Generic[ReturnDTO], ABC):
             ]
 
     async def select_data_by_id(self, data_id: int) -> ReturnDTO:
+        id_column = self._id_column()
         async with self.database.session() as session:
             result = await session.execute(
-                select(self.model).filter(self.model.id == data_id)
+                select(self.model).filter(id_column == data_id)
             )
             data = result.scalar_one_or_none()
             if not data:
@@ -81,15 +83,64 @@ class BaseRepository(Generic[ReturnDTO], ABC):
     async def select_datas_by_ids(self, data_ids: list[int]) -> list[ReturnDTO]:
         if not data_ids:
             return []
+        id_column = self._id_column()
         async with self.database.session() as session:
             result = await session.execute(
-                select(self.model).where(self.model.id.in_(data_ids))
+                select(self.model).where(id_column.in_(data_ids))
             )
             datas = result.scalars().all()
             return [
                 self.return_entity.model_validate(data, from_attributes=True)
                 for data in datas
             ]
+
+    async def exists_by_id(self, data_id: int) -> bool:
+        id_column = self._id_column()
+        async with self.database.session() as session:
+            result = await session.execute(
+                select(id_column).where(id_column == data_id).limit(1)
+            )
+            return result.scalar_one_or_none() is not None
+
+    async def exists_by_fields(
+        self,
+        filters: Mapping[str, Any],
+        *,
+        exclude_id: int | None = None,
+    ) -> bool:
+        if not filters:
+            return False
+        id_column = self._id_column()
+        async with self.database.session() as session:
+            query = select(id_column).where(
+                *[
+                    self._column_for_field(field) == value
+                    for field, value in filters.items()
+                ]
+            )
+            if exclude_id is not None:
+                query = query.where(id_column != exclude_id)
+            result = await session.execute(query.limit(1))
+            return result.scalar_one_or_none() is not None
+
+    async def existing_values_by_field(
+        self,
+        field: str,
+        values: list[Any],
+        *,
+        exclude_id: int | None = None,
+    ) -> set[Any]:
+        value_set = {value for value in values if value is not None}
+        if not value_set:
+            return set()
+        column = self._column_for_field(field)
+        id_column = self._id_column()
+        async with self.database.session() as session:
+            query = select(column).where(column.in_(value_set))
+            if exclude_id is not None:
+                query = query.where(id_column != exclude_id)
+            result = await session.execute(query)
+            return set(result.scalars().all())
 
     async def select_datas_with_count(
         self,
@@ -149,9 +200,10 @@ class BaseRepository(Generic[ReturnDTO], ABC):
     async def update_data_by_data_id(
         self, data_id: int, entity: BaseModel
     ) -> ReturnDTO:
+        id_column = self._id_column()
         async with self.database.session() as session:
             result = await session.execute(
-                select(self.model).filter(self.model.id == data_id)
+                select(self.model).filter(id_column == data_id)
             )
             data = result.scalar_one_or_none()
             if not data:
@@ -165,9 +217,10 @@ class BaseRepository(Generic[ReturnDTO], ABC):
             return self.return_entity.model_validate(data, from_attributes=True)
 
     async def delete_data_by_data_id(self, data_id: int) -> bool:
+        id_column = self._id_column()
         async with self.database.session() as session:
             result = await session.execute(
-                select(self.model).filter(self.model.id == data_id)
+                select(self.model).filter(id_column == data_id)
             )
             data = result.scalar_one_or_none()
             if not data:
@@ -182,3 +235,12 @@ class BaseRepository(Generic[ReturnDTO], ABC):
         async with self.database.session() as session:
             result = await session.execute(select(func.count()).select_from(self.model))
             return result.scalar_one()
+
+    def _column_for_field(self, field: str) -> InstrumentedAttribute:
+        column = getattr(self.model, field, None)
+        if not isinstance(column, InstrumentedAttribute):
+            raise ValueError(f"Unknown model field: {field}")
+        return column
+
+    def _id_column(self) -> InstrumentedAttribute:
+        return self._column_for_field("id")
