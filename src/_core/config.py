@@ -44,7 +44,17 @@ _UNSAFE_DEFAULTS: dict[str, str] = {
     "admin_storage_secret": "change-me-in-production",  # noqa: S105
     "database_password": "postgres",  # noqa: S105
     "database_host": "localhost",
+    "jwt_secret_key": "change-me-in-production",  # noqa: S105
 }
+
+_UNSAFE_JWT_SECRETS = frozenset(
+    {
+        "change-me",
+        "change-me-in-production",
+        "secret",
+        "jwt-secret",
+    }
+)
 
 _WARN_DEFAULTS: dict[str, str] = {
     "task_name_prefix": "my-project",
@@ -80,6 +90,33 @@ class Settings(BaseSettings):
     admin_storage_secret: str = Field(
         default_factory=lambda: secrets.token_urlsafe(32),
         validation_alias="ADMIN_STORAGE_SECRET",
+    )
+
+    # ----------------------------------------------------------------
+    # Authentication (JWT)
+    #
+    # Local and quickstart use an auto-generated secret for zero-config
+    # boot. Strict environments must provide JWT_SECRET_KEY explicitly.
+    # ----------------------------------------------------------------
+    jwt_secret_key: str = Field(
+        default_factory=lambda: secrets.token_urlsafe(32),
+        validation_alias="JWT_SECRET_KEY",
+    )
+    jwt_algorithm: str = Field(default="HS256", validation_alias="JWT_ALGORITHM")
+    jwt_access_token_minutes: int = Field(
+        default=15, validation_alias="JWT_ACCESS_TOKEN_MINUTES", ge=1
+    )
+    jwt_refresh_token_days: int = Field(
+        default=14, validation_alias="JWT_REFRESH_TOKEN_DAYS", ge=1
+    )
+    jwt_issuer: str = Field(
+        default="fastapi-agent-blueprint", validation_alias="JWT_ISSUER"
+    )
+    jwt_audience: str = Field(
+        default="fastapi-agent-blueprint-api", validation_alias="JWT_AUDIENCE"
+    )
+    jwt_leeway_seconds: int = Field(
+        default=30, validation_alias="JWT_LEEWAY_SECONDS", ge=0
     )
 
     # ----------------------------------------------------------------
@@ -352,6 +389,12 @@ class Settings(BaseSettings):
                     f"in '{self.env}' environment (auto-generated value not allowed)"
                 )
 
+            if "jwt_secret_key" not in self.model_fields_set:
+                errors.append(
+                    f"[jwt_secret_key] JWT_SECRET_KEY must be explicitly set "
+                    f"in '{self.env}' environment (auto-generated value not allowed)"
+                )
+
             if self.dynamodb_endpoint_url:
                 _local_patterns = ("localhost", "127.", "0.0.0.0", "::1")  # noqa: S104
                 if any(p in self.dynamodb_endpoint_url for p in _local_patterns):
@@ -367,6 +410,16 @@ class Settings(BaseSettings):
                         f"'{default_value}' in '{self.env}' environment",
                         stacklevel=2,
                     )
+
+        if self.jwt_algorithm != "HS256":
+            errors.append(
+                f"[jwt_algorithm] Unsupported JWT algorithm '{self.jwt_algorithm}'. "
+                "Only HS256 is supported in v1."
+            )
+        if len(self.jwt_secret_key.encode()) < 32:
+            errors.append("[jwt_secret_key] JWT_SECRET_KEY must be at least 32 bytes")
+        if self.jwt_secret_key in _UNSAFE_JWT_SECRETS:
+            errors.append("[jwt_secret_key] JWT_SECRET_KEY uses an unsafe placeholder")
 
         s3_fields = {
             "s3_access_key": self.s3_access_key,

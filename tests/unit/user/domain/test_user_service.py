@@ -40,6 +40,12 @@ class MockUserRepository:
             raise Exception(f"User {data_id} not found")
         return self._store[data_id]
 
+    async def select_data_by_username(self, username: str) -> UserDTO | None:
+        for dto in self._store.values():
+            if dto.username == username:
+                return dto
+        return None
+
     async def select_datas_by_ids(self, data_ids: list[int]) -> list[UserDTO]:
         return [self._store[i] for i in data_ids if i in self._store]
 

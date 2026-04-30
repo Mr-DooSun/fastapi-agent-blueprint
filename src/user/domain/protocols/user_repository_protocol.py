@@ -5,4 +5,4 @@ from src.user.domain.dtos.user_dto import UserDTO
 
 
 class UserRepositoryProtocol(BaseRepositoryProtocol[UserDTO], Protocol):
-    pass
+    async def select_data_by_username(self, username: str) -> UserDTO | None: ...

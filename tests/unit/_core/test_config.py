@@ -28,6 +28,7 @@ def _make_safe_env(env_name: str = "prod") -> dict[str, str]:
         "DATABASE_PASSWORD": "db-s3cure-p@ss",
         "DATABASE_HOST": "db.internal.example.com",
         "DATABASE_NAME": "myapp_db",
+        "JWT_SECRET_KEY": "a-real-jwt-secret-key-with-enough-length",
         "TASK_NAME_PREFIX": "myapp",
         "BROKER_TYPE": "sqs",
         "AWS_SQS_ACCESS_KEY": "test-key",
@@ -73,6 +74,7 @@ class TestStrictEnvRejectsUnsafeDefaults:
             ("ADMIN_STORAGE_SECRET", "change-me-in-production"),
             ("DATABASE_PASSWORD", "postgres"),
             ("DATABASE_HOST", "localhost"),
+            ("JWT_SECRET_KEY", "change-me-in-production"),
         ],
     )
     def test_strict_env_rejects_each_unsafe_default(
@@ -96,7 +98,32 @@ class TestStrictEnvRejectsUnsafeDefaults:
             with pytest.raises(ValidationError) as exc_info:
                 _create_settings()
             error_message = str(exc_info.value)
-            assert "5 error(s)" in error_message
+            assert "6 error(s)" in error_message
+
+    @pytest.mark.parametrize("env_name", ["prod", "stg"])
+    def test_strict_env_requires_explicit_jwt_secret(self, env_name):
+        safe_env = _make_safe_env(env_name)
+        safe_env.pop("JWT_SECRET_KEY")
+        with patch.dict(os.environ, safe_env, clear=True):
+            with pytest.raises(ValidationError, match="JWT_SECRET_KEY"):
+                _create_settings()
+
+    @pytest.mark.parametrize("env_name", ["prod", "stg"])
+    @pytest.mark.parametrize("jwt_secret", ["short-secret", "jwt-secret"])
+    def test_strict_env_rejects_weak_jwt_secret(self, env_name, jwt_secret):
+        safe_env = _make_safe_env(env_name)
+        safe_env["JWT_SECRET_KEY"] = jwt_secret
+        with patch.dict(os.environ, safe_env, clear=True):
+            with pytest.raises(ValidationError, match="jwt_secret_key"):
+                _create_settings()
+
+    @pytest.mark.parametrize("env_name", ["prod", "stg"])
+    def test_strict_env_rejects_unsupported_jwt_algorithm(self, env_name):
+        safe_env = _make_safe_env(env_name)
+        safe_env["JWT_ALGORITHM"] = "RS256"
+        with patch.dict(os.environ, safe_env, clear=True):
+            with pytest.raises(ValidationError, match="HS256"):
+                _create_settings()
 
     @pytest.mark.parametrize("env_name", ["prod", "stg"])
     def test_strict_env_rejects_ai_usage_public_api(self, env_name):

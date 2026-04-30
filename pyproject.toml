@@ -20,6 +20,7 @@ dependencies = [
     "psycopg[binary]>=3.2.12",
     "pydantic-settings>=2.10.1",
     "pymysql>=1.1.1",
+    "pyjwt>=2.10.0",
     "python-dotenv>=1.1.0",
     "sqlalchemy>=2.0.40",
     "structlog>=25.0.0",

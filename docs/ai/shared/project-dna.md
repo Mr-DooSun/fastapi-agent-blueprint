@@ -594,7 +594,7 @@ class {Name}Container(containers.DeclarativeContainer):
 | LLM (PydanticAI Agent) | Active | build_llm_model(), LLMConfig, Agent structured output |
 | Text chunking (semantic-text-splitter) | Active | chunk_text(), chunk_text_by_tokens() in src._core.common.text_utils |
 | Structured Logging (structlog) | Active | structlog + asgi-correlation-id, RequestLogMiddleware (server), StructlogContextMiddleware (worker), LOG_LEVEL / LOG_JSON_FORMAT env vars, sqlalchemy.engine double-emit fix (#9) |
-| JWT/Authentication | Not implemented | |
+| JWT/Authentication | Active | `src/auth/` provides HS256 access/refresh tokens, refresh-token rotation/revocation persistence, `/v1/auth/*`, and Bearer protection for `user` API routes (#4) |
 | File Upload (UploadFile) | Not implemented | |
 | RBAC/Permissions | Not implemented | |
 | Rate Limiting (slowapi) | Not implemented | |
