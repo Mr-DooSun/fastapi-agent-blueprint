@@ -76,6 +76,10 @@ python run_server_local.py --env local
 
 Pass `--extra <name>` to `uv sync` for each capability you need. `make setup` pulls `--extra admin --extra aws` by default for full dev coverage; `make quickstart` only needs `--extra admin` (it runs on SQLite + InMemory broker). Every other extra opts in explicitly.
 
+The NiceGUI admin dashboard authenticates through the DB-backed `auth` domain.
+Use `ADMIN_BOOTSTRAP_*` settings to create or promote the initial admin user;
+`ADMIN_ID` / `ADMIN_PASSWORD` are no longer the login authority.
+
 ---
 
 ## Tech stack

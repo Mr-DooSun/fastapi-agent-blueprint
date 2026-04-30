@@ -11,7 +11,9 @@ def test_domain_name_matches():
 
 def test_visible_columns_excludes_hidden():
     visible = user_admin_page.get_visible_columns()
+    field_names = {col.field_name for col in visible}
     assert visible
+    assert "role" in field_names
     for col in visible:
         assert not col.hidden
 

@@ -586,7 +586,7 @@ class {Name}Container(containers.DeclarativeContainer):
 | dependency-injector | Active | DeclarativeContainer, @inject + Provide |
 | Object Storage (aioboto3) | Active | S3/MinIO switchable via STORAGE_TYPE, ObjectStorage + ObjectStorageClient (via `aws` extra) |
 | AWS DynamoDB (aioboto3) | Active | BaseDynamoRepository + DynamoDBClient (optional infra, via `aws` extra) |
-| NiceGUI (BaseAdminPage) | Active | Admin dashboard (AG Grid, auto-discovery, Template Method rendering) -- gated via `admin` extra (#104) |
+| NiceGUI (BaseAdminPage) | Active | Admin dashboard (AG Grid, auto-discovery, Template Method rendering) -- gated via `admin` extra (#104) and DB-backed admin auth (#154) |
 | alembic (migrations) | Active | DB migrations |
 | Password hashing (bcrypt) | Active | hash_password(), verify_password() in src._core.common.security |
 | AWS S3 Vectors (aioboto3) | Active | BaseS3VectorStore + S3VectorClient (optional infra, via `aws` extra) |
@@ -596,7 +596,7 @@ class {Name}Container(containers.DeclarativeContainer):
 | Structured Logging (structlog) | Active | structlog + asgi-correlation-id, RequestLogMiddleware (server), StructlogContextMiddleware (worker), LOG_LEVEL / LOG_JSON_FORMAT env vars, sqlalchemy.engine double-emit fix (#9) |
 | JWT/Authentication | Active | `src/auth/` provides HS256 access/refresh tokens, refresh-token rotation/revocation persistence, `/v1/auth/*`, and Bearer protection for `user` API routes (#4) |
 | File Upload (UploadFile) | Not implemented | |
-| RBAC/Permissions | Not implemented | |
+| RBAC/Permissions | Active | Minimal `user.role` admin authorization protects NiceGUI admin access (#154); permission tables and role-management UI are not implemented |
 | Rate Limiting (slowapi) | Not implemented | |
 | WebSocket | Not implemented | |
 
@@ -711,7 +711,7 @@ page_configs: list[BaseAdminPage] = []
 
 @ui.page("/admin/{name}")
 async def {name}_list_page(page: int = 1, search: str = ""):
-    if not require_auth():
+    if not await require_auth():
         return
     admin_layout(page_configs, current_domain="{name}")
     await {name}_admin_page.render_list(page=page, search=search)
@@ -719,7 +719,7 @@ async def {name}_list_page(page: int = 1, search: str = ""):
 
 @ui.page("/admin/{name}/{record_id}")
 async def {name}_detail_page(record_id: int):
-    if not require_auth():
+    if not await require_auth():
         return
     admin_layout(page_configs, current_domain="{name}")
     await {name}_admin_page.render_detail(record_id=record_id)

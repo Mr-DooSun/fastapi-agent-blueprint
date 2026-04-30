@@ -65,6 +65,9 @@ class AuthService:
     async def get_user_from_access_token(self, token: str) -> UserDTO:
         payload = self._decode_token(token, expected_type=ACCESS_TOKEN_TYPE)
         user_id = self._user_id_from_payload(payload)
+        return await self.get_user_by_id(user_id)
+
+    async def get_user_by_id(self, user_id: int) -> UserDTO:
         try:
             return await self._user_repository.select_data_by_id(user_id)
         except BaseCustomException as exc:

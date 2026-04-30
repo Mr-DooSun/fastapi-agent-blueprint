@@ -10,7 +10,7 @@ page_configs: list[BaseAdminPage] = []
 
 @ui.page("/admin/")
 async def dashboard_page():
-    if not require_auth():
+    if not await require_auth():
         return
     admin_layout(page_configs, current_domain="")
     ui.label("Dashboard").classes("text-h4 q-mb-lg")

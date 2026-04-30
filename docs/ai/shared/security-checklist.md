@@ -55,13 +55,13 @@ Check router files and configuration files:
   - When not implemented: treat as `[OPEN][BLOCKING]` and require production-safe auth before release
 ### Admin Dashboard Security
 - [ ] [Always][BLOCKING] Admin endpoint access restriction verified
-  - Grep: Every `@ui.page("/admin/` function calls `require_auth()` before any rendering
-- [ ] [Always][HIGH] Admin authentication uses timing-safe comparison
-  - Grep: Verify `hmac.compare_digest` in `src/_core/infrastructure/admin/auth.py` (not `==` for password comparison)
+  - Grep: Every `@ui.page("/admin/` function awaits `require_auth()` before any rendering
+- [ ] [Always][HIGH] Admin authentication delegates credential checks to the auth domain
+  - Grep: Verify `AdminAuthProvider` calls `AuthUseCase.admin_login()` and password verification stays in `AuthService.verify_credentials()`
 - [ ] [Always][HIGH] Sensitive fields masked in admin grid
   - Grep: Fields containing `password`, `secret`, `token`, `key` in ColumnConfig use `masked=True`
-- [ ] [Always][MEDIUM] Admin credentials managed via environment variables
-  - Grep: `settings.admin_id` and `settings.admin_password` (not hardcoded in auth.py)
+- [ ] [Always][MEDIUM] Admin bootstrap credentials are seed-only
+  - Grep: `ADMIN_BOOTSTRAP_*` settings may create or promote the first admin user, but `ADMIN_ID` / `ADMIN_PASSWORD` must not be used as the login authority
 - [ ] [Always][MEDIUM] Admin session storage secret is non-default
   - Grep: `admin_storage_secret` loaded from environment settings (not hardcoded string)
 - [ ] [Always][LOW] Admin pages do not directly import domain Services

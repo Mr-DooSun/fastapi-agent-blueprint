@@ -2,8 +2,9 @@ import pytest
 
 from src._core.common.security import hash_password, verify_password
 from src.auth.application.use_cases.auth_use_case import AuthUseCase
+from src.auth.domain.exceptions.auth_exceptions import InvalidCredentialsException
 from src.auth.domain.services.auth_service import AuthService
-from src.user.domain.dtos.user_dto import UserDTO
+from src.user.domain.dtos.user_dto import USER_ROLE_ADMIN, UserDTO
 from tests.factories.auth_factory import (
     make_auth_token_config,
     make_login_request,
@@ -74,3 +75,64 @@ async def test_login_returns_token_pair_for_existing_user():
 
     assert result.user.id == user.id
     assert verify_password("secret", user.password)
+
+
+@pytest.mark.asyncio
+async def test_admin_login_returns_session_for_admin_user():
+    user = make_user_dto(password=hash_password("secret"), role=USER_ROLE_ADMIN)
+    refresh_repo = MockRefreshTokenRepository()
+    auth_service = AuthService(
+        refresh_token_repository=refresh_repo,
+        user_repository=MockUserRepository([user]),
+        token_config=make_auth_token_config(),
+    )
+    use_case = AuthUseCase(
+        auth_service=auth_service,
+        user_service=MockUserService(),
+        token_config=make_auth_token_config(),
+    )
+
+    result = await use_case.admin_login(make_login_request(username=user.username))
+
+    assert result.user_id == user.id
+    assert result.username == user.username
+    assert result.role == USER_ROLE_ADMIN
+    assert refresh_repo._store == {}
+
+
+@pytest.mark.asyncio
+async def test_admin_login_rejects_non_admin_user():
+    user = make_user_dto(password=hash_password("secret"))
+    auth_service = AuthService(
+        refresh_token_repository=MockRefreshTokenRepository(),
+        user_repository=MockUserRepository([user]),
+        token_config=make_auth_token_config(),
+    )
+    use_case = AuthUseCase(
+        auth_service=auth_service,
+        user_service=MockUserService(),
+        token_config=make_auth_token_config(),
+    )
+
+    with pytest.raises(InvalidCredentialsException):
+        await use_case.admin_login(make_login_request(username=user.username))
+
+
+@pytest.mark.asyncio
+async def test_admin_login_rejects_wrong_password_for_admin_user():
+    user = make_user_dto(password=hash_password("secret"), role=USER_ROLE_ADMIN)
+    auth_service = AuthService(
+        refresh_token_repository=MockRefreshTokenRepository(),
+        user_repository=MockUserRepository([user]),
+        token_config=make_auth_token_config(),
+    )
+    use_case = AuthUseCase(
+        auth_service=auth_service,
+        user_service=MockUserService(),
+        token_config=make_auth_token_config(),
+    )
+
+    with pytest.raises(InvalidCredentialsException):
+        await use_case.admin_login(
+            make_login_request(username=user.username, password="wrong")
+        )

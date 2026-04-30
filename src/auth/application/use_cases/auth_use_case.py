@@ -1,4 +1,5 @@
-from src.auth.domain.dtos.auth_dto import AuthTokenConfig
+from src.auth.domain.dtos.auth_dto import AdminSessionDTO, AuthTokenConfig
+from src.auth.domain.exceptions.auth_exceptions import InvalidCredentialsException
 from src.auth.domain.services.auth_service import AuthService
 from src.auth.interface.server.schemas.auth_schema import (
     LoginRequest,
@@ -7,7 +8,7 @@ from src.auth.interface.server.schemas.auth_schema import (
     RegisterRequest,
     TokenPairData,
 )
-from src.user.domain.dtos.user_dto import UserDTO
+from src.user.domain.dtos.user_dto import USER_ROLE_ADMIN, UserDTO
 from src.user.domain.protocols.user_service_protocol import UserServiceProtocol
 from src.user.interface.server.schemas.user_schema import CreateUserRequest
 
@@ -35,6 +36,17 @@ class AuthUseCase:
             request.password,
         )
         return await self._token_pair_for_user(user)
+
+    async def admin_login(self, request: LoginRequest) -> AdminSessionDTO:
+        user = await self._auth_service.verify_credentials(
+            request.username,
+            request.password,
+        )
+        return self._admin_session_for_user(user)
+
+    async def get_admin_session(self, user_id: int) -> AdminSessionDTO:
+        user = await self._auth_service.get_user_by_id(user_id)
+        return self._admin_session_for_user(user)
 
     async def refresh(self, request: RefreshTokenRequest) -> TokenPairData:
         access_token, refresh_token = await self._auth_service.rotate_refresh_token(
@@ -66,3 +78,8 @@ class AuthUseCase:
             expires_in=60 * self._token_config.access_token_minutes,
             user=user,
         )
+
+    def _admin_session_for_user(self, user: UserDTO) -> AdminSessionDTO:
+        if user.role != USER_ROLE_ADMIN:
+            raise InvalidCredentialsException()
+        return AdminSessionDTO(user_id=user.id, username=user.username, role=user.role)

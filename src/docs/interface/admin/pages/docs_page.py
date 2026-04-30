@@ -17,7 +17,7 @@ page_configs: list[BaseAdminPage] = []
 
 @ui.page("/admin/docs")
 async def docs_list_page(page: int = 1, search: str = "") -> None:
-    if not require_auth():
+    if not await require_auth():
         return
     admin_layout(page_configs, current_domain="docs")
     await docs_admin_page.render_list(page=page, search=search)
@@ -25,7 +25,7 @@ async def docs_list_page(page: int = 1, search: str = "") -> None:
 
 @ui.page("/admin/docs/query")
 async def docs_query_page() -> None:
-    if not require_auth():
+    if not await require_auth():
         return
     admin_layout(page_configs, current_domain="docs")
     ui.label("Docs Query Playground").classes("text-h5 q-mb-md")
@@ -88,7 +88,7 @@ async def docs_query_page() -> None:
 
 @ui.page("/admin/docs/{record_id}")
 async def docs_detail_page(record_id: int) -> None:
-    if not require_auth():
+    if not await require_auth():
         return
     admin_layout(page_configs, current_domain="docs")
     await docs_admin_page.render_detail(record_id=record_id)

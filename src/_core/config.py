@@ -40,7 +40,6 @@ _LOCAL_DIMENSIONS: dict[str, int] = {
 }
 
 _UNSAFE_DEFAULTS: dict[str, str] = {
-    "admin_password": "admin",  # noqa: S105
     "admin_storage_secret": "change-me-in-production",  # noqa: S105
     "database_password": "postgres",  # noqa: S105
     "database_host": "localhost",
@@ -80,16 +79,40 @@ class Settings(BaseSettings):
     # ----------------------------------------------------------------
     # Admin Dashboard
     #
-    # Defaults here are intentionally unsafe ("admin"/"admin") so that
-    # `make quickstart` runs with no configuration. They are blocked in
-    # stg/prod by the `_UNSAFE_DEFAULTS` check below; callers in real
-    # deployments must override them via env vars.
+    # Authentication is backed by the auth domain. ADMIN_BOOTSTRAP_* can
+    # create or promote the first admin user, but the login flow never uses
+    # env-var credentials directly.
     # ----------------------------------------------------------------
-    admin_id: str = Field(default="admin", validation_alias="ADMIN_ID")
-    admin_password: str = Field(default="admin", validation_alias="ADMIN_PASSWORD")
     admin_storage_secret: str = Field(
         default_factory=lambda: secrets.token_urlsafe(32),
         validation_alias="ADMIN_STORAGE_SECRET",
+    )
+    admin_bootstrap_enabled: bool = Field(
+        default=False,
+        validation_alias="ADMIN_BOOTSTRAP_ENABLED",
+    )
+    admin_bootstrap_username: str = Field(
+        default="admin",
+        validation_alias="ADMIN_BOOTSTRAP_USERNAME",
+        min_length=1,
+        max_length=20,
+    )
+    admin_bootstrap_password: str | None = Field(
+        default=None,
+        validation_alias="ADMIN_BOOTSTRAP_PASSWORD",
+        max_length=255,
+    )
+    admin_bootstrap_email: str = Field(
+        default="admin@example.com",
+        validation_alias="ADMIN_BOOTSTRAP_EMAIL",
+        min_length=1,
+        max_length=255,
+    )
+    admin_bootstrap_full_name: str = Field(
+        default="Administrator",
+        validation_alias="ADMIN_BOOTSTRAP_FULL_NAME",
+        min_length=1,
+        max_length=255,
     )
 
     # ----------------------------------------------------------------
@@ -395,6 +418,15 @@ class Settings(BaseSettings):
                     f"in '{self.env}' environment (auto-generated value not allowed)"
                 )
 
+            if (
+                self.admin_bootstrap_enabled
+                and self.admin_bootstrap_password == "admin"  # noqa: S105
+            ):
+                errors.append(
+                    "[admin_bootstrap_password] ADMIN_BOOTSTRAP_PASSWORD uses an "
+                    "unsafe default in strict environments"
+                )
+
             if self.dynamodb_endpoint_url:
                 _local_patterns = ("localhost", "127.", "0.0.0.0", "::1")  # noqa: S104
                 if any(p in self.dynamodb_endpoint_url for p in _local_patterns):
@@ -420,6 +452,11 @@ class Settings(BaseSettings):
             errors.append("[jwt_secret_key] JWT_SECRET_KEY must be at least 32 bytes")
         if self.jwt_secret_key in _UNSAFE_JWT_SECRETS:
             errors.append("[jwt_secret_key] JWT_SECRET_KEY uses an unsafe placeholder")
+        if self.admin_bootstrap_enabled and not self.admin_bootstrap_password:
+            errors.append(
+                "[admin_bootstrap_password] ADMIN_BOOTSTRAP_PASSWORD must be set "
+                "when ADMIN_BOOTSTRAP_ENABLED=true"
+            )
 
         s3_fields = {
             "s3_access_key": self.s3_access_key,
