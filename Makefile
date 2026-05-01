@@ -21,7 +21,7 @@ quickstart:
 	@echo "→ Syncing dependencies (includes admin extra for the dashboard)"
 	@uv sync --extra admin
 	@echo "→ Starting FastAPI server on http://127.0.0.1:8001"
-	@echo "  Docs:       http://127.0.0.1:8001/docs-swagger"
+	@echo "  API docs:   http://127.0.0.1:8001/docs"
 	@echo "  Admin:      http://127.0.0.1:8001/admin (admin / admin)"
 	@echo "  Run demo:   make demo  (in another terminal)"
 	@uv run python run_server_local.py --env quickstart

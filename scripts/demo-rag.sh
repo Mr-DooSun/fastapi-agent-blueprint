@@ -89,4 +89,4 @@ QUERY_BODY='{
 }'
 run "curl -sS -X POST '${BASE_URL}/v1/docs/query' -H 'Content-Type: application/json' -d '${QUERY_BODY}' | pretty"
 
-note "Done. Swagger UI: ${BASE_URL}/docs-swagger | Admin: ${BASE_URL}/admin/docs"
+note "Done. API docs: ${BASE_URL}/docs | Admin: ${BASE_URL}/admin/docs"

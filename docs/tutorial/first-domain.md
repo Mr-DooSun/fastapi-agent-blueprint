@@ -414,7 +414,7 @@ curl -sS -X PUT http://127.0.0.1:8001/v1/order/1 \
 curl -sS -X DELETE http://127.0.0.1:8001/v1/order/1
 ```
 
-Open <http://127.0.0.1:8001/docs-swagger> — the `Order` tag is now
+Open <http://127.0.0.1:8001/docs> (pick Swagger from the selector) — the `Order` tag is now
 listed alongside `User`. **No edits were needed in `src/_apps/`**:
 domain auto-discovery picked the new folder up.
 

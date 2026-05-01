@@ -56,4 +56,4 @@ run "curl -sS -X PUT '${BASE_URL}/v1/user/${USER_ID}' -H 'Content-Type: applicat
 note "Delete the user"
 run "curl -sS -X DELETE '${BASE_URL}/v1/user/${USER_ID}' | pretty"
 
-note "Done. Swagger UI: ${BASE_URL}/docs-swagger"
+note "Done. API docs: ${BASE_URL}/docs"

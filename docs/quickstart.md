@@ -19,10 +19,15 @@ The server comes up on `http://127.0.0.1:8001`:
 
 | Endpoint | URL |
 |----------|-----|
-| Swagger docs | http://127.0.0.1:8001/docs-swagger |
-| ReDoc        | http://127.0.0.1:8001/docs-redoc |
-| Admin UI     | http://127.0.0.1:8001/admin (admin / admin) |
-| Health       | http://127.0.0.1:8001/health |
+| API docs (selector) | http://127.0.0.1:8001/docs — Stoplight Elements / Scalar recommended |
+| OpenAPI spec        | http://127.0.0.1:8001/openapi-download.json (attachment) |
+| Swagger UI          | http://127.0.0.1:8001/docs-swagger |
+| ReDoc               | http://127.0.0.1:8001/docs-redoc |
+| Admin UI            | http://127.0.0.1:8001/admin (admin / admin) |
+| Health              | http://127.0.0.1:8001/health |
+
+For sharing the API with frontend developers, see
+[`docs/frontend-handoff.md`](frontend-handoff.md).
 
 ## Exercise the API
 

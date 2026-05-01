@@ -66,12 +66,13 @@ make quickstart   # :8001 에 FastAPI 기동, SQLite 스키마 자동 생성
                   "hasNext": false, ... } }
 
 → Update the user    → Delete the user
-→ Done. Swagger UI: http://127.0.0.1:8001/docs-swagger
+→ Done. API docs: http://127.0.0.1:8001/docs
 ```
 
-- Swagger: <http://127.0.0.1:8001/docs-swagger>
+- API 문서: <http://127.0.0.1:8001/docs> (Stoplight Elements / Scalar 추천; 같은 페이지에 spec download + 프론트엔드 핸드오프 링크)
 - Admin UI: <http://127.0.0.1:8001/admin> (`admin` / `admin`)
 - 전체 안내: [`docs/quickstart.md`](quickstart.md)
+- 프론트엔드 핸드오프: [`docs/frontend-handoff.md`](frontend-handoff.md)
 - 실제 개발 환경 (PostgreSQL + 마이그레이션): [`docs/reference.md`](reference.md#local-development-with-postgresql)
 
 ---

@@ -68,12 +68,13 @@ In a second terminal, `make demo` exercises the `user` domain and
                   "hasNext": false, ... } }
 
 → Update the user    → Delete the user
-→ Done. Swagger UI: http://127.0.0.1:8001/docs-swagger
+→ Done. API docs: http://127.0.0.1:8001/docs
 ```
 
-- Swagger: <http://127.0.0.1:8001/docs-swagger>
+- API docs: <http://127.0.0.1:8001/docs> (Stoplight Elements & Scalar recommended; spec download + frontend handoff link on the same page)
 - Admin UI: <http://127.0.0.1:8001/admin> (`admin` / `admin`)
 - Full walkthrough: [`docs/quickstart.md`](docs/quickstart.md)
+- Frontend handoff: [`docs/frontend-handoff.md`](docs/frontend-handoff.md)
 - Real dev stack (PostgreSQL + migrations): [`docs/reference.md`](docs/reference.md#local-development-with-postgresql)
 
 ---

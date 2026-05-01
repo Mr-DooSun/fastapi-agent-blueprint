@@ -754,3 +754,38 @@ class TestOtelConfig:
             s = _create_settings()
             assert s.otel_enabled is True
             assert s.otel_exporter_otlp_endpoint == "http://localhost:4317"
+
+
+class TestDocsUrlGating:
+    """`docs_url` / `redoc_url` / `openapi_url` are exposed only in dev envs.
+
+    Frontend handoff and /openapi-download.json depend on the same gate, so a
+    regression here would silently expose specs in prod. See `docs_router` and
+    `frontend-handoff.md`.
+    """
+
+    def test_docs_urls_exposed_in_dev(self):
+        env = {"ENV": "dev", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.is_dev is True
+            assert s.docs_url == "/docs-swagger"
+            assert s.redoc_url == "/docs-redoc"
+            assert s.openapi_url == "/openapi.json"
+
+    def test_docs_urls_disabled_in_prod(self):
+        env = _make_safe_env("prod")
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.is_dev is False
+            assert s.docs_url is None
+            assert s.redoc_url is None
+            assert s.openapi_url is None
+
+    def test_docs_urls_disabled_in_stg(self):
+        env = _make_safe_env("stg")
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.is_dev is False
+            assert s.docs_url is None
+            assert s.openapi_url is None
