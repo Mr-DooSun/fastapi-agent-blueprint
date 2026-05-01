@@ -18,6 +18,7 @@ DOCS_CARDS: list[dict[str, str]] = [
         "tagline": "Interactive, three-pane reader. Best for browsing.",
         "label": "Recommended — Visual",
         "kind": "primary",
+        "icon": "🎨",
     },
     {
         "key": "scalar",
@@ -26,6 +27,7 @@ DOCS_CARDS: list[dict[str, str]] = [
         "tagline": "Modern reference with try-it that bridges into a client.",
         "label": "Recommended — Try-it",
         "kind": "primary",
+        "icon": "✨",
     },
     {
         "key": "swagger",
@@ -34,6 +36,7 @@ DOCS_CARDS: list[dict[str, str]] = [
         "tagline": "FastAPI's bundled default. Familiar to most teams.",
         "label": "Compatibility",
         "kind": "secondary",
+        "icon": "📚",
     },
     {
         "key": "redoc",
@@ -42,6 +45,7 @@ DOCS_CARDS: list[dict[str, str]] = [
         "tagline": "Documentation-first three-panel layout.",
         "label": "Clean",
         "kind": "secondary",
+        "icon": "📖",
     },
     {
         "key": "rapidoc",
@@ -50,6 +54,7 @@ DOCS_CARDS: list[dict[str, str]] = [
         "tagline": "Lightweight viewer. Fast initial load.",
         "label": "Fast",
         "kind": "secondary",
+        "icon": "⚡",
     },
 ]
 
@@ -68,6 +73,7 @@ def _handoff_cards(download_url: str) -> list[dict[str, str]]:
             "label": "Spec",
             "external": "false",
             "kind": "secondary",
+            "icon": "⬇️",
         },
         {
             "key": "handoff",
@@ -77,6 +83,7 @@ def _handoff_cards(download_url: str) -> list[dict[str, str]]:
             "label": "Guide",
             "external": "true",
             "kind": "secondary",
+            "icon": "🧭",
         },
     ]
 
@@ -200,11 +207,7 @@ def _render_default(
         </p>
       </div>
       <div class="docs-grid">
-        {_default_card(docs_cards[0], "🎨")}
-        {_default_card(docs_cards[1], "✨")}
-        {_default_card(docs_cards[2], "📚")}
-        {_default_card(docs_cards[3], "📖")}
-        {_default_card(docs_cards[4], "⚡")}
+        {"".join(_default_card(c) for c in docs_cards)}
       </div>
       <section class="handoff-section">
         <h2>📦 Share with Frontend</h2>
@@ -214,8 +217,7 @@ def _render_default(
           OpenAPI spec and let the frontend import it into their tool of choice.
         </p>
         <div class="handoff-grid">
-          {_default_handoff_card(handoff_cards[0], "⬇️")}
-          {_default_handoff_card(handoff_cards[1], "🧭")}
+          {"".join(_default_handoff_card(c) for c in handoff_cards)}
         </div>
       </section>
     </div>
@@ -223,23 +225,25 @@ def _render_default(
 </html>"""
 
 
-def _default_card(card: dict[str, str], icon: str) -> str:
+def _default_card(card: dict[str, str]) -> str:
     badge_class = "badge" if card["kind"] == "primary" else "badge muted"
+    icon = card.get("icon", "")
     return f"""
     <a href="{card["href"]}" class="docs-card">
-      <span style="font-size:3rem; display:block; text-align:center; margin-bottom:16px;">{icon}</span>
+      <span aria-hidden="true" style="font-size:3rem; display:block; text-align:center; margin-bottom:16px;">{icon}</span>
       <div class="docs-title" style="text-align:center;">{card["title"]}</div>
       <p class="docs-desc" style="text-align:center;">{card["tagline"]}</p>
       <div style="text-align:center;"><span class="{badge_class}">{card["label"]}</span></div>
     </a>"""
 
 
-def _default_handoff_card(card: dict[str, str], icon: str) -> str:
+def _default_handoff_card(card: dict[str, str]) -> str:
     target = ' target="_blank" rel="noopener"' if card["external"] == "true" else ""
     download = " download" if card["external"] == "false" else ""
+    icon = card.get("icon", "")
     return f"""
     <a href="{card["href"]}" class="docs-card"{target}{download}>
-      <span style="font-size:3rem; display:block; text-align:center; margin-bottom:16px;">{icon}</span>
+      <span aria-hidden="true" style="font-size:3rem; display:block; text-align:center; margin-bottom:16px;">{icon}</span>
       <div class="docs-title" style="text-align:center;">{card["title"]}</div>
       <p class="docs-desc" style="text-align:center;">{card["tagline"]}</p>
       <div style="text-align:center;"><span class="badge">{card["label"]}</span></div>
@@ -745,11 +749,13 @@ def _mac_row(card: dict[str, str]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Refined Modern — keeps the legibility tools of a card grid (rounded card +
-# soft shadow + hierarchy + solid colour accent) but strips the AI-pattern
-# clichés (purple gradient, gradient text, emoji icons, frosted glass blur).
-# Light + dark variants, with a manual toggle that respects prefers-color-scheme
-# and persists to localStorage.
+# Refined Modern — keeps the legibility tools of the original surface (large
+# rounded cards, emoji icons as visual cues, three-column grid, strong card /
+# background contrast, hierarchy via shadow + colour badge) but strips the
+# real AI-pattern clichés: purple gradient backgrounds, gradient text via
+# -webkit-background-clip, gradient badges, frosted glass `backdrop-filter`.
+# Light + dark variants share the same structure; theme is user-toggleable
+# and persists in localStorage with a prefers-color-scheme fallback.
 # ---------------------------------------------------------------------------
 
 
@@ -757,74 +763,80 @@ def _render_refined(
     docs_cards: list[dict[str, str]],
     handoff_cards: list[dict[str, str]],
 ) -> str:
-    docs_rows = "\n".join(_refined_card(c) for c in docs_cards)
-    handoff_rows = "\n".join(_refined_card(c) for c in handoff_cards)
-    return f"""
-<!doctype html>
+    docs_grid = "".join(_refined_card(c) for c in docs_cards)
+    handoff_grid = "".join(_refined_card(c) for c in handoff_cards)
+    return f"""<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>API Documentation — fastapi-agent-blueprint</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- theme: refined-modern -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
-      // Run before paint to avoid flash of unstyled theme. Reads localStorage
-      // first; falls back to OS prefers-color-scheme. Mirrors the toggle JS
-      // below but kept inline-early because deferred listeners would flicker.
       (function() {{
         try {{
           var stored = localStorage.getItem('docs-selector-theme');
           if (stored === 'dark' || stored === 'light') {{
             document.documentElement.setAttribute('data-theme', stored);
           }}
-        }} catch (e) {{ /* localStorage blocked — fall back to media query */ }}
+        }} catch (e) {{ /* ignore */ }}
       }})();
     </script>
     <style>
       :root {{
         --bg: #f1f5f9;
-        --surface: #ffffff;
+        --card: #ffffff;
         --title: #0f172a;
         --desc: #475569;
         --muted: #64748b;
         --border: #e2e8f0;
         --border-strong: #cbd5e1;
-        --shadow: 0 1px 2px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.04);
-        --shadow-hover: 0 2px 4px rgba(15,23,42,0.08), 0 12px 24px rgba(15,23,42,0.08);
+        --shadow: 0 4px 12px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04);
+        --shadow-hover: 0 16px 36px rgba(15,23,42,0.12), 0 2px 6px rgba(15,23,42,0.06);
         --accent: #0f172a;
         --accent-fg: #ffffff;
-        --accent-soft: #f1f5f9;
+        --accent-soft: #e2e8f0;
+        --muted-bg: #e2e8f0;
+        --muted-text: #475569;
+        --section-rule: #e2e8f0;
         --focus-ring: #0f172a;
       }}
       :root[data-theme="dark"] {{
-        --bg: #0b1220;
-        --surface: #111a2e;
+        --bg: #050a18;
+        --card: #131e36;
         --title: #f8fafc;
         --desc: #cbd5e1;
         --muted: #94a3b8;
-        --border: #1e2a44;
+        --border: #233152;
         --border-strong: #334155;
-        --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.25);
-        --shadow-hover: 0 2px 4px rgba(0,0,0,0.5), 0 12px 24px rgba(0,0,0,0.35);
+        --shadow: 0 4px 12px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);
+        --shadow-hover: 0 16px 36px rgba(0,0,0,0.65), 0 2px 6px rgba(0,0,0,0.4);
         --accent: #f8fafc;
         --accent-fg: #0b1220;
         --accent-soft: #1e2a44;
+        --muted-bg: #1e2a44;
+        --muted-text: #94a3b8;
+        --section-rule: #233152;
         --focus-ring: #f8fafc;
       }}
       @media (prefers-color-scheme: dark) {{
         :root:not([data-theme]) {{
-          --bg: #0b1220;
-          --surface: #111a2e;
+          --bg: #050a18;
+          --card: #131e36;
           --title: #f8fafc;
           --desc: #cbd5e1;
           --muted: #94a3b8;
-          --border: #1e2a44;
+          --border: #233152;
           --border-strong: #334155;
-          --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.25);
-          --shadow-hover: 0 2px 4px rgba(0,0,0,0.5), 0 12px 24px rgba(0,0,0,0.35);
+          --shadow: 0 4px 12px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);
+          --shadow-hover: 0 16px 36px rgba(0,0,0,0.65), 0 2px 6px rgba(0,0,0,0.4);
           --accent: #f8fafc;
           --accent-fg: #0b1220;
           --accent-soft: #1e2a44;
+          --muted-bg: #1e2a44;
+          --muted-text: #94a3b8;
+          --section-rule: #233152;
           --focus-ring: #f8fafc;
         }}
       }}
@@ -832,76 +844,108 @@ def _render_refined(
       * {{ margin: 0; padding: 0; box-sizing: border-box; }}
       html, body {{ background: var(--bg); }}
       body {{
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         color: var(--title);
-        min-height: 100vh; padding: 64px 24px 96px; line-height: 1.5;
-        font-size: 15px;
+        min-height: 100vh; padding: 64px 24px 96px;
+        line-height: 1.6;
+        display: flex; align-items: flex-start; justify-content: center;
       }}
-      .frame {{ max-width: 960px; margin: 0 auto; }}
-      .head {{ margin-bottom: 32px; }}
-      .head h1 {{
-        font-size: 1.9rem; font-weight: 600; letter-spacing: -0.01em;
-        color: var(--title); margin-bottom: 6px;
+      .container {{
+        width: 100%; max-width: 1000px;
+        background: transparent;
+        padding: 0;
       }}
-      .head .meta {{ color: var(--muted); font-size: 0.95rem; }}
-
-      .section-label {{
-        font-size: 11px; font-weight: 600; color: var(--muted);
-        text-transform: uppercase; letter-spacing: 0.08em;
-        margin: 32px 0 12px;
-      }}
-      .grid {{
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 16px;
-      }}
-
-      .card {{
-        position: relative;
-        display: block; padding: 20px 22px 18px;
-        background: var(--surface); color: inherit;
-        border: 1px solid var(--border); border-radius: 12px;
-        text-decoration: none; box-shadow: var(--shadow);
-        transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-        overflow: hidden;
-      }}
-      .card:hover {{
-        border-color: var(--border-strong);
-        box-shadow: var(--shadow-hover);
-        transform: translateY(-2px);
-      }}
-      .card.primary {{ border-color: transparent; }}
-      .card.primary::before {{
-        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-        background: var(--accent);
-      }}
-      .card.primary:hover {{ border-color: transparent; }}
-      .card-title {{
-        font-size: 1.05rem; font-weight: 600; color: var(--title);
-        margin-bottom: 4px; line-height: 1.3;
-      }}
-      .card-desc {{
-        color: var(--desc); font-size: 0.9rem; line-height: 1.5;
+      .header {{ text-align: center; margin-bottom: 44px; }}
+      h1 {{
+        font-size: 2.6rem; font-weight: 700;
+        color: var(--title);
         margin-bottom: 12px;
       }}
+      .subtitle {{
+        font-size: 1.05rem; color: var(--muted);
+        max-width: 560px; margin: 0 auto; line-height: 1.6;
+      }}
+
+      .docs-grid {{
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 20px;
+      }}
+
+      .docs-card {{
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 28px 22px 24px;
+        text-decoration: none; color: inherit;
+        display: block; text-align: center;
+        box-shadow: var(--shadow);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      }}
+      .docs-card:hover {{
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-hover);
+        border-color: var(--accent);
+      }}
+      .card-icon {{
+        display: block;
+        font-size: 2.6rem;
+        margin-bottom: 14px;
+        line-height: 1;
+      }}
+      .card-title {{
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--title);
+        margin-bottom: 8px;
+        line-height: 1.3;
+      }}
+      .card-desc {{
+        color: var(--desc);
+        font-size: 0.92rem;
+        line-height: 1.55;
+        margin-bottom: 14px;
+      }}
       .card-badge {{
-        display: inline-block; font-size: 11px; font-weight: 600;
-        padding: 3px 9px; border-radius: 999px;
-        text-transform: uppercase; letter-spacing: 0.04em;
+        display: inline-block;
+        font-size: 11px; font-weight: 600;
+        padding: 4px 11px; border-radius: 999px;
+        text-transform: uppercase; letter-spacing: 0.06em;
       }}
-      .card.primary .card-badge {{
-        background: var(--accent); color: var(--accent-fg);
+      .docs-card.primary .card-badge {{
+        background: var(--accent);
+        color: var(--accent-fg);
       }}
-      .card.secondary .card-badge {{
-        background: transparent; color: var(--muted);
-        border: 1px solid var(--border-strong);
+      .docs-card.secondary .card-badge {{
+        background: var(--muted-bg);
+        color: var(--muted-text);
+      }}
+
+      .handoff-section {{
+        margin-top: 56px; padding-top: 36px;
+        border-top: 1px solid var(--section-rule);
+      }}
+      .handoff-section h2 {{
+        font-size: 1.4rem; font-weight: 600;
+        color: var(--title); text-align: center;
+        margin-bottom: 8px;
+      }}
+      .handoff-section .handoff-subtitle {{
+        text-align: center; color: var(--muted);
+        max-width: 600px; margin: 0 auto 24px; font-size: 0.95rem;
+      }}
+      .handoff-grid {{
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
       }}
 
       .toolbar {{
         position: fixed; top: 14px; right: 14px;
-        display: flex; gap: 6px; align-items: center;
-        background: var(--surface); border: 1px solid var(--border);
-        border-radius: 8px; padding: 4px 6px; box-shadow: var(--shadow);
+        display: flex; gap: 4px; align-items: center;
+        background: var(--card); border: 1px solid var(--border);
+        border-radius: 8px; padding: 4px 6px;
+        box-shadow: var(--shadow);
         font-size: 12px; z-index: 10;
       }}
       .toolbar a, .toolbar button {{
@@ -913,38 +957,44 @@ def _render_refined(
       .toolbar a.active {{ color: var(--accent-fg); background: var(--accent); }}
       .toolbar .sep {{ width: 1px; height: 14px; background: var(--border); margin: 0 2px; }}
 
-      .card:focus-visible,
+      .docs-card:focus-visible,
       .toolbar a:focus-visible,
       .toolbar button:focus-visible {{
-        outline: 2px solid var(--focus-ring);
-        outline-offset: 2px;
+        outline: 2px solid var(--focus-ring); outline-offset: 2px;
       }}
 
       @media (max-width: 720px) {{
         body {{ padding: 32px 16px 64px; }}
-        .grid {{ grid-template-columns: 1fr; }}
+        h1 {{ font-size: 2.1rem; }}
+        .docs-grid, .handoff-grid {{ grid-template-columns: 1fr; }}
         .toolbar {{ top: 8px; right: 8px; }}
-        /* Preview-only links are hidden on small screens to keep the toggle
-           reachable. Final cleanup will remove them entirely. */
         .toolbar > a, .toolbar > .sep {{ display: none; }}
       }}
     </style>
   </head>
   <body>
     {_refined_toolbar()}
-    <div class="frame">
-      <div class="head">
+    <div class="container">
+      <div class="header">
         <h1>API Documentation</h1>
-        <div class="meta">fastapi-agent-blueprint · Pick a viewer or hand off the spec.</div>
+        <p class="subtitle">
+          fastapi-agent-blueprint &middot; Pick a viewer or hand off the spec.
+        </p>
       </div>
-      <div class="section-label">Viewers</div>
-      <div class="grid">
-{docs_rows}
+      <div class="docs-grid">
+{docs_grid}
       </div>
-      <div class="section-label">Share with frontend</div>
-      <div class="grid">
-{handoff_rows}
-      </div>
+      <section class="handoff-section">
+        <h2>Share with Frontend</h2>
+        <p class="handoff-subtitle">
+          For workflows that need persisted tokens or environments, hand the
+          spec off to a real client (Postman, Bruno, Insomnia, Hoppscotch, or
+          Scalar Client) and import it there.
+        </p>
+        <div class="handoff-grid">
+{handoff_grid}
+        </div>
+      </section>
     </div>
     <script>
       (function() {{
@@ -975,7 +1025,7 @@ def _render_refined(
 
 def _refined_card(card: dict[str, str]) -> str:
     kind = card.get("kind", "primary")
-    klass = "card primary" if kind == "primary" else "card secondary"
+    klass = "docs-card primary" if kind == "primary" else "docs-card secondary"
     is_external = card.get("external", "false") == "true"
     target = ' target="_blank" rel="noopener"' if is_external else ""
     download = (
@@ -983,9 +1033,11 @@ def _refined_card(card: dict[str, str]) -> str:
         if card.get("external") == "false" and card["key"] == "download"
         else ""
     )
+    icon = card.get("icon", "")
     return f"""        <a class="{klass}" href="{card["href"]}"{target}{download}>
+          <span class="card-icon" aria-hidden="true">{icon}</span>
           <div class="card-title">{card["title"]}</div>
-          <div class="card-desc">{card["tagline"]}</div>
+          <p class="card-desc">{card["tagline"]}</p>
           <span class="card-badge">{card["label"]}</span>
         </a>"""
 
