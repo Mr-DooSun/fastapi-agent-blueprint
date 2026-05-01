@@ -67,6 +67,43 @@ async def test_openapi_download_matches_openapi_json():
     assert baseline.json() == download.json()
 
 
+@pytest.mark.asyncio
+async def test_docs_selector_refined_theme_structure():
+    """Refined Modern carries a distinct set of structural markers.
+
+    The single-line marker check used by the parametrized test is not strong
+    enough to catch silent regressions in the Refined renderer (the toggle
+    JS, the dark-mode CSS variables, the primary card strip, the toolbar
+    aria attributes). This case asserts on the structural surface.
+    """
+    async with _client() as client:
+        response = await client.get("/docs?theme=refined")
+    assert response.status_code == 200
+    body = response.text
+    # Theme identifier (kept for grep across renderers).
+    assert "theme: refined-modern" in body
+    # CSS variable scheme + dark override are wired up.
+    assert "data-theme" in body
+    assert ':root[data-theme="dark"]' in body
+    assert "prefers-color-scheme: dark" in body
+    # Toggle button is present, accessible, and JS-controlled.
+    assert 'id="theme-toggle"' in body
+    assert "aria-pressed" in body
+    assert "localStorage" in body
+    # Primary card strip is the visual hierarchy carrier.
+    assert "card primary" in body
+    assert "card secondary" in body
+    # AI-pattern clichés are out of the Refined output.
+    refined_section_start = body.index("theme: refined-modern")
+    refined_section = body[refined_section_start:]
+    for cliche in (
+        "linear-gradient",
+        "-webkit-background-clip",
+        "backdrop-filter",
+    ):
+        assert cliche not in refined_section, f"AI-pattern cliche leaked: {cliche}"
+
+
 @pytest.mark.parametrize(
     "theme,marker",
     [
@@ -74,6 +111,7 @@ async def test_openapi_download_matches_openapi_json():
         ("editorial", "Newsreader"),
         ("minimal", "fastapi-agent-blueprint · dev environment"),
         ("mac", "traffic"),
+        ("refined", "theme: refined-modern"),
     ],
 )
 @pytest.mark.asyncio

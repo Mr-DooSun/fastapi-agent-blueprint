@@ -55,6 +55,10 @@ DOCS_CARDS: list[dict[str, str]] = [
 
 
 def _handoff_cards(download_url: str) -> list[dict[str, str]]:
+    # `kind="secondary"` keeps the Recommended visual weight reserved for the
+    # two viewer cards. Themes that read `kind` (Brutalist / Minimal / Mac /
+    # Refined) treat handoff rows as quieter; themes that ignore it are
+    # unaffected.
     return [
         {
             "key": "download",
@@ -63,6 +67,7 @@ def _handoff_cards(download_url: str) -> list[dict[str, str]]:
             "tagline": "Save the live spec as openapi.json for Postman, Bruno, or any client.",
             "label": "Spec",
             "external": "false",
+            "kind": "secondary",
         },
         {
             "key": "handoff",
@@ -71,11 +76,12 @@ def _handoff_cards(download_url: str) -> list[dict[str, str]]:
             "tagline": "Contract scope, test client comparison, and TypeScript SDK recipes.",
             "label": "Guide",
             "external": "true",
+            "kind": "secondary",
         },
     ]
 
 
-VALID_THEMES = {"brutalist", "editorial", "minimal", "mac"}
+VALID_THEMES = {"brutalist", "editorial", "minimal", "mac", "refined"}
 
 
 @router.get(
@@ -98,6 +104,8 @@ def docs_selector(request: Request, theme: str | None = None):
         body = _render_minimal(docs_cards, handoff_cards)
     elif selected == "mac":
         body = _render_mac(docs_cards, handoff_cards)
+    elif selected == "refined":
+        body = _render_refined(docs_cards, handoff_cards)
     else:
         body = _render_default(docs_cards, handoff_cards)
 
@@ -251,6 +259,7 @@ def _preview_bar(active: str) -> str:
         ("editorial", "Editorial"),
         ("minimal", "Minimal"),
         ("mac", "Mac"),
+        ("refined", "Refined"),
     ]
     rendered = []
     for key, label in items:
@@ -733,6 +742,283 @@ def _mac_row(card: dict[str, str]) -> str:
             <span class="{label_class}">{card["label"]}</span>
             <span class="chevron">&rsaquo;</span>
           </a>"""
+
+
+# ---------------------------------------------------------------------------
+# Refined Modern — keeps the legibility tools of a card grid (rounded card +
+# soft shadow + hierarchy + solid colour accent) but strips the AI-pattern
+# clichés (purple gradient, gradient text, emoji icons, frosted glass blur).
+# Light + dark variants, with a manual toggle that respects prefers-color-scheme
+# and persists to localStorage.
+# ---------------------------------------------------------------------------
+
+
+def _render_refined(
+    docs_cards: list[dict[str, str]],
+    handoff_cards: list[dict[str, str]],
+) -> str:
+    docs_rows = "\n".join(_refined_card(c) for c in docs_cards)
+    handoff_rows = "\n".join(_refined_card(c) for c in handoff_cards)
+    return f"""
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>API Documentation — fastapi-agent-blueprint</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- theme: refined-modern -->
+    <script>
+      // Run before paint to avoid flash of unstyled theme. Reads localStorage
+      // first; falls back to OS prefers-color-scheme. Mirrors the toggle JS
+      // below but kept inline-early because deferred listeners would flicker.
+      (function() {{
+        try {{
+          var stored = localStorage.getItem('docs-selector-theme');
+          if (stored === 'dark' || stored === 'light') {{
+            document.documentElement.setAttribute('data-theme', stored);
+          }}
+        }} catch (e) {{ /* localStorage blocked — fall back to media query */ }}
+      }})();
+    </script>
+    <style>
+      :root {{
+        --bg: #f1f5f9;
+        --surface: #ffffff;
+        --title: #0f172a;
+        --desc: #475569;
+        --muted: #64748b;
+        --border: #e2e8f0;
+        --border-strong: #cbd5e1;
+        --shadow: 0 1px 2px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.04);
+        --shadow-hover: 0 2px 4px rgba(15,23,42,0.08), 0 12px 24px rgba(15,23,42,0.08);
+        --accent: #0f172a;
+        --accent-fg: #ffffff;
+        --accent-soft: #f1f5f9;
+        --focus-ring: #0f172a;
+      }}
+      :root[data-theme="dark"] {{
+        --bg: #0b1220;
+        --surface: #111a2e;
+        --title: #f8fafc;
+        --desc: #cbd5e1;
+        --muted: #94a3b8;
+        --border: #1e2a44;
+        --border-strong: #334155;
+        --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.25);
+        --shadow-hover: 0 2px 4px rgba(0,0,0,0.5), 0 12px 24px rgba(0,0,0,0.35);
+        --accent: #f8fafc;
+        --accent-fg: #0b1220;
+        --accent-soft: #1e2a44;
+        --focus-ring: #f8fafc;
+      }}
+      @media (prefers-color-scheme: dark) {{
+        :root:not([data-theme]) {{
+          --bg: #0b1220;
+          --surface: #111a2e;
+          --title: #f8fafc;
+          --desc: #cbd5e1;
+          --muted: #94a3b8;
+          --border: #1e2a44;
+          --border-strong: #334155;
+          --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.25);
+          --shadow-hover: 0 2px 4px rgba(0,0,0,0.5), 0 12px 24px rgba(0,0,0,0.35);
+          --accent: #f8fafc;
+          --accent-fg: #0b1220;
+          --accent-soft: #1e2a44;
+          --focus-ring: #f8fafc;
+        }}
+      }}
+
+      * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+      html, body {{ background: var(--bg); }}
+      body {{
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+        color: var(--title);
+        min-height: 100vh; padding: 64px 24px 96px; line-height: 1.5;
+        font-size: 15px;
+      }}
+      .frame {{ max-width: 960px; margin: 0 auto; }}
+      .head {{ margin-bottom: 32px; }}
+      .head h1 {{
+        font-size: 1.9rem; font-weight: 600; letter-spacing: -0.01em;
+        color: var(--title); margin-bottom: 6px;
+      }}
+      .head .meta {{ color: var(--muted); font-size: 0.95rem; }}
+
+      .section-label {{
+        font-size: 11px; font-weight: 600; color: var(--muted);
+        text-transform: uppercase; letter-spacing: 0.08em;
+        margin: 32px 0 12px;
+      }}
+      .grid {{
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }}
+
+      .card {{
+        position: relative;
+        display: block; padding: 20px 22px 18px;
+        background: var(--surface); color: inherit;
+        border: 1px solid var(--border); border-radius: 12px;
+        text-decoration: none; box-shadow: var(--shadow);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+        overflow: hidden;
+      }}
+      .card:hover {{
+        border-color: var(--border-strong);
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-2px);
+      }}
+      .card.primary {{ border-color: transparent; }}
+      .card.primary::before {{
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+        background: var(--accent);
+      }}
+      .card.primary:hover {{ border-color: transparent; }}
+      .card-title {{
+        font-size: 1.05rem; font-weight: 600; color: var(--title);
+        margin-bottom: 4px; line-height: 1.3;
+      }}
+      .card-desc {{
+        color: var(--desc); font-size: 0.9rem; line-height: 1.5;
+        margin-bottom: 12px;
+      }}
+      .card-badge {{
+        display: inline-block; font-size: 11px; font-weight: 600;
+        padding: 3px 9px; border-radius: 999px;
+        text-transform: uppercase; letter-spacing: 0.04em;
+      }}
+      .card.primary .card-badge {{
+        background: var(--accent); color: var(--accent-fg);
+      }}
+      .card.secondary .card-badge {{
+        background: transparent; color: var(--muted);
+        border: 1px solid var(--border-strong);
+      }}
+
+      .toolbar {{
+        position: fixed; top: 14px; right: 14px;
+        display: flex; gap: 6px; align-items: center;
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 8px; padding: 4px 6px; box-shadow: var(--shadow);
+        font-size: 12px; z-index: 10;
+      }}
+      .toolbar a, .toolbar button {{
+        background: transparent; border: 0; cursor: pointer;
+        color: var(--muted); text-decoration: none;
+        padding: 4px 8px; border-radius: 5px; font: inherit;
+      }}
+      .toolbar a:hover, .toolbar button:hover {{ color: var(--title); background: var(--accent-soft); }}
+      .toolbar a.active {{ color: var(--accent-fg); background: var(--accent); }}
+      .toolbar .sep {{ width: 1px; height: 14px; background: var(--border); margin: 0 2px; }}
+
+      .card:focus-visible,
+      .toolbar a:focus-visible,
+      .toolbar button:focus-visible {{
+        outline: 2px solid var(--focus-ring);
+        outline-offset: 2px;
+      }}
+
+      @media (max-width: 720px) {{
+        body {{ padding: 32px 16px 64px; }}
+        .grid {{ grid-template-columns: 1fr; }}
+        .toolbar {{ top: 8px; right: 8px; }}
+        /* Preview-only links are hidden on small screens to keep the toggle
+           reachable. Final cleanup will remove them entirely. */
+        .toolbar > a, .toolbar > .sep {{ display: none; }}
+      }}
+    </style>
+  </head>
+  <body>
+    {_refined_toolbar()}
+    <div class="frame">
+      <div class="head">
+        <h1>API Documentation</h1>
+        <div class="meta">fastapi-agent-blueprint · Pick a viewer or hand off the spec.</div>
+      </div>
+      <div class="section-label">Viewers</div>
+      <div class="grid">
+{docs_rows}
+      </div>
+      <div class="section-label">Share with frontend</div>
+      <div class="grid">
+{handoff_rows}
+      </div>
+    </div>
+    <script>
+      (function() {{
+        var KEY = 'docs-selector-theme';
+        var root = document.documentElement;
+        var btn = document.getElementById('theme-toggle');
+        function currentTheme() {{
+          return root.getAttribute('data-theme')
+            || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        }}
+        function paint() {{
+          var dark = currentTheme() === 'dark';
+          btn.textContent = dark ? 'Light' : 'Dark';
+          btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+        }}
+        paint();
+        btn.addEventListener('click', function() {{
+          var next = currentTheme() === 'dark' ? 'light' : 'dark';
+          root.setAttribute('data-theme', next);
+          try {{ localStorage.setItem(KEY, next); }} catch (e) {{ /* ignore */ }}
+          paint();
+        }});
+      }})();
+    </script>
+  </body>
+</html>"""
+
+
+def _refined_card(card: dict[str, str]) -> str:
+    kind = card.get("kind", "primary")
+    klass = "card primary" if kind == "primary" else "card secondary"
+    is_external = card.get("external", "false") == "true"
+    target = ' target="_blank" rel="noopener"' if is_external else ""
+    download = (
+        " download"
+        if card.get("external") == "false" and card["key"] == "download"
+        else ""
+    )
+    return f"""        <a class="{klass}" href="{card["href"]}"{target}{download}>
+          <div class="card-title">{card["title"]}</div>
+          <div class="card-desc">{card["tagline"]}</div>
+          <span class="card-badge">{card["label"]}</span>
+        </a>"""
+
+
+def _refined_toolbar() -> str:
+    """Tiny top-right bar that hosts the preview links plus the theme toggle.
+
+    Once a redesign is picked, the preview-link cluster is dropped but the
+    theme toggle stays — it is part of the final UX, not the cleanup target.
+    """
+    items = [
+        ("default", "Current"),
+        ("brutalist", "Brutalist"),
+        ("editorial", "Editorial"),
+        ("minimal", "Minimal"),
+        ("mac", "Mac"),
+        ("refined", "Refined"),
+    ]
+    links = []
+    for key, label in items:
+        href = "/docs" if key == "default" else f"/docs?theme={key}"
+        is_active = key == "refined"
+        klass = "active" if is_active else ""
+        aria = ' aria-current="page"' if is_active else ""
+        links.append(f'<a href="{href}" class="{klass}"{aria}>{label}</a>')
+    return (
+        '<nav class="toolbar" aria-label="Theme preview">'
+        + "".join(links)
+        + '<span class="sep" aria-hidden="true"></span>'
+        + '<button id="theme-toggle" type="button"'
+        ' aria-label="Toggle light or dark theme" aria-pressed="false">Dark</button>'
+        + "</nav>"
+    )
 
 
 # ---------------------------------------------------------------------------
