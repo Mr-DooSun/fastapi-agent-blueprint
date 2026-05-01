@@ -321,10 +321,16 @@ def _render_brutalist(
         display: block; padding: 18px 24px;
         border: 1px solid var(--border); border-top: none;
         text-decoration: none; color: var(--fg); transition: border-color 0.12s linear;
+        position: relative;
       }}
       .row:hover {{ border-color: var(--border-hover); }}
+      .row.primary {{
+        border-left: 3px solid var(--accent); padding-left: 22px;
+      }}
       .row .marker {{ color: var(--muted); margin-right: 8px; }}
+      .row.primary .marker {{ color: var(--accent); }}
       .row .name {{ font-weight: 600; }}
+      .row.primary .name {{ color: var(--accent); }}
       .row .desc {{ color: var(--muted); margin-top: 4px; font-size: 13px; }}
       .row .label {{ color: var(--accent); font-size: 11px; margin-top: 8px; display: inline-block; }}
       .row .label.muted {{ color: var(--muted); }}
@@ -357,7 +363,9 @@ def _render_brutalist(
 
 
 def _brutalist_row(card: dict[str, str]) -> str:
-    label_class = "label" if card.get("kind", "primary") == "primary" else "label muted"
+    kind = card.get("kind", "primary")
+    row_class = "row primary" if kind == "primary" else "row"
+    label_class = "label" if kind == "primary" else "label muted"
     is_external = card.get("external", "false") == "true"
     target = ' target="_blank" rel="noopener"' if is_external else ""
     download = (
@@ -365,8 +373,9 @@ def _brutalist_row(card: dict[str, str]) -> str:
         if card.get("external") == "false" and card["key"] == "download"
         else ""
     )
-    return f"""      <a class="row" href="{card["href"]}"{target}{download}>
-        <div><span class="marker">&gt;</span><span class="name">{card["title"]}</span></div>
+    marker = "*" if kind == "primary" else "&gt;"
+    return f"""      <a class="{row_class}" href="{card["href"]}"{target}{download}>
+        <div><span class="marker" aria-hidden="true">{marker}</span><span class="name">{card["title"]}</span></div>
         <div class="desc">{card["tagline"]}</div>
         <div class="{label_class}">[{card["label"].lower()}]</div>
       </a>"""
@@ -431,9 +440,17 @@ def _render_editorial(
       }}
       .row:hover {{ color: var(--link-hover); }}
       .row .row-head {{ display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }}
+      .row .row-leading {{ display: flex; align-items: baseline; gap: 14px; min-width: 0; flex: 1; }}
+      .row .row-icon {{
+        font-family: 'Newsreader', Georgia, serif;
+        font-size: 1.5rem; color: var(--muted); flex-shrink: 0;
+        font-style: italic; min-width: 24px; text-align: center;
+      }}
+      .row.primary .row-icon {{ color: var(--link); font-weight: 600; font-style: normal; }}
       .row .row-title {{
         font-family: 'Newsreader', Georgia, serif; font-size: 1.45rem; font-weight: 600; line-height: 1.2;
       }}
+      .row.primary .row-title {{ font-size: 1.55rem; }}
       .row .arrow {{ color: var(--muted); font-size: 1.1rem; }}
       .row:hover .arrow {{ color: var(--link-hover); }}
       .row .row-desc {{ color: var(--muted); margin-top: 6px; font-size: 0.98rem; }}
@@ -441,6 +458,7 @@ def _render_editorial(
         margin-top: 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em;
         color: var(--muted);
       }}
+      .row.primary .row-label {{ color: var(--link); font-weight: 600; }}
       .preview-bar {{
         position: fixed; top: 16px; right: 16px;
         background: var(--bg); border: 1px solid var(--rule);
@@ -474,6 +492,8 @@ def _render_editorial(
 
 
 def _editorial_row(card: dict[str, str]) -> str:
+    kind = card.get("kind", "primary")
+    row_class = "row primary" if kind == "primary" else "row"
     is_external = card.get("external", "false") == "true"
     target = ' target="_blank" rel="noopener"' if is_external else ""
     download = (
@@ -481,9 +501,13 @@ def _editorial_row(card: dict[str, str]) -> str:
         if card.get("external") == "false" and card["key"] == "download"
         else ""
     )
-    return f"""      <a class="row" href="{card["href"]}"{target}{download}>
+    icon = card.get("icon", "")
+    return f"""      <a class="{row_class}" href="{card["href"]}"{target}{download}>
         <div class="row-head">
-          <div class="row-title">{card["title"]}</div>
+          <div class="row-leading">
+            <span class="row-icon" aria-hidden="true">{icon}</span>
+            <div class="row-title">{card["title"]}</div>
+          </div>
           <div class="arrow">&rarr;</div>
         </div>
         <div class="row-desc">{card["tagline"]}</div>
@@ -540,6 +564,15 @@ def _render_minimal(
         text-decoration: none; color: var(--fg); transition: border-color 0.12s ease;
       }}
       .row:hover {{ border-color: var(--border-hover); }}
+      .row.primary {{
+        border-left: 3px solid var(--accent); padding-left: 14px;
+      }}
+      .row .row-leading {{ display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }}
+      .row .row-icon {{
+        font-size: 1.5rem; line-height: 1; flex-shrink: 0;
+        width: 32px; text-align: center;
+      }}
+      .row .row-text {{ min-width: 0; }}
       .row .row-text .name {{ font-weight: 600; font-size: 0.98rem; }}
       .row .row-text .desc {{ color: var(--muted); font-size: 13px; margin-top: 2px; }}
       .row .row-meta {{ display: flex; align-items: center; gap: 10px; flex-shrink: 0; }}
@@ -547,7 +580,9 @@ def _render_minimal(
         font-size: 11px; color: var(--muted); border: 1px solid var(--border);
         padding: 2px 8px; border-radius: 999px; white-space: nowrap;
       }}
-      .row .label.primary {{ color: var(--accent); border-color: var(--accent); }}
+      .row .label.primary {{
+        color: white; background: var(--accent); border-color: var(--accent);
+      }}
       .row .arrow {{ color: var(--muted); font-size: 14px; }}
       .row:hover .arrow {{ color: var(--accent); }}
       .preview-bar {{
@@ -582,9 +617,9 @@ def _render_minimal(
 
 
 def _minimal_row(card: dict[str, str]) -> str:
-    label_class = (
-        "label primary" if card.get("kind", "primary") == "primary" else "label"
-    )
+    kind = card.get("kind", "primary")
+    row_class = "row primary" if kind == "primary" else "row"
+    label_class = "label primary" if kind == "primary" else "label"
     is_external = card.get("external", "false") == "true"
     target = ' target="_blank" rel="noopener"' if is_external else ""
     download = (
@@ -592,10 +627,14 @@ def _minimal_row(card: dict[str, str]) -> str:
         if card.get("external") == "false" and card["key"] == "download"
         else ""
     )
-    return f"""        <a class="row" href="{card["href"]}"{target}{download}>
-          <div class="row-text">
-            <div class="name">{card["title"]}</div>
-            <div class="desc">{card["tagline"]}</div>
+    icon = card.get("icon", "")
+    return f"""        <a class="{row_class}" href="{card["href"]}"{target}{download}>
+          <div class="row-leading">
+            <span class="row-icon" aria-hidden="true">{icon}</span>
+            <div class="row-text">
+              <div class="name">{card["title"]}</div>
+              <div class="desc">{card["tagline"]}</div>
+            </div>
           </div>
           <div class="row-meta">
             <span class="{label_class}">{card["label"]}</span>
@@ -679,8 +718,13 @@ def _render_mac(
       }}
       .row:last-child {{ border-bottom: none; }}
       .row:hover {{ background: rgba(0,122,255,0.08); }}
-      .row .row-text {{ flex: 1; }}
+      .row .row-icon {{
+        font-size: 1.6rem; line-height: 1; flex-shrink: 0;
+        width: 32px; text-align: center;
+      }}
+      .row .row-text {{ flex: 1; min-width: 0; }}
       .row .row-text .name {{ font-weight: 500; font-size: 14px; }}
+      .row.primary .row-text .name {{ font-weight: 700; color: var(--accent); }}
       .row .row-text .desc {{ color: var(--muted); font-size: 12px; margin-top: 1px; }}
       .row .label {{
         font-size: 11px; color: var(--muted); padding: 2px 8px;
@@ -728,9 +772,9 @@ def _render_mac(
 
 
 def _mac_row(card: dict[str, str]) -> str:
-    label_class = (
-        "label primary" if card.get("kind", "primary") == "primary" else "label"
-    )
+    kind = card.get("kind", "primary")
+    row_class = "row primary" if kind == "primary" else "row"
+    label_class = "label primary" if kind == "primary" else "label"
     is_external = card.get("external", "false") == "true"
     target = ' target="_blank" rel="noopener"' if is_external else ""
     download = (
@@ -738,7 +782,9 @@ def _mac_row(card: dict[str, str]) -> str:
         if card.get("external") == "false" and card["key"] == "download"
         else ""
     )
-    return f"""          <a class="row" href="{card["href"]}"{target}{download}>
+    icon = card.get("icon", "")
+    return f"""          <a class="{row_class}" href="{card["href"]}"{target}{download}>
+            <span class="row-icon" aria-hidden="true">{icon}</span>
             <div class="row-text">
               <div class="name">{card["title"]}</div>
               <div class="desc">{card["tagline"]}</div>
