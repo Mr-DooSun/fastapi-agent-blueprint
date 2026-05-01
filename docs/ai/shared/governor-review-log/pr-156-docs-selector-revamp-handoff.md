@@ -51,6 +51,14 @@ The PR is governor-changing because the closing `/sync-guidelines` step also upd
      - R4.3: Committing the sync edits onto PR #156 changes its classification from "non-governor-changing" to governor-changing because `.claude/rules/**` is Tier A/B.
    - Final Verdict: block merge until #4 row is corrected, the agents wrapper is reshaped to match the Claude `Procedure Overview` pattern, and the governor-review-log entry plus PR template Governor section land. All three were closed in the same sync push (this entry is part of R4.3 closure).
 
+6. **Round 5 — closure-on-closure cross-review (codex CLI, read-only)**
+   - Target: this entry, the README index row, the PR body Governor section, and the four `.claude/rules/*` files after commit 9616511.
+   - Prompt focus: Round 4 R-point closures, Inherited Constraint shape (forward-looking vs descriptive), G closure linter conformance, Tier 1 language policy, Hybrid C phase parity, orphan claims.
+   - Surfaced points:
+     - R5.1: Self-Application Proof claimed "4 codex CLI reviews" while Review Rounds enumerated Round 0-4 (5 rounds) — internal count mismatch.
+   - Verified: G closure linter passes (4-column shape, canonical labels), Tier 1 language checker passes (0 violations), Hybrid C parity restored (shared procedure 4 phases / both wrappers 4-step Procedure Overview), R4.1 + R4.2 + local half of R4.3 closed.
+   - Final Verdict: closed after the R5.1 minor fix.
+
 ## R-points Closure Table
 
 | Source | R-point | Closure | Note |
@@ -72,6 +80,7 @@ The PR is governor-changing because the closing `/sync-guidelines` step also upd
 | Round 4 | R4.1: `.claude/rules/project-status.md` #4 JWT row still claimed env-var admin auth, superseded by #154 | Fixed | Row updated with a superseded note. |
 | Round 4 | R4.2: `.agents/skills/sync-guidelines/SKILL.md` had a 5-item `Procedure` while Claude wrapper had a 4-item `Procedure Overview` (Hybrid C drift) | Fixed | Agents wrapper reshaped to match the Claude `Procedure Overview` pattern. |
 | Round 4 | R4.3: committing the sync edits onto PR #156 changes its classification to governor-changing | Fixed | This entry, the README index row, and the PR body Governor section closed the gate. |
+| Round 5 | R5.1: Self-Application Proof claimed "4 codex CLI reviews" while Review Rounds enumerate Round 0-4 (5 rounds), an internal count mismatch | Fixed | Self-Application Proof now reads "5 codex CLI rounds completed" and explicitly enumerates Round 0-4 plus the Round 5 closure-on-closure verification. |
 
 ## Inherited Constraints
 
@@ -105,7 +114,7 @@ The PR is governor-changing because the closing `/sync-guidelines` step also upd
 
 ### Cross-tool review trail
 
-- 4 codex CLI reviews completed (`codex exec --sandbox read-only --skip-git-repo-check`): design plan, first implementation pass, cleanup pass, /sync-guidelines closure pass. All R-points closed via the table above; final verdict from R4 is merge-ready conditional on this artifact landing.
+- 5 codex CLI rounds completed (`codex exec --sandbox read-only --skip-git-repo-check`): Round 0 design plan, Round 1 first implementation pass, Round 2 Refined preview legibility, Round 3 cleanup, Round 4 `/sync-guidelines` closure. Round 5 closure-on-closure review verified the artefacts in this entry, the README index row, and the PR body Governor section. All R-points closed via the table above (16 Fixed + 1 Deferred-with-rationale).
 
 ### Verification
 
