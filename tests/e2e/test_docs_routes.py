@@ -65,3 +65,32 @@ async def test_openapi_download_matches_openapi_json():
     assert baseline.status_code == 200
     assert download.status_code == 200
     assert baseline.json() == download.json()
+
+
+@pytest.mark.parametrize(
+    "theme,marker",
+    [
+        ("brutalist", "JetBrains Mono"),
+        ("editorial", "Newsreader"),
+        ("minimal", "fastapi-agent-blueprint · dev environment"),
+        ("mac", "traffic"),
+    ],
+)
+@pytest.mark.asyncio
+async def test_docs_selector_preview_themes(theme: str, marker: str):
+    """Each preview theme renders a distinct page that contains a theme-specific marker.
+
+    Preview themes are temporary — once one is picked as the production
+    redesign, the rest plus the `?theme=` dispatch get removed and these
+    parametrized cases drop out of the suite.
+    """
+    async with _client() as client:
+        response = await client.get(f"/docs?theme={theme}")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    body = response.text
+    assert marker in body
+    # Every theme must surface the two recommended viewers and the handoff link.
+    assert "Stoplight Elements" in body
+    assert "Scalar" in body
+    assert "/docs/frontend-handoff.md" in body

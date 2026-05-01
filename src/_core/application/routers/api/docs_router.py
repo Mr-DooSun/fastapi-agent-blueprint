@@ -8,18 +8,114 @@ HANDOFF_GUIDE_URL = (
     "/blob/main/docs/frontend-handoff.md"
 )
 
+# Card data shared by every theme renderer. Keep order stable: the first two
+# entries are the recommended viewers, the rest are alternates.
+DOCS_CARDS: list[dict[str, str]] = [
+    {
+        "key": "elements",
+        "href": "/api/docs-elements",
+        "title": "Stoplight Elements",
+        "tagline": "Interactive, three-pane reader. Best for browsing.",
+        "label": "Recommended — Visual",
+        "kind": "primary",
+    },
+    {
+        "key": "scalar",
+        "href": "/api/docs-scalar",
+        "title": "Scalar API Reference",
+        "tagline": "Modern reference with try-it that bridges into a client.",
+        "label": "Recommended — Try-it",
+        "kind": "primary",
+    },
+    {
+        "key": "swagger",
+        "href": "/api/docs-swagger",
+        "title": "Swagger UI",
+        "tagline": "FastAPI's bundled default. Familiar to most teams.",
+        "label": "Compatibility",
+        "kind": "secondary",
+    },
+    {
+        "key": "redoc",
+        "href": "/api/docs-redoc",
+        "title": "ReDoc",
+        "tagline": "Documentation-first three-panel layout.",
+        "label": "Clean",
+        "kind": "secondary",
+    },
+    {
+        "key": "rapidoc",
+        "href": "/api/docs-rapidoc",
+        "title": "RapiDoc",
+        "tagline": "Lightweight viewer. Fast initial load.",
+        "label": "Fast",
+        "kind": "secondary",
+    },
+]
+
+
+def _handoff_cards(download_url: str) -> list[dict[str, str]]:
+    return [
+        {
+            "key": "download",
+            "href": download_url,
+            "title": "Download OpenAPI (JSON)",
+            "tagline": "Save the live spec as openapi.json for Postman, Bruno, or any client.",
+            "label": "Spec",
+            "external": "false",
+        },
+        {
+            "key": "handoff",
+            "href": HANDOFF_GUIDE_URL,
+            "title": "Frontend Handoff Guide",
+            "tagline": "Contract scope, test client comparison, and TypeScript SDK recipes.",
+            "label": "Guide",
+            "external": "true",
+        },
+    ]
+
+
+VALID_THEMES = {"brutalist", "editorial", "minimal", "mac"}
+
 
 @router.get(
     "/docs",
     include_in_schema=False,
     description="API Docs Selector - Main page for choosing among various documentation UIs",
 )
-def docs_selector(request: Request):
+def docs_selector(request: Request, theme: str | None = None):
     root_path = request.scope.get("root_path", "")
     download_url = f"{root_path}/openapi-download.json"
+    handoff_cards = _handoff_cards(download_url)
+    docs_cards = DOCS_CARDS
 
-    return HTMLResponse(
-        f"""
+    selected = theme if theme in VALID_THEMES else None
+    if selected == "brutalist":
+        body = _render_brutalist(docs_cards, handoff_cards)
+    elif selected == "editorial":
+        body = _render_editorial(docs_cards, handoff_cards)
+    elif selected == "minimal":
+        body = _render_minimal(docs_cards, handoff_cards)
+    elif selected == "mac":
+        body = _render_mac(docs_cards, handoff_cards)
+    else:
+        body = _render_default(docs_cards, handoff_cards)
+
+    return HTMLResponse(body)
+
+
+# ---------------------------------------------------------------------------
+# Default theme — kept as the production surface from PR #156. Purple gradient,
+# rounded cards, the original "AI-pattern" look. Future cleanup will replace
+# this with whichever preview theme the user picks.
+# ---------------------------------------------------------------------------
+
+
+def _render_default(
+    docs_cards: list[dict[str, str]],
+    handoff_cards: list[dict[str, str]],
+) -> str:
+    return f"""
 <!doctype html>
 <html>
   <head>
@@ -28,221 +124,65 @@ def docs_selector(request: Request):
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      * {{
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }}
-
+      * {{ margin: 0; padding: 0; box-sizing: border-box; }}
       body {{
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        padding: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        min-height: 100vh; padding: 20px;
+        display: flex; align-items: center; justify-content: center;
       }}
-
       .container {{
-        max-width: 1000px;
-        width: 100%;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 24px;
-        padding: 60px 40px;
+        max-width: 1000px; width: 100%;
+        background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+        border-radius: 24px; padding: 60px 40px;
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
       }}
-
-      .header {{
-        text-align: center;
-        margin-bottom: 50px;
-      }}
-
+      .header {{ text-align: center; margin-bottom: 50px; }}
       h1 {{
-        font-size: 3.5rem;
-        font-weight: 700;
+        font-size: 3.5rem; font-weight: 700;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 16px;
-        letter-spacing: -0.02em;
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text; margin-bottom: 16px; letter-spacing: -0.02em;
       }}
-
-      .subtitle {{
-        font-size: 1.2rem;
-        color: #64748b;
-        font-weight: 400;
-        max-width: 600px;
-        margin: 0 auto;
-        line-height: 1.6;
-      }}
-
-      .docs-grid {{
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 24px;
-        margin-top: 40px;
-      }}
-
+      .subtitle {{ font-size: 1.2rem; color: #64748b; max-width: 600px; margin: 0 auto; line-height: 1.6; }}
+      .docs-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 40px; }}
       .docs-card {{
-        background: white;
-        border-radius: 16px;
-        padding: 32px 24px;
-        text-decoration: none;
-        color: inherit;
-        display: block;
+        background: white; border-radius: 16px; padding: 32px 24px;
+        text-decoration: none; color: inherit; display: block;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid #e2e8f0;
-        position: relative;
-        overflow: hidden;
+        border: 1px solid #e2e8f0; position: relative; overflow: hidden;
       }}
-
       .docs-card::before {{
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
         background: linear-gradient(90deg, #667eea, #764ba2);
-        transform: scaleX(0);
-        transition: transform 0.3s ease;
+        transform: scaleX(0); transition: transform 0.3s ease;
       }}
-
-      .docs-card:hover {{
-        transform: translateY(-8px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        border-color: #667eea;
-      }}
-
-      .docs-card:hover::before {{
-        transform: scaleX(1);
-      }}
-
-      .card-icon {{
-        font-size: 3rem;
-        margin-bottom: 16px;
-        display: block;
-        text-align: center;
-      }}
-
-      .docs-title {{
-        font-size: 1.4rem;
-        font-weight: 600;
-        margin-bottom: 12px;
-        color: #1e293b;
-        text-align: center;
-        line-height: 1.3;
-      }}
-
-      .docs-desc {{
-        color: #64748b;
-        margin: 0;
-        font-size: 0.95rem;
-        line-height: 1.6;
-        text-align: center;
-      }}
-
+      .docs-card:hover {{ transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); border-color: #667eea; }}
+      .docs-card:hover::before {{ transform: scaleX(1); }}
+      .docs-title {{ font-size: 1.4rem; font-weight: 600; margin-bottom: 12px; color: #1e293b; line-height: 1.3; }}
+      .docs-desc {{ color: #64748b; margin: 0; font-size: 0.95rem; line-height: 1.6; }}
       .badge {{
-        display: inline-block;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        margin-top: 16px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+        padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 500;
+        margin-top: 16px; text-transform: uppercase; letter-spacing: 0.5px;
       }}
-
-      .badge.muted {{
-        background: #e2e8f0;
-        color: #475569;
+      .badge.muted {{ background: #e2e8f0; color: #475569; }}
+      .handoff-section {{ margin-top: 56px; padding-top: 40px; border-top: 1px solid #e2e8f0; }}
+      .handoff-section h2 {{ font-size: 1.6rem; font-weight: 600; color: #1e293b; text-align: center; margin-bottom: 8px; }}
+      .handoff-section p.handoff-subtitle {{ text-align: center; color: #64748b; max-width: 640px; margin: 0 auto 28px; line-height: 1.6; }}
+      .handoff-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }}
+      .preview-bar {{
+        position: fixed; top: 16px; right: 16px; background: rgba(255,255,255,0.95);
+        padding: 8px 12px; border-radius: 8px; font-size: 0.78rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; gap: 8px; align-items: center;
       }}
-
-      .handoff-section {{
-        margin-top: 56px;
-        padding-top: 40px;
-        border-top: 1px solid #e2e8f0;
-      }}
-
-      .handoff-section h2 {{
-        font-size: 1.6rem;
-        font-weight: 600;
-        color: #1e293b;
-        text-align: center;
-        margin-bottom: 8px;
-      }}
-
-      .handoff-section p.handoff-subtitle {{
-        text-align: center;
-        color: #64748b;
-        font-size: 1rem;
-        max-width: 640px;
-        margin: 0 auto 28px;
-        line-height: 1.6;
-      }}
-
-      .handoff-grid {{
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 16px;
-      }}
-
-      @media (max-width: 768px) {{
-        .container {{
-          padding: 40px 24px;
-          margin: 10px;
-        }}
-
-        h1 {{
-          font-size: 2.5rem;
-        }}
-
-        .subtitle {{
-          font-size: 1.1rem;
-        }}
-
-        .docs-grid {{
-          grid-template-columns: 1fr;
-          gap: 16px;
-        }}
-
-        .docs-card {{
-          padding: 24px 20px;
-        }}
-
-        .handoff-grid {{
-          grid-template-columns: 1fr;
-        }}
-      }}
-
-      @keyframes fadeInUp {{
-        from {{
-          opacity: 0;
-          transform: translateY(30px);
-        }}
-        to {{
-          opacity: 1;
-          transform: translateY(0);
-        }}
-      }}
-
-      .docs-card {{
-        animation: fadeInUp 0.6s ease forwards;
-      }}
-
-      .docs-card:nth-child(1) {{ animation-delay: 0.1s; }}
-      .docs-card:nth-child(2) {{ animation-delay: 0.2s; }}
-      .docs-card:nth-child(3) {{ animation-delay: 0.3s; }}
-      .docs-card:nth-child(4) {{ animation-delay: 0.4s; }}
-      .docs-card:nth-child(5) {{ animation-delay: 0.5s; }}
+      .preview-bar a {{ color: #4a5568; text-decoration: none; padding: 2px 6px; border-radius: 4px; }}
+      .preview-bar a:hover {{ background: #edf2f7; }}
+      .preview-bar a.active {{ background: #667eea; color: white; }}
     </style>
   </head>
   <body>
+    {_preview_bar("default")}
     <div class="container">
       <div class="header">
         <h1>🚀 API Documentation</h1>
@@ -251,59 +191,13 @@ def docs_selector(request: Request):
           Each one offers a unique set of features and user experience.
         </p>
       </div>
-
       <div class="docs-grid">
-        <a href="/api/docs-elements" class="docs-card">
-          <span class="card-icon">🎨</span>
-          <div class="docs-title">Stoplight Elements</div>
-          <p class="docs-desc">
-            An interactive, visually appealing API documentation that
-            delivers a rich user experience.
-          </p>
-          <span class="badge">Recommended — Visual</span>
-        </a>
-
-        <a href="/api/docs-scalar" class="docs-card">
-          <span class="card-icon">✨</span>
-          <div class="docs-title">Scalar API Reference</div>
-          <p class="docs-desc">
-            A modern, sophisticated API documentation with built-in
-            try-it experience that bridges into a full client.
-          </p>
-          <span class="badge">Recommended — Try-it</span>
-        </a>
-
-        <a href="/api/docs-swagger" class="docs-card">
-          <span class="card-icon">📚</span>
-          <div class="docs-title">FastAPI Swagger UI</div>
-          <p class="docs-desc">
-            The most widely used API documentation format, offering an
-            intuitive interface with full-featured functionality.
-          </p>
-          <span class="badge muted">Compatibility</span>
-        </a>
-
-        <a href="/api/docs-redoc" class="docs-card">
-          <span class="card-icon">📖</span>
-          <div class="docs-title">ReDoc</div>
-          <p class="docs-desc">
-            A clean, readable, documentation-focused design that lets
-            you explore API specifications in a well-organized manner.
-          </p>
-          <span class="badge muted">Clean</span>
-        </a>
-
-        <a href="/api/docs-rapidoc" class="docs-card">
-          <span class="card-icon">⚡</span>
-          <div class="docs-title">RapiDoc</div>
-          <p class="docs-desc">
-            A fast, lightweight API documentation that provides
-            a simple yet efficient interface.
-          </p>
-          <span class="badge muted">Fast</span>
-        </a>
+        {_default_card(docs_cards[0], "🎨")}
+        {_default_card(docs_cards[1], "✨")}
+        {_default_card(docs_cards[2], "📚")}
+        {_default_card(docs_cards[3], "📖")}
+        {_default_card(docs_cards[4], "⚡")}
       </div>
-
       <section class="handoff-section">
         <h2>📦 Share with Frontend</h2>
         <p class="handoff-subtitle">
@@ -312,31 +206,538 @@ def docs_selector(request: Request):
           OpenAPI spec and let the frontend import it into their tool of choice.
         </p>
         <div class="handoff-grid">
-          <a href="{download_url}" class="docs-card" download>
-            <span class="card-icon">⬇️</span>
-            <div class="docs-title">Download OpenAPI (JSON)</div>
-            <p class="docs-desc">
-              Save the live spec as <code>openapi.json</code> and import it into
-              Postman, Bruno, or any OpenAPI-aware client.
-            </p>
-            <span class="badge">Spec</span>
-          </a>
-
-          <a href="{HANDOFF_GUIDE_URL}" class="docs-card" target="_blank" rel="noopener">
-            <span class="card-icon">🧭</span>
-            <div class="docs-title">Frontend Handoff Guide</div>
-            <p class="docs-desc">
-              Contract scope (auth, errors, pagination, CORS), test client
-              comparison, and TypeScript SDK generation recipes.
-            </p>
-            <span class="badge">Guide</span>
-          </a>
+          {_default_handoff_card(handoff_cards[0], "⬇️")}
+          {_default_handoff_card(handoff_cards[1], "🧭")}
         </div>
       </section>
     </div>
   </body>
 </html>"""
+
+
+def _default_card(card: dict[str, str], icon: str) -> str:
+    badge_class = "badge" if card["kind"] == "primary" else "badge muted"
+    return f"""
+    <a href="{card["href"]}" class="docs-card">
+      <span style="font-size:3rem; display:block; text-align:center; margin-bottom:16px;">{icon}</span>
+      <div class="docs-title" style="text-align:center;">{card["title"]}</div>
+      <p class="docs-desc" style="text-align:center;">{card["tagline"]}</p>
+      <div style="text-align:center;"><span class="{badge_class}">{card["label"]}</span></div>
+    </a>"""
+
+
+def _default_handoff_card(card: dict[str, str], icon: str) -> str:
+    target = ' target="_blank" rel="noopener"' if card["external"] == "true" else ""
+    download = " download" if card["external"] == "false" else ""
+    return f"""
+    <a href="{card["href"]}" class="docs-card"{target}{download}>
+      <span style="font-size:3rem; display:block; text-align:center; margin-bottom:16px;">{icon}</span>
+      <div class="docs-title" style="text-align:center;">{card["title"]}</div>
+      <p class="docs-desc" style="text-align:center;">{card["tagline"]}</p>
+      <div style="text-align:center;"><span class="badge">{card["label"]}</span></div>
+    </a>"""
+
+
+def _preview_bar(active: str) -> str:
+    """Render a tiny floating bar that lets the reviewer hop between previews.
+
+    The bar is preview-only. Once the redesign is picked, this helper plus
+    `?theme=` dispatch will be removed and the chosen renderer becomes the
+    sole `_render` for `/docs`.
+    """
+    items = [
+        ("default", "Current"),
+        ("brutalist", "Brutalist"),
+        ("editorial", "Editorial"),
+        ("minimal", "Minimal"),
+        ("mac", "Mac"),
+    ]
+    rendered = []
+    for key, label in items:
+        href = "/docs" if key == "default" else f"/docs?theme={key}"
+        klass = "active" if key == active else ""
+        rendered.append(f'<a href="{href}" class="{klass}">{label}</a>')
+    return f'<div class="preview-bar">Preview · {" ".join(rendered)}</div>'
+
+
+# ---------------------------------------------------------------------------
+# Brutalist Terminal — black background, monospace, single-line frame, no
+# gradients / shadows / emojis. Reads like a TUI panel.
+# ---------------------------------------------------------------------------
+
+
+def _render_brutalist(
+    docs_cards: list[dict[str, str]],
+    handoff_cards: list[dict[str, str]],
+) -> str:
+    rows = "\n".join(_brutalist_row(c) for c in docs_cards)
+    handoff_rows = "\n".join(_brutalist_row(c) for c in handoff_cards)
+    return f"""
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>fastapi-agent-blueprint :: docs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+      :root {{
+        --bg: #0a0a0a;
+        --fg: #e6e6e6;
+        --muted: #7a7a7a;
+        --border: #2a2a2a;
+        --border-hover: #4a4a4a;
+        --accent: #e6c300;
+      }}
+      body {{
+        font-family: 'JetBrains Mono', 'SF Mono', 'Menlo', 'Consolas', monospace;
+        background: var(--bg); color: var(--fg);
+        min-height: 100vh; padding: 48px 24px; line-height: 1.55;
+        font-size: 14px;
+      }}
+      .frame {{ max-width: 760px; margin: 0 auto; }}
+      .head {{ border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 0; }}
+      .head .title {{ color: var(--fg); font-weight: 600; }}
+      .head .meta {{ color: var(--muted); font-size: 12px; margin-top: 4px; }}
+      .section-head {{
+        border: 1px solid var(--border); border-top: none;
+        padding: 12px 24px; color: var(--muted); font-size: 12px;
+        text-transform: uppercase; letter-spacing: 0.1em;
+      }}
+      .row {{
+        display: block; padding: 18px 24px;
+        border: 1px solid var(--border); border-top: none;
+        text-decoration: none; color: var(--fg); transition: border-color 0.12s linear;
+      }}
+      .row:hover {{ border-color: var(--border-hover); }}
+      .row .marker {{ color: var(--muted); margin-right: 8px; }}
+      .row .name {{ font-weight: 600; }}
+      .row .desc {{ color: var(--muted); margin-top: 4px; font-size: 13px; }}
+      .row .label {{ color: var(--accent); font-size: 11px; margin-top: 8px; display: inline-block; }}
+      .row .label.muted {{ color: var(--muted); }}
+      .row.last {{ border-bottom: 1px solid var(--border); }}
+      .preview-bar {{
+        position: fixed; top: 12px; right: 12px;
+        background: var(--bg); border: 1px solid var(--border);
+        padding: 6px 10px; font-size: 12px; display: flex; gap: 6px; align-items: center;
+      }}
+      .preview-bar .lbl {{ color: var(--muted); margin-right: 4px; }}
+      .preview-bar a {{ color: var(--muted); text-decoration: none; padding: 2px 6px; }}
+      .preview-bar a:hover {{ color: var(--fg); }}
+      .preview-bar a.active {{ color: var(--accent); }}
+    </style>
+  </head>
+  <body>
+    {_preview_bar("brutalist")}
+    <div class="frame">
+      <div class="head">
+        <div class="title">fastapi-agent-blueprint :: api docs</div>
+        <div class="meta">5 viewers · 2 handoff actions · selector @ /docs</div>
+      </div>
+      <div class="section-head">viewer</div>
+{rows}
+      <div class="section-head">handoff</div>
+{handoff_rows}
+    </div>
+  </body>
+</html>"""
+
+
+def _brutalist_row(card: dict[str, str]) -> str:
+    label_class = "label" if card.get("kind", "primary") == "primary" else "label muted"
+    is_external = card.get("external", "false") == "true"
+    target = ' target="_blank" rel="noopener"' if is_external else ""
+    download = (
+        " download"
+        if card.get("external") == "false" and card["key"] == "download"
+        else ""
     )
+    return f"""      <a class="row" href="{card["href"]}"{target}{download}>
+        <div><span class="marker">&gt;</span><span class="name">{card["title"]}</span></div>
+        <div class="desc">{card["tagline"]}</div>
+        <div class="{label_class}">[{card["label"].lower()}]</div>
+      </a>"""
+
+
+# ---------------------------------------------------------------------------
+# Editorial / Print — cream background, serif headings, horizontal rules
+# instead of cards. Reads like a magazine table of contents.
+# ---------------------------------------------------------------------------
+
+
+def _render_editorial(
+    docs_cards: list[dict[str, str]],
+    handoff_cards: list[dict[str, str]],
+) -> str:
+    rows = "\n".join(_editorial_row(c) for c in docs_cards)
+    handoff_rows = "\n".join(_editorial_row(c) for c in handoff_cards)
+    return f"""
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>FastAPI Agent Blueprint — API Documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+      * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+      :root {{
+        --bg: #f7f3ec;
+        --fg: #1a1a1a;
+        --muted: #6b6353;
+        --rule: #d4cdb8;
+        --link: #1a1a1a;
+        --link-hover: #5a3d1e;
+      }}
+      body {{
+        background: var(--bg); color: var(--fg);
+        font-family: 'Inter', -apple-system, system-ui, sans-serif;
+        min-height: 100vh; padding: 80px 24px 120px; line-height: 1.6;
+      }}
+      .frame {{ max-width: 720px; margin: 0 auto; }}
+      .masthead {{ border-bottom: 1px solid var(--rule); padding-bottom: 24px; margin-bottom: 32px; }}
+      .masthead .eyebrow {{
+        font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em;
+        color: var(--muted); margin-bottom: 12px;
+      }}
+      .masthead h1 {{
+        font-family: 'Newsreader', Georgia, serif;
+        font-size: 2.6rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em;
+      }}
+      .masthead .lede {{
+        margin-top: 12px; color: var(--muted); font-size: 1.05rem; max-width: 560px;
+      }}
+      .section-title {{
+        font-family: 'Newsreader', Georgia, serif;
+        font-size: 1.2rem; font-weight: 600; margin: 48px 0 16px;
+        color: var(--fg); padding-bottom: 8px; border-bottom: 1px solid var(--rule);
+      }}
+      .row {{
+        display: block; padding: 22px 0; border-bottom: 1px solid var(--rule);
+        text-decoration: none; color: var(--link); transition: color 0.15s ease;
+      }}
+      .row:hover {{ color: var(--link-hover); }}
+      .row .row-head {{ display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }}
+      .row .row-title {{
+        font-family: 'Newsreader', Georgia, serif; font-size: 1.45rem; font-weight: 600; line-height: 1.2;
+      }}
+      .row .arrow {{ color: var(--muted); font-size: 1.1rem; }}
+      .row:hover .arrow {{ color: var(--link-hover); }}
+      .row .row-desc {{ color: var(--muted); margin-top: 6px; font-size: 0.98rem; }}
+      .row .row-label {{
+        margin-top: 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em;
+        color: var(--muted);
+      }}
+      .preview-bar {{
+        position: fixed; top: 16px; right: 16px;
+        background: var(--bg); border: 1px solid var(--rule);
+        padding: 6px 10px; font-size: 12px; display: flex; gap: 6px; align-items: center;
+        font-family: 'Inter', sans-serif;
+      }}
+      .preview-bar .lbl {{ color: var(--muted); margin-right: 4px; }}
+      .preview-bar a {{ color: var(--muted); text-decoration: none; padding: 2px 6px; }}
+      .preview-bar a:hover {{ color: var(--fg); }}
+      .preview-bar a.active {{ color: var(--fg); font-weight: 500; }}
+    </style>
+  </head>
+  <body>
+    {_preview_bar("editorial")}
+    <div class="frame">
+      <div class="masthead">
+        <div class="eyebrow">FastAPI Agent Blueprint · API Documentation</div>
+        <h1>Five readers, two handoffs.</h1>
+        <p class="lede">
+          The browser viewers are for reading. For the parts that need persisted
+          state — tokens, environments, request bodies — hand off the spec.
+        </p>
+      </div>
+      <div class="section-title">Viewers</div>
+{rows}
+      <div class="section-title">Handoff</div>
+{handoff_rows}
+    </div>
+  </body>
+</html>"""
+
+
+def _editorial_row(card: dict[str, str]) -> str:
+    is_external = card.get("external", "false") == "true"
+    target = ' target="_blank" rel="noopener"' if is_external else ""
+    download = (
+        " download"
+        if card.get("external") == "false" and card["key"] == "download"
+        else ""
+    )
+    return f"""      <a class="row" href="{card["href"]}"{target}{download}>
+        <div class="row-head">
+          <div class="row-title">{card["title"]}</div>
+          <div class="arrow">&rarr;</div>
+        </div>
+        <div class="row-desc">{card["tagline"]}</div>
+        <div class="row-label">{card["label"]}</div>
+      </a>"""
+
+
+# ---------------------------------------------------------------------------
+# Minimal Native — white background, system fonts, GitHub-flavoured 1px boxes.
+# Quiet and forgettable in the best way.
+# ---------------------------------------------------------------------------
+
+
+def _render_minimal(
+    docs_cards: list[dict[str, str]],
+    handoff_cards: list[dict[str, str]],
+) -> str:
+    rows = "\n".join(_minimal_row(c) for c in docs_cards)
+    handoff_rows = "\n".join(_minimal_row(c) for c in handoff_cards)
+    return f"""
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>API Documentation — fastapi-agent-blueprint</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+      :root {{
+        --bg: #ffffff;
+        --fg: #0e0e10;
+        --muted: #57606a;
+        --border: #d0d7de;
+        --border-hover: #0969da;
+        --accent: #0969da;
+      }}
+      body {{
+        background: var(--bg); color: var(--fg);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+        min-height: 100vh; padding: 64px 24px; line-height: 1.5;
+        font-size: 15px;
+      }}
+      .frame {{ max-width: 720px; margin: 0 auto; }}
+      .head h1 {{ font-size: 1.6rem; font-weight: 600; margin-bottom: 4px; }}
+      .head .meta {{ color: var(--muted); font-size: 13px; }}
+      .section-head {{
+        margin: 36px 0 12px; font-size: 12px; font-weight: 600; color: var(--muted);
+        text-transform: uppercase; letter-spacing: 0.04em;
+      }}
+      .list {{ display: flex; flex-direction: column; gap: 8px; }}
+      .row {{
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        padding: 14px 16px; border: 1px solid var(--border); border-radius: 6px;
+        text-decoration: none; color: var(--fg); transition: border-color 0.12s ease;
+      }}
+      .row:hover {{ border-color: var(--border-hover); }}
+      .row .row-text .name {{ font-weight: 600; font-size: 0.98rem; }}
+      .row .row-text .desc {{ color: var(--muted); font-size: 13px; margin-top: 2px; }}
+      .row .row-meta {{ display: flex; align-items: center; gap: 10px; flex-shrink: 0; }}
+      .row .label {{
+        font-size: 11px; color: var(--muted); border: 1px solid var(--border);
+        padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+      }}
+      .row .label.primary {{ color: var(--accent); border-color: var(--accent); }}
+      .row .arrow {{ color: var(--muted); font-size: 14px; }}
+      .row:hover .arrow {{ color: var(--accent); }}
+      .preview-bar {{
+        position: fixed; top: 12px; right: 12px;
+        background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+        padding: 6px 10px; font-size: 12px; display: flex; gap: 6px; align-items: center;
+      }}
+      .preview-bar .lbl {{ color: var(--muted); margin-right: 4px; }}
+      .preview-bar a {{ color: var(--muted); text-decoration: none; padding: 2px 6px; border-radius: 3px; }}
+      .preview-bar a:hover {{ color: var(--fg); }}
+      .preview-bar a.active {{ color: var(--accent); font-weight: 500; }}
+    </style>
+  </head>
+  <body>
+    {_preview_bar("minimal")}
+    <div class="frame">
+      <div class="head">
+        <h1>API Documentation</h1>
+        <div class="meta">fastapi-agent-blueprint · dev environment · /docs</div>
+      </div>
+      <div class="section-head">Viewers</div>
+      <div class="list">
+{rows}
+      </div>
+      <div class="section-head">Handoff</div>
+      <div class="list">
+{handoff_rows}
+      </div>
+    </div>
+  </body>
+</html>"""
+
+
+def _minimal_row(card: dict[str, str]) -> str:
+    label_class = (
+        "label primary" if card.get("kind", "primary") == "primary" else "label"
+    )
+    is_external = card.get("external", "false") == "true"
+    target = ' target="_blank" rel="noopener"' if is_external else ""
+    download = (
+        " download"
+        if card.get("external") == "false" and card["key"] == "download"
+        else ""
+    )
+    return f"""        <a class="row" href="{card["href"]}"{target}{download}>
+          <div class="row-text">
+            <div class="name">{card["title"]}</div>
+            <div class="desc">{card["tagline"]}</div>
+          </div>
+          <div class="row-meta">
+            <span class="{label_class}">{card["label"]}</span>
+            <span class="arrow">&rsaquo;</span>
+          </div>
+        </a>"""
+
+
+# ---------------------------------------------------------------------------
+# Mac System Native — System Settings dialog inspired. Translucent panel,
+# SF font stack, traffic-light header, compact list rows with chevrons.
+# ---------------------------------------------------------------------------
+
+
+def _render_mac(
+    docs_cards: list[dict[str, str]],
+    handoff_cards: list[dict[str, str]],
+) -> str:
+    rows = "\n".join(_mac_row(c) for c in docs_cards)
+    handoff_rows = "\n".join(_mac_row(c) for c in handoff_cards)
+    return f"""
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>API Documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+      :root {{
+        --bg: #e6e6ec;
+        --panel: rgba(246, 246, 248, 0.92);
+        --panel-border: rgba(0,0,0,0.08);
+        --fg: #1d1d1f;
+        --muted: #6b6b70;
+        --row-border: rgba(0,0,0,0.06);
+        --accent: #007aff;
+        --row-bg: rgba(255,255,255,0.6);
+      }}
+      body {{
+        background: linear-gradient(180deg, #d8d8df 0%, #ececf2 100%); color: var(--fg);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+        min-height: 100vh; padding: 48px 24px;
+        display: flex; align-items: flex-start; justify-content: center;
+        font-size: 14px;
+      }}
+      .window {{
+        max-width: 640px; width: 100%;
+        background: var(--panel); backdrop-filter: blur(20px);
+        border: 1px solid var(--panel-border); border-radius: 12px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.6) inset;
+        overflow: hidden;
+      }}
+      .titlebar {{
+        display: flex; align-items: center; padding: 12px 16px;
+        border-bottom: 1px solid var(--row-border); background: rgba(255,255,255,0.4);
+      }}
+      .traffic {{ display: flex; gap: 8px; }}
+      .traffic span {{ width: 12px; height: 12px; border-radius: 50%; display: block; }}
+      .traffic .red {{ background: #ff5f57; }}
+      .traffic .yellow {{ background: #febc2e; }}
+      .traffic .green {{ background: #28c840; }}
+      .titlebar .title {{ flex: 1; text-align: center; font-weight: 600; font-size: 13px; color: var(--fg); }}
+      .titlebar .spacer {{ width: 52px; }}
+      .body {{ padding: 24px 24px 28px; }}
+      .body h2 {{ font-size: 1.5rem; font-weight: 600; margin-bottom: 4px; letter-spacing: -0.01em; }}
+      .body .subtitle {{ color: var(--muted); margin-bottom: 24px; font-size: 13px; }}
+      .group {{
+        background: var(--row-bg); border: 1px solid var(--row-border); border-radius: 10px;
+        overflow: hidden; margin-bottom: 16px;
+      }}
+      .group-label {{
+        font-size: 11px; font-weight: 500; color: var(--muted);
+        text-transform: uppercase; letter-spacing: 0.06em;
+        padding: 0 4px 6px; margin-top: 8px;
+      }}
+      .row {{
+        display: flex; align-items: center; gap: 12px;
+        padding: 11px 14px; border-bottom: 1px solid var(--row-border);
+        text-decoration: none; color: var(--fg); transition: background 0.1s ease;
+      }}
+      .row:last-child {{ border-bottom: none; }}
+      .row:hover {{ background: rgba(0,122,255,0.08); }}
+      .row .row-text {{ flex: 1; }}
+      .row .row-text .name {{ font-weight: 500; font-size: 14px; }}
+      .row .row-text .desc {{ color: var(--muted); font-size: 12px; margin-top: 1px; }}
+      .row .label {{
+        font-size: 11px; color: var(--muted); padding: 2px 8px;
+        border-radius: 5px; background: rgba(0,0,0,0.05); white-space: nowrap;
+      }}
+      .row .label.primary {{ color: white; background: var(--accent); }}
+      .row .chevron {{ color: var(--muted); font-size: 14px; flex-shrink: 0; }}
+      .preview-bar {{
+        position: fixed; top: 14px; right: 14px;
+        background: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
+        border: 1px solid var(--panel-border); border-radius: 8px;
+        padding: 6px 10px; font-size: 12px; display: flex; gap: 6px; align-items: center;
+      }}
+      .preview-bar .lbl {{ color: var(--muted); margin-right: 4px; }}
+      .preview-bar a {{ color: var(--muted); text-decoration: none; padding: 2px 6px; border-radius: 4px; }}
+      .preview-bar a:hover {{ color: var(--fg); }}
+      .preview-bar a.active {{ color: white; background: var(--accent); }}
+    </style>
+  </head>
+  <body>
+    {_preview_bar("mac")}
+    <div class="window">
+      <div class="titlebar">
+        <div class="traffic">
+          <span class="red"></span><span class="yellow"></span><span class="green"></span>
+        </div>
+        <div class="title">API Documentation</div>
+        <div class="spacer"></div>
+      </div>
+      <div class="body">
+        <h2>Pick a viewer</h2>
+        <p class="subtitle">Or hand the spec off to a real client below.</p>
+        <div class="group-label">Viewers</div>
+        <div class="group">
+{rows}
+        </div>
+        <div class="group-label">Handoff</div>
+        <div class="group">
+{handoff_rows}
+        </div>
+      </div>
+    </div>
+  </body>
+</html>"""
+
+
+def _mac_row(card: dict[str, str]) -> str:
+    label_class = (
+        "label primary" if card.get("kind", "primary") == "primary" else "label"
+    )
+    is_external = card.get("external", "false") == "true"
+    target = ' target="_blank" rel="noopener"' if is_external else ""
+    download = (
+        " download"
+        if card.get("external") == "false" and card["key"] == "download"
+        else ""
+    )
+    return f"""          <a class="row" href="{card["href"]}"{target}{download}>
+            <div class="row-text">
+              <div class="name">{card["title"]}</div>
+              <div class="desc">{card["tagline"]}</div>
+            </div>
+            <span class="{label_class}">{card["label"]}</span>
+            <span class="chevron">&rsaquo;</span>
+          </a>"""
+
+
+# ---------------------------------------------------------------------------
+# Spec download + individual UI mounts (unchanged from PR #156).
+# ---------------------------------------------------------------------------
 
 
 @router.get(
@@ -360,7 +761,6 @@ def openapi_download(request: Request):
 def scalar_docs(request: Request):
     root_path = request.scope.get("root_path", "")
     spec_url = f"{root_path}{request.app.openapi_url}"
-
     return HTMLResponse(
         f"""
 <!doctype html>
@@ -376,7 +776,6 @@ def scalar_docs(request: Request):
     <script>
       Scalar.createApiReference('#api', {{
         url: '{spec_url}',
-        // proxyUrl: 'https://proxy.scalar.com' // Optional CORS bypass
       }});
     </script>
   </body>
@@ -392,7 +791,6 @@ def scalar_docs(request: Request):
 def elements_docs(request: Request):
     root_path = request.scope.get("root_path", "")
     spec_url = f"{root_path}{request.app.openapi_url}"
-
     return HTMLResponse(
         f"""
 <!doctype html>
@@ -418,7 +816,6 @@ def elements_docs(request: Request):
 def rapidoc_docs(request: Request):
     root_path = request.scope.get("root_path", "")
     spec_url = f"{root_path}{request.app.openapi_url}"
-
     return HTMLResponse(
         f"""
 <!doctype html>
