@@ -25,18 +25,43 @@ async def test_docs_selector_returns_html():
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
     body = response.text
+    # Hero + recommended viewers + handoff link must be present on every load.
     assert "API Documentation" in body
     assert "Stoplight Elements" in body
     assert "Scalar API Reference" in body
     assert "Recommended" in body
-    assert "Share with Frontend" in body
-    # The download card must point at the dedicated attachment route, not the
+    # The two viewer rows must carry the primary class so the accent strip
+    # actually renders; secondary handoff/viewer rows must keep their class.
+    assert "row primary" in body
+    assert 'class="row"' in body
+    # Light/dark theme system + toggle must be wired in.
+    assert "data-theme" in body
+    assert ':root[data-theme="dark"]' in body
+    assert "prefers-color-scheme: dark" in body
+    assert 'id="theme-toggle"' in body
+    assert "aria-pressed" in body
+    assert "localStorage" in body
+    # AI-pattern clichés must stay out of the production surface.
+    for cliche in (
+        "linear-gradient",
+        "-webkit-background-clip",
+        "backdrop-filter",
+    ):
+        assert cliche not in body, f"AI-pattern cliche leaked: {cliche}"
+
+
+@pytest.mark.asyncio
+async def test_docs_selector_links_to_handoff_and_download():
+    async with _client() as client:
+        response = await client.get("/docs")
+    body = response.text
+    # The download row must point at the dedicated attachment route, not the
     # bare /openapi.json (which would render inline). Match the href tail to
     # stay agnostic to root_path prefixing.
     download_match = re.search(
-        r'<a\s+href="([^"]*)"\s+class="docs-card"\s+download', body
+        r'<a\s+class="row[^"]*"\s+href="([^"]*openapi-download\.json)"', body
     )
-    assert download_match is not None
+    assert download_match is not None, "download row href missing"
     assert download_match.group(1).endswith("/openapi-download.json")
     # Handoff guide link goes out to GitHub main; protect the path against
     # silent renames.
@@ -68,67 +93,39 @@ async def test_openapi_download_matches_openapi_json():
 
 
 @pytest.mark.asyncio
-async def test_docs_selector_refined_theme_structure():
-    """Refined Modern carries a distinct set of structural markers.
-
-    The single-line marker check used by the parametrized test is not strong
-    enough to catch silent regressions in the Refined renderer (the toggle
-    JS, the dark-mode CSS variables, the primary card strip, the toolbar
-    aria attributes). This case asserts on the structural surface.
+async def test_legacy_theme_query_falls_through_to_default():
+    """Old preview URLs (`/docs?theme=brutalist` etc.) are no longer routed
+    to alternate renderers, but the dispatch was removed silently — FastAPI
+    drops unknown query params, so the server must return the default
+    selector unchanged. This test locks the graceful fallthrough so a future
+    edit cannot accidentally re-introduce a stale renderer behind the same
+    URL.
     """
     async with _client() as client:
-        response = await client.get("/docs?theme=refined")
-    assert response.status_code == 200
-    body = response.text
-    # Theme identifier (kept for grep across renderers).
-    assert "theme: refined-modern" in body
-    # CSS variable scheme + dark override are wired up.
-    assert "data-theme" in body
-    assert ':root[data-theme="dark"]' in body
-    assert "prefers-color-scheme: dark" in body
-    # Toggle button is present, accessible, and JS-controlled.
-    assert 'id="theme-toggle"' in body
-    assert "aria-pressed" in body
-    assert "localStorage" in body
-    # Primary card strip is the visual hierarchy carrier.
-    assert "card primary" in body
-    assert "card secondary" in body
-    # AI-pattern clichés are out of the Refined output.
-    refined_section_start = body.index("theme: refined-modern")
-    refined_section = body[refined_section_start:]
-    for cliche in (
-        "linear-gradient",
-        "-webkit-background-clip",
-        "backdrop-filter",
-    ):
-        assert cliche not in refined_section, f"AI-pattern cliche leaked: {cliche}"
+        baseline = await client.get("/docs")
+        legacy = await client.get("/docs?theme=brutalist")
+    assert baseline.status_code == 200
+    assert legacy.status_code == 200
+    assert baseline.text == legacy.text
 
 
 @pytest.mark.parametrize(
-    "theme,marker",
+    "path",
     [
-        ("brutalist", "JetBrains Mono"),
-        ("editorial", "Newsreader"),
-        ("minimal", "fastapi-agent-blueprint · dev environment"),
-        ("mac", "traffic"),
-        ("refined", "theme: refined-modern"),
+        "/docs-swagger",
+        "/docs-redoc",
+        "/docs-scalar",
+        "/docs-elements",
+        "/docs-rapidoc",
     ],
 )
 @pytest.mark.asyncio
-async def test_docs_selector_preview_themes(theme: str, marker: str):
-    """Each preview theme renders a distinct page that contains a theme-specific marker.
-
-    Preview themes are temporary — once one is picked as the production
-    redesign, the rest plus the `?theme=` dispatch get removed and these
-    parametrized cases drop out of the suite.
+async def test_docs_ui_routes_serve_html(path: str):
+    """The selector links to five docs UI routes; verify each one is wired up
+    and serves HTML (CDN renderers are loaded client-side, so the response
+    body is a small bootstrap page rather than the full spec render).
     """
     async with _client() as client:
-        response = await client.get(f"/docs?theme={theme}")
-    assert response.status_code == 200
+        response = await client.get(path)
+    assert response.status_code == 200, f"{path} did not return 200"
     assert "text/html" in response.headers["content-type"]
-    body = response.text
-    assert marker in body
-    # Every theme must surface the two recommended viewers and the handoff link.
-    assert "Stoplight Elements" in body
-    assert "Scalar" in body
-    assert "/docs/frontend-handoff.md" in body

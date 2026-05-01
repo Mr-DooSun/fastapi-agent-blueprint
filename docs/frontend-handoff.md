@@ -204,7 +204,7 @@ backend release to surface drift early.
 
 ## 3. Test Client Choice
 
-The browser docs UIs (Swagger / Scalar / Stoplight Elements / RapiDoc) lose
+The browser docs UIs (Swagger / ReDoc / Scalar / Stoplight Elements / RapiDoc) lose
 their state on reload. For any workflow where you need to keep tokens,
 environments, or saved request bodies, use a real client. Importing the
 OpenAPI spec gives you a starting collection in any of these tools.
