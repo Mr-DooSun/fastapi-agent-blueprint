@@ -134,3 +134,4 @@ specialisations in
 | #152 | CRUD Data Validation Sync | #10 | [pr-152-crud-data-validation-sync.md](pr-152-crud-data-validation-sync.md) |
 | #153 | JWT authentication domain | #4 | [pr-153-jwt-auth-domain.md](pr-153-jwt-auth-domain.md) |
 | #155 | NiceGUI admin JWT RBAC migration | #154 | [pr-155-nicegui-admin-jwt-rbac.md](pr-155-nicegui-admin-jwt-rbac.md) |
+| #158 | Bridge to ADR 047 — governor-review-log right-sizing (last entry) | #157 | [pr-158-bridge-adr-047.md](pr-158-bridge-adr-047.md) |
