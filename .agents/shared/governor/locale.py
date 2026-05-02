@@ -85,16 +85,16 @@ _LOCALE_KO: dict[str, str] = {
     "GOVERNOR_REMINDER_WITH_PR": "\n".join(
         [
             "[completion-gate] 거버너 관련 변경이 감지되었습니다 (Pillar 7).",
-            "PR #{pr}에 해당하는 governor-review-log 항목이 없습니다.",
-            "예상 경로: docs/ai/shared/governor-review-log/pr-{pr}-<slug>.md",
-            "참조: docs/ai/shared/governor-review-log/README.md",
+            "PR #{pr} 본문에 `## Governor Footer` 블록이 있어야 합니다.",
+            "CI는 tools/check_governor_footer.py --require-governor-footer 로 검증합니다.",
+            "참조: docs/history/047-governor-review-provenance-consolidation.md (D2/D5).",
         ]
     ),
     "GOVERNOR_REMINDER_NO_PR": "\n".join(
         [
             "[completion-gate] 거버너 관련 변경이 감지되었습니다 (Pillar 7).",
-            "PR 번호를 알 수 없습니다. 먼저 PR을 연 뒤 governor-review-log/ 항목을 추가하세요.",
-            "참조: docs/ai/shared/governor-review-log/README.md",
+            "PR 번호를 알 수 없습니다. 먼저 PR을 연 뒤 본문에 `## Governor Footer` 블록을 채우세요.",
+            "참조: docs/history/047-governor-review-provenance-consolidation.md (D2/D5).",
         ]
     ),
     "SYNC_STRONG_HEADER": "=== /sync-guidelines 강력 권장 ===",

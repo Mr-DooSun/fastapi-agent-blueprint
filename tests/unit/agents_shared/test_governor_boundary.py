@@ -245,7 +245,13 @@ def test_gatestatus_variants_referenced_by_completion_gate_shims() -> None:
         "match": "match_log_entry",  # match/mismatch/missing/unknown share entry
     }
     # Sanity: GateStatus must contain every variant we expect to see.
+    # ``silent_sync_cosmetic`` (ADR 047 D4) lives entirely inside ``evaluate_gate``;
+    # the shim's ``governor_changing_segment`` flow does not need a separate branch
+    # signal because the gate returns ``governor_changing=False`` for it just like
+    # any other ``silent_*`` status — the shim's existing ``if not result.governor_changing``
+    # path silences it already.
     expected_variants = set(expected_branch_signals) | {
+        "silent_sync_cosmetic",
         "mismatch",
         "missing",
         "unknown",

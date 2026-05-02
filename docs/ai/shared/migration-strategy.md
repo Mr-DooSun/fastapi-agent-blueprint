@@ -103,13 +103,14 @@ The shared-policy part is identical across tools; the adapters differ because th
 - Output is merged with sync-reminder in a single Stop event (no duplicate Stop hooks).
 - Gate respects auto-escapes (changed_files == 0, **general** doc-only, comment-only) and exception tokens. Policy/harness doc paths are **not** auto-escaped (see `target-operating-model.md` §3 carve-out).
 - Sample workflow traces from `target-operating-model.md` Appendix B can be reproduced under the gate without false-positive warnings.
-- **Governor-changing PR check** (Pillar 7): when `changed_files` intersects the trigger globs in [`governor-paths.md`](governor-paths.md) (Tier A / B / C minus exclusions) **AND** no `docs/ai/shared/governor-review-log/pr-{N}-*` entry exists or is being created/modified in the same session **whose `{N}` matches the current PR number**, the gate emits a hard reminder pointing to `governor-review-log/README.md`. The PR-number match is essential: editing an unrelated old log entry must not satisfy the gate (Round-4 R4.4). This is a reminder, not a hard block — consistent with issue #117 Non-Goals.
-- The log-only backfill exclusion in [`governor-paths.md`](governor-paths.md) applies: a PR whose changed files lie entirely under `governor-review-log/` extending an existing entry does not need a new self-log entry (Round-4 R4.5).
+- **Governor-changing PR check** (Pillar 7, post-ADR-047): when `changed_files` intersects the trigger globs in [`governor-paths.md`](governor-paths.md) (Tier A / B / C minus exclusions, including the new `/sync-guidelines` cosmetic carve-out from ADR 047 D4), the gate emits a reminder pointing to the PR-description `## Governor Footer` requirement. The local Stop hook cannot inspect the PR body, so the actual presence + shape check happens in the `Governor Footer Lint` CI workflow (`tools/check_governor_footer.py --require-governor-footer`); the Stop hook reminder is informational and points at the same authority. This is a reminder, not a hard block — consistent with issue #117 Non-Goals.
+- The log-only backfill exclusion in [`governor-paths.md`](governor-paths.md) applies: a PR whose changed files lie entirely under `governor-review-log/` (extending or correcting an existing entry in the closed historical archive) is exempt.
+- The sync-cosmetic exclusion (ADR 047 D4) applies: a PR whose governor-matching subset is limited to `Last synced:` lines and `Recent Major Changes` table rows on the three covered `.claude/rules/*.md` files is exempt.
 - Sample runs to validate the gate:
-  - Session edits `AGENTS.md` without touching `governor-review-log/pr-{currentN}-*` → reminder surfaces.
-  - Session edits `AGENTS.md` AND `governor-review-log/pr-{currentN}-*.md` → no reminder.
-  - Session edits only `governor-review-log/pr-100-*.md` (backfill of merged old PR) → no reminder.
-  - Session edits `AGENTS.md` AND `governor-review-log/pr-99-*.md` (different PR number) → reminder surfaces.
+  - Session edits `AGENTS.md` only → reminder surfaces (CI footer linter then enforces presence + shape).
+  - Session edits `src/user/...` plus `.claude/rules/project-status.md` `Last synced:` line → no reminder (sync-cosmetic exemption applies to the governor-matching subset).
+  - Session edits `AGENTS.md` plus `.claude/rules/project-status.md` `Last synced:` line → reminder surfaces (subset includes AGENTS.md, which is not in the cosmetic set).
+  - Session edits only `governor-review-log/pr-100-*.md` (errata to a frozen entry) → no reminder.
 
 **Rollback**: revert the Phase 4 PR. The merge with sync-reminder is structured so the existing reminder remains if the gate logic is removed.
 

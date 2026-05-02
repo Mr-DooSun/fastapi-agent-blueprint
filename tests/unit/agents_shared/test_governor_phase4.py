@@ -243,9 +243,24 @@ def test_hooks_import_shared_reminder_constants() -> None:
     assert "from governor" in claude_text
     assert "from governor" in codex_text
     # Shared constant still carries the canonical reminder line.
-    # PR #131 translated the line from Korean to English under AGENTS.md
-    # § Language Policy; the inline-redeclaration ban remains language-agnostic.
-    assert "No governor-review-log entry matches PR #{pr}." in GOVERNOR_REMINDER_WITH_PR
+    # ADR 047 D2 retargets the reminder from the per-PR governor-review-log
+    # archive to the PR-description Governor Footer block; the line below is
+    # the canonical post-ADR-047 wording. The inline-redeclaration ban remains
+    # language-agnostic.
+    assert (
+        "PR #{pr} description must contain a `## Governor Footer` block."
+        in GOVERNOR_REMINDER_WITH_PR
+    )
     # Inline redeclaration of the canonical line MUST NOT exist in shims.
-    assert claude_text.count("No governor-review-log entry matches PR #{pr}.") == 0
-    assert codex_text.count("No governor-review-log entry matches PR #{pr}.") == 0
+    assert (
+        claude_text.count(
+            "PR #{pr} description must contain a `## Governor Footer` block."
+        )
+        == 0
+    )
+    assert (
+        codex_text.count(
+            "PR #{pr} description must contain a `## Governor Footer` block."
+        )
+        == 0
+    )

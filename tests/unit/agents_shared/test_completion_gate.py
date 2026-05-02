@@ -369,3 +369,88 @@ def test_governor_changing_segment_no_pr_with_staged_entry_silent(
     monkeypatch.setattr(codex_gate, "_read_latest_token", lambda _: None)
     seg = codex_gate.governor_changing_segment()
     assert seg is None
+
+
+# ---------------------------------------------------------------------------
+# ADR 047 D4 — sync-cosmetic carve-out wired into shim hooks
+# ---------------------------------------------------------------------------
+def test_claude_shim_silences_on_sync_cosmetic_subset(claude_gate, monkeypatch) -> None:
+    """Self-loop scenario from ADR 047 — feature PR + cosmetic /sync-guidelines edit.
+
+    Without the shim wiring, the Claude Stop hook would emit a Pillar 7
+    reminder for AGENTS.md / .claude/rules/** despite the cosmetic-only
+    nature of the rules edit. The wired shim must consult
+    `_shared_is_sync_cosmetic_only` and silence.
+    """
+
+    monkeypatch.setattr(
+        claude_gate,
+        "_changed_files",
+        lambda: [
+            "src/user/domain/services/user_service.py",
+            ".claude/rules/project-status.md",
+        ],
+    )
+    monkeypatch.setattr(claude_gate, "_read_latest_token", lambda _: None)
+    monkeypatch.setattr(claude_gate, "pr_number_from_branch", lambda: 200)
+    monkeypatch.setattr(
+        claude_gate, "_shared_is_sync_cosmetic_only", lambda _subset: True
+    )
+
+    assert claude_gate.governor_changing_segment() is None
+
+
+def test_claude_shim_triggers_when_sync_cosmetic_returns_false(
+    claude_gate, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        claude_gate,
+        "_changed_files",
+        lambda: ["AGENTS.md", ".claude/rules/project-status.md"],
+    )
+    monkeypatch.setattr(claude_gate, "_read_latest_token", lambda _: None)
+    monkeypatch.setattr(claude_gate, "pr_number_from_branch", lambda: 201)
+    monkeypatch.setattr(
+        claude_gate, "_shared_is_sync_cosmetic_only", lambda _subset: False
+    )
+
+    seg = claude_gate.governor_changing_segment()
+    assert seg is not None
+    assert "Governor Footer" in seg
+
+
+def test_codex_shim_silences_on_sync_cosmetic_subset(codex_gate, monkeypatch) -> None:
+    monkeypatch.setattr(
+        codex_gate,
+        "changed_files",
+        lambda: [
+            "src/user/domain/services/user_service.py",
+            ".claude/rules/project-status.md",
+        ],
+    )
+    monkeypatch.setattr(codex_gate, "_read_latest_token", lambda _: None)
+    monkeypatch.setattr(codex_gate, "pr_number_from_branch", lambda: 202)
+    monkeypatch.setattr(
+        codex_gate, "_shared_is_sync_cosmetic_only", lambda _subset: True
+    )
+
+    assert codex_gate.governor_changing_segment() is None
+
+
+def test_codex_shim_triggers_when_sync_cosmetic_returns_false(
+    codex_gate, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        codex_gate,
+        "changed_files",
+        lambda: ["AGENTS.md", ".claude/rules/project-status.md"],
+    )
+    monkeypatch.setattr(codex_gate, "_read_latest_token", lambda _: None)
+    monkeypatch.setattr(codex_gate, "pr_number_from_branch", lambda: 203)
+    monkeypatch.setattr(
+        codex_gate, "_shared_is_sync_cosmetic_only", lambda _subset: False
+    )
+
+    seg = codex_gate.governor_changing_segment()
+    assert seg is not None
+    assert "Governor Footer" in seg

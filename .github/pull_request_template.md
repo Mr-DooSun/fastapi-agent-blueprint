@@ -26,50 +26,13 @@
 
 ---
 
-## Governor-Changing PR (delete this section if not applicable)
+## Governor Footer (required for governor-changing PRs — ADR 047)
 
-This section is **required** if your PR is *governor-changing* per [`docs/ai/shared/governor-paths.md`](../docs/ai/shared/governor-paths.md) (Tier A / B / C minus exclusions).
-Otherwise delete the entire section.
+Required if your PR is *governor-changing* per [`docs/ai/shared/governor-paths.md`](../docs/ai/shared/governor-paths.md) (Tier A / B / C minus exclusions). Otherwise set `trigger: no` and the rest of the block is optional (or delete the section entirely).
 
-Source of truth: [`AGENTS.md` § Default Coding Flow](../AGENTS.md#default-coding-flow) + [`docs/ai/shared/governor-paths.md`](../docs/ai/shared/governor-paths.md) + [`docs/ai/shared/governor-review-log/README.md`](../docs/ai/shared/governor-review-log/README.md).
+Source of truth: [`AGENTS.md` § Default Coding Flow](../AGENTS.md#default-coding-flow) + [`docs/ai/shared/governor-paths.md`](../docs/ai/shared/governor-paths.md) + [ADR 047 §D2](../docs/history/047-governor-review-provenance-consolidation.md).
 
-### Triggered files
-
-- [ ] At least one file in `changed_files` matches a Tier A / B / C path in `governor-paths.md`, and no full-set exclusion applies.
-
-### Cross-tool review
-
-- [ ] Codex `gpt-5.5 --sandbox read-only` review completed at least once (plan stage and/or implementation stage).
-- [ ] All R-points addressed or explicitly deferred with rationale.
-- [ ] Final Verdict captured (`merge-ready` / `minor fixes recommended` / `block merge`).
-
-### Self-application proof
-
-- [ ] `/review-architecture` (or its manual equivalent) output captured for the changed surface — `Findings` / `Drift Candidates` / `Sync Required`.
-- [ ] `/sync-guidelines` (or its manual equivalent) output captured — `AUTO-FIX` / `REVIEW` / `Remaining`.
-
-### Review trail artifact
-
-- [ ] `docs/ai/shared/governor-review-log/pr-{NNN}-{slug}.md` added (or existing entry extended) with: Summary, Review Rounds, Inherited Constraints, Self-Application Proof.
-- [ ] `governor-review-log/README.md` Index table updated.
-- [ ] If this PR creates follow-up issues, each follow-up issue body links the new log entry under "Inherited Review Constraints".
-
-### Doc-only escape hygiene
-
-- [ ] If this PR is doc-only, confirm the changes do **not** touch policy / harness docs as listed in [`governor-paths.md`](../docs/ai/shared/governor-paths.md) Tier A. Touching those files disqualifies the doc-only auto-escape — see [`target-operating-model.md` §3](../docs/ai/shared/target-operating-model.md).
-
-### Phase context (Phase 2~5 of #117 only)
-
-- [ ] PR description links the relevant section of [`migration-strategy.md` §1](../docs/ai/shared/migration-strategy.md).
-- [ ] Inherited Constraints (IC-1 ~ IC-9 in [`governor-review-log/pr-125-...`](../docs/ai/shared/governor-review-log/pr-125-hybrid-harness-target-architecture.md)) reviewed; any phase-specific tightening recorded in this PR's log entry.
-
----
-
-## Governor Footer (pilot — ADR 047)
-
-Required from PR B onward; documentation-only on PR A. From PR E onward this footer **replaces** the "Review trail artifact" checkboxes above; until PR E lands, it is dual-write alongside the existing log-entry workflow. See [ADR 047](../docs/history/047-governor-review-provenance-consolidation.md) for the migration plan.
-
-Fill the block below verbatim and replace the placeholder values. Lint shape: each field on its own line, exact field name, single space after the colon. The closure-category labels must be exactly `Fixed`, `Deferred-with-rationale`, or `Rejected` (Guard G).
+The block below is parsed by `tools/check_governor_footer.py` (run via the `Governor Footer Lint` CI workflow). Fill it verbatim and replace the placeholder values. Lint shape: each field on its own line, exact field name, single space after the colon, no extra fields, no duplicates, declared order. The closure-category labels in `r-points-*` counts must be exactly `Fixed`, `Deferred-with-rationale`, or `Rejected` (Guard G — closure labels are documented in the PR body for human readers and counted in this footer for the linter).
 
 ```
 ## Governor Footer
@@ -94,4 +57,6 @@ Field guidance:
 - `touched-adr-consequences` — list `ADR{NNN}-G{N}` slot IDs (the canonical form used by ADR 047 IC Classification Table; e.g. `ADR047-G3`, `ADR048-G1`) this PR amends; `none` if no durable-governance constraint changed. Comma-separated.
 - `pr-scope-notes` — short prose for `pr-scope` invariants this PR self-imposes (e.g. "minimal RBAC scope; permission tables follow-up"). They are **not** promoted to ADR Consequences.
 - `final-verdict` — last cross-tool review verdict.
-- `links` — PR URL plus, while dual-write is in effect, the matching `governor-review-log/pr-{N}-*.md` entry URL.
+- `links` — PR URL plus any companion artefact URL (e.g. a related issue or, for historical context, a frozen `governor-review-log/pr-{N}-*.md` entry). Use `n/a` if there are no extra links.
+
+Doc-only escape hygiene: if your PR is doc-only, confirm the changes do **not** touch policy / harness docs listed in [`governor-paths.md`](../docs/ai/shared/governor-paths.md) Tier A. Touching those files disqualifies the doc-only auto-escape — see [`target-operating-model.md` §3](../docs/ai/shared/target-operating-model.md).

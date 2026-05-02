@@ -1,7 +1,23 @@
 # Governor Review Log
 
-> Living archive of cross-tool review trails for **governor-changing PRs**.
-> Source of truth: ADR 045 §Self-Application Recovery + AGENTS.md § Default Coding Flow §Cross-Tool Review.
+> **Closed historical archive — no new entries are added after PR #158 / [ADR 047](../../history/047-governor-review-provenance-consolidation.md).**
+> Cross-tool review provenance for new governor-changing PRs lives in the PR
+> description's ``## Governor Footer`` block (ADR 047 §D2), enforced in CI by
+> ``tools/check_governor_footer.py``. Durable inherited constraints live in
+> ADR Consequences sections — see ADR 047 §"Durable Governance Constraints
+> (ADR047-G1 ~ ADR047-G27)" and the IC Classification Table for the
+> historical-id alias map.
+>
+> The 17 entries below document the Phase 1~5 build-out of the hybrid harness
+> governance system. They remain in the repository as a frozen historical
+> record; do not edit existing entries except to append append-only English
+> errata under an explicit ``Errata YYYY-MM-DD:`` heading. Provenance prefixes
+> (``> Original ... (ko, verbatim):``) and ``LOCALE_DATA_FILES`` carve-outs
+> stay in force for the existing entries (ADR 047 §D6).
+>
+> Original purpose (pre-ADR-047): Living archive of cross-tool review trails
+> for **governor-changing PRs**, sourced from ADR 045 §Self-Application
+> Recovery + AGENTS.md § Default Coding Flow §Cross-Tool Review.
 
 ## Purpose
 
@@ -55,21 +71,15 @@ The `Closure` cell may use a plain label or bold exact label:
 `Fixed (retracted)`, `Rejected after correction`, `Deferred`, lowercase
 variants, italic variants, and labels with extra words are invalid.
 
-`tools/check_g_closure.py` enforces this table shape for
-`docs/ai/shared/governor-review-log/pr-*.md` and is registered as the
-`governor-review-log-g-closure` pre-commit hook. V1 intentionally does not
-validate summary counts, `Source` format, R-point ID format, or whether the
-chosen closure category is semantically correct.
+**(Historical)** `tools/check_g_closure.py` enforced this table shape via the `governor-review-log-g-closure` pre-commit hook for `docs/ai/shared/governor-review-log/pr-*.md`. ADR 047 PR B-F (issue #157) removed the tool and the hook; the closure-table shape requirement is preserved on the 17 frozen entries by the historical record itself, and the canonical Guard G enforcement target moved to the PR-description `## Governor Footer` block (`tools/check_governor_footer.py`).
 
 ## Retention
 
-Entries are kept for the lifetime of the repository. The matrix and the migration-strategy document rely on this directory as a permanent reference.
-
-If a future ADR consolidates or rotates entries (e.g. annual archive subdirectories), that decision is itself a governor-changing PR that must add its own entry here.
+Closed historical archive — see banner above. The 17 entries below are preserved for the lifetime of the repository as a frozen build-out record. The active equivalents are the PR-description Governor Footer block (`tools/check_governor_footer.py`) and ADR Consequences (`ADR{NNN}-G{N}` slots in [ADR 047](../../history/047-governor-review-provenance-consolidation.md) and successor ADRs).
 
 ## Drift discipline
 
-`docs/ai/shared/drift-checklist.md` §1D verifies that every governor-changing PR merged into `main` has a corresponding log entry. `/sync-guidelines` consumes that row.
+`docs/ai/shared/drift-checklist.md` §1D (rewritten by ADR 047 PR B-F) verifies that every governor-changing PR merged into `main` had a passing `Governor Footer Lint` CI run and that any new `ADR{NNN}-G{N}` durable constraints landed in the same merge. The pre-ADR-047 sync check enumerated this directory; the new check enumerates merged PR descriptions instead.
 
 ## Cross-Tool Review Prompt Template
 

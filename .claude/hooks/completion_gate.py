@@ -49,6 +49,12 @@ try:
     )
     from governor import read_latest_token as _shared_read_latest_token  # noqa: E402
     from governor.completion_gate import _matches_glob  # noqa: E402
+    from governor.sync_cosmetic import (  # noqa: E402 — ADR 047 D4 self-loop carve-out
+        governor_subset as _shared_governor_subset,
+    )
+    from governor.sync_cosmetic import (  # noqa: E402
+        is_sync_cosmetic_only as _shared_is_sync_cosmetic_only,
+    )
 
     _SHARED_OK = True
 except Exception:  # noqa: BLE001 — HC-5.5 fail-open
@@ -59,6 +65,8 @@ except Exception:  # noqa: BLE001 — HC-5.5 fail-open
     _shared_read_latest_token = None
     _shared_consume_phase2_markers = None
     _shared_changed_files = None
+    _shared_governor_subset = None
+    _shared_is_sync_cosmetic_only = None
     _SHARED_OK = False
 
     def _within_24h(ts: str) -> bool:  # type: ignore[no-redef]
@@ -141,6 +149,14 @@ def governor_changing_segment() -> str | None:
         globs = parse_trigger_globs()
         if not globs or not is_governor_changing(changed, globs):
             return None
+        # ADR 047 D4 — `/sync-guidelines` cosmetic subset carve-out.
+        if (
+            _shared_governor_subset is not None
+            and _shared_is_sync_cosmetic_only is not None
+        ):
+            subset = _shared_governor_subset(changed, globs)
+            if _shared_is_sync_cosmetic_only(subset):
+                return None
         current_pr = pr_number_from_branch()
         status = match_log_entry(changed, current_pr)
         if status in ("match", "unknown"):

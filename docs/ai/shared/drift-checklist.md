@@ -50,20 +50,22 @@ Read CLAUDE.md and verify Claude-only guidance still matches the harness:
 - [ ] Verify each row's `Bucket` is one of `Keep` / `Replace` / `Overlay` / `Drop` and matches the bucket definitions at the top of the matrix
 - [ ] For any asset classified `Drop`: verify with `rg <asset> .claude/ .codex/` that no harness component still references it
 
-## 1D. `governor-review-log/` ↔ Governor-Changing PR Sync Check (ADR 045 Pillar 4)
+## 1D. Governor Footer + ADR Consequences Sync Check (ADR 047 D2 / D3)
 
 The canonical definition of "governor-changing PR" is in [`governor-paths.md`](governor-paths.md). Do not duplicate the path list here; consult that file when running this check.
 
+After ADR 047, cross-tool review provenance lives in the PR description's `## Governor Footer` block (CI-linted) and durable governance constraints live in ADR Consequences slots (`ADR{NNN}-G{N}`). The pre-ADR-047 `governor-review-log/` archive is closed; this check no longer enumerates that directory for new PRs.
+
 - [ ] Enumerate merged PRs touching the Tier A / B / C globs since the last sync run:
   ```bash
-  gh pr list --state merged --search "merged:>=$(cat .last-sync-date 2>/dev/null || echo 2026-04-26)" --json number,title,files
+  gh pr list --state merged --search "merged:>=$(cat .last-sync-date 2>/dev/null || echo 2026-05-03)" --json number,title,files,body
   ```
-- [ ] For every such PR, verify a `docs/ai/shared/governor-review-log/pr-{NNN}-{slug}.md` entry exists **and the `{NNN}` segment of the filename equals the PR number** (Round-4 R4.4 — prevents stale entries from satisfying the gate).
-- [ ] Verify `governor-review-log/README.md` Index table includes a row for every entry (no missing rows, no orphan rows).
-- [ ] Each entry contains the required sections: `Summary`, `Review Rounds` (each round with explicit `Final Verdict`), `Inherited Constraints`, `Self-Application Proof`. Empty sections are acceptable only when explicitly justified.
-- [ ] Apply the exclusions from `governor-paths.md`: log-only backfill PRs that extend an existing entry are exempt from requiring a new entry of their own.
-- [ ] If any entry is missing or incomplete: open an issue *Backfill governor-review-log for PR #NNN* and treat it as `REVIEW` drift, never silent `AUTO-FIX`.
-- [ ] If a PR was merged that touched the trigger glob *and* had no cross-tool review captured: surface as `DRIFT` and recommend re-running cross-tool review on the merged commit retrospectively.
+- [ ] For every such PR, verify the PR description contains a `## Governor Footer` block whose CI run (`Governor Footer Lint`) was green at merge time. Use `gh run list --workflow=governor-footer-lint.yml --branch <head-branch>` to confirm.
+- [ ] Verify `trigger: yes`, `rounds >= 1`, and the closure counts (`r-points-fixed` / `-deferred` / `-rejected`) are non-negative integers. The CI linter enforces this; this checklist item is the manual cross-check.
+- [ ] For each `touched-adr-consequences` ID in the footer, verify the corresponding `ADR{NNN}-G{N}` slot body exists in the cited ADR's Consequences section (or, for new slots, was added in the same PR). Treat dangling references as `REVIEW` drift, never silent `AUTO-FIX`.
+- [ ] For every governor-changing PR whose footer declares a new durable governance constraint (`touched-adr-consequences != none`), verify the corresponding `ADR{NNN}-G{N}` slot body landed in the same merge.
+- [ ] Apply the exclusions from `governor-paths.md`: log-only backfill PRs to the frozen archive and `/sync-guidelines` cosmetic-only PRs are exempt.
+- [ ] If a PR was merged that touched the trigger glob *and* had no `Governor Footer Lint` CI run (e.g. linter was bypassed via `[skip-governor-footer]`): surface as `REVIEW` drift, never silent `AUTO-FIX`.
 
 ## 2. Skills ↔ Code Consistency Check
 
