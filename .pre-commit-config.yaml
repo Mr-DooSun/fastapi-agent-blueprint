@@ -93,16 +93,14 @@ repos:
         pass_filenames: true
         files: '^(AGENTS\.md|CLAUDE\.md|CONTRIBUTING\.md|CODE_OF_CONDUCT\.md|SECURITY\.md|docs/ai/shared/.*\.md|docs/history/.*\.md|\.claude/rules/.*\.md|\.claude/hooks/.*|\.claude/skills/.*\.md|\.codex/rules/.*|\.codex/hooks/.*|\.agents/.*\.(py|md)|\.github/pull_request_template\.md|\.github/workflows/.*\.ya?ml)$'
 
-      # Guard G closure enforcement:
-      # governor review-log entries must classify every R-point using the
-      # canonical closure table and closure labels documented in
-      # docs/ai/shared/governor-review-log/README.md.
-      - id: governor-review-log-g-closure
-        name: "Governor review-log: G closure table enforcement"
-        language: system
-        entry: python3 tools/check_g_closure.py
-        pass_filenames: false
-        files: '^(tools/check_g_closure\.py|docs/ai/shared/governor-review-log/(README\.md|pr-.*\.md))$'
+      # Guard G closure enforcement (post-ADR 047):
+      # The canonical Guard G enforcement target moved from the per-PR
+      # governor-review-log/ archive to the PR-description Governor Footer
+      # block. The new linter (tools/check_governor_footer.py) runs in CI via
+      # .github/workflows/governor-footer-lint.yml, not pre-commit, because
+      # the PR description is not a working-tree file. The legacy
+      # governor-review-log-g-closure pre-commit hook + tools/check_g_closure.py
+      # were removed in PR #159.
 
   # ==================== STAGE: COMMIT-MSG (commit message validation) ====================
   # Conventional Commits: type: description OR type(scope): description

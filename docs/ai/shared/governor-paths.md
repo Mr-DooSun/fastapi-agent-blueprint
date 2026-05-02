@@ -44,6 +44,11 @@ Tier C is intentionally narrow today; the list grows only when an ADR explicitly
 ## Exclusions (NOT governor-changing even though path-glob looks close)
 
 - **Log-only backfill PRs**: a PR whose `changed_files` is **entirely under** `docs/ai/shared/governor-review-log/` (extending or correcting an existing entry, or adding a backfill entry for a previously-merged PR) does **not** require its own new self-log entry. Such a PR may extend the *existing* entry's `Review Rounds` and `Self-Application Proof` sections instead. This exception breaks the recursion that would otherwise require every log-edit PR to log itself.
+- **`/sync-guidelines` cosmetic edits (ADR 047 D4)**: a `.claude/rules/**` change is exempt from governor-changing classification when the *governor-matching subset* of `changed_files` is limited to one or more of the three covered files AND each covered file's diff contains only the cosmetic patterns listed below. Other changes outside `.claude/rules/**` are evaluated independently — they may or may not trigger on their own merits.
+  - `.claude/rules/project-status.md`: `> Last synced:` line edits + additions / edits of rows in the `## Recent Major Changes` table.
+  - `.claude/rules/project-overview.md`: `> Last synced:` line edits.
+  - `.claude/rules/commands.md`: `> Last synced:` line edits.
+  Semantic edits to those same files (new sections, regenerated bodies, rule additions, anything outside the cosmetic patterns) still trigger. The carve-out is deliberately narrow because `/sync-guidelines` produces these cosmetic edits as a routine closure step on most feature PRs; without the carve-out, every feature PR would inherit the full governor-changing ceremony purely because of its closure step (the original "self-loop" identified in ADR 047 Background).
 - **Generated artefact regeneration**: `docs/assets/architecture/*.svg` regenerated via `make diagrams` after a `docs/ai/shared/architecture-diagrams.md` source edit. The source edit itself triggers; the regenerated SVGs do not double-trigger.
 - **`.gitignore`d entries**: `.claude/settings.local.json` and similar — never in PR diffs by definition.
 
@@ -58,11 +63,12 @@ A reviewer or hook decides "is this PR governor-changing?" by:
 
 ## Required artefacts when governor-changing
 
-When the rules above classify a PR as governor-changing, the PR must produce:
+When the rules above classify a PR as governor-changing (and after [ADR 047](../history/047-governor-review-provenance-consolidation.md) D2/D5), the PR must produce:
 
-- A `docs/ai/shared/governor-review-log/pr-{NNN}-{slug}.md` entry **whose filename's `{NNN}` equals the PR number**. The entry must contain Summary, Review Rounds (each with explicit `Final Verdict`), Inherited Constraints (or a link to the prior PR's Inherited Constraints when the new PR carries them forward), and Self-Application Proof.
-- The Governor-Changing PR section of `.github/pull_request_template.md` filled (not deleted).
-- At least one round of cross-tool review captured (per `target-operating-model.md` §5 Cross-Tool Review Cadence).
+- A **`## Governor Footer` block** in the PR description (10-field machine-parseable shape, closure-label vocabulary `Fixed` / `Deferred-with-rationale` / `Rejected`). The `Governor Footer Lint` CI workflow runs `tools/check_governor_footer.py --require-governor-footer` against the PR body and changed-file list and **fails the build** if the footer is missing, mis-shaped, or declares `trigger: no` on a governor-changing change set.
+- At least one round of cross-tool review captured in the footer (`rounds: N >= 1`, `reviewer: <comma-list>`, R-points closed).
+- Durable governance constraints introduced by the PR added as new `ADR{NNN}-G{N}` slot bodies in the relevant ADR's Consequences section. Durable domain invariants go to `docs/ai/shared/project-dna.md` or the relevant domain doc (e.g. §15 Auth Domain Pattern, §16 Docs Frontend Contract). PR-scope and superseded constraints stay only in the PR description's `pr-scope-notes` field.
+- The pre-ADR-047 obligation (`docs/ai/shared/governor-review-log/pr-{NNN}-{slug}.md`) is **retired** for new PRs. The directory remains as a frozen historical archive for the 17 entries written before PR #158 — see [`governor-review-log/README.md`](governor-review-log/README.md) for the alias map.
 
 ## Where this file is consumed
 
@@ -84,7 +90,7 @@ If you add a new consumer, add the row above so the canonical surface stays visi
 This file is itself governor-changing (Tier A, `docs/ai/shared/**`). Any edit must:
 
 - Be reflected by all consumers above (verify their copies are still link-only, not duplicate-list).
-- Add a `governor-review-log/` entry with Round 1 cross-tool review of the path-list change.
-- Update `governor-review-log/README.md` Index table.
+- Be captured in the PR description's `## Governor Footer` block (post-ADR-047) — the Footer's `rounds` / `r-points-*` fields cover the Round 1+ cross-tool review of the path-list change. CI's `Governor Footer Lint` workflow validates the Footer shape.
+- Add a new `ADR{NNN}-G{N}` slot to the relevant ADR's Consequences section if the edit introduces a durable governance constraint that future PRs must inherit.
 
 This recursion is intentional: a change to the canonical paths definition is a high-impact governor change.

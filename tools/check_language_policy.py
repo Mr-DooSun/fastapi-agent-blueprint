@@ -152,6 +152,12 @@ TOKEN_LITERALS_BY_FILE: dict[str, set[str]] = {
     ".agents/skills/fix-bug/SKILL.md": {"[자명]", "[긴급]", "[탐색]", "긴급"},
     ".agents/skills/onboard/SKILL.md": {"[자명]", "[긴급]", "[탐색]", "탐색"},
     # Review-log entries that preserve token-vocabulary decisions.
+    # ADR 047 (PR #159) closes the governor-review-log/ archive — these five
+    # frozen entries retain their existing token allowlist (option F1) so the
+    # historical archive continues to pass the language policy check. Do NOT
+    # extend this block: new governor-changing PRs use the PR-description
+    # Governor Footer block instead of writing new log entries, so no new
+    # files should ever require entries here.
     "docs/ai/shared/governor-review-log/pr-125-hybrid-harness-target-architecture.md": {
         "[자명]",
         "[긴급]",

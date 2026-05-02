@@ -1,6 +1,6 @@
 # Project Status
 
-> Last synced: 2026-04-30 via /sync-guidelines (#4 JWT authentication domain)
+> Last synced: 2026-05-03 via ADR 047 PR B-F rollout (#157 governor-review-log right-sizing — fold to ADR Consequences + PR-description Governor Footer)
 
 ## Current Version Context
 - Latest release: v0.4.0 (2026-04-21)
@@ -56,6 +56,7 @@
 | AI Usage Ledger | #75 (PR #149) | Adds the `ai_usage` domain, usage recording protocol, `AgentUsageRecord` / `PromptSnapshot` value objects, RDB migrations, admin and server surfaces, and coverage for usage accounting. |
 | Taskiq Error Handling | #120 (PR #150) | Adds task-scoped structlog context binding, structured task failure logging, and permanent-aware smart retry middleware wired through worker bootstrap. |
 | JWT Authentication Domain | #4 | Adds `src/auth/` with HS256 access/refresh tokens, DB-backed refresh-token rotation/revocation, `/v1/auth/register`, `/v1/auth/login`, `/v1/auth/refresh`, `/v1/auth/logout`, `/v1/auth/me`, and Bearer protection for existing `user` API routes. NiceGUI admin auth remains env-var based pending a later RBAC/admin-auth issue. |
+| Governor-Review Provenance Consolidation (ADR 047) | #157 (PR #158 bridge + PR B-F rollout) | Folds the per-PR `governor-review-log/` archive into a PR-description `## Governor Footer` block (CI-linted by `tools/check_governor_footer.py`) plus ADR Consequences (`ADR{NNN}-G{N}` slots). Adds 6-category IC durability taxonomy (`durable-governance` / `durable-domain` / `pr-scope` / `superseded` / `historical-only` / `follow-up`) classifying all 44 historical IC tags. Promotes durable-governance ICs into ADR 047 Consequences as `ADR047-G1 ~ ADR047-G27` (G8 vacated; superseded-by-D2). Promotes durable-domain ICs into `project-dna.md` §11 Admin Auth & Session subsection, new §15 Auth Domain Pattern, new §16 Docs Frontend Contract. Adds `/sync-guidelines` cosmetic carve-out (`Last synced:` + `Recent Major Changes` table on `project-status.md` / `project-overview.md` / `commands.md`) to `governor-paths.md` Exclusions to break the self-loop where every feature PR's closure step pulled it into governor-changing classification. Wires the carve-out into `.agents/shared/governor/sync_cosmetic.py` (governor-matching subset check, not whole-changed-set), exposed via `evaluate_gate()` and consumed by both Claude / Codex hook shims. Removes `tools/check_g_closure.py` + the legacy pre-commit hook entry; replaces with `Governor Footer Lint` GitHub Actions workflow. Existing 17 entries stay as a closed historical archive. Three rounds of Codex CLI cross-review (xhigh + high) drove the design; all R-points closed Fixed or Deferred-with-rationale. |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN

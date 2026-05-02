@@ -170,10 +170,11 @@ rather than primary entry points (`Overlay`).
 | `harness-asset-matrix.md` | Keep | Low | High |
 | `target-operating-model.md` | Keep | Low | High |
 | `migration-strategy.md` | Keep | Low | High |
-| `governor-review-log/` (directory) | Keep | Low | High |
+| `governor-review-log/` (directory) | Keep | None (frozen) | Low |
 | `governor-paths.md` | Keep | Low | High |
 | `.agents/shared/governor/` (package) | Keep | Low | High |
-| `tools/check_g_closure.py` | Keep | Low | High |
+| `tools/check_g_closure.py` | Drop | None (removed) | None |
+| `tools/check_governor_footer.py` | Keep | Low | High |
 
 ### `project-dna.md`
 
@@ -328,15 +329,15 @@ rather than primary entry points (`Overlay`).
 - **Stability impact**: High (Phase 2~5 acceptance criteria copy from §1).
 - **Notes**: Self-classified.
 
-### `governor-review-log/` (directory)
+### `governor-review-log/` (directory) — closed historical archive
 
-- **Current role**: Permanent archive of cross-tool review trails for every governor-changing PR (ADR 045 Pillar 4). Each PR adds `pr-{NNN}-{slug}.md` with Summary / Review Rounds / Inherited Constraints / Self-Application Proof.
-- **Why it exists**: Round-4 self-coherence review found that PR #125's review trail was only in PR body — not auto-transmitted to Phase 2~5 work. The directory makes review trails first-class repo artefacts.
-- **Replacement feasibility**: None.
-- **Final location**: unchanged.
-- **Migration risk**: Low (additive only — entries grow over time).
-- **Stability impact**: High (drift-checklist §1D verifies sync; Phase 4 hook reminds on missing entry).
-- **Notes**: Self-classified. Long-term retention; archive subdirectories (e.g. `2026/`) may be introduced by a future ADR if size becomes a problem.
+- **Current role**: **Closed historical archive** (ADR 047 D6). Holds the 17 entries written between PR #125 and PR #158 documenting the Phase 1~5 build-out of the hybrid harness. No new entries are added — cross-tool review provenance for new PRs lives in the PR description's `## Governor Footer` block (`tools/check_governor_footer.py`).
+- **Why it exists**: Round-4 self-coherence review (PR #125) made cross-tool review trails first-class repo artefacts during the harness build-out. ADR 047 retired the per-PR archive obligation after the build-out closed; the directory is preserved as a frozen historical record because the IC declarations inside still serve as alias targets for ADR 047's IC Classification Table.
+- **Replacement feasibility**: Replaced by PR-description Governor Footer + ADR Consequences (`ADR{NNN}-G{N}` slots). Existing entries are not migrated; they remain as historical context.
+- **Final location**: unchanged. README.md banner declares the archive closed.
+- **Migration risk**: None (frozen).
+- **Stability impact**: Low (read-only enforcement only — language-policy provenance carve-out continues to apply for the existing entries).
+- **Notes**: Append-only English errata under `Errata YYYY-MM-DD:` headings is the only allowed edit pattern for existing entries.
 
 ### `governor-paths.md`
 
@@ -358,15 +359,25 @@ rather than primary entry points (`Overlay`).
 - **Stability impact**: High. Single source of truth for governor policy; closes the inline-redeclaration loophole asserted by `test_governor_boundary.py`.
 - **Notes**: Boundary contract (R0-C.3): this package owns *policy*; tool-specific runtime utilities (`.codex/hooks/_shared.py` git/subprocess helpers, Codex `session_id()` / verify-log writer / `cleanup_stale_verify_logs`) remain per-tool. `__all__` declared in `__init__.py` enforces stability — `test_governor_boundary.py::test_governor_all_does_not_drop_known_names` fails the build if a public name is removed without deliberate review.
 
-### `tools/check_g_closure.py` (#145)
+### `tools/check_g_closure.py` (#145) — superseded and removed by ADR 047 PR (#159)
 
-- **Current role**: Mechanical checker for AGENTS.md guard G. Scans `docs/ai/shared/governor-review-log/pr-*.md` and enforces exactly one canonical `## R-points Closure Table` with `Fixed`, `Deferred-with-rationale`, or `Rejected` closure labels.
-- **Why it exists**: Issue #145 turns the reasoning-level G closure rule from text-only discipline into a local pre-commit / CI-enforced guard for governor review-log entries.
-- **Replacement feasibility**: None. It is repository-specific enforcement for the local governor-review-log shape.
-- **Final location**: unchanged.
-- **Migration risk**: Low. Scope is bounded to review-log PR entries; V1 intentionally does not validate summary counts, Source format, R-point ID format, or semantic correctness.
-- **Stability impact**: High. Prevents non-canonical labels such as `Fixed (retracted)` or `Rejected after correction` from silently weakening closure discipline.
-- **Notes**: Registered in `.pre-commit-config.yaml` as `governor-review-log-g-closure`; regression-covered by `tests/unit/agents_shared/test_g_closure.py`.
+- **Current role**: Removed in PR #159 (ADR 047 PR B-F rollout). Was a mechanical checker for AGENTS.md guard G that scanned `docs/ai/shared/governor-review-log/pr-*.md`.
+- **Why it exists (historical)**: Issue #145 turned the reasoning-level G closure rule from text-only discipline into a local pre-commit / CI-enforced guard for governor review-log entries.
+- **Replacement feasibility**: Replaced by `tools/check_governor_footer.py` which validates the PR-description `## Governor Footer` block (closure-label vocabulary preserved exactly: `Fixed` / `Deferred-with-rationale` / `Rejected` per Guard G — ADR047-G26).
+- **Final location**: deleted.
+- **Migration risk**: None (the closed archive is no longer churned, so a linter for it is no longer needed).
+- **Stability impact**: None.
+- **Notes**: The `governor-review-log-g-closure` pre-commit hook entry is also removed in PR #159. Test file `tests/unit/agents_shared/test_g_closure.py` is removed alongside the tool.
+
+### `tools/check_governor_footer.py` (ADR 047 PR B) — NEW
+
+- **Current role**: Mechanical checker for the PR-description `## Governor Footer` block (ADR 047 D2). Validates 10-field shape, enum vocabularies, integer types, ADR consequence ID grammar (`ADR{NNN}-G{N}`), and (with `--require-governor-footer`) enforces presence + `trigger: yes` + `rounds >= 1` for governor-changing PRs.
+- **Why it exists**: Replaces `tools/check_g_closure.py` as the active closure-label / Guard G enforcement target after ADR 047 retires the per-PR `governor-review-log/` archive.
+- **Replacement feasibility**: None. Repository-specific enforcement for the new Governor Footer shape; Markdown fenced examples in ADR 047 / PR template are deliberately ignored so the linter does not parse them as the real footer.
+- **Final location**: `tools/check_governor_footer.py`.
+- **Migration risk**: Low. Scope bounded to the PR description body (CI fetches via `gh pr view`). V1 does not validate ADR slot existence, count consistency with R-points, or reviewer vocabulary.
+- **Stability impact**: High. Without it, removing `check_g_closure.py` would leave Guard G as text-only enforcement — codex design review flagged this as the single biggest risk of the ADR 047 rollout.
+- **Notes**: Wired in CI via `.github/workflows/governor-footer-lint.yml` (event triggers `opened` / `synchronize` / `reopened` / `edited`; sticky comment on failure; `[skip-governor-footer]` token bypass). Regression-covered by `tests/unit/tools/test_governor_footer.py` (29 cases).
 
 ---
 
@@ -734,13 +745,13 @@ Six rule files (5 Claude + 1 Codex). All `Keep` except `commands.md` which becom
 
 | Bucket | Count | Share | Notes |
 |---|---|---|---|
-| Keep | 52 | ~80% | Project-specific architecture / safety / reference value (incl. 4 design + 3 self-coherence-recovery process-governor artefacts + 2 Phase 2 #121 hooks + Phase 5 #124 shared governor package + #145 G closure linter) |
+| Keep | 52 | ~79% | Project-specific architecture / safety / reference value (incl. 4 design + 3 self-coherence-recovery process-governor artefacts + 2 Phase 2 #121 hooks + Phase 5 #124 shared governor package now extended by ADR 047 PR B-F with `sync_cosmetic.py`; ADR 047 PR B-F also added `tools/check_governor_footer.py` + `.github/workflows/governor-footer-lint.yml` in place of the removed `tools/check_g_closure.py`) |
 | Overlay | 13 | ~20% | Process discipline now routed by Default Flow (Phase 3 #122 adds 3 verify-first; Phase 4 #123 adds 2 completion-gate hooks; Phase 5 #124 reduces those hooks to thin shims without changing buckets) |
 | Replace | 0 | 0% | None in initial inventory; reserved for future passes |
-| Drop | 0 | 0% | Initial pass found no genuinely removable assets |
-| **Total** | **65** | 100% | |
+| Drop | 1 | ~1% | `tools/check_g_closure.py` retired by ADR 047 PR B-F (Guard G enforcement target moved to PR-description Governor Footer; `tools/check_governor_footer.py` is the replacement and is counted under `Keep`). |
+| **Total** | **66** | 100% | |
 
-Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=19` (12 reference + 3 design living docs + `governor-review-log/` directory + `governor-paths.md` + `.agents/shared/governor/` package added by Phase 5 #124 + #145 G closure linter), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=18` (Phase 4 #123 added `.claude/hooks/completion_gate.py` + `.codex/hooks/completion_gate.py`; Phase 3 = 16, Phase 2 = 13, Phase 1 = 10; Phase 5 #124 converts 6 of these to thin shims without changing the count), `Tier 4=6` — sum 66. The 65 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d. The bucket-share percentages use 65 as the denominator.
+Counting note: `Tier 0=9` (8 + ADR 045 + `.github/pull_request_template.md`), `Tier 1=20` (12 reference + 3 design living docs + `governor-review-log/` directory + `governor-paths.md` + `.agents/shared/governor/` package + `tools/check_g_closure.py` historical-Drop + `tools/check_governor_footer.py` + `docs/history/047-governor-review-provenance-consolidation.md`), `Tier 2=14` (skill rows; each row covers all 3 wrapper layers), `Tier 3=18` (Phase 4 #123 added `.claude/hooks/completion_gate.py` + `.codex/hooks/completion_gate.py`; Phase 3 = 16, Phase 2 = 13, Phase 1 = 10; Phase 5 #124 converts 6 of these to thin shims without changing the count), `Tier 4=6` — sum 67. The 66 figure above excludes `.claude/settings.local.json` from the active-share count because it is `.gitignore`d. The bucket-share percentages use 66 as the denominator.
 
 This distribution matches the "Mostly Local with Philosophy Overlay" model declared in [ADR 045 §D4](../../history/045-hybrid-harness-target-architecture.md). The `Replace` and `Drop` columns are both empty: no asset's content is being rewritten, and self-verification during cross-link work showed that the only `Drop` candidate identified during the first triage was actually an active component (a sh-wrapper `.py` pair).
 
@@ -757,7 +768,7 @@ The following self-checks must pass before this matrix is treated as authoritati
      .claude/settings.json .claude/settings.local.json .mcp.json
   # Tier 1
   ls docs/ai/shared/*.md
-  ls tools/check_g_closure.py
+  ls tools/check_governor_footer.py
   # Tier 2 (3 layers per skill)
   ls docs/ai/shared/skills/*.md .claude/skills/*/SKILL.md .agents/skills/*/SKILL.md
   # Tier 3 (exclude gitignored caches such as __pycache__/*.pyc)
@@ -769,7 +780,7 @@ The following self-checks must pass before this matrix is treated as authoritati
 - [ ] Every skill has a consistent bucket across its three wrapper layers (Phase 1 update preserves this invariant).
 - [ ] No asset is classified `Replace` while other Phase 1 work treats it as `Keep`.
 - [ ] Any `Drop` candidate has been verified to have zero callers (`rg <name> .claude/ .codex/`). Self-verification during cross-link work overturned the only initial Drop candidate; the principle remains: a Drop classification requires positive evidence of zero callers.
-- [ ] Bucket-share ratio matches §Bucket Distribution Summary (~80% Keep / ~20% Overlay / 0% Replace / 0% Drop) within ±10%.
+- [ ] Bucket-share ratio matches §Bucket Distribution Summary (~79% Keep / ~20% Overlay / 0% Replace / ~1% Drop after ADR 047 PR B-F) within ±10%.
 
 ## Update Log
 

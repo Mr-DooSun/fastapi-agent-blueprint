@@ -42,6 +42,7 @@ from typing import Literal
 
 from .markers import MarkerLifecycle, read_latest_token
 from .paths import GOVERNOR_PATHS_MD, REPO_ROOT
+from .sync_cosmetic import DiffSource, governor_subset, is_sync_cosmetic_only
 from .tokens import EXPLORATION_TOKENS
 
 GOVERNOR_REVIEW_LOG_PREFIX = "docs/ai/shared/governor-review-log/"
@@ -55,17 +56,17 @@ GOVERNOR_REVIEW_LOG_PREFIX = "docs/ai/shared/governor-review-log/"
 GOVERNOR_REMINDER_WITH_PR = "\n".join(
     [
         "[completion-gate] Governor-changing changes detected (Pillar 7).",
-        "No governor-review-log entry matches PR #{pr}.",
-        "Expected: docs/ai/shared/governor-review-log/pr-{pr}-<slug>.md",
-        "See: docs/ai/shared/governor-review-log/README.md",
+        "PR #{pr} description must contain a `## Governor Footer` block.",
+        "CI will lint via tools/check_governor_footer.py --require-governor-footer.",
+        "See: docs/history/047-governor-review-provenance-consolidation.md (D2/D5).",
     ]
 )
 
 GOVERNOR_REMINDER_NO_PR = "\n".join(
     [
         "[completion-gate] Governor-changing changes detected (Pillar 7).",
-        "PR number unknown — open the PR first, then add the governor-review-log/ entry.",
-        "See: docs/ai/shared/governor-review-log/README.md",
+        "PR number unknown — open the PR first, then fill the `## Governor Footer` block in its description.",
+        "See: docs/history/047-governor-review-provenance-consolidation.md (D2/D5).",
     ]
 )
 
@@ -75,6 +76,7 @@ GOVERNOR_REMINDER_NO_PR = "\n".join(
 GateStatus = Literal[
     "silent_no_changes",
     "silent_log_only",
+    "silent_sync_cosmetic",
     "silent_exploration",
     "silent_not_governor",
     "match",
@@ -92,6 +94,7 @@ class GateResult:
 
     * ``"silent_no_changes"`` — no changed files
     * ``"silent_log_only"`` — only governor-review-log/ paths changed (HC-4.5)
+    * ``"silent_sync_cosmetic"`` — governor-matching subset is sync-cosmetic only (ADR 047 D4)
     * ``"silent_exploration"`` — exploration/탐색 marker present
     * ``"silent_not_governor"`` — no changed file matches governor globs
     * ``"match"`` — governor-changing + log entry pr-{pr}-*.md present
@@ -238,8 +241,14 @@ def evaluate_gate(
     changed_files: list[str],
     pr_number: int | None,
     md_path: Path = GOVERNOR_PATHS_MD,
+    diff_source: DiffSource | None = None,
 ) -> GateResult:
-    """Pure Pillar 7 decision function — see ``GateResult`` for branches."""
+    """Pure Pillar 7 decision function — see ``GateResult`` for branches.
+
+    ``diff_source`` is injected by tests for the ADR 047 D4 sync-cosmetic
+    carve-out; production callers omit it and the carve-out reads diffs via
+    ``git`` directly.
+    """
 
     if not changed_files:
         return GateResult("silent_no_changes", False, pr_number)
@@ -252,8 +261,15 @@ def evaluate_gate(
         return GateResult("silent_exploration", False, pr_number)
 
     globs = parse_trigger_globs(md_path)
-    if not globs or not is_governor_changing(changed_files, globs):
+    if not globs:
         return GateResult("silent_not_governor", False, pr_number)
+
+    subset = governor_subset(changed_files, globs)
+    if not subset:
+        return GateResult("silent_not_governor", False, pr_number)
+
+    if is_sync_cosmetic_only(subset, diff_source):
+        return GateResult("silent_sync_cosmetic", False, pr_number)
 
     log_status = match_log_entry(changed_files, pr_number)
     return GateResult(log_status, True, pr_number)

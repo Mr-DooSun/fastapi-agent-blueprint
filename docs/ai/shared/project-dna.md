@@ -14,6 +14,7 @@
 §5 DI Pattern | §6 Conversion Patterns | §7 Security Tools | §8 Active Features
 §9 Router Pattern | §10 Exception Pattern | §11 Admin Page Pattern
 §12 S3 Vector Store Pattern | §13 Embedding Pattern | §14 LLM Pattern
+§15 Auth Domain Pattern | §16 Docs Frontend Contract
 
 > **Visual summary:** see [`architecture-diagrams.md`](architecture-diagrams.md)
 > for the layer dependency graph, Write/Read data flow (RDB), and the
@@ -739,6 +740,16 @@ For domain-specific rendering, subclass `BaseAdminPage` in the config file and o
 - `render_detail_card(dto)` — custom detail view
 - `_fetch_list_data(page, search)` / `_fetch_detail_data(record_id)` — custom data fetching
 
+### Admin Auth & Session (durable invariants — promoted from PR #155 ICs)
+
+The NiceGUI admin layer integrates with the auth-domain JWT credential check (PR #155 / ADR 047 IC promotion). The following invariants are durable and apply to all future admin work:
+
+- **Session storage scope (IC-155-1)**: NiceGUI admin session storage may contain only authentication metadata needed by the UI — `authenticated`, `user_id`, `username`, `role`. Access tokens, refresh tokens, and raw JWTs MUST NOT be stored in NiceGUI session metadata.
+- **DB-role authorisation (IC-155-2)**: admin authorisation is DB-role based via `User.role`. Non-admin users and wrong passwords both surface as a single "invalid credentials" error to avoid enumeration leakage.
+- **Seed-only bootstrapping (IC-155-3)**: `ADMIN_BOOTSTRAP_USERNAME` / `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD` env vars are seed-only. They may create or promote the initial admin user idempotently at server boot, but they are never the primary login authority. The auth-domain `/v1/auth/login` flow is the canonical credential channel.
+
+Quickstart prints the seeded `admin / admin` credentials only when `ENV=quickstart`; production / staging deployments must override the bootstrap env vars or disable seeding.
+
 ## §12. S3 Vector Store Pattern
 
 ### VectorModel (Data Model)
@@ -926,3 +937,40 @@ classification_service = providers.Factory(ClassificationService, classifier=cla
 - Structured output via `Agent[DepsType, OutputType]` — type-checked at build time
 - Domain service injects `ClassifierProtocol` (or equivalent), not `llm_model` directly
 - ADR 043: Domain → Protocol → Infra Adapter → Selector is the canonical AI feature pattern
+
+## §15. Auth Domain Pattern
+
+The `auth` domain (PR #4 / PR #153) is a durable cross-cutting domain. The following invariants are promoted from PR #153 inherited constraints (ADR 047 IC promotion) and apply to all future auth-touching work.
+
+### Domain shape
+
+- **Non-CRUD domain (IC-153-1)**: `auth` does not follow the BaseService / BaseRepository CRUD scaffolding. `AuthService` exposes domain-specific methods (`register`, `login`, `refresh`, `logout`, `me`) instead of the generic CRUD verbs. Do not retrofit `BaseService[CreateDTO, UpdateDTO, ReturnDTO]` onto `AuthService` just to match the scaffolding pattern.
+
+### Token persistence and shape
+
+- **Refresh token persistence (IC-153-2)**: refresh tokens are NEVER stored in plaintext. Persistence stores keyed HMAC-SHA256 hashes plus `jti`, `user_id`, expiry, and revocation timestamps. Storage layout lives in the `refresh_token` table; rotation and revocation operate on the hash, not the raw token.
+- **Stateless access tokens (IC-153-3)**: access tokens remain stateless for serverless compatibility. Server-side state is confined to refresh-token rotation and revocation; `/v1/auth/me` validates the access JWT alone without DB lookup beyond the user row.
+- **JWT claim shape (IC-153-4 PR #155 version)**: access and refresh tokens carry the canonical claim set `sub`, `jti`, `type`, `iat`, `exp`, `iss`, `aud`. This shape is binding unless a later ADR explicitly supersedes issue #4.
+
+### Surface and inheritance
+
+- **Bearer protection (IC-153-5)**: existing `user` API routes are Bearer-protected. `/v1/auth/register` is the public signup path. New API routes default to Bearer-protected; public routes require explicit declaration in the router.
+- **Future-work inheritance (IC-153-6)**: future RBAC, rate limiting, RS256 / key rotation, FastMCP auth integration, or non-user route protection MUST inherit this PR's JWT claim shape and refresh-token persistence unless a later ADR supersedes them. Treat this as a hard constraint when designing follow-up auth features.
+
+## §16. Docs Frontend Contract
+
+The `/docs` selector (PR #156) is the contributor-facing OpenAPI spec viewer. The following invariants are durable and govern future docs / spec work.
+
+### Selector renderer
+
+- **Single helper (IC-156-1)**: the selector renderer is a single `_render_selector` helper. Theme toggle JavaScript, FOUC-prevention inline script, and ARIA attributes are part of the production surface — they are not preview-time scaffolding to be stripped before merge.
+- **Icon field with safe fallback (IC-156-2)**: `DOCS_CARDS` and `_handoff_cards()` carry an `icon` field. Renderers that omit the field MUST fall back via `.get("icon", "")` so a future card definition cannot raise `KeyError` in production traffic.
+- **Kind discrimination (IC-156-3)**: `kind` (`primary` / `secondary`) is the canonical Recommended-vs-rest hierarchy carrier. Helpers that ignore `kind` (the Editorial regression in PR #156 R2.2) are a regression class — every list-row helper MUST read `kind`.
+
+### Spec exposure
+
+- **dev-only download endpoint (IC-156-4)**: `/openapi-download.json` is dev-only by design (gated indirectly through `docs_router` registration in `bootstrap.py`). Exposing the live spec in stg / prod requires an ADR; `TestDocsUrlGating` is the regression guard.
+
+### UI hygiene
+
+- **No AI-pattern clichés (IC-156-5)**: `linear-gradient`, `-webkit-background-clip`, `backdrop-filter`, ChatGPT-style purple gradient palettes, and similar AI-generated-UI clichés MUST stay out of the docs selector renderer. `test_docs_selector_returns_html` greps for the three CSS clichés as the regression guard. This is a docs-domain test, not a cross-cutting style governance rule.

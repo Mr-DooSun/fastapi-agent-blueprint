@@ -175,7 +175,7 @@ Context
 - Round: <0 plan / 1 implementation / 2 gate-on-gate / N>
 - original user question: <verbatim or concise restatement>
 - success metric: <what the user said would count as success>
-- Inherited constraints: <links to relevant governor-review-log entries>
+- Inherited constraints: <list of ADR{NNN}-G{N} consequence IDs from prior governance ADRs (post-ADR-047); for historical context, see governor-review-log/ archive>
 
 What you are reviewing
 - Summary: <one-paragraph change summary>

@@ -21,7 +21,7 @@ Issue #117 introduced a hybrid local process governor. The four documents below,
 - [`docs/ai/shared/target-operating-model.md`](docs/ai/shared/target-operating-model.md) — the target workflow, exception model, Claude/Codex alignment, and sample-workflow traces
 - [`docs/ai/shared/migration-strategy.md`](docs/ai/shared/migration-strategy.md) — phased migration plan, rollback rules, and the asset-move ordering
 
-Status (2026-04-27): Phase 5 (#124) ships the **Hybrid Harness v1** milestone. Governor *policy* now lives in a single shared package at [`.agents/shared/governor/`](.agents/shared/governor/); Claude / Codex hook scripts under `.claude/hooks/` and `.codex/hooks/` operate as thin shims that import from it. The hybrid governance model itself — escape-token vocabulary, dual-tool adapters, governor-review-log discipline — remains permanent (target-operating-model §3 / §7). Future governor changes belong in the shared package, not in per-tool inline copies (`tests/unit/agents_shared/test_governor_boundary.py` enforces this).
+Status (2026-05-03 — ADR 047): Phase 5 (#124) shipped the **Hybrid Harness v1** milestone (governor *policy* in a single shared package at [`.agents/shared/governor/`](.agents/shared/governor/), with Claude / Codex hook scripts under `.claude/hooks/` and `.codex/hooks/` as thin shims). [ADR 047](docs/history/047-governor-review-provenance-consolidation.md) right-sizes the steady-state surface: cross-tool review provenance moves to the PR description's `## Governor Footer` block (CI-linted), durable governance constraints live in ADR Consequences (`ADR{NNN}-G{N}` slots), and the per-PR `governor-review-log/` archive is frozen as a closed historical record. The hybrid governance model itself — escape-token vocabulary, dual-tool adapters, scope-of-impact-driven cross-tool review — remains permanent (target-operating-model §3 / §7). Future governor changes belong in the shared package, not in per-tool inline copies (`tests/unit/agents_shared/test_governor_boundary.py` enforces this).
 
 ## Project Scale
 
@@ -146,9 +146,9 @@ Auto-escapes (no token required): `changed_files == 0`, *general* doc-only chang
 `self-review` is mandatory by default. When the change touches any path classified under **Tier A or Tier B (or Tier C, if introduced)** of [`docs/ai/shared/governor-paths.md`](docs/ai/shared/governor-paths.md) — and is not entirely covered by an exclusion in the same file — `self-review` must include a **cross-tool review** as a mandatory sub-step:
 
 - run `codex exec -m gpt-5.5 --sandbox read-only "<review prompt>"` (or any cross-tool reviewer of equivalent capability) on the change set;
-- capture the resulting `Findings` / `Drift Candidates` / `Sync Required` / Final Verdict in [`docs/ai/shared/governor-review-log/`](docs/ai/shared/governor-review-log/);
-- address surfaced R-points or explicitly defer with rationale;
-- the review artefact's location is link-cited from the PR description and the GitHub PR template's "Governor-Changing PR" section.
+- capture the resulting `Findings` / `Drift Candidates` / `Sync Required` / Final Verdict in the **PR description's `## Governor Footer` block** (post-ADR-047 — `tools/check_governor_footer.py --require-governor-footer` enforces presence + shape via the `Governor Footer Lint` CI workflow). Durable governance constraints derived from the review are added to the relevant ADR's Consequences section (e.g. ADR 047 §"Durable Governance Constraints (ADR047-G1 ~ ADR047-G27)"); durable domain invariants go to `project-dna.md` or the relevant domain doc;
+- address surfaced R-points or explicitly defer with rationale (closure label vocabulary `Fixed` / `Deferred-with-rationale` / `Rejected` per AGENTS.md guard G — the linter parses the footer's `r-points-*` counts);
+- the existing `docs/ai/shared/governor-review-log/` directory is a **closed historical archive** for entries written before PR #158 (ADR 047) — see `governor-review-log/README.md` for the alias map back to ADR 047 G-slots.
 
 Non-governor-changing PRs are **exempt** from cross-tool review (issue #117 Non-Goals: avoid heavy ceremony).
 
@@ -162,7 +162,7 @@ This document is canonical. Tool-specific enforcement adapters are defined per m
 
 ## Reasoning-Level Consistency Guards
 
-> Source: cross-review trail captured in [`governor-review-log/`](docs/ai/shared/governor-review-log/) (entry for the introducing PR — four evaluation rounds plus a fifth plan-review round, with an implementation-stage round on the PR diff itself). This section is the canonical Tier 1 surface; extend the log entry first when adding new guards.
+> Source: cross-review trail for the introducing PR (#143) — four evaluation rounds plus a fifth plan-review round, with an implementation-stage round on the PR diff itself — captured in the PR description's `## Governor Footer` (post-ADR-047). Pre-ADR-047 PRs captured the same shape in [`governor-review-log/`](docs/ai/shared/governor-review-log/) (closed historical archive). This AGENTS.md section is the canonical Tier 1 surface; when adding new guards, extend AGENTS.md first and reflect the durable rule as a new `ADR{NNN}-G{N}` slot in the relevant ADR Consequences.
 
 This section applies to **every reasoning step — conversation, cross-review, document generation — across all tools**. It complements the PR-level governor (§ Default Coding Flow + `.agents/shared/governor/`), which operates on changed files. The guards here address miss patterns at the conversation level — patterns the PR-level governor does not cover.
 
@@ -209,7 +209,7 @@ System-prompt snapshots, prior memory entries, and prior-round summaries are evi
 
 **Why.** During the 2026-04-28 round-2 review, Claude framed an unaddressed gap as "preserved as cross-review asset"; the user corrected this in round 3 — cross-review exists to close gaps, not to preserve them.
 
-**How to apply.** When recording a `governor-review-log` entry or reporting cross-review results, attach a closure status to every R-point. Saying "we will leave this as is" in prose is fine; the *category label* must be one of the three.
+**How to apply.** When filling the PR description's `## Governor Footer` block (or reporting cross-review results in any other surface), attach a closure status to every R-point so that the `r-points-fixed` / `r-points-deferred` / `r-points-rejected` count fields are well-defined. Saying "we will leave this as is" in prose is fine; the *category label* must be one of the three.
 
 ### H. Effect vs Process Question Discrimination
 
