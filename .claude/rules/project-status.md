@@ -1,12 +1,12 @@
 # Project Status
 
-> Last synced: 2026-04-30 via /sync-guidelines (#4 JWT authentication domain)
+> Last synced: 2026-05-01 via /sync-guidelines (#154 NiceGUI admin JWT RBAC backfill, #156 /docs selector revamp + frontend handoff)
 
 ## Current Version Context
 - Latest release: v0.4.0 (2026-04-21)
-- Active domains: auth (JWT access/refresh token API, #4), user (reference domain), classification (prototype), docs (RAG consumer example, #80), ai_usage (usage ledger, #75)
+- Active domains: auth (JWT access/refresh token API, #4), user (reference domain — now carries `User.role` for minimal RBAC, #154), classification (prototype), docs (RAG consumer example, #80), ai_usage (usage ledger, #75)
 - Contributor examples: `examples/todo/` (minimal CRUD, mirrors `src/user/` layout, copy into `src/` to run — see [`examples/README.md`](../../examples/README.md))
-- Infrastructure: RDB (PostgreSQL/MySQL/SQLite), DynamoDB, Storage (S3/MinIO), S3 Vectors, InMemory Vectors (quickstart), Embedding (PydanticAI + StubEmbedder fallback), LLM (PydanticAI Agent + TestModel stub fallback via `build_stub_llm_model`), RagPipeline (+ StubAnswerAgent), Broker (SQS/RabbitMQ/InMemory), Structured logging (structlog + asgi-correlation-id), JWT auth (HS256 v1). All non-DB infras are optional via `providers.Selector` + lazy factories (ADR 042). `nicegui` lives in the `admin` extra, `boto3`/`aioboto3` in the `aws` extra (#104). NiceGUI admin still uses the existing env-var login provider.
+- Infrastructure: RDB (PostgreSQL/MySQL/SQLite), DynamoDB, Storage (S3/MinIO), S3 Vectors, InMemory Vectors (quickstart), Embedding (PydanticAI + StubEmbedder fallback), LLM (PydanticAI Agent + TestModel stub fallback via `build_stub_llm_model`), RagPipeline (+ StubAnswerAgent), Broker (SQS/RabbitMQ/InMemory), Structured logging (structlog + asgi-correlation-id), JWT auth (HS256 v1). All non-DB infras are optional via `providers.Selector` + lazy factories (ADR 042). `nicegui` lives in the `admin` extra, `boto3`/`aioboto3` in the `aws` extra (#104). NiceGUI admin login is now backed by auth-domain JWT verification + DB-backed `User.role` checks (#154); the legacy env-var provider was removed.
 
 ## Recent Major Changes (since v0.3.0)
 | Feature | Issue | Impact |
@@ -55,7 +55,9 @@
 | G Closure Linter | #145 (PR #148) | Adds `tools/check_g_closure.py` plus pre-commit / CI enforcement for governor-review-log `R-points Closure Table` shape and the three canonical closure labels from AGENTS.md guard G. |
 | AI Usage Ledger | #75 (PR #149) | Adds the `ai_usage` domain, usage recording protocol, `AgentUsageRecord` / `PromptSnapshot` value objects, RDB migrations, admin and server surfaces, and coverage for usage accounting. |
 | Taskiq Error Handling | #120 (PR #150) | Adds task-scoped structlog context binding, structured task failure logging, and permanent-aware smart retry middleware wired through worker bootstrap. |
-| JWT Authentication Domain | #4 | Adds `src/auth/` with HS256 access/refresh tokens, DB-backed refresh-token rotation/revocation, `/v1/auth/register`, `/v1/auth/login`, `/v1/auth/refresh`, `/v1/auth/logout`, `/v1/auth/me`, and Bearer protection for existing `user` API routes. NiceGUI admin auth remains env-var based pending a later RBAC/admin-auth issue. |
+| JWT Authentication Domain | #4 | Adds `src/auth/` with HS256 access/refresh tokens, DB-backed refresh-token rotation/revocation, `/v1/auth/register`, `/v1/auth/login`, `/v1/auth/refresh`, `/v1/auth/logout`, `/v1/auth/me`, and Bearer protection for existing `user` API routes. NiceGUI admin auth was env-var based at #4 landing time; superseded by #154 (PR #155) which migrated NiceGUI admin to the same auth-domain JWT credential check plus DB-backed `User.role` admin gating. |
+| NiceGUI Admin JWT + Minimal RBAC | #154 (PR #155) | Migrates the NiceGUI admin login from `ADMIN_ID` / `ADMIN_PASSWORD` to the auth-domain credential check plus DB-backed admin role checks. Adds a minimal `user.role` field (`UserRole` enum, default `USER_ROLE_USER`) and idempotent `ADMIN_BOOTSTRAP_*` admin seeding. Token-free NiceGUI session metadata (refresh tokens stay out of NiceGUI storage) preserves the #4 JWT claim shape. Server-route RBAC (per-endpoint role gating beyond admin/user) is still pending; see "Not Yet Implemented". |
+| /docs Selector Revamp + Frontend Handoff | #156 | Replaces the purple AI-styled selector with a GitHub-flavoured Minimal layout (large list rows + emoji cue + primary card accent strip) and adds a built-in light/dark toggle (`prefers-color-scheme` fallback + `localStorage` persistence + pre-paint inline script for FOUC). Adds `GET /openapi-download.json` (Content-Disposition: attachment) and `docs/frontend-handoff.md` describing the operating contract (camelCase serialization, `SuccessResponse` envelope, RDB / cursor pagination shapes, JWT auth flow, CORS, breaking-change signals, plus Postman / Bruno / Hey API / Orval recipes). Quickstart, demo scripts, and tutorial copy now point at `/docs` (selector) instead of `/docs-swagger`. The five viewer mounts (Swagger / ReDoc / Scalar / Stoplight Elements / RapiDoc) are unchanged but now guarded by `test_docs_ui_routes_serve_html`. |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN
@@ -63,7 +65,7 @@
 - Entity pattern: CLEAN
 
 ## Not Yet Implemented
-- RBAC/Permissions
+- Server-route RBAC (per-endpoint role gating; minimal `User.role` + NiceGUI admin-only check landed in #154 (PR #155), but FastAPI route-level role enforcement / permission policy is still pending)
 - File Upload (UploadFile)
 - Rate Limiting (slowapi)
 - WebSocket

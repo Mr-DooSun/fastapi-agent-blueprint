@@ -1,265 +1,332 @@
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 router = APIRouter()
+
+HANDOFF_GUIDE_URL = (
+    "https://github.com/Mr-DooSun/fastapi-agent-blueprint"
+    "/blob/main/docs/frontend-handoff.md"
+)
+
+# Card data shared by the selector renderer. Keep order stable: the first two
+# entries are the recommended viewers, the rest are alternates.
+DOCS_CARDS: list[dict[str, str]] = [
+    {
+        "key": "elements",
+        "href": "/api/docs-elements",
+        "title": "Stoplight Elements",
+        "tagline": "Interactive, three-pane reader. Best for browsing.",
+        "label": "Recommended — Visual",
+        "kind": "primary",
+        "icon": "🎨",
+    },
+    {
+        "key": "scalar",
+        "href": "/api/docs-scalar",
+        "title": "Scalar API Reference",
+        "tagline": "Modern reference with try-it that bridges into a client.",
+        "label": "Recommended — Try-it",
+        "kind": "primary",
+        "icon": "✨",
+    },
+    {
+        "key": "swagger",
+        "href": "/api/docs-swagger",
+        "title": "Swagger UI",
+        "tagline": "FastAPI's bundled default. Familiar to most teams.",
+        "label": "Compatibility",
+        "kind": "secondary",
+        "icon": "📚",
+    },
+    {
+        "key": "redoc",
+        "href": "/api/docs-redoc",
+        "title": "ReDoc",
+        "tagline": "Documentation-first three-panel layout.",
+        "label": "Clean",
+        "kind": "secondary",
+        "icon": "📖",
+    },
+    {
+        "key": "rapidoc",
+        "href": "/api/docs-rapidoc",
+        "title": "RapiDoc",
+        "tagline": "Lightweight viewer. Fast initial load.",
+        "label": "Fast",
+        "kind": "secondary",
+        "icon": "⚡",
+    },
+]
+
+
+def _handoff_cards(download_url: str) -> list[dict[str, str]]:
+    # `kind="secondary"` keeps the Recommended visual weight reserved for the
+    # two viewer cards; handoff actions read as quieter rows.
+    return [
+        {
+            "key": "download",
+            "href": download_url,
+            "title": "Download OpenAPI (JSON)",
+            "tagline": "Save the live spec as openapi.json for Postman, Bruno, or any client.",
+            "label": "Spec",
+            "external": "false",
+            "kind": "secondary",
+            "icon": "⬇️",
+        },
+        {
+            "key": "handoff",
+            "href": HANDOFF_GUIDE_URL,
+            "title": "Frontend Handoff Guide",
+            "tagline": "Contract scope, test client comparison, and TypeScript SDK recipes.",
+            "label": "Guide",
+            "external": "true",
+            "kind": "secondary",
+            "icon": "🧭",
+        },
+    ]
 
 
 @router.get(
     "/docs",
     include_in_schema=False,
-    description="API Docs Selector - Main page for choosing among various documentation UIs",
+    description="API Docs Selector - landing page for choosing among various documentation UIs",
 )
-def docs_selector():
-    return HTMLResponse(
-        """
-<!doctype html>
-<html>
+def docs_selector(request: Request):
+    root_path = request.scope.get("root_path", "")
+    download_url = f"{root_path}/openapi-download.json"
+    handoff_cards = _handoff_cards(download_url)
+    return HTMLResponse(_render_selector(DOCS_CARDS, handoff_cards))
+
+
+# ---------------------------------------------------------------------------
+# Selector renderer — GitHub-flavoured minimal list with light/dark themes.
+# Recommended cards lean on a left accent strip + filled badge so the two
+# primary viewers read out of the page at a glance. Theme is user-toggleable
+# (top-right button), persists in localStorage, and falls back to the system
+# preference via prefers-color-scheme. The inline pre-paint script hydrates
+# the data-theme attribute before first paint to avoid FOUC.
+# ---------------------------------------------------------------------------
+
+
+def _render_selector(
+    docs_cards: list[dict[str, str]],
+    handoff_cards: list[dict[str, str]],
+) -> str:
+    rows = "\n".join(_selector_row(c) for c in docs_cards)
+    handoff_rows = "\n".join(_selector_row(c) for c in handoff_cards)
+    return f"""<!doctype html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>API Documentation Selector</title>
+    <title>API Documentation — fastapi-agent-blueprint</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      (function() {{
+        try {{
+          var stored = localStorage.getItem('docs-selector-theme');
+          if (stored === 'dark' || stored === 'light') {{
+            document.documentElement.setAttribute('data-theme', stored);
+          }}
+        }} catch (e) {{ /* ignore */ }}
+      }})();
+    </script>
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+      :root {{
+        --bg: #ffffff;
+        --surface: #ffffff;
+        --fg: #0e0e10;
+        --muted: #57606a;
+        --border: #d0d7de;
+        --border-hover: #0969da;
+        --accent: #0969da;
+        --accent-fg: #ffffff;
+        --accent-soft: #ddf4ff;
+        --focus-ring: #0969da;
+      }}
+      :root[data-theme="dark"] {{
+        --bg: #0d1117;
+        --surface: #161b22;
+        --fg: #e6edf3;
+        --muted: #7d8590;
+        --border: #30363d;
+        --border-hover: #58a6ff;
+        --accent: #58a6ff;
+        --accent-fg: #0d1117;
+        --accent-soft: #121d2f;
+        --focus-ring: #58a6ff;
+      }}
+      @media (prefers-color-scheme: dark) {{
+        :root:not([data-theme]) {{
+          --bg: #0d1117;
+          --surface: #161b22;
+          --fg: #e6edf3;
+          --muted: #7d8590;
+          --border: #30363d;
+          --border-hover: #58a6ff;
+          --accent: #58a6ff;
+          --accent-fg: #0d1117;
+          --accent-soft: #121d2f;
+          --focus-ring: #58a6ff;
+        }}
+      }}
 
-      body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        padding: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
+      * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+      html, body {{ background: var(--bg); }}
+      body {{
+        background: var(--bg); color: var(--fg);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+        min-height: 100vh; padding: 64px 24px; line-height: 1.5;
+        font-size: 15px;
+      }}
+      .frame {{ max-width: 720px; margin: 0 auto; }}
+      .head h1 {{ font-size: 1.6rem; font-weight: 600; margin-bottom: 4px; }}
+      .head .meta {{ color: var(--muted); font-size: 13px; }}
+      .section-head {{
+        margin: 36px 0 12px; font-size: 12px; font-weight: 600; color: var(--muted);
+        text-transform: uppercase; letter-spacing: 0.04em;
+      }}
+      .list {{ display: flex; flex-direction: column; gap: 8px; }}
+      .row {{
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        padding: 14px 16px; border: 1px solid var(--border); border-radius: 6px;
+        text-decoration: none; color: var(--fg); transition: border-color 0.12s ease;
+        background: var(--surface);
+      }}
+      .row:hover {{ border-color: var(--border-hover); }}
+      .row.primary {{
+        border-left: 3px solid var(--accent); padding-left: 14px;
+      }}
+      .row .row-leading {{ display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }}
+      .row .row-icon {{
+        font-size: 1.5rem; line-height: 1; flex-shrink: 0;
+        width: 32px; text-align: center;
+      }}
+      .row .row-text {{ min-width: 0; }}
+      .row .row-text .name {{ font-weight: 600; font-size: 0.98rem; }}
+      .row .row-text .desc {{ color: var(--muted); font-size: 13px; margin-top: 2px; }}
+      .row .row-meta {{ display: flex; align-items: center; gap: 10px; flex-shrink: 0; }}
+      .row .label {{
+        font-size: 11px; color: var(--muted); border: 1px solid var(--border);
+        padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+      }}
+      .row .label.primary {{
+        color: var(--accent-fg); background: var(--accent); border-color: var(--accent);
+      }}
+      .row .arrow {{ color: var(--muted); font-size: 14px; }}
+      .row:hover .arrow {{ color: var(--accent); }}
 
-      .container {
-        max-width: 1000px;
-        width: 100%;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 24px;
-        padding: 60px 40px;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-      }
+      .toolbar {{
+        position: fixed; top: 14px; right: 14px;
+        display: flex; gap: 4px; align-items: center;
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 6px; padding: 4px 6px;
+        font-size: 12px; z-index: 10;
+      }}
+      .toolbar button {{
+        background: transparent; border: 0; cursor: pointer;
+        color: var(--muted); padding: 4px 8px; border-radius: 3px; font: inherit;
+      }}
+      .toolbar button:hover {{ color: var(--fg); background: var(--accent-soft); }}
 
-      .header {
-        text-align: center;
-        margin-bottom: 50px;
-      }
+      .row:focus-visible,
+      .toolbar button:focus-visible {{
+        outline: 2px solid var(--focus-ring); outline-offset: 2px;
+      }}
 
-      h1 {
-        font-size: 3.5rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 16px;
-        letter-spacing: -0.02em;
-      }
-
-      .subtitle {
-        font-size: 1.2rem;
-        color: #64748b;
-        font-weight: 400;
-        max-width: 600px;
-        margin: 0 auto;
-        line-height: 1.6;
-      }
-
-      .docs-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 24px;
-        margin-top: 40px;
-      }
-
-      .docs-card {
-        background: white;
-        border-radius: 16px;
-        padding: 32px 24px;
-        text-decoration: none;
-        color: inherit;
-        display: block;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid #e2e8f0;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .docs-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #667eea, #764ba2);
-        transform: scaleX(0);
-        transition: transform 0.3s ease;
-      }
-
-      .docs-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        border-color: #667eea;
-      }
-
-      .docs-card:hover::before {
-        transform: scaleX(1);
-      }
-
-      .card-icon {
-        font-size: 3rem;
-        margin-bottom: 16px;
-        display: block;
-        text-align: center;
-      }
-
-      .docs-title {
-        font-size: 1.4rem;
-        font-weight: 600;
-        margin-bottom: 12px;
-        color: #1e293b;
-        text-align: center;
-        line-height: 1.3;
-      }
-
-      .docs-desc {
-        color: #64748b;
-        margin: 0;
-        font-size: 0.95rem;
-        line-height: 1.6;
-        text-align: center;
-      }
-
-      .badge {
-        display: inline-block;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        margin-top: 16px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-
-      @media (max-width: 768px) {
-        .container {
-          padding: 40px 24px;
-          margin: 10px;
-        }
-
-        h1 {
-          font-size: 2.5rem;
-        }
-
-        .subtitle {
-          font-size: 1.1rem;
-        }
-
-        .docs-grid {
-          grid-template-columns: 1fr;
-          gap: 16px;
-        }
-
-        .docs-card {
-          padding: 24px 20px;
-        }
-      }
-
-      @keyframes fadeInUp {
-        from {
-          opacity: 0;
-          transform: translateY(30px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .docs-card {
-        animation: fadeInUp 0.6s ease forwards;
-      }
-
-      .docs-card:nth-child(1) { animation-delay: 0.1s; }
-      .docs-card:nth-child(2) { animation-delay: 0.2s; }
-      .docs-card:nth-child(3) { animation-delay: 0.3s; }
-      .docs-card:nth-child(4) { animation-delay: 0.4s; }
-      .docs-card:nth-child(5) { animation-delay: 0.5s; }
+      @media (max-width: 720px) {{
+        body {{ padding: 32px 16px 64px; }}
+        .toolbar {{ top: 8px; right: 8px; }}
+      }}
     </style>
   </head>
   <body>
-    <div class="container">
-      <div class="header">
-        <h1>🚀 API Documentation</h1>
-        <p class="subtitle">
-          Choose your preferred style of API documentation below.<br>
-          Each one offers a unique set of features and user experience.
-        </p>
+    <nav class="toolbar" aria-label="Theme toggle">
+      <button id="theme-toggle" type="button"
+              aria-label="Toggle light or dark theme" aria-pressed="false">Dark</button>
+    </nav>
+    <div class="frame">
+      <div class="head">
+        <h1>API Documentation</h1>
+        <div class="meta">fastapi-agent-blueprint · dev environment · /docs</div>
       </div>
-
-      <div class="docs-grid">
-        <a href="/api/docs-swagger" class="docs-card">
-          <span class="card-icon">📚</span>
-          <div class="docs-title">FastAPI Swagger UI</div>
-          <p class="docs-desc">
-            The most widely used API documentation format, offering an
-            intuitive interface with full-featured functionality.
-          </p>
-          <span class="badge">Recommended</span>
-        </a>
-
-        <a href="/api/docs-redoc" class="docs-card">
-          <span class="card-icon">📖</span>
-          <div class="docs-title">ReDoc</div>
-          <p class="docs-desc">
-            A clean, readable, documentation-focused design that lets
-            you explore API specifications in a well-organized manner.
-          </p>
-          <span class="badge">Clean</span>
-        </a>
-
-        <a href="/api/docs-scalar" class="docs-card">
-          <span class="card-icon">✨</span>
-          <div class="docs-title">Scalar API Reference</div>
-          <p class="docs-desc">
-            A modern, sophisticated API documentation with
-            developer-friendly features.
-          </p>
-          <span class="badge">Modern</span>
-        </a>
-
-        <a href="/api/docs-elements" class="docs-card">
-          <span class="card-icon">🎨</span>
-          <div class="docs-title">Stoplight Elements</div>
-          <p class="docs-desc">
-            An interactive, visually appealing API documentation that
-            delivers a rich user experience.
-          </p>
-          <span class="badge">Interactive</span>
-        </a>
-
-        <a href="/api/docs-rapidoc" class="docs-card">
-          <span class="card-icon">⚡</span>
-          <div class="docs-title">RapiDoc</div>
-          <p class="docs-desc">
-            A fast, lightweight API documentation that provides
-            a simple yet efficient interface.
-          </p>
-          <span class="badge">Fast</span>
-        </a>
+      <div class="section-head">Viewers</div>
+      <div class="list">
+{rows}
+      </div>
+      <div class="section-head">Handoff</div>
+      <div class="list">
+{handoff_rows}
       </div>
     </div>
+    <script>
+      (function() {{
+        var KEY = 'docs-selector-theme';
+        var root = document.documentElement;
+        var btn = document.getElementById('theme-toggle');
+        function currentTheme() {{
+          return root.getAttribute('data-theme')
+            || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        }}
+        function paint() {{
+          var dark = currentTheme() === 'dark';
+          btn.textContent = dark ? 'Light' : 'Dark';
+          btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+        }}
+        paint();
+        btn.addEventListener('click', function() {{
+          var next = currentTheme() === 'dark' ? 'light' : 'dark';
+          root.setAttribute('data-theme', next);
+          try {{ localStorage.setItem(KEY, next); }} catch (e) {{ /* ignore */ }}
+          paint();
+        }});
+      }})();
+    </script>
   </body>
 </html>"""
+
+
+def _selector_row(card: dict[str, str]) -> str:
+    kind = card.get("kind", "primary")
+    row_class = "row primary" if kind == "primary" else "row"
+    label_class = "label primary" if kind == "primary" else "label"
+    is_external = card.get("external", "false") == "true"
+    target = ' target="_blank" rel="noopener"' if is_external else ""
+    download = (
+        " download"
+        if card.get("external") == "false" and card["key"] == "download"
+        else ""
+    )
+    icon = card.get("icon", "")
+    return f"""        <a class="{row_class}" href="{card["href"]}"{target}{download}>
+          <div class="row-leading">
+            <span class="row-icon" aria-hidden="true">{icon}</span>
+            <div class="row-text">
+              <div class="name">{card["title"]}</div>
+              <div class="desc">{card["tagline"]}</div>
+            </div>
+          </div>
+          <div class="row-meta">
+            <span class="{label_class}">{card["label"]}</span>
+            <span class="arrow">&rsaquo;</span>
+          </div>
+        </a>"""
+
+
+# ---------------------------------------------------------------------------
+# Spec download + individual UI mounts.
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/openapi-download.json",
+    include_in_schema=False,
+    description="OpenAPI spec download with attachment Content-Disposition for frontend handoff",
+)
+def openapi_download(request: Request):
+    spec = request.app.openapi()
+    return JSONResponse(
+        content=spec,
+        headers={"Content-Disposition": 'attachment; filename="openapi.json"'},
     )
 
 
@@ -271,7 +338,6 @@ def docs_selector():
 def scalar_docs(request: Request):
     root_path = request.scope.get("root_path", "")
     spec_url = f"{root_path}{request.app.openapi_url}"
-
     return HTMLResponse(
         f"""
 <!doctype html>
@@ -287,7 +353,6 @@ def scalar_docs(request: Request):
     <script>
       Scalar.createApiReference('#api', {{
         url: '{spec_url}',
-        // proxyUrl: 'https://proxy.scalar.com' // Optional CORS bypass
       }});
     </script>
   </body>
@@ -303,7 +368,6 @@ def scalar_docs(request: Request):
 def elements_docs(request: Request):
     root_path = request.scope.get("root_path", "")
     spec_url = f"{root_path}{request.app.openapi_url}"
-
     return HTMLResponse(
         f"""
 <!doctype html>
@@ -329,7 +393,6 @@ def elements_docs(request: Request):
 def rapidoc_docs(request: Request):
     root_path = request.scope.get("root_path", "")
     spec_url = f"{root_path}{request.app.openapi_url}"
-
     return HTMLResponse(
         f"""
 <!doctype html>

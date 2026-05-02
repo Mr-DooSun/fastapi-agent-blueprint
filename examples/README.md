@@ -27,8 +27,9 @@ rm -f ./quickstart.db         # so the new table is created at boot
 make quickstart
 ```
 
-Swagger at <http://127.0.0.1:8001/docs-swagger> will now list the new
-tag alongside `User`. Remove the example when you are done:
+Open <http://127.0.0.1:8001/docs> and pick Swagger from the selector;
+the new tag is now listed alongside `User`. Remove the example when you
+are done:
 
 ```bash
 rm -rf src/todo

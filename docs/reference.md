@@ -37,7 +37,9 @@ cp _env/local.env.example _env/local.env
 make dev
 ```
 
-Open <http://localhost:8000/docs-swagger> to explore the API.
+Open <http://localhost:8000/docs> to explore the API. The selector recommends
+Stoplight Elements / Scalar and exposes a `Download OpenAPI (JSON)` button
+plus a link to the [frontend handoff guide](frontend-handoff.md).
 
 For the first Alembic rollout in an environment that already has tables
 created outside Alembic, see the

@@ -1,6 +1,6 @@
 # Suggested Commands
 
-> Last synced: 2026-04-30 via /sync-guidelines (#10 reviewed; no command surface changes)
+> Last synced: 2026-05-01 via /sync-guidelines (#154 admin JWT RBAC + #156 /docs selector revamp reviewed; no `make` / pytest / lint / migration command surface changes.)
 > Purpose: Quick reference for Claude Code when executing shell commands.
 > Also referenced when running Skills.
 > Default Flow context: see [`AGENTS.md` § Default Coding Flow](../../AGENTS.md#default-coding-flow). The commands below are consulted by the `implement` and `verify` steps; this file is **not** a primary entry point in the Default Flow.
@@ -140,7 +140,10 @@ STORAGE_TYPE=s3 python run_server_local.py --env local
 ```bash
 # The admin dashboard mounts only when the `admin` extra is installed (#104)
 uv sync --extra admin            # install nicegui
-# → http://127.0.0.1:8001/admin (ADMIN_ID / ADMIN_PASSWORD from .env)
+# → http://127.0.0.1:8001/admin
+# Login uses auth-domain credentials (POST /v1/auth/login) plus a `user.role` admin
+# check (#154 / PR #155). Seed an admin via `ADMIN_BOOTSTRAP_USERNAME`,
+# `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD` env vars (idempotent on boot).
 
 # When not installed, the server boots normally and emits a structured log line:
 #   event="admin_mount_skipped" reason="nicegui_not_installed"
