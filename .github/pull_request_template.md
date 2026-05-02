@@ -62,3 +62,36 @@ Source of truth: [`AGENTS.md` § Default Coding Flow](../AGENTS.md#default-codin
 
 - [ ] PR description links the relevant section of [`migration-strategy.md` §1](../docs/ai/shared/migration-strategy.md).
 - [ ] Inherited Constraints (IC-1 ~ IC-9 in [`governor-review-log/pr-125-...`](../docs/ai/shared/governor-review-log/pr-125-hybrid-harness-target-architecture.md)) reviewed; any phase-specific tightening recorded in this PR's log entry.
+
+---
+
+## Governor Footer (pilot — ADR 047)
+
+Required from PR B onward; documentation-only on PR A. From PR E onward this footer **replaces** the "Review trail artifact" checkboxes above; until PR E lands, it is dual-write alongside the existing log-entry workflow. See [ADR 047](../docs/history/047-governor-review-provenance-consolidation.md) for the migration plan.
+
+Fill the block below verbatim and replace the placeholder values. Lint shape: each field on its own line, exact field name, single space after the colon. The closure-category labels must be exactly `Fixed`, `Deferred-with-rationale`, or `Rejected` (Guard G).
+
+```
+## Governor Footer
+- trigger: yes/no
+- reviewer: codex-cli/claude-code/...
+- rounds: N
+- r-points-fixed: N
+- r-points-deferred: N
+- r-points-rejected: N
+- touched-adr-consequences: ADR{NNN}-G{N}, ADR{NNN}-G{N} / none
+- pr-scope-notes: <one-line summary or "none">
+- final-verdict: merge-ready/minor-fixes/needs-reinforcement/block
+- links: <PR url>, <prior-log url or "n/a">
+```
+
+Field guidance:
+
+- `trigger` — `yes` if `changed_files` matches any Tier A/B/C glob in [`governor-paths.md`](../docs/ai/shared/governor-paths.md) and no full-set Exclusion applies; otherwise `no` (and you may delete this footer).
+- `reviewer` — the cross-tool reviewer that read the change. Multiple reviewers comma-separated.
+- `rounds` — total cross-tool review rounds run on this PR (plan stage + implementation stage counts as 2).
+- `r-points-fixed/deferred/rejected` — closure counts using exactly the three Guard G categories.
+- `touched-adr-consequences` — list `ADR{NNN}-G{N}` slot IDs (the canonical form used by ADR 047 IC Classification Table; e.g. `ADR047-G3`, `ADR048-G1`) this PR amends; `none` if no durable-governance constraint changed. Comma-separated.
+- `pr-scope-notes` — short prose for `pr-scope` invariants this PR self-imposes (e.g. "minimal RBAC scope; permission tables follow-up"). They are **not** promoted to ADR Consequences.
+- `final-verdict` — last cross-tool review verdict.
+- `links` — PR URL plus, while dual-write is in effect, the matching `governor-review-log/pr-{N}-*.md` entry URL.
