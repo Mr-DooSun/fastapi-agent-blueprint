@@ -159,15 +159,24 @@ LogEntryStatus = Literal["match", "mismatch", "missing", "unknown"]
 
 
 def match_log_entry(changed: list[str], current_pr: int | None) -> LogEntryStatus:
-    """Classify governor-review-log entry presence vs the current PR number."""
+    """Classify governor-review-log entry presence vs the current PR number.
 
-    log_entries = [p for p in changed if re.search(r"governor-review-log/pr-\d+-", p)]
+    Anchored at ``GOVERNOR_REVIEW_LOG_PREFIX``: a path is only treated as a
+    log entry when it lives under the canonical archive location (currently
+    ``docs/history/archive/governor-review-log/``). This prevents an
+    accidental resurrection of the pre-#160 path
+    (``docs/ai/shared/governor-review-log/...``) from silencing the
+    completion gate via a "match" verdict — Codex round-2 R1.
+    """
+
+    pattern = re.escape(GOVERNOR_REVIEW_LOG_PREFIX) + r"pr-(\d+)-"
+    log_entries = [p for p in changed if re.search(pattern, p)]
     if not log_entries:
         return "missing"
     if current_pr is None:
         return "unknown"
     for entry in log_entries:
-        m = re.search(r"governor-review-log/pr-(\d+)-", entry)
+        m = re.search(pattern, entry)
         if m and int(m.group(1)) == current_pr:
             return "match"
     return "mismatch"

@@ -195,6 +195,38 @@ def test_match_log_entry_missing_no_pr(codex_gate) -> None:
     assert codex_gate.match_log_entry(["AGENTS.md"], None) == "missing"
 
 
+def test_match_log_entry_rejects_pre_relocation_path(codex_gate) -> None:
+    """Codex round-2 R1: the pre-#160 location must not be treated as a
+    matching log entry. If someone accidentally resurrects
+    ``docs/ai/shared/governor-review-log/pr-{N}-foo.md`` for the current
+    PR, ``match_log_entry`` must return ``missing`` so the completion
+    gate emits its reminder instead of falsely silencing it."""
+
+    changed = ["docs/ai/shared/governor-review-log/pr-160-foo.md"]
+    assert codex_gate.match_log_entry(changed, 160) == "missing"
+
+
+def test_evaluate_gate_resurrection_does_not_silence(codex_gate, monkeypatch) -> None:
+    """Codex round-2 R1 (end-to-end): when only the pre-#160 path is
+    edited, the gate must NOT silence as ``match`` — the file is no longer
+    a recognised governor-review-log entry, so the gate keeps
+    governor-changing reminders active."""
+
+    monkeypatch.setattr(
+        codex_gate,
+        "changed_files",
+        lambda: [
+            "AGENTS.md",
+            "docs/ai/shared/governor-review-log/pr-160-foo.md",
+        ],
+    )
+    monkeypatch.setattr(codex_gate, "pr_number_from_branch", lambda: 160)
+    monkeypatch.setattr(codex_gate, "_read_latest_token", lambda _: None)
+    seg = codex_gate.governor_changing_segment()
+    assert seg is not None
+    assert "160" in seg
+
+
 # ---------------------------------------------------------------------------
 # pr_number_from_branch — fail-open (gh not present or no PR)
 # ---------------------------------------------------------------------------

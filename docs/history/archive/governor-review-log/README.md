@@ -71,7 +71,7 @@ The `Closure` cell may use a plain label or bold exact label:
 `Fixed (retracted)`, `Rejected after correction`, `Deferred`, lowercase
 variants, italic variants, and labels with extra words are invalid.
 
-**(Historical)** `tools/check_g_closure.py` enforced this table shape via the `governor-review-log-g-closure` pre-commit hook for `docs/ai/shared/governor-review-log/pr-*.md`. ADR 047 PR B-F (issue #157) removed the tool and the hook; the closure-table shape requirement is preserved on the 17 frozen entries by the historical record itself, and the canonical Guard G enforcement target moved to the PR-description `## Governor Footer` block (`tools/check_governor_footer.py`).
+**(Historical)** `tools/check_g_closure.py` enforced this table shape via the `governor-review-log-g-closure` pre-commit hook for `docs/ai/shared/governor-review-log/pr-*.md`. ADR 047 PR B-F (issue #157) removed the tool and the hook; the closure-table shape requirement is preserved on the 18 frozen entries by the historical record itself, and the canonical Guard G enforcement target moved to the PR-description `## Governor Footer` block (`tools/check_governor_footer.py`).
 
 ## Retention
 

@@ -331,7 +331,7 @@ rather than primary entry points (`Overlay`).
 
 ### `governor-review-log/` (directory) — closed historical archive
 
-- **Current role**: **Closed historical archive** (ADR 047 D6). Holds the 17 entries written between PR #125 and PR #158 documenting the Phase 1~5 build-out of the hybrid harness. No new entries are added — cross-tool review provenance for new PRs lives in the PR description's `## Governor Footer` block (`tools/check_governor_footer.py`).
+- **Current role**: **Closed historical archive** (ADR 047 D6). Holds the 18 entries written between PR #125 and PR #158 documenting the Phase 1~5 build-out of the hybrid harness. No new entries are added — cross-tool review provenance for new PRs lives in the PR description's `## Governor Footer` block (`tools/check_governor_footer.py`).
 - **Why it exists**: Round-4 self-coherence review (PR #125) made cross-tool review trails first-class repo artefacts during the harness build-out. ADR 047 retired the per-PR archive obligation after the build-out closed; the directory is preserved as a frozen historical record because the IC declarations inside still serve as alias targets for ADR 047's IC Classification Table.
 - **Replacement feasibility**: Replaced by PR-description Governor Footer + ADR Consequences (`ADR{NNN}-G{N}` slots). Existing entries are not migrated; they remain as historical context.
 - **Final location**: unchanged. README.md banner declares the archive closed.

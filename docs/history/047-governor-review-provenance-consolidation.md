@@ -24,7 +24,7 @@ Six decisions:
 
 ADR 045 (PR #125, 2026-04-26) introduced a hybrid local process governor. Pillar 4 created `docs/ai/shared/governor-review-log/` as a per-PR permanent archive of cross-tool review trails. Pillar 7 added a Stop-hook completion gate that emits a reminder when a Tier A/B/C PR has no matching log entry.
 
-Five days later, the directory holds 18 entries, of which 14 are governance-meta self-references from the harness build-out itself (Phase 1~5, language policy, locale, reasoning guards, G linter). The remaining 4 are feature PRs (#152 / #153 / #155 / #156) that were pulled into governor-changing classification not by their primary changes but by their own `/sync-guidelines` closure step editing `.claude/rules/project-status.md` (Tier A). PR #156's entry [explicitly notes this](../ai/shared/governor-review-log/pr-156-docs-selector-revamp-handoff.md) self-loop.
+Five days later, the directory holds 18 entries, of which 14 are governance-meta self-references from the harness build-out itself (Phase 1~5, language policy, locale, reasoning guards, G linter). The remaining 4 are feature PRs (#152 / #153 / #155 / #156) that were pulled into governor-changing classification not by their primary changes but by their own `/sync-guidelines` closure step editing `.claude/rules/project-status.md` (Tier A). PR #156's entry [explicitly notes this](archive/governor-review-log/pr-156-docs-selector-revamp-handoff.md) self-loop.
 
 A two-round audit was commissioned:
 
@@ -236,7 +236,7 @@ The 44 historical IC tags from `docs/ai/shared/governor-review-log/pr-*.md` (as 
 
 **Phantom citations (informational):**
 
-The strings `IC-RG-6`, `IC-RG-7`, and `IC-RG-8` appear nowhere as declarations. They surface only inside the over-broad citation form `IC-1 through IC-RG-8` used in [pr-148](../ai/shared/governor-review-log/pr-148-g-closure-linter.md) and [pr-151](../ai/shared/governor-review-log/pr-151-architecture-review-followup.md); only IC-RG-1 through IC-RG-5 were actually declared (in [pr-143](../ai/shared/governor-review-log/pr-143-reasoning-guards.md)). They are recorded here so future readers do not search for non-existent tags. They have no classification — they are not ICs, they are citation noise.
+The strings `IC-RG-6`, `IC-RG-7`, and `IC-RG-8` appear nowhere as declarations. They surface only inside the over-broad citation form `IC-1 through IC-RG-8` used in [pr-148](archive/governor-review-log/pr-148-g-closure-linter.md) and [pr-151](archive/governor-review-log/pr-151-architecture-review-followup.md); only IC-RG-1 through IC-RG-5 were actually declared (in [pr-143](archive/governor-review-log/pr-143-reasoning-guards.md)). They are recorded here so future readers do not search for non-existent tags. They have no classification — they are not ICs, they are citation noise.
 
 ## Self-Application Recovery (PR A bridge)
 
