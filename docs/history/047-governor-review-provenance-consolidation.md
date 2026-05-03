@@ -263,3 +263,63 @@ The bootstrapping rule — "the migration PR satisfies the verifier it is replac
 - `docs/ai/shared/harness-asset-matrix.md` — asset Tier classifications (PR E reclassifies `governor-review-log/` and `tools/check_g_closure.py`).
 - `tools/check_g_closure.py` — closure-table linter (PR F removes; replaced by `tools/check_governor_footer.py` in PR B).
 - `tools/check_language_policy.py` — Tier 1 enforcer (PR F simplifies the per-file allowlist; provenance-prefix carve-out + `LOCALE_DATA_FILES` retained).
+
+## Post-Decision Note 2026-05-03 — D2 Location Revisited (#160)
+
+**Scope.** Physical location of the closed historical archive moved from
+`docs/ai/shared/governor-review-log/` to
+`docs/history/archive/governor-review-log/`. Content preservation is
+honoured at the spirit of D6 — markdown-link form `[text](path)` inside
+the 18 frozen entries was rewritten so external link targets remain
+valid after the move (the previous form `../../history/045-...` already
+resolved to a non-existent `docs/ai/history/...` path; the rewrite
+incidentally fixes pre-existing broken links). Prose / fenced-code-block
+path quotes are preserved verbatim as historical evidence of the rule
+in force when each entry was written. No `Errata YYYY-MM-DD:` headings
+are added inside frozen entries.
+
+**Operational decisions preserved verbatim.** D2 frozen-archive
+contract, D3 alias-immutability invariant, D4 sync-cosmetic carve-out,
+D5 phased dual-write completion, D6 append-only errata. ADR047-G1~G27
+slot bodies and the IC Classification Table (lines 175-241) are not
+amended.
+
+**Trigger.** Visual noise in the active `docs/ai/shared/` reference
+tree. The 18 frozen entries' value is historical / audit-trail, not
+operational, and `docs/history/archive/` is the canonical home for
+"preserved-for-history-but-not-required-reading" archives (precedent:
+PR #83, 2026-04-20, moved 29 superseded ADRs from `docs/history/` to
+`docs/history/archive/`).
+
+**Bundling justification (ADR047-G27).** This is a *location contract
+change*, not a mechanical move: the `REVIEW_LOG_GLOB` carve-out in
+`tools/check_language_policy.py` and the shared completion-gate
+`GOVERNOR_REVIEW_LOG_PREFIX` move with the directory. Splitting would
+leave the language-policy provenance carve-out demoting Korean-provenance
+lines to Hangul violations between commits. G27's narrow-scope
+explicit-justification clause is honoured.
+
+**Hook-local dead-constant cleanup (Codex round-1 R2).**
+`.claude/hooks/completion_gate.py` and `.codex/hooks/completion_gate.py`
+declared a local `GOVERNOR_REVIEW_LOG_PREFIX` constant that was
+unreachable in the normal import path — the shared
+`is_log_only_backfill()` from `.agents/shared/governor/completion_gate.py`
+is the actual decision point. The dead constants are removed in this
+PR. A boundary test
+(`tests/unit/agents_shared/test_governor_boundary.py::test_hook_shims_do_not_redeclare_governor_review_log_prefix`)
+prevents resurrection.
+
+**README banner correction (Codex round-1 R3).**
+`docs/history/archive/governor-review-log/README.md` previously declared
+"17 entries below" while the index already listed 18 (#125 ~ #158).
+Corrected to "18 entries" — banner-meta only; the 18 entries themselves
+remain frozen.
+
+**Self-application proof.** This PR is governor-changing (touches
+`docs/history/**`, AGENTS.md, governor-paths.md, the shared governor
+module, and the language-policy enforcer). Cross-tool review provenance
+lives in the PR description's `## Governor Footer` block per D2, with
+two rounds: (1) plan-stage on the implementation plan, three R-points
+all closed `Fixed`; (2) implementation-stage on the actual diff, R-points
+recorded in the footer. No new `governor-review-log/` entry is
+written — that artefact format was retired by D2.

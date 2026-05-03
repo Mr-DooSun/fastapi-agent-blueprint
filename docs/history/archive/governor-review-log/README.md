@@ -8,7 +8,7 @@
 > (ADR047-G1 ~ ADR047-G27)" and the IC Classification Table for the
 > historical-id alias map.
 >
-> The 17 entries below document the Phase 1~5 build-out of the hybrid harness
+> The 18 entries below document the Phase 1~5 build-out of the hybrid harness
 > governance system. They remain in the repository as a frozen historical
 > record; do not edit existing entries except to append append-only English
 > errata under an explicit ``Errata YYYY-MM-DD:`` heading. Provenance prefixes
@@ -75,7 +75,7 @@ variants, italic variants, and labels with extra words are invalid.
 
 ## Retention
 
-Closed historical archive — see banner above. The 17 entries below are preserved for the lifetime of the repository as a frozen build-out record. The active equivalents are the PR-description Governor Footer block (`tools/check_governor_footer.py`) and ADR Consequences (`ADR{NNN}-G{N}` slots in [ADR 047](../../047-governor-review-provenance-consolidation.md) and successor ADRs).
+Closed historical archive — see banner above. The 18 entries below are preserved for the lifetime of the repository as a frozen build-out record. The active equivalents are the PR-description Governor Footer block (`tools/check_governor_footer.py`) and ADR Consequences (`ADR{NNN}-G{N}` slots in [ADR 047](../../047-governor-review-provenance-consolidation.md) and successor ADRs).
 
 ## Drift discipline
 
