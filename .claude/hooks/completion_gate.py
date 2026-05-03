@@ -24,7 +24,6 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 STATE_DIR = REPO_ROOT / ".claude" / "state"
 GOVERNOR_PATHS_MD = REPO_ROOT / "docs" / "ai" / "shared" / "governor-paths.md"
-GOVERNOR_REVIEW_LOG_PREFIX = "docs/ai/shared/governor-review-log/"
 
 _SHARED = REPO_ROOT / ".agents" / "shared"
 if str(_SHARED) not in sys.path:

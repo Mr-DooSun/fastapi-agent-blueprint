@@ -45,7 +45,7 @@ from .paths import GOVERNOR_PATHS_MD, REPO_ROOT
 from .sync_cosmetic import DiffSource, governor_subset, is_sync_cosmetic_only
 from .tokens import EXPLORATION_TOKENS
 
-GOVERNOR_REVIEW_LOG_PREFIX = "docs/ai/shared/governor-review-log/"
+GOVERNOR_REVIEW_LOG_PREFIX = "docs/history/archive/governor-review-log/"
 
 # IC-2: byte-for-byte string-equal between Claude/Codex hook adapters.
 # Parity is asserted by tests/unit/agents_shared/test_completion_gate.py.
