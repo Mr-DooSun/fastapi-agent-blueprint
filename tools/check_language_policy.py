@@ -157,8 +157,10 @@ TOKEN_LITERALS_BY_FILE: dict[str, set[str]] = {
     # historical archive continues to pass the language policy check. Do NOT
     # extend this block: new governor-changing PRs use the PR-description
     # Governor Footer block instead of writing new log entries, so no new
-    # files should ever require entries here.
-    "docs/ai/shared/governor-review-log/pr-125-hybrid-harness-target-architecture.md": {
+    # files should ever require entries here. Archive moved to
+    # docs/history/archive/governor-review-log/ per ADR 047 post-decision note
+    # (#160).
+    "docs/history/archive/governor-review-log/pr-125-hybrid-harness-target-architecture.md": {
         "[자명]",
         "[긴급]",
         "[탐색]",
@@ -166,7 +168,7 @@ TOKEN_LITERALS_BY_FILE: dict[str, set[str]] = {
         "긴급",
         "탐색",
     },
-    "docs/ai/shared/governor-review-log/pr-126-userpromptsubmit-token-parser.md": {
+    "docs/history/archive/governor-review-log/pr-126-userpromptsubmit-token-parser.md": {
         "[자명]",
         "[긴급]",
         "[탐색]",
@@ -174,15 +176,15 @@ TOKEN_LITERALS_BY_FILE: dict[str, set[str]] = {
         "긴급",
         "탐색",
     },
-    "docs/ai/shared/governor-review-log/pr-127-verify-first-adapters.md": {
+    "docs/history/archive/governor-review-log/pr-127-verify-first-adapters.md": {
         "[탐색]",
         "탐색",
     },
-    "docs/ai/shared/governor-review-log/pr-128-completion-gate-stop-adapter.md": {
+    "docs/history/archive/governor-review-log/pr-128-completion-gate-stop-adapter.md": {
         "[탐색]",
         "탐색",
     },
-    "docs/ai/shared/governor-review-log/pr-132-language-policy.md": {
+    "docs/history/archive/governor-review-log/pr-132-language-policy.md": {
         "[자명]",
         "[긴급]",
         "[탐색]",
@@ -218,7 +220,7 @@ PROVENANCE_PREFIXES: tuple[str, ...] = (
     "> Historical Korean excerpt (ko, verbatim):",
 )
 
-REVIEW_LOG_GLOB = "docs/ai/shared/governor-review-log/"
+REVIEW_LOG_GLOB = "docs/history/archive/governor-review-log/"
 
 # ---------------------------------------------------------------------------
 # README link-label exemption
@@ -360,7 +362,8 @@ def find_violations(path: Path, *, repo_root: Path = REPO_ROOT) -> list[Violatio
                             reason=(
                                 "missing English normalised line after provenance "
                                 "prefix on the previous line (AGENTS.md § Language "
-                                "Policy → Exemptions: governor-review-log/**)"
+                                "Policy → Exemptions: docs/history/archive/"
+                                "governor-review-log/**)"
                             ),
                         )
                     )
