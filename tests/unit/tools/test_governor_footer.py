@@ -282,7 +282,7 @@ def test_log_only_backfill_is_not_governor_changing():
         body,
         source="t",
         require_governor_footer=True,
-        changed_files=["docs/ai/shared/governor-review-log/pr-125-foo.md"],
+        changed_files=["docs/history/archive/governor-review-log/pr-125-foo.md"],
     )
     assert violations == []
 

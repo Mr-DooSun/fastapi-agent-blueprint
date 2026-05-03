@@ -111,7 +111,7 @@ def test_token_literal_does_not_launder_korean_prose(tmp_path: Path) -> None:
 def test_review_log_provenance_prefix_passes(tmp_path: Path) -> None:
     violations = _scan(
         tmp_path,
-        "docs/ai/shared/governor-review-log/pr-999-example.md",
+        "docs/history/archive/governor-review-log/pr-999-example.md",
         "> Original reviewer verdict (ko, verbatim): 보완 필요\n"
         "> English normalised verdict: needs follow-up.\n",
     )
@@ -121,7 +121,7 @@ def test_review_log_provenance_prefix_passes(tmp_path: Path) -> None:
 def test_review_log_korean_without_prefix_is_violation(tmp_path: Path) -> None:
     violations = _scan(
         tmp_path,
-        "docs/ai/shared/governor-review-log/pr-999-example.md",
+        "docs/history/archive/governor-review-log/pr-999-example.md",
         "Some random text 보완 필요\n",
     )
     assert len(violations) == 1
@@ -134,7 +134,7 @@ def test_review_log_multiline_provenance_must_repeat_prefix(
     every line. A continuation line without the prefix is a violation."""
     violations = _scan(
         tmp_path,
-        "docs/ai/shared/governor-review-log/pr-999-example.md",
+        "docs/history/archive/governor-review-log/pr-999-example.md",
         "> Original user/owner statement (ko, verbatim): 첫 번째 줄\n"
         "두 번째 줄에는 prefix가 없음\n",
     )
@@ -153,7 +153,7 @@ def test_review_log_provenance_without_english_summary_is_violation(
     A provenance-only entry with no English summary is a violation."""
     violations = _scan(
         tmp_path,
-        "docs/ai/shared/governor-review-log/pr-999-example.md",
+        "docs/history/archive/governor-review-log/pr-999-example.md",
         "> Original reviewer verdict (ko, verbatim): 보완 필요\n",
     )
     assert len(violations) == 1
@@ -167,7 +167,7 @@ def test_review_log_provenance_with_blank_then_english_passes(
     is acceptable — the next *non-blank* line is what the checker examines."""
     violations = _scan(
         tmp_path,
-        "docs/ai/shared/governor-review-log/pr-999-example.md",
+        "docs/history/archive/governor-review-log/pr-999-example.md",
         "> Original reviewer verdict (ko, verbatim): 보완 필요\n\nneeds follow-up.\n",
     )
     assert violations == []
@@ -187,7 +187,7 @@ def test_review_log_consecutive_provenance_lines_each_summarised(
     )
     violations = _scan(
         tmp_path,
-        "docs/ai/shared/governor-review-log/pr-999-example.md",
+        "docs/history/archive/governor-review-log/pr-999-example.md",
         content,
     )
     assert violations == []
@@ -199,7 +199,7 @@ def test_review_log_adjacent_provenance_lines_still_need_english_summary(
     """A second provenance line is not an English summary for the first one."""
     violations = _scan(
         tmp_path,
-        "docs/ai/shared/governor-review-log/pr-999-example.md",
+        "docs/history/archive/governor-review-log/pr-999-example.md",
         "> Original user/owner statement (ko, verbatim): 첫 번째 한국어 줄\n"
         "> Original user/owner statement (ko, verbatim): 두 번째 한국어 줄\n"
         "Second English line.\n",

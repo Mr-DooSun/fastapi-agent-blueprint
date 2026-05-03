@@ -271,3 +271,31 @@ def test_gatestatus_variants_referenced_by_completion_gate_shims() -> None:
                 f"(expected token {signal!r}). Add the corresponding silence "
                 "or render path before introducing the new variant."
             )
+
+
+# ---------------------------------------------------------------------------
+# 5. (#160) Hook-local GOVERNOR_REVIEW_LOG_PREFIX must not resurrect
+# ---------------------------------------------------------------------------
+# Per Codex round-1 R2 on the relocation PR (#160): both hook completion
+# gates previously declared a local ``GOVERNOR_REVIEW_LOG_PREFIX`` constant
+# that was unreachable in the normal import path — the shared
+# ``is_log_only_backfill()`` from ``.agents/shared/governor/completion_gate.py``
+# does the work. The dead constants were removed in #160 commit 4. This
+# test prevents accidental resurrection: only the shared module may declare
+# the prefix.
+COMPLETION_GATE_SHIM_FILES = [
+    REPO_ROOT / ".claude" / "hooks" / "completion_gate.py",
+    REPO_ROOT / ".codex" / "hooks" / "completion_gate.py",
+]
+
+
+def test_hook_shims_do_not_redeclare_governor_review_log_prefix() -> None:
+    """Hook shims must rely on the shared prefix, not declare their own."""
+
+    for shim in COMPLETION_GATE_SHIM_FILES:
+        text = shim.read_text(encoding="utf-8")
+        assert "GOVERNOR_REVIEW_LOG_PREFIX" not in text, (
+            f"{shim.name}: redeclares GOVERNOR_REVIEW_LOG_PREFIX. The shared "
+            "is_log_only_backfill() from .agents/shared/governor/completion_gate.py "
+            "is the single source of truth — see #160 R2."
+        )

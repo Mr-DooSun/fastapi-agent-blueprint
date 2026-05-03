@@ -31,15 +31,15 @@ from governor import (
 # ---------------------------------------------------------------------------
 def test_is_log_only_backfill_all_under_log_dir() -> None:
     changed = [
-        "docs/ai/shared/governor-review-log/pr-128-foo.md",
-        "docs/ai/shared/governor-review-log/README.md",
+        "docs/history/archive/governor-review-log/pr-128-foo.md",
+        "docs/history/archive/governor-review-log/README.md",
     ]
     assert is_log_only_backfill(changed) is True
 
 
 def test_is_log_only_backfill_mixed_returns_false() -> None:
     changed = [
-        "docs/ai/shared/governor-review-log/pr-128-foo.md",
+        "docs/history/archive/governor-review-log/pr-128-foo.md",
         "AGENTS.md",
     ]
     assert is_log_only_backfill(changed) is False
@@ -62,10 +62,10 @@ def test_is_governor_changing_negative() -> None:
 @pytest.mark.parametrize(
     "changed,pr,expected",
     [
-        (["docs/ai/shared/governor-review-log/pr-100-foo.md"], 100, "match"),
-        (["docs/ai/shared/governor-review-log/pr-99-foo.md"], 100, "mismatch"),
+        (["docs/history/archive/governor-review-log/pr-100-foo.md"], 100, "match"),
+        (["docs/history/archive/governor-review-log/pr-99-foo.md"], 100, "mismatch"),
         (["AGENTS.md"], 100, "missing"),
-        (["docs/ai/shared/governor-review-log/pr-100-foo.md"], None, "unknown"),
+        (["docs/history/archive/governor-review-log/pr-100-foo.md"], None, "unknown"),
     ],
 )
 def test_match_log_entry(changed: list[str], pr: int | None, expected: str) -> None:
@@ -89,7 +89,7 @@ def test_evaluate_gate_silent_no_changes(tmp_path) -> None:
 
 
 def test_evaluate_gate_silent_log_only(tmp_path) -> None:
-    changed = ["docs/ai/shared/governor-review-log/pr-1-x.md"]
+    changed = ["docs/history/archive/governor-review-log/pr-1-x.md"]
     result = evaluate_gate(state_dir=tmp_path, changed_files=changed, pr_number=None)
     assert result.status == "silent_log_only"
     assert result.governor_changing is False
@@ -114,7 +114,7 @@ def test_evaluate_gate_silent_not_governor(tmp_path) -> None:
 def test_evaluate_gate_match_with_pr(tmp_path) -> None:
     changed = [
         "AGENTS.md",
-        "docs/ai/shared/governor-review-log/pr-128-shared-governor-module.md",
+        "docs/history/archive/governor-review-log/pr-128-shared-governor-module.md",
     ]
     result = evaluate_gate(state_dir=tmp_path, changed_files=changed, pr_number=128)
     assert result.status == "match"
@@ -131,7 +131,7 @@ def test_evaluate_gate_missing_with_pr(tmp_path) -> None:
 def test_evaluate_gate_mismatch_with_pr(tmp_path) -> None:
     changed = [
         "AGENTS.md",
-        "docs/ai/shared/governor-review-log/pr-99-other.md",
+        "docs/history/archive/governor-review-log/pr-99-other.md",
     ]
     result = evaluate_gate(state_dir=tmp_path, changed_files=changed, pr_number=128)
     assert result.status == "mismatch"
@@ -141,7 +141,7 @@ def test_evaluate_gate_mismatch_with_pr(tmp_path) -> None:
 def test_evaluate_gate_unknown_pr(tmp_path) -> None:
     changed = [
         "AGENTS.md",
-        "docs/ai/shared/governor-review-log/pr-128-x.md",
+        "docs/history/archive/governor-review-log/pr-128-x.md",
     ]
     result = evaluate_gate(state_dir=tmp_path, changed_files=changed, pr_number=None)
     assert result.status == "unknown"
@@ -200,7 +200,7 @@ def test_governor_changing_segment_wraps_evaluate_and_render(tmp_path) -> None:
 
 
 def test_governor_changing_segment_silent_when_log_only(tmp_path) -> None:
-    changed = ["docs/ai/shared/governor-review-log/pr-128-foo.md"]
+    changed = ["docs/history/archive/governor-review-log/pr-128-foo.md"]
     assert (
         governor_changing_segment(
             state_dir=tmp_path, changed_files=changed, pr_number=128
