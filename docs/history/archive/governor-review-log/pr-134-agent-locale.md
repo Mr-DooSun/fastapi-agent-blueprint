@@ -16,7 +16,7 @@ emit Korean. With the variable unset / `en` / unknown, output is
 byte-identical to pre-#133 English.
 
 The new locale data file
-[`.agents/shared/governor/locale.py`](../../../.agents/shared/governor/locale.py)
+[`.agents/shared/governor/locale.py`](../../../../.agents/shared/governor/locale.py)
 holds an 18-key table — 3 reminder constants re-exported from
 `verify.py` / `completion_gate.py` (drift impossible by reference)
 and 15 sync-advisory keys whose English values mirror the inline
@@ -44,7 +44,7 @@ CLAUDE.md (Tier A), `docs/ai/shared/**` (Tier A),
 (Tier B), `.agents/**` (Tier B), `tools/check_language_policy.py`
 (Tier A), `.pre-commit-config.yaml` (Tier A). Therefore this
 self-application entry is mandatory per
-[`governor-paths.md`](../governor-paths.md).
+[`governor-paths.md`](../../../ai/shared/governor-paths.md).
 
 ## Review rounds
 

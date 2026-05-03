@@ -1,6 +1,6 @@
 # Governor Review Log
 
-> **Closed historical archive — no new entries are added after PR #158 / [ADR 047](../../history/047-governor-review-provenance-consolidation.md).**
+> **Closed historical archive — no new entries are added after PR #158 / [ADR 047](../../047-governor-review-provenance-consolidation.md).**
 > Cross-tool review provenance for new governor-changing PRs lives in the PR
 > description's ``## Governor Footer`` block (ADR 047 §D2), enforced in CI by
 > ``tools/check_governor_footer.py``. Durable inherited constraints live in
@@ -21,13 +21,13 @@
 
 ## Purpose
 
-Issue #117 introduced a hybrid local process governor (ADR 045). The review trail that produced ADR 045 — three rounds of Codex `gpt-5.5 --sandbox read-only` review — is *itself* a load-bearing piece of context that subsequent governor-changing PRs (Phase 2~5 of [migration-strategy.md](../migration-strategy.md), and any future shared-rule edit) must inherit to avoid re-discovering the same blind spots.
+Issue #117 introduced a hybrid local process governor (ADR 045). The review trail that produced ADR 045 — three rounds of Codex `gpt-5.5 --sandbox read-only` review — is *itself* a load-bearing piece of context that subsequent governor-changing PRs (Phase 2~5 of [migration-strategy.md](../../../ai/shared/migration-strategy.md), and any future shared-rule edit) must inherit to avoid re-discovering the same blind spots.
 
 This directory exists so that the trail is not buried in PR descriptions.
 
 ## Scope (which PRs need a log entry)
 
-A PR is **governor-changing** — and therefore must add an entry here — if its `changed_files` intersects any glob in [`governor-paths.md`](../governor-paths.md) (Tier A / B / C minus Exclusions).
+A PR is **governor-changing** — and therefore must add an entry here — if its `changed_files` intersects any glob in [`governor-paths.md`](../../../ai/shared/governor-paths.md) (Tier A / B / C minus Exclusions).
 
 For non-governor-changing PRs (regular feature, bug fix, refactor inside `src/`), no entry is required. The `governor-paths.md` file itself defines the Exclusions (e.g. log-only backfill PRs that extend an existing entry).
 
@@ -75,7 +75,7 @@ variants, italic variants, and labels with extra words are invalid.
 
 ## Retention
 
-Closed historical archive — see banner above. The 17 entries below are preserved for the lifetime of the repository as a frozen build-out record. The active equivalents are the PR-description Governor Footer block (`tools/check_governor_footer.py`) and ADR Consequences (`ADR{NNN}-G{N}` slots in [ADR 047](../../history/047-governor-review-provenance-consolidation.md) and successor ADRs).
+Closed historical archive — see banner above. The 17 entries below are preserved for the lifetime of the repository as a frozen build-out record. The active equivalents are the PR-description Governor Footer block (`tools/check_governor_footer.py`) and ADR Consequences (`ADR{NNN}-G{N}` slots in [ADR 047](../../047-governor-review-provenance-consolidation.md) and successor ADRs).
 
 ## Drift discipline
 

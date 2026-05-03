@@ -36,7 +36,7 @@ This PR is **governor-changing** because it edits AGENTS.md
 and `governor-paths.md` (Tier A — Tier A list expanded to include
 `CLAUDE.md`, and the `pre-commit-config.yaml` typo fixed).
 Therefore this self-application entry is mandatory per
-[`governor-paths.md`](../governor-paths.md).
+[`governor-paths.md`](../../../ai/shared/governor-paths.md).
 
 ## Review rounds
 

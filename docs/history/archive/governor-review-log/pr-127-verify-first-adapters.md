@@ -8,7 +8,7 @@
 
 ## Summary
 
-Implements Phase 3 of [ADR 045](../../history/045-hybrid-harness-target-architecture.md): adds informational verify-first reminders to both harnesses so the `verify` step of the Default Coding Flow is not silently skipped.
+Implements Phase 3 of [ADR 045](../../045-hybrid-harness-target-architecture.md): adds informational verify-first reminders to both harnesses so the `verify` step of the Default Coding Flow is not silently skipped.
 
 - **Claude side** — new `PostToolUse Edit|Write` sibling hook pair (`.claude/hooks/verify-first.sh` + `.claude/hooks/verify_first.py`). On every `.py` edit, reads the latest Phase 2 marker from `.claude/state/exception-token-*.json`; emits bilingual stderr reminder unless the token is `[exploration]`/`[탐색]`. Never blocks (HC-3.3). Fail-open on all error paths (HC-3.6).
 - **Codex side** — Stop hook segment merge pattern (IC-2). New library module `.codex/hooks/verify_first.py` imported by the existing `stop-sync-reminder.py` (no new hooks.json entry). `.codex/hooks/post-tool-format.py` extended with a verify-log writer that records `pytest` / `make test` / `make demo[-rag]` / `alembic upgrade` invocations as JSONL to `.codex/state/verify-log-{session_id}.json`. `stop-sync-reminder.py` refactored to a segments list (IC-2 single output) and appends a verify-first segment when changed `.py` files exist and the current-session verify-log is absent or stale.

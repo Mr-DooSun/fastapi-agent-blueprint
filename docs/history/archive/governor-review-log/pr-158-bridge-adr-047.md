@@ -2,7 +2,7 @@
 
 ## Summary
 
-PR [#158](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/158) introduces [ADR 047](../../history/047-governor-review-provenance-consolidation.md) as the bridge for a 6-PR phased migration that right-sizes the cross-tool review provenance system. Two rounds of Codex CLI cross-review (gpt-5.5, model_reasoning_effort=xhigh, sandbox=read-only) — plus a third design-stage review on the ADR 047 draft itself — concluded that the build-out trail (Phase 1~5, 5 days, 14 self-referential entries) was right-sized but the surrounding permanent infrastructure (per-PR archive obligation, lifetime retention, broad Tier matching that creates a `/sync-guidelines` self-loop, full-output Self-Application Proof archival) is over-engineered for a solo-developer steady state.
+PR [#158](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/158) introduces [ADR 047](../../047-governor-review-provenance-consolidation.md) as the bridge for a 6-PR phased migration that right-sizes the cross-tool review provenance system. Two rounds of Codex CLI cross-review (gpt-5.5, model_reasoning_effort=xhigh, sandbox=read-only) — plus a third design-stage review on the ADR 047 draft itself — concluded that the build-out trail (Phase 1~5, 5 days, 14 self-referential entries) was right-sized but the surrounding permanent infrastructure (per-PR archive obligation, lifetime retention, broad Tier matching that creates a `/sync-guidelines` self-loop, full-output Self-Application Proof archival) is over-engineered for a solo-developer steady state.
 
 The migration folds durable inherited constraints into ADR Consequences (Nygard pattern: "consequences become context for later ADRs"; MADR 4.0 / Y-Statements) and moves cross-tool review provenance to a CI-linted PR-description Governor Footer. PR A populates the bridge ADR with a 47-row IC classification table covering all 44 historical IC tags across 6 categories (durable-governance / durable-domain / pr-scope / superseded / historical-only / follow-up) plus a `historical_id → adr_clause → status` alias mapping. The PR template gains the Governor Footer pilot block (dual-write with the existing checkboxes); PR B adds the CI linter; PR C populates ADR 047 Consequences; PR D fixes the `/sync-guidelines` self-loop; PR E switches the active source of truth; PR F removes the legacy `tools/check_g_closure.py` after the new linter has cleanly handled at least 2 unrelated governor-changing PRs.
 
@@ -59,7 +59,7 @@ The PR is governor-changing because it introduces a new ADR under `docs/history/
 
 This is the LAST entry written under the pre-ADR-047 obligation. From PR B onward, durable-governance constraints are recorded in ADR 047 Consequences as `ADR047-G*` slots (PR C populates them); the cross-tool review trail moves to the PR-description Governor Footer.
 
-This PR introduces no net-new IC tags. It carries forward all 44 existing tags via the IC Classification Table in [ADR 047](../../history/047-governor-review-provenance-consolidation.md) `### IC Classification Table`. The mapping is alias-only — no semantic change to any historical IC at PR A merge time.
+This PR introduces no net-new IC tags. It carries forward all 44 existing tags via the IC Classification Table in [ADR 047](../../047-governor-review-provenance-consolidation.md) `### IC Classification Table`. The mapping is alias-only — no semantic change to any historical IC at PR A merge time.
 
 The new `ADR047-G*` slot bodies will be authored in PR C; this PR only records the mapping skeleton.
 

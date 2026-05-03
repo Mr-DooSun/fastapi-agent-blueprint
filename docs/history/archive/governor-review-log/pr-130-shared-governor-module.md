@@ -6,7 +6,7 @@
 - PR: https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/130
 - Branch: `feat/124-shared-governor-module`
 - Issue: [#124](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/124)
-- ADR: [ADR 045](../../history/045-hybrid-harness-target-architecture.md)
+- ADR: [ADR 045](../../045-hybrid-harness-target-architecture.md)
 - Phase: **5 of 5** — closes the [#117](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/117) "Hybrid Harness v1" milestone
 - Inherited constraints: pr-125 IC-1 ~ IC-10, pr-126 IC-11 (Phase 2 marker schema + safety-block-first), pr-127 verify-log freshness contract, pr-128 IC-11 resolution (Option A read-and-delete) + IC-12 marker lifecycle
 
