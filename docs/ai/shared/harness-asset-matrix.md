@@ -361,7 +361,7 @@ rather than primary entry points (`Overlay`).
 
 ### `tools/check_g_closure.py` (#145) — superseded and removed by ADR 047 PR (#159)
 
-- **Current role**: Removed in PR #159 (ADR 047 PR B-F rollout). Was a mechanical checker for AGENTS.md guard G that scanned `docs/ai/shared/governor-review-log/pr-*.md`.
+- **Current role**: Removed in PR #159 (ADR 047 PR B-F rollout). Was a mechanical checker for AGENTS.md guard G that scanned `docs/history/archive/governor-review-log/pr-*.md`.
 - **Why it exists (historical)**: Issue #145 turned the reasoning-level G closure rule from text-only discipline into a local pre-commit / CI-enforced guard for governor review-log entries.
 - **Replacement feasibility**: Replaced by `tools/check_governor_footer.py` which validates the PR-description `## Governor Footer` block (closure-label vocabulary preserved exactly: `Fixed` / `Deferred-with-rationale` / `Rejected` per Guard G — ADR047-G26).
 - **Final location**: deleted.

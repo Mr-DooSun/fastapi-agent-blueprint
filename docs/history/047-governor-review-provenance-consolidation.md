@@ -257,7 +257,7 @@ The bootstrapping rule — "the migration PR satisfies the verifier it is replac
 
 - ADR [045](045-hybrid-harness-target-architecture.md) — introduced the system this ADR right-sizes. Pillars 4 + 7 partially superseded.
 - `docs/ai/shared/governor-paths.md` — Tier A/B/C path list (PR D adds an Exclusion).
-- `docs/ai/shared/governor-review-log/README.md` — frozen archive (PR E adds the closure banner).
+- `docs/history/archive/governor-review-log/README.md` — frozen archive (PR E adds the closure banner; relocated from `docs/ai/shared/` per the post-decision note below).
 - `docs/ai/shared/target-operating-model.md` §3 §5 §7 — cross-tool review cadence (PR E updates the capture location).
 - `docs/ai/shared/drift-checklist.md` §1D — sync verification rule (PR E removes or replaces).
 - `docs/ai/shared/harness-asset-matrix.md` — asset Tier classifications (PR E reclassifies `governor-review-log/` and `tools/check_g_closure.py`).

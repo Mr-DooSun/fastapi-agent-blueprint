@@ -16,8 +16,8 @@ A PR is **governor-changing** if its `changed_files` intersects any path below.
 
 - `AGENTS.md`
 - `CLAUDE.md`
-- `docs/ai/shared/**` (every file under the shared reference directory, including `governor-review-log/**`)
-- `docs/history/**` (every ADR and archive entry)
+- `docs/ai/shared/**` (every file under the shared reference directory)
+- `docs/history/**` (every ADR and archive entry, including `archive/governor-review-log/**`)
 - `.claude/rules/**`
 - `.codex/rules/**`
 - `.github/pull_request_template.md`
@@ -43,7 +43,7 @@ Tier C is intentionally narrow today; the list grows only when an ADR explicitly
 
 ## Exclusions (NOT governor-changing even though path-glob looks close)
 
-- **Log-only backfill PRs**: a PR whose `changed_files` is **entirely under** `docs/ai/shared/governor-review-log/` (extending or correcting an existing entry, or adding a backfill entry for a previously-merged PR) does **not** require its own new self-log entry. Such a PR may extend the *existing* entry's `Review Rounds` and `Self-Application Proof` sections instead. This exception breaks the recursion that would otherwise require every log-edit PR to log itself.
+- **Log-only backfill PRs**: a PR whose `changed_files` is **entirely under** `docs/history/archive/governor-review-log/` (appending an Errata YYYY-MM-DD: section to an existing frozen entry per ADR 047 D6) does **not** require its own new self-log entry. Such a PR may extend the *existing* entry's `Review Rounds` and `Self-Application Proof` sections instead. This exception breaks the recursion that would otherwise require every log-edit PR to log itself.
 - **`/sync-guidelines` cosmetic edits (ADR 047 D4)**: a `.claude/rules/**` change is exempt from governor-changing classification when the *governor-matching subset* of `changed_files` is limited to one or more of the three covered files AND each covered file's diff contains only the cosmetic patterns listed below. Other changes outside `.claude/rules/**` are evaluated independently — they may or may not trigger on their own merits.
   - `.claude/rules/project-status.md`: `> Last synced:` line edits + additions / edits of rows in the `## Recent Major Changes` table.
   - `.claude/rules/project-overview.md`: `> Last synced:` line edits.
@@ -68,7 +68,7 @@ When the rules above classify a PR as governor-changing (and after [ADR 047](../
 - A **`## Governor Footer` block** in the PR description (10-field machine-parseable shape, closure-label vocabulary `Fixed` / `Deferred-with-rationale` / `Rejected`). The `Governor Footer Lint` CI workflow runs `tools/check_governor_footer.py --require-governor-footer` against the PR body and changed-file list and **fails the build** if the footer is missing, mis-shaped, or declares `trigger: no` on a governor-changing change set.
 - At least one round of cross-tool review captured in the footer (`rounds: N >= 1`, `reviewer: <comma-list>`, R-points closed).
 - Durable governance constraints introduced by the PR added as new `ADR{NNN}-G{N}` slot bodies in the relevant ADR's Consequences section. Durable domain invariants go to `docs/ai/shared/project-dna.md` or the relevant domain doc (e.g. §15 Auth Domain Pattern, §16 Docs Frontend Contract). PR-scope and superseded constraints stay only in the PR description's `pr-scope-notes` field.
-- The pre-ADR-047 obligation (`docs/ai/shared/governor-review-log/pr-{NNN}-{slug}.md`) is **retired** for new PRs. The directory remains as a frozen historical archive for the 17 entries written before PR #158 — see [`governor-review-log/README.md`](governor-review-log/README.md) for the alias map.
+- The pre-ADR-047 obligation (`docs/history/archive/governor-review-log/pr-{NNN}-{slug}.md`) is **retired** for new PRs. The directory remains as a frozen historical archive for the 18 entries written before PR #158 — see [`governor-review-log/README.md`](../history/archive/governor-review-log/README.md) for the alias map.
 
 ## Where this file is consumed
 
