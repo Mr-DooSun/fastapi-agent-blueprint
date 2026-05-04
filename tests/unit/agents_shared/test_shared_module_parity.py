@@ -244,7 +244,7 @@ def _evaluate_branch(state_dir: Path, changed: list[str], pr: int | None) -> str
 def test_scenario5_completion_gate_log_only_silent(tmp_path) -> None:
     status = _evaluate_branch(
         tmp_path,
-        ["docs/ai/shared/governor-review-log/pr-128-foo.md"],
+        ["docs/history/archive/governor-review-log/pr-128-foo.md"],
         128,
     )
     assert status == "silent_log_only"
@@ -253,7 +253,7 @@ def test_scenario5_completion_gate_log_only_silent(tmp_path) -> None:
 def test_scenario5_completion_gate_match(tmp_path) -> None:
     status = _evaluate_branch(
         tmp_path,
-        ["AGENTS.md", "docs/ai/shared/governor-review-log/pr-128-foo.md"],
+        ["AGENTS.md", "docs/history/archive/governor-review-log/pr-128-foo.md"],
         128,
     )
     assert status == "match"

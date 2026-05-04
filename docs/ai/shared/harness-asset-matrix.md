@@ -331,7 +331,7 @@ rather than primary entry points (`Overlay`).
 
 ### `governor-review-log/` (directory) — closed historical archive
 
-- **Current role**: **Closed historical archive** (ADR 047 D6). Holds the 17 entries written between PR #125 and PR #158 documenting the Phase 1~5 build-out of the hybrid harness. No new entries are added — cross-tool review provenance for new PRs lives in the PR description's `## Governor Footer` block (`tools/check_governor_footer.py`).
+- **Current role**: **Closed historical archive** (ADR 047 D6). Holds the 18 entries written between PR #125 and PR #158 documenting the Phase 1~5 build-out of the hybrid harness. No new entries are added — cross-tool review provenance for new PRs lives in the PR description's `## Governor Footer` block (`tools/check_governor_footer.py`).
 - **Why it exists**: Round-4 self-coherence review (PR #125) made cross-tool review trails first-class repo artefacts during the harness build-out. ADR 047 retired the per-PR archive obligation after the build-out closed; the directory is preserved as a frozen historical record because the IC declarations inside still serve as alias targets for ADR 047's IC Classification Table.
 - **Replacement feasibility**: Replaced by PR-description Governor Footer + ADR Consequences (`ADR{NNN}-G{N}` slots). Existing entries are not migrated; they remain as historical context.
 - **Final location**: unchanged. README.md banner declares the archive closed.
@@ -361,7 +361,7 @@ rather than primary entry points (`Overlay`).
 
 ### `tools/check_g_closure.py` (#145) — superseded and removed by ADR 047 PR (#159)
 
-- **Current role**: Removed in PR #159 (ADR 047 PR B-F rollout). Was a mechanical checker for AGENTS.md guard G that scanned `docs/ai/shared/governor-review-log/pr-*.md`.
+- **Current role**: Removed in PR #159 (ADR 047 PR B-F rollout). Was a mechanical checker for AGENTS.md guard G that scanned `docs/history/archive/governor-review-log/pr-*.md`.
 - **Why it exists (historical)**: Issue #145 turned the reasoning-level G closure rule from text-only discipline into a local pre-commit / CI-enforced guard for governor review-log entries.
 - **Replacement feasibility**: Replaced by `tools/check_governor_footer.py` which validates the PR-description `## Governor Footer` block (closure-label vocabulary preserved exactly: `Fixed` / `Deferred-with-rationale` / `Rejected` per Guard G — ADR047-G26).
 - **Final location**: deleted.

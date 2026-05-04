@@ -33,7 +33,7 @@ rounds 1–2 was halted only by user pushback at round 3.
 
 This PR is **governor-changing** because it edits Tier A
 (`AGENTS.md`, `CLAUDE.md`) and Tier B (`.codex/hooks/`) per
-[`governor-paths.md`](../governor-paths.md). Therefore this
+[`governor-paths.md`](../../../ai/shared/governor-paths.md). Therefore this
 self-application entry is mandatory.
 
 Phase 1 (this PR) lands the text guards plus visibility cross-refs

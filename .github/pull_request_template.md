@@ -57,6 +57,6 @@ Field guidance:
 - `touched-adr-consequences` — list `ADR{NNN}-G{N}` slot IDs (the canonical form used by ADR 047 IC Classification Table; e.g. `ADR047-G3`, `ADR048-G1`) this PR amends; `none` if no durable-governance constraint changed. Comma-separated.
 - `pr-scope-notes` — short prose for `pr-scope` invariants this PR self-imposes (e.g. "minimal RBAC scope; permission tables follow-up"). They are **not** promoted to ADR Consequences.
 - `final-verdict` — last cross-tool review verdict.
-- `links` — PR URL plus any companion artefact URL (e.g. a related issue or, for historical context, a frozen `governor-review-log/pr-{N}-*.md` entry). Use `n/a` if there are no extra links.
+- `links` — PR URL plus any companion artefact URL (e.g. a related issue or, for historical context, a frozen `docs/history/archive/governor-review-log/pr-{N}-*.md` entry). Use `n/a` if there are no extra links.
 
 Doc-only escape hygiene: if your PR is doc-only, confirm the changes do **not** touch policy / harness docs listed in [`governor-paths.md`](../docs/ai/shared/governor-paths.md) Tier A. Touching those files disqualifies the doc-only auto-escape — see [`target-operating-model.md` §3](../docs/ai/shared/target-operating-model.md).

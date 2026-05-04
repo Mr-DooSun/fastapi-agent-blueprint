@@ -52,8 +52,8 @@ The driving failure mode is Korean prose leaking into Tier 1 files via AI sessio
 All new prose, comments, docstrings, log strings, and user-facing terminal output under the following paths should be written in English; **Korean prose is blocked by the pre-commit hook**:
 
 - `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`
-- `docs/ai/shared/**` (including `governor-review-log/**`)
-- `docs/history/**` (every ADR and archive entry)
+- `docs/ai/shared/**`
+- `docs/history/**` (every ADR and archive entry, including `archive/governor-review-log/**`)
 - `.claude/rules/**`, `.claude/hooks/**`, `.claude/skills/**`
 - `.codex/rules/**`, `.codex/hooks/**`
 - `.agents/**` (skills and the shared governor package)
@@ -76,7 +76,7 @@ A second, narrowly-scoped carve-out covers **locale data files** explicitly list
 
 - `README.md` — the Korean-language link label pointing to `docs/README.ko.md` is an i18n affordance pointing to a deliberately translated sibling document. `README.md` is intentionally not in the Tier 1 glob.
 - `docs/README.ko.md` itself and any future `docs/*.{lang}.md` translation files (parallel translations, not in-line bilingualism).
-- `docs/ai/shared/governor-review-log/**` — Korean text inside a line prefixed with `> Original user/owner statement (ko, verbatim):`, `> Original reviewer verdict (ko, verbatim):`, or `> Historical Korean excerpt (ko, verbatim):` is preserved provenance. English normalised meaning must follow on the next line. Multi-line preserved Korean must repeat the prefix on every line.
+- `docs/history/archive/governor-review-log/**` — Korean text inside a line prefixed with `> Original user/owner statement (ko, verbatim):`, `> Original reviewer verdict (ko, verbatim):`, or `> Historical Korean excerpt (ko, verbatim):` is preserved provenance. English normalised meaning must follow on the next line. Multi-line preserved Korean must repeat the prefix on every line.
 - Locale data files listed in `tools/check_language_policy.py::LOCALE_DATA_FILES` (currently `.agents/shared/governor/locale.py`) — these files are the canonical runtime source for locale translations. Korean translation strings are permitted *only* inside the language mapping values (enforced by `tests/unit/agents_shared/test_locale.py::test_locale_py_korean_only_in_locale_ko_dict_values`); comments, docstrings, identifiers, and the English table must remain ASCII. Adding a new locale data file requires updating `LOCALE_DATA_FILES`, this bullet, and adding a regression test.
 
 ### AI-when-editing rule
@@ -148,7 +148,7 @@ Auto-escapes (no token required): `changed_files == 0`, *general* doc-only chang
 - run `codex exec -m gpt-5.5 --sandbox read-only "<review prompt>"` (or any cross-tool reviewer of equivalent capability) on the change set;
 - capture the resulting `Findings` / `Drift Candidates` / `Sync Required` / Final Verdict in the **PR description's `## Governor Footer` block** (post-ADR-047 — `tools/check_governor_footer.py --require-governor-footer` enforces presence + shape via the `Governor Footer Lint` CI workflow). Durable governance constraints derived from the review are added to the relevant ADR's Consequences section (e.g. ADR 047 §"Durable Governance Constraints (ADR047-G1 ~ ADR047-G27)"); durable domain invariants go to `project-dna.md` or the relevant domain doc;
 - address surfaced R-points or explicitly defer with rationale (closure label vocabulary `Fixed` / `Deferred-with-rationale` / `Rejected` per AGENTS.md guard G — the linter parses the footer's `r-points-*` counts);
-- the existing `docs/ai/shared/governor-review-log/` directory is a **closed historical archive** for entries written before PR #158 (ADR 047) — see `governor-review-log/README.md` for the alias map back to ADR 047 G-slots.
+- the existing `docs/history/archive/governor-review-log/` directory is a **closed historical archive** for entries written before PR #158 (ADR 047) — see [`governor-review-log/README.md`](docs/history/archive/governor-review-log/README.md) for the alias map back to ADR 047 G-slots.
 
 Non-governor-changing PRs are **exempt** from cross-tool review (issue #117 Non-Goals: avoid heavy ceremony).
 
@@ -162,7 +162,7 @@ This document is canonical. Tool-specific enforcement adapters are defined per m
 
 ## Reasoning-Level Consistency Guards
 
-> Source: cross-review trail for the introducing PR (#143) — four evaluation rounds plus a fifth plan-review round, with an implementation-stage round on the PR diff itself — captured in the PR description's `## Governor Footer` (post-ADR-047). Pre-ADR-047 PRs captured the same shape in [`governor-review-log/`](docs/ai/shared/governor-review-log/) (closed historical archive). This AGENTS.md section is the canonical Tier 1 surface; when adding new guards, extend AGENTS.md first and reflect the durable rule as a new `ADR{NNN}-G{N}` slot in the relevant ADR Consequences.
+> Source: cross-review trail for the introducing PR (#143) — four evaluation rounds plus a fifth plan-review round, with an implementation-stage round on the PR diff itself — captured in the PR description's `## Governor Footer` (post-ADR-047). Pre-ADR-047 PRs captured the same shape in [`governor-review-log/`](docs/history/archive/governor-review-log/) (closed historical archive). This AGENTS.md section is the canonical Tier 1 surface; when adding new guards, extend AGENTS.md first and reflect the durable rule as a new `ADR{NNN}-G{N}` slot in the relevant ADR Consequences.
 
 This section applies to **every reasoning step — conversation, cross-review, document generation — across all tools**. It complements the PR-level governor (§ Default Coding Flow + `.agents/shared/governor/`), which operates on changed files. The guards here address miss patterns at the conversation level — patterns the PR-level governor does not cover.
 

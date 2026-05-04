@@ -37,7 +37,6 @@ from verify_first import session_id
 
 STATE_DIR = REPO_ROOT / ".codex" / "state"
 GOVERNOR_PATHS_MD = REPO_ROOT / "docs" / "ai" / "shared" / "governor-paths.md"
-GOVERNOR_REVIEW_LOG_PREFIX = "docs/ai/shared/governor-review-log/"
 
 _SHARED = REPO_ROOT / ".agents" / "shared"
 if str(_SHARED) not in sys.path:

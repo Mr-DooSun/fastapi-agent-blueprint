@@ -134,15 +134,26 @@ def test_claude_hook_is_governor_changing(codex_gate) -> None:
 # is_log_only_backfill
 # ---------------------------------------------------------------------------
 def test_log_only_backfill_all_under_log_dir(codex_gate) -> None:
-    changed = ["docs/ai/shared/governor-review-log/pr-127-verify-first.md"]
+    changed = ["docs/history/archive/governor-review-log/pr-127-verify-first.md"]
     assert codex_gate.is_log_only_backfill(changed) is True
 
 
 def test_log_only_backfill_mixed_files_not_excluded(codex_gate) -> None:
     changed = [
-        "docs/ai/shared/governor-review-log/pr-127-verify-first.md",
+        "docs/history/archive/governor-review-log/pr-127-verify-first.md",
         "AGENTS.md",
     ]
+    assert codex_gate.is_log_only_backfill(changed) is False
+
+
+def test_log_only_backfill_rejects_pre_relocation_path(codex_gate) -> None:
+    """Regression guard for #160: after the archive moved to
+    docs/history/archive/, a PR editing the pre-relocation path is NOT a
+    log-only backfill — that path no longer exists in tree, and treating
+    it as a backfill would silence governor-changing reminders for any
+    accidental resurrection of the old layout. Codex round-1 R6."""
+
+    changed = ["docs/ai/shared/governor-review-log/pr-99-foo.md"]
     assert codex_gate.is_log_only_backfill(changed) is False
 
 
@@ -152,7 +163,7 @@ def test_log_only_backfill_mixed_files_not_excluded(codex_gate) -> None:
 def test_match_log_entry_match(codex_gate) -> None:
     assert (
         codex_gate.match_log_entry(
-            ["docs/ai/shared/governor-review-log/pr-128-completion-gate.md"], 128
+            ["docs/history/archive/governor-review-log/pr-128-completion-gate.md"], 128
         )
         == "match"
     )
@@ -161,7 +172,7 @@ def test_match_log_entry_match(codex_gate) -> None:
 def test_match_log_entry_mismatch(codex_gate) -> None:
     assert (
         codex_gate.match_log_entry(
-            ["docs/ai/shared/governor-review-log/pr-99-old.md"], 128
+            ["docs/history/archive/governor-review-log/pr-99-old.md"], 128
         )
         == "mismatch"
     )
@@ -174,7 +185,7 @@ def test_match_log_entry_missing(codex_gate) -> None:
 def test_match_log_entry_unknown_no_pr(codex_gate) -> None:
     assert (
         codex_gate.match_log_entry(
-            ["docs/ai/shared/governor-review-log/pr-99-old.md"], None
+            ["docs/history/archive/governor-review-log/pr-99-old.md"], None
         )
         == "unknown"
     )
@@ -182,6 +193,38 @@ def test_match_log_entry_unknown_no_pr(codex_gate) -> None:
 
 def test_match_log_entry_missing_no_pr(codex_gate) -> None:
     assert codex_gate.match_log_entry(["AGENTS.md"], None) == "missing"
+
+
+def test_match_log_entry_rejects_pre_relocation_path(codex_gate) -> None:
+    """Codex round-2 R1: the pre-#160 location must not be treated as a
+    matching log entry. If someone accidentally resurrects
+    ``docs/ai/shared/governor-review-log/pr-{N}-foo.md`` for the current
+    PR, ``match_log_entry`` must return ``missing`` so the completion
+    gate emits its reminder instead of falsely silencing it."""
+
+    changed = ["docs/ai/shared/governor-review-log/pr-160-foo.md"]
+    assert codex_gate.match_log_entry(changed, 160) == "missing"
+
+
+def test_evaluate_gate_resurrection_does_not_silence(codex_gate, monkeypatch) -> None:
+    """Codex round-2 R1 (end-to-end): when only the pre-#160 path is
+    edited, the gate must NOT silence as ``match`` — the file is no longer
+    a recognised governor-review-log entry, so the gate keeps
+    governor-changing reminders active."""
+
+    monkeypatch.setattr(
+        codex_gate,
+        "changed_files",
+        lambda: [
+            "AGENTS.md",
+            "docs/ai/shared/governor-review-log/pr-160-foo.md",
+        ],
+    )
+    monkeypatch.setattr(codex_gate, "pr_number_from_branch", lambda: 160)
+    monkeypatch.setattr(codex_gate, "_read_latest_token", lambda _: None)
+    seg = codex_gate.governor_changing_segment()
+    assert seg is not None
+    assert "160" in seg
 
 
 # ---------------------------------------------------------------------------
@@ -212,7 +255,7 @@ def test_sample_run_2_agents_md_matching_entry_silent(codex_gate, monkeypatch) -
         "changed_files",
         lambda: [
             "AGENTS.md",
-            "docs/ai/shared/governor-review-log/pr-128-completion-gate.md",
+            "docs/history/archive/governor-review-log/pr-128-completion-gate.md",
         ],
     )
     monkeypatch.setattr(codex_gate, "pr_number_from_branch", lambda: 128)
@@ -226,7 +269,7 @@ def test_sample_run_3_log_only_backfill_silent(codex_gate, monkeypatch) -> None:
     monkeypatch.setattr(
         codex_gate,
         "changed_files",
-        lambda: ["docs/ai/shared/governor-review-log/pr-100-old-backfill.md"],
+        lambda: ["docs/history/archive/governor-review-log/pr-100-old-backfill.md"],
     )
     seg = codex_gate.governor_changing_segment()
     assert seg is None
@@ -241,7 +284,7 @@ def test_sample_run_4_agents_md_wrong_pr_number_reminds(
         "changed_files",
         lambda: [
             "AGENTS.md",
-            "docs/ai/shared/governor-review-log/pr-99-old.md",
+            "docs/history/archive/governor-review-log/pr-99-old.md",
         ],
     )
     monkeypatch.setattr(codex_gate, "pr_number_from_branch", lambda: 128)
@@ -362,7 +405,7 @@ def test_governor_changing_segment_no_pr_with_staged_entry_silent(
         "changed_files",
         lambda: [
             "AGENTS.md",
-            "docs/ai/shared/governor-review-log/pr-99-placeholder.md",
+            "docs/history/archive/governor-review-log/pr-99-placeholder.md",
         ],
     )
     monkeypatch.setattr(codex_gate, "pr_number_from_branch", lambda: None)

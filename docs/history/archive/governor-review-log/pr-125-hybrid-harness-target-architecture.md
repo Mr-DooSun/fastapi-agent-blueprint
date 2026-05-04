@@ -94,7 +94,7 @@ Final variant pushed to PR: multi-commit (each round's reinforcement is a separa
 ### Round 6 — Claude-Side Quality Gate (`/review-pr`)
 
 - **Target**: PR #125 head `f7a1403` (post Round-5 reinforcement).
-- **Reviewer**: Claude `/review-pr` skill, executed manually following the procedure in [`docs/ai/shared/skills/review-pr.md`](../skills/review-pr.md).
+- **Reviewer**: Claude `/review-pr` skill, executed manually following the procedure in [`docs/ai/shared/skills/review-pr.md`](../../../ai/shared/skills/review-pr.md).
 - **Why this exists**: Codex Rounds 1~5 supplied *cross-tool* review. Claude `/review-pr` supplies the *intra-tool* completion-gate contract on the same change set, closing the formal gate on the Claude side. Without this round the governor's `completion gate` step would lack its Claude-side proof artefact.
 - **Final Verdict**: `Claude-side completion gate: PASSED`. No code findings. No drift candidates remain. Self-application proof complete.
 
@@ -199,8 +199,8 @@ These items are referenced from follow-up issue bodies. They are not optional re
 - **IC-6** Phase acceptance criteria must not reference deliverables produced by later phases (R3-derived after Round-2; canonised in migration-strategy.md §1).
 - **IC-7** Bucket-share denominator across the four design docs must reconcile to the matrix; `.gitignore`d entries (e.g. `.claude/settings.local.json`) are excluded from the share denominator but recorded for completeness.
 - **IC-8** A governor-changing PR must produce or extend an entry under `docs/ai/shared/governor-review-log/`. `/sync-guidelines` checks this via drift-checklist §1D.
-- **IC-9** The `auto-escape: doc-only` rule does **not** apply to policy / harness docs. See `target-operating-model.md` §3 "Auto-escapes" for the carve-out reasoning. The actual path list is in [`governor-paths.md`](../governor-paths.md) Tier A.
-- **IC-10** (Round-4) Trigger-glob list lives in a single canonical document — [`governor-paths.md`](../governor-paths.md). All consumer docs (AGENTS.md, target-operating-model, migration-strategy, drift-checklist, PR template) **link** the file, never redeclare the list. Phase 5 shared module reads the same file (or its parsed form). Log-only backfill PRs are explicitly excluded (no recursion). Phase 4 gate matches log entry filename to `pr-{currentN}-` to prevent stale-entry false-negative.
+- **IC-9** The `auto-escape: doc-only` rule does **not** apply to policy / harness docs. See `target-operating-model.md` §3 "Auto-escapes" for the carve-out reasoning. The actual path list is in [`governor-paths.md`](../../../ai/shared/governor-paths.md) Tier A.
+- **IC-10** (Round-4) Trigger-glob list lives in a single canonical document — [`governor-paths.md`](../../../ai/shared/governor-paths.md). All consumer docs (AGENTS.md, target-operating-model, migration-strategy, drift-checklist, PR template) **link** the file, never redeclare the list. Phase 5 shared module reads the same file (or its parsed form). Log-only backfill PRs are explicitly excluded (no recursion). Phase 4 gate matches log entry filename to `pr-{currentN}-` to prevent stale-entry false-negative.
 
 ## Self-Application Proof
 

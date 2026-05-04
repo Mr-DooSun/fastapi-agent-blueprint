@@ -8,7 +8,7 @@
 
 ## Summary
 
-Implements Phase 4 of [ADR 045](../../history/045-hybrid-harness-target-architecture.md): adds the completion-gate Stop adapter so the `completion gate` step of the Default Coding Flow is enforced at session end.
+Implements Phase 4 of [ADR 045](../../045-hybrid-harness-target-architecture.md): adds the completion-gate Stop adapter so the `completion gate` step of the Default Coding Flow is enforced at session end.
 
 - **IC-11 resolution (Option A)**: Phase 2 exception-token markers are read-and-deleted by the Stop hook on both sides. `read_latest_token_marker` (both `verify_first.py` files) gains a 24h filter to skip Stop-failure leftovers. Marker schema unchanged from Phase 2 (no `session_id` field added). See §IC-11 Resolution below.
 - **Pillar 7**: `completion_gate.py` (both sides) parses `governor-paths.md` at runtime (IC-10 — no inline glob re-declaration) and emits a reminder when `changed_files` intersects Tier A/B/C globs without a matching `governor-review-log/pr-{N}-*.md` entry whose `{N}` equals the current PR number. `[exploration]`/`[탐색]` token silences Pillar 7 too.

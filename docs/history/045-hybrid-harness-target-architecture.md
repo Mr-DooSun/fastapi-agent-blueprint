@@ -123,10 +123,10 @@ To prevent the gap from cascading into Phase 2~5, the following Pillars are adde
 
 | # | Pillar | Where it lives |
 |---|---|---|
-| 1 | PR #125 self-application proof — `/review-architecture` and `/sync-guidelines` outputs captured for the PR's own surface | [`governor-review-log/pr-125-...md`](../ai/shared/governor-review-log/pr-125-hybrid-harness-target-architecture.md) §Self-Application Proof |
+| 1 | PR #125 self-application proof — `/review-architecture` and `/sync-guidelines` outputs captured for the PR's own surface | [`governor-review-log/pr-125-...md`](archive/governor-review-log/pr-125-hybrid-harness-target-architecture.md) §Self-Application Proof |
 | 2 | Self-review step gains a *conditional* cross-tool review sub-step, triggered by governor-changing trigger glob | [`AGENTS.md` § Self-Review Step](../../AGENTS.md#default-coding-flow), [`target-operating-model.md` § Cross-Tool Review Cadence](../ai/shared/target-operating-model.md) |
 | 3 | `auto-escape: doc-only` carve-out so that policy/harness docs are **not** escaped | [`AGENTS.md` § Doc-only carve-out](../../AGENTS.md), [`target-operating-model.md` §3](../ai/shared/target-operating-model.md) |
-| 4 | `governor-review-log/` directory permanently archives review trails | [`docs/ai/shared/governor-review-log/`](../ai/shared/governor-review-log/) |
+| 4 | `governor-review-log/` directory permanently archives review trails | [`docs/history/archive/governor-review-log/`](archive/governor-review-log/) |
 | 5 | `.github/pull_request_template.md` adds Governor-Changing PR checklist (artefact-locks the cross-tool review and self-application proof) | [`.github/pull_request_template.md`](../../.github/pull_request_template.md) |
 | 6 | Follow-up issues #121~#124 bodies link the log entry under "Inherited Review Constraints" | gh issue bodies |
 | 7 | Phase 4 completion-gate Stop adapter checks for missing governor-review-log entry | [`migration-strategy.md` §1 Phase 4 Acceptance](../ai/shared/migration-strategy.md) |
