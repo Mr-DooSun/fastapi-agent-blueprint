@@ -60,6 +60,13 @@ if [ -z "$CHANGED" ]; then
     fi
 fi
 
+# Phase 4 completion-gate: marker cleanup runs on every Stop regardless of
+# CHANGED (IC-11 Option A — consume exception-token markers on every Stop
+# event, not only when files changed). Output captured here; printed below
+# only when CHANGED is non-empty so advisory sessions stay silent.
+# Fail-open: helper crash → markers not cleaned, advisory unaffected (HC-4.7).
+COMPLETION_OUT=$(python3 "${HOOK_DIR}/completion_gate.py" 2>/dev/null || true)
+
 [ -z "$CHANGED" ] && exit 0
 
 # Foundation: project-wide impact
@@ -84,9 +91,6 @@ elif [ -n "$STRUCTURE" ]; then
     echo "$_SYNC_NORM_FOOTER"
 fi
 
-# Phase 4 completion-gate (Pillar 7 + IC-11 marker lifecycle).
-# Fail-open: helper crash → sync-reminder still emitted above (HC-4.7).
-COMPLETION_OUT=$(python3 "${HOOK_DIR}/completion_gate.py" 2>/dev/null || true)
 if [ -n "$COMPLETION_OUT" ]; then
     echo ""
     echo "$COMPLETION_OUT"
