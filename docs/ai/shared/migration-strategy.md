@@ -1,8 +1,10 @@
 # Migration Strategy
 
-> Last synced: 2026-04-26 (initial draft, ADR 045 + Phase 1)
+> Last synced: 2026-05-06 (PR-B.4b — Phase 1-5 closed, migration complete)
 > Source of truth for the phased migration from the current harness to the Target Operating Model.
 > Sibling docs: [ADR 045](../../history/045-hybrid-harness-target-architecture.md) · [harness-asset-matrix.md](harness-asset-matrix.md) · [target-operating-model.md](target-operating-model.md)
+
+> **Migration record (2026-05-06):** All five phases of Hybrid Harness v1 (#117) are closed. Phase 1 (Default Flow + skill wrappers), Phase 2 (exception-token UserPromptSubmit, PR #126), Phase 3 (verification-first adapters, PR #127), Phase 4 (completion-gate Stop adapter, PR #128), and Phase 5 (shared governor module, PR #130) are all shipped. The `completion gate` step is now mandatory-by-default with non-blocking enforcement via the Phase 4 Stop hook and Governor Footer Lint CI. The dual-system window described in §3 is closed; escape tokens remain a permanent feature. This document is now a historical migration record; the Target Operating Model is the authoritative runtime reference.
 
 ## Purpose
 
@@ -190,7 +192,7 @@ If any of these need to change during the migration, that change is its own ADR,
 
 ## §6 Full Replacement vs Hybrid — When to Re-Evaluate
 
-The model is "Mostly Local with Philosophy Overlay" because the asset-matrix bucket distribution is approximately ~86% Keep / ~14% Overlay / 0% Replace / 0% Drop ([harness-asset-matrix.md §Bucket Distribution Summary](harness-asset-matrix.md#bucket-distribution-summary)).
+The model is "Mostly Local with Philosophy Overlay" because the asset-matrix bucket distribution is approximately ~80% Keep / ~20% Overlay / 0% Replace / 0% Drop (Phase 5 #124 closure; [harness-asset-matrix.md §Bucket Distribution Summary](harness-asset-matrix.md#bucket-distribution-summary)).
 
 The hybrid model is justified as long as:
 - Keep ≥ 60%, AND

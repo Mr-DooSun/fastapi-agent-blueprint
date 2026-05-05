@@ -108,7 +108,7 @@ problem framing → approach options → plan → implement
 
 Mandatory-by-default for implementation-class work: `framing`, `plan`, `verify`, `self-review`.
 Conditionally mandatory (architecture commitment present): `approach options`.
-Currently advisory (becomes mandatory in migration Phase 4): `completion gate`.
+Mandatory-by-default; non-blocking reminder via Phase 4 hook + Governor Footer Lint CI: `completion gate`.
 
 ### Precedence
 
