@@ -1,7 +1,7 @@
 """Shared sync-advisory classification (PR-A.5 + F-1).
 
 Single source of truth for ``FOUNDATION_PREFIXES`` / ``STRUCTURE_MARKERS``
-and the ``classify_advisory`` decision function.  Both the Codex Python hook
+and the ``classify_advisory`` decision function. Both the Codex Python hook
 (``.codex/hooks/stop-sync-reminder.py``) and the Claude bash hook
 (``.claude/hooks/stop-sync-reminder.sh``) delegate here via thin shims,
 satisfying IC-2 (single SOT) and IC-14 (no inline policy redeclaration).
@@ -14,7 +14,7 @@ Semantic note — primary vs fallback matching:
   This module uses ``str.startswith`` prefix matching. The bash fallback
   (inactive under normal conditions) uses anchored ``grep -E`` patterns.
   Paths like ``pyproject.toml.bak`` would match the Python path but not
-  the bash fallback.  Such paths are not produced by normal git operations,
+  the bash fallback. Such paths are not produced by normal git operations,
   so the divergence is accepted and confined to the fallback-only path.
 """
 

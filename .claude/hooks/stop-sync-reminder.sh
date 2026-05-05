@@ -82,6 +82,7 @@ if _ADVISORY_RAW=$(printf '%s\n' "$CHANGED" \
         foundation) FOUNDATION="$_ADVISORY_FILES"; _ADVISORY_OK=1 ;;
         structure)  STRUCTURE="$_ADVISORY_FILES";  _ADVISORY_OK=1 ;;
         none)       _ADVISORY_OK=1 ;;
+        *)          _ADVISORY_OK=1 ;;  # future extension — treat unknown level as none
     esac
 fi
 

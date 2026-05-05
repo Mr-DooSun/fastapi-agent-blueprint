@@ -23,7 +23,7 @@ def main() -> None:
         from governor.sync_advisory import classify_advisory
 
         lines = sys.stdin.read().splitlines()
-        changed = [line for line in lines if line.strip()]
+        changed = [line for line in lines if line]
         level, files = classify_advisory(changed)
         level_str = level if level is not None else "none"
         print(level_str)

@@ -182,9 +182,15 @@ def test_claude_bash_hook_delegates_to_sync_advisory_cli() -> None:
 
 
 def test_claude_bash_hook_has_fail_open_fallback() -> None:
-    """stop-sync-reminder.sh must retain an inline grep fallback for HC-5.5 compliance."""
+    """stop-sync-reminder.sh must retain the inline grep fallback for HC-5.5 compliance."""
     text = _bash_text()
     assert "_ADVISORY_OK" in text, (
         f"{_CLAUDE_HOOK.name}: _ADVISORY_OK flag absent — HC-5.5 fail-open fallback "
         "must be present so classification degrades gracefully when Python is unavailable."
+    )
+    # The inline grep fallback patterns must still be present in the file so the
+    # hook remains functional when Python is entirely unavailable.
+    assert "grep -E" in text, (
+        f"{_CLAUDE_HOOK.name}: inline grep -E fallback patterns absent. "
+        "HC-5.5 requires a working fallback when Python is unavailable."
     )
