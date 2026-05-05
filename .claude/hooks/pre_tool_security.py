@@ -1,12 +1,33 @@
-"""PreToolUse Hook: Security pattern check before code writing
+"""PreToolUse Hook: Security pattern check before code writing.
 
-Blocks when Edit/Write/Bash tools attempt to write dangerous patterns to .py files.
-Exit 0 = allow, Exit 2 = block
+Phase 5 / PR-A.4 thin-shim refactor: the four inline security-check
+categories (SQL injection, hardcoded secrets, domain-infra import,
+sensitive-log) are moved to governor/code_safety.py. This file retains
+only the tool-routing logic (_extract_bash_write + check_security dispatch).
+
+Exit 0 = allow, Exit 2 = block.
+Fail-open (HC-5.5): shared import failure -> exit 0 (no block).
 """
+
+from __future__ import annotations
 
 import json
 import re
 import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+_SHARED = REPO_ROOT / ".agents" / "shared"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
+
+try:
+    from governor.code_safety import check_code_safety  # noqa: E402
+
+    _SHARED_OK = True
+except Exception:  # noqa: BLE001 — HC-5.5 fail-open
+    check_code_safety = None  # type: ignore[assignment]
+    _SHARED_OK = False
 
 
 def _extract_bash_write(command: str) -> tuple[str, str] | None:
@@ -50,93 +71,10 @@ def check_security(data: dict) -> list[str]:
     if not path.endswith(".py"):
         return []
 
-    errors = []
+    if not _SHARED_OK or check_code_safety is None:
+        return []
 
-    # 1. SQL Injection: f-string SQL
-    if re.search(
-        r'f["\x27].*\b(SELECT|INSERT|UPDATE|DELETE|DROP)\b', content, re.IGNORECASE
-    ):
-        errors.append(
-            "SQL injection risk: f-string SQL detected. "
-            "Use parameterized queries (SQLAlchemy ORM or text(:param))"
-        )
-
-    # 1b. .format() + SQL
-    if re.search(
-        r"\.format\s*\(.*\).*(SELECT|INSERT|UPDATE|DELETE)", content, re.IGNORECASE
-    ):
-        errors.append(
-            "SQL injection risk: .format() SQL detected. Use parameterized queries"
-        )
-
-    # 1c. text() + f-string (SQLAlchemy text with dynamic string)
-    if re.search(r'text\s*\(\s*f["\x27]', content):
-        errors.append(
-            'SQL injection risk: text(f"...") detected. Use text(:param) + bindparams'
-        )
-
-    # 1d. execute() + f-string or .format()
-    if re.search(r'\.execute\s*\(\s*f["\x27]', content):
-        errors.append(
-            'SQL injection risk: execute(f"...") detected. Use parameterized queries'
-        )
-    if re.search(r'\.execute\s*\(["\x27].*\.format\s*\(', content, re.IGNORECASE):
-        errors.append(
-            'SQL injection risk: execute("...".format()) detected. Use parameterized queries'
-        )
-
-    # 2. Hardcoded secrets (excludes Pydantic Field, env var patterns, and test files)
-    _quoted_value_re = (
-        r"(?:[bruf]*)(?:"
-        r'"{3}[\s\S]{3,}?"{3}'  # """..."""
-        r"|\x27{3}[\s\S]{3,}?\x27{3}"  # '''...'''
-        r'|["\x27][^"\x27\s]{3,}["\x27]'  # "..." or '...'
-        r")"
-    )
-    _sensitive_keywords = [
-        r"(?:password|passwd|pwd)",
-        r"(?:secret|secret_key)",
-        r"(?:api_key|apikey)",
-        r"(?:private_key)",
-        r"(?:auth_token)",
-        r"(?:encryption_key)",
-        r"(?:credential)",
-        r"(?:access_token)",
-    ]
-    is_test_file = "/tests/" in path or path.endswith("_test.py")
-    if not is_test_file:
-        secret_patterns = [
-            kw + r"\s*=\s*" + _quoted_value_re for kw in _sensitive_keywords
-        ]
-        for pat in secret_patterns:
-            if re.search(pat, content, re.IGNORECASE):
-                if not re.search(
-                    r"(Field\s*\(|os\.environ|settings\.|getenv|validation_alias|\.env)",
-                    content,
-                ):
-                    errors.append(
-                        "Hardcoded secret detected. Use environment variables (Settings) or a secret manager"
-                    )
-                    break
-
-    # 3. Prohibit Domain → Infrastructure import
-    if "/domain/" in path:
-        if re.search(r"from\s+src\..*\.infrastructure", content):
-            errors.append(
-                "Architecture violation: Domain layer must not import Infrastructure. Use Protocol (DIP)"
-            )
-
-    # 4. Sensitive data in logs/print
-    if re.search(
-        r"(?:logger\.|logging\.|print\s*\().*(?:password|secret|token|api_key|private_key)",
-        content,
-        re.IGNORECASE,
-    ):
-        errors.append(
-            "Sensitive data exposure risk in logs: password/secret/token found in log output. Masking required"
-        )
-
-    return errors
+    return check_code_safety(path, content)
 
 
 def main():

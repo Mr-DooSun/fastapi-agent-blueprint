@@ -1,8 +1,32 @@
+"""PreToolUse Hook (Codex side) — thin shim over governor.shell_safety.
+
+Phase 5 / PR-A.4 replaces the five inline regex checks with a single call
+to ``check_bash_command`` from the shared governor module. The deny reason
+strings are now the single source of truth inside governor/shell_safety.py.
+
+Fail-open (HC-5.5): if the shared import fails, the hook exits 0 without
+blocking (the governor module is not on the critical path for session
+continuity).
+"""
+
 from __future__ import annotations
 
 import json
-import re
 import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+_SHARED = REPO_ROOT / ".agents" / "shared"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
+
+try:
+    from governor.shell_safety import check_bash_command  # noqa: E402
+
+    _SHARED_OK = True
+except Exception:  # noqa: BLE001 — HC-5.5 fail-open
+    check_bash_command = None  # type: ignore[assignment]
+    _SHARED_OK = False
 
 
 def deny(reason: str) -> None:
@@ -20,26 +44,17 @@ def deny(reason: str) -> None:
     raise SystemExit(0)
 
 
-payload = json.load(sys.stdin)
-command = payload.get("tool_input", {}).get("command", "")
+def main() -> None:
+    payload = json.load(sys.stdin)
+    command = payload.get("tool_input", {}).get("command", "")
 
-if re.search(r"\bgit\s+reset\s+--hard\b|\bgit\s+checkout\s+--\b", command):
-    deny("Destructive git rollback is forbidden in this repository.")
+    if not _SHARED_OK or check_bash_command is None:
+        return
 
-if re.search(r"\brm\s+-rf\b|\bdd\s+if=|\bmkfs\b", command):
-    deny(
-        "Destructive filesystem commands require explicit user approval and exact scope."
-    )
+    result = check_bash_command(command)
+    if result is not None:
+        deny(result)
 
-if re.search(r"text\s*\(\s*f[\"']", command):
-    deny("Potential SQL injection pattern detected in shell-written code.")
 
-if re.search(r"from\s+src\..*\.infrastructure", command) and "/domain/" in command:
-    deny("Domain layer must not import Infrastructure directly.")
-
-if re.search(
-    r"(password|secret|api_key|token)\s*=\s*[\"'][^\"']{3,}[\"']",
-    command,
-    re.IGNORECASE,
-):
-    deny("Possible hardcoded secret detected in shell-written content.")
+if __name__ == "__main__":
+    main()
