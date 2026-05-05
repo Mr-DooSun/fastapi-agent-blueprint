@@ -1,6 +1,6 @@
 # Harness Asset Inventory Matrix
 
-> Last synced: 2026-04-29 (/sync-guidelines table parity pass + #145 G closure linter)
+> Last synced: 2026-05-06 (PR-B.2 stale-terminology sweep: LOC corrections + ADR-047 fossil fixes)
 > Source of truth: this is a **living inventory**. Update when assets are added, renamed, or removed. `/sync-guidelines` validates that this file matches the actual filesystem.
 > Sibling docs: [ADR 045](../../history/045-hybrid-harness-target-architecture.md) · [target-operating-model.md](target-operating-model.md) · [migration-strategy.md](migration-strategy.md)
 
@@ -178,7 +178,7 @@ rather than primary entry points (`Overlay`).
 
 ### `project-dna.md`
 
-- **Current role**: 906-line canonical pattern catalogue auto-extracted from the codebase. Sections §0~§14 cover directory structure, base classes, generics, CRUD, DI, conversions, security, features, routers, exception, admin, vector, embedding, LLM.
+- **Current role**: 976-line canonical pattern catalogue auto-extracted from the codebase. Sections §0~§14 cover directory structure, base classes, generics, CRUD, DI, conversions, security, features, routers, exception, admin, vector, embedding, LLM.
 - **Why it exists**: Adopted as part of the Hybrid C harness so that both Claude and Codex read identical architecture references.
 - **Replacement feasibility**: None — superpowers carries no project-specific architecture.
 - **Final location**: unchanged.
@@ -198,7 +198,7 @@ rather than primary entry points (`Overlay`).
 
 ### `scaffolding-layers.md`
 
-- **Current role**: 295-line scaffolding manual: per-layer file list, paths, import rules. Source of truth for `/new-domain`.
+- **Current role**: 299-line scaffolding manual: per-layer file list, paths, import rules. Source of truth for `/new-domain`.
 - **Why it exists**: Hybrid C shared procedure for layer scaffolding. Carries the Optional AI Infra Variant section (post-ADR 042).
 - **Replacement feasibility**: None.
 - **Final location**: unchanged.
@@ -238,7 +238,7 @@ rather than primary entry points (`Overlay`).
 
 ### `ai-infrastructure-overview.md`
 
-- **Current role**: 117-line overview of LLM / Embedding / RAG / Vector / Classifier patterns.
+- **Current role**: 162-line overview of LLM / Embedding / RAG / Vector / Classifier patterns (includes OTEL backend comparison matrix, ADR 046).
 - **Why it exists**: New-contributor orientation to the AI infra layer.
 - **Replacement feasibility**: None.
 - **Final location**: unchanged.
@@ -258,7 +258,7 @@ rather than primary entry points (`Overlay`).
 
 ### `test-files.md`
 
-- **Current role**: 27-line baseline-test file checklist (factories / unit / integration / admin).
+- **Current role**: 33-line baseline-test file checklist (factories / unit / integration / admin).
 - **Why it exists**: Enforces minimum-viable test coverage for new domains.
 - **Replacement feasibility**: None.
 - **Final location**: unchanged.
@@ -279,7 +279,7 @@ rather than primary entry points (`Overlay`).
 
 ### `drift-checklist.md`
 
-- **Current role**: 189-line drift-detection items consumed by `/sync-guidelines`.
+- **Current role**: 220-line drift-detection items consumed by `/sync-guidelines`.
 - **Why it exists**: Code ↔ shared docs ↔ tool harness alignment.
 - **Replacement feasibility**: Partial. Drift-detection becomes a `completion gate` activity in the Default Flow instead of a free-standing skill the user invokes.
 - **Bucket: Overlay** for the same reason as planning-checklists.
@@ -347,7 +347,7 @@ rather than primary entry points (`Overlay`).
 - **Final location**: unchanged.
 - **Migration risk**: Low.
 - **Stability impact**: High — every path-classification decision in Phase 2~5 hooks resolves to this file.
-- **Notes**: Itself governor-changing. Editing it requires a fresh `governor-review-log/` entry per the file's own §Updating section.
+- **Notes**: Itself governor-changing. Editing it requires a PR with a `## Governor Footer` block (Governor Footer model per ADR 047 — `governor-review-log/` per-PR obligation retired).
 
 ### `.agents/shared/governor/` (Phase 5 / #124 — NEW)
 
@@ -586,10 +586,10 @@ Eighteen hook scripts (6 Claude shell + 4 Claude Python implementations + 8 Code
 
 ### `.claude/hooks/stop-sync-reminder.sh`
 
-- **Current role**: Stop hook reminding the user to run `/sync-guidelines` if shared rule sources changed.
+- **Current role**: Stop hook reminding the user to run `/sync-guidelines` if shared rule sources changed. AGENT_LOCALE (#133) resolves advisory header/footer strings via `python -m governor.locale KEY`.
 - **Why it exists**: Drift management closure.
 - **Bucket**: Keep.
-- **Notes**: Phase 4 completion-gate hook will *combine* its output with this reminder rather than overwrite it (Codex R2).
+- **Notes**: Phase 4 (#123) completion-gate output (`COMPLETION_OUT`) is captured and merged after the sync-advisory block (HC-4.1 non-blocking; printed only when `CHANGED` is non-empty). IC-11 Option A requires `COMPLETION_OUT` to be computed before the early-exit guard so markers are consumed on every Stop regardless of file changes.
 
 ### `.claude/hooks/pre_tool_security.py`
 
@@ -659,9 +659,9 @@ Eighteen hook scripts (6 Claude shell + 4 Claude Python implementations + 8 Code
 
 ### `.codex/hooks/stop-sync-reminder.py`
 
-- **Current role**: Stop hook with two segments merged into a single `{"systemMessage": "..."}` JSON output (IC-2): (1) sync-reminder for foundation/structure path drift; (2) Phase 3 (#122) verify-first segment via `verify_first.should_remind()` import (current-session log read only — R0.2; subsecond freshness — R0.3).
+- **Current role**: Stop hook with five responsibilities merged into a single `{"systemMessage": "..."}` JSON output via `build_segments` orchestrator (AGENT_LOCALE #133 / PR #134, IC-2): (1) sync-advisory for governor-path drift; (2) Phase 3 (#122) verify-first via `verify_first.should_remind()`; (3) Phase 4 (#123) completion-gate via `completion_gate` module; (4) Phase 2 exception-token marker consumption (`consume_phase2_markers` — IC-11 Option A); (5) stale verify-log cleanup. AGENT_LOCALE env resolves locale for segments 1 and 3 at startup.
 - **Bucket**: Keep.
-- **Notes**: Phase 4 completion-gate output is merged as a third segment in the same hook output; Codex R2. Phase 3 R0.1: the verify-first import is performed inside the same `try` block that calls `should_remind` so an ImportError leaves the existing sync-reminder behaviour intact (HC-3.6 fail-open).
+- **Notes**: `build_segments` is a pure function (testable without subprocess). Phase 4 completion-gate is the third segment (Codex R2). Phase 5 thin-shims for `verify_first` and `completion_gate` are imported inline. Phase 3 R0.1: import inside try-block so ImportError leaves sync-advisory intact (HC-3.6 fail-open). All five responsibilities are unconditional — no early-exit guard skips marker cleanup.
 
 ### `.codex/hooks/verify_first.py`
 
@@ -791,3 +791,5 @@ The following self-checks must pass before this matrix is treated as authoritati
 - 2026-04-27 — Phase 5 (#124): added `.agents/shared/governor/` package to Tier 1 (8 modules consolidating Phase 2~4 duplicates: paths / time_window / tokens / markers / safety / verify / completion_gate / `__init__`). Updated Tier 3 hook role descriptions for the 6 hooks now operating as thin shims (`.claude/hooks/{user_prompt_submit,verify_first,completion_gate}.py` + `.codex/hooks/{user-prompt-submit,verify_first,completion_gate}.py`). Total 63 → 64. Bucket-share Keep 79% → 80% (1 net Keep added) / Overlay 21% → 20%. Closes #117 "Hybrid Harness v1" milestone — escape token vocabulary and hybrid governance remain permanent (target-operating-model §3 / §7).
 - 2026-04-29 — #145: added `tools/check_g_closure.py` to Tier 1 as the mechanical AGENTS.md guard G closure-table checker for governor review-log entries. Total 64 → 65. Bucket-share remains ~80% Keep / ~20% Overlay.
 - 2026-04-29 — `/sync-guidelines` table parity pass: added `.claude/hooks/completion_gate.py` and `.codex/hooks/completion_gate.py` to the Tier 3 quick-reference table. Detail sections and counts were already present from Phase 4, so there is no count change.
+- 2026-05-02 — ADR 047 PR B-F (#159): `tools/check_g_closure.py` retired (Drop); `tools/check_governor_footer.py` + `.github/workflows/governor-footer-lint.yml` added; `docs/history/047-governor-review-provenance-consolidation.md` added to Tier 1; `.agents/shared/governor/sync_cosmetic.py` added to Phase 5 package. `governor-review-log/` relocated to `docs/history/archive/governor-review-log/` (PR #161). Bucket-share ~79% Keep / ~20% Overlay / ~1% Drop.
+- 2026-05-06 — PR-B.2: LOC corrections (project-dna.md 906→976, scaffolding-layers.md 295→299, ai-infrastructure-overview.md 117→162, drift-checklist.md 189→220, test-files.md 27→33); governor-paths.md Notes updated to reference Governor Footer model (ADR 047, `governor-review-log/` per-PR obligation retired); stop-sync-reminder.sh Notes updated past-tense for Phase 4 + IC-11 Option A; stop-sync-reminder.py role description refreshed for AGENT_LOCALE 5-responsibility orchestrator (#133).
