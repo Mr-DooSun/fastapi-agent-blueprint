@@ -449,7 +449,7 @@ uv run alembic current
 ## Drift Management
 
 - `AGENTS.md` is the canonical source for shared rules; tool-specific harness docs must point here instead of re-copying rules
-- Keep root `AGENTS.md` short and stable; when local context needs more detail, prefer `AGENTS.override.md` or named skills instead of expanding the root doc
+- Keep root `AGENTS.md` short and stable; when local context needs more detail, prefer named skills instead of expanding the root doc; `AGENTS.override.md` may be used only if it is explicitly subject to the same drift-management and language-policy governance as `AGENTS.md` itself
 - Codex memories are personal/session optimization only; do not treat them as a shared rule source
 - Shared rule sources: `AGENTS.md`, `docs/ai/shared/`, `docs/ai/shared/skills/`, `.claude/`, `.codex/`, and `.agents/`
 - Update related documentation in the same change when shared rules or harness behavior changes
