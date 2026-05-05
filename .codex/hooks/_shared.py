@@ -3,9 +3,24 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+_SHARED_PKG = REPO_ROOT / ".agents" / "shared"
+if str(_SHARED_PKG) not in sys.path:
+    sys.path.insert(0, str(_SHARED_PKG))
+
+try:
+    from governor.completion_gate import (  # noqa: E402 — sys.path adjusted above
+        changed_files_via_git as _impl,
+    )
+
+    _GATE_OK = True
+except Exception:  # noqa: BLE001 — HC-5.5 fail-open
+    _impl = None  # type: ignore[assignment]
+    _GATE_OK = False
 
 
 def load_payload() -> dict:
@@ -23,6 +38,9 @@ def run_command(args: list[str]) -> subprocess.CompletedProcess[str]:
 
 
 def changed_files() -> list[str]:
+    if _GATE_OK and _impl is not None:
+        return _impl()
+    # Fallback when governor module is unavailable (HC-5.5 fail-open).
     tracked = run_command(["git", "diff", "--name-only", "HEAD"])
     untracked = run_command(["git", "ls-files", "--others", "--exclude-standard"])
     seen: list[str] = []
