@@ -37,30 +37,6 @@ import sys
 
 from _shared import REPO_ROOT, changed_files
 
-FOUNDATION_PREFIXES = (
-    "AGENTS.md",
-    "CLAUDE.md",
-    ".codex/",
-    ".agents/",
-    ".claude/hooks/",
-    ".claude/rules/",
-    ".claude/settings.json",
-    "docs/ai/shared/",
-    "docs/ai/shared/skills/",
-    "src/_apps/",
-    "src/_core/",
-    "pyproject.toml",
-    ".pre-commit-config.yaml",
-)
-
-STRUCTURE_MARKERS = (
-    "/infrastructure/di/",
-    "/interface/server/routers/",
-    "/domain/protocols/",
-    "/domain/dtos/",
-)
-
-
 # AGENT_LOCALE resolver (issue #133) — separate try block so a locale.py
 # failure cannot break sync reminders. Keeps the canonical English values
 # inline below as the second arg to _loc(), preserving Issue AC.
@@ -76,6 +52,17 @@ except Exception:  # noqa: BLE001 — HC-5.5 fail-open
 
     def _resolve_locale_string(key: str) -> str:  # type: ignore[no-redef]
         return ""
+
+
+try:
+    from governor.sync_advisory import (  # noqa: E402
+        classify_advisory as _classify_advisory,
+    )
+
+    _SYNC_OK = True
+except Exception:  # noqa: BLE001 — HC-5.5 fail-open
+    _classify_advisory = None  # type: ignore[assignment]
+    _SYNC_OK = False
 
 
 def _loc(key: str, fallback: str) -> str:
@@ -99,19 +86,16 @@ def build_segments(changed: list[str] | None = None) -> list[str]:
     if changed is None:
         changed = changed_files()
 
-    foundation = [p for p in changed if p.startswith(FOUNDATION_PREFIXES)]
-    structure = [
-        p
-        for p in changed
-        if p.startswith("src/")
-        and "/_" not in p
-        and any(marker in p for marker in STRUCTURE_MARKERS)
-    ]
+    advisory_level, advisory_files = (
+        _classify_advisory(changed)
+        if _SYNC_OK and _classify_advisory is not None
+        else (None, [])
+    )
 
     segments: list[str] = []
 
     # (1) sync-reminder advisory (foundation > structure precedence)
-    if foundation:
+    if advisory_level == "foundation":
         segments.append(
             "\n".join(
                 [
@@ -120,7 +104,7 @@ def build_segments(changed: list[str] | None = None) -> list[str]:
                         "Guideline sync required before closing this work.",
                     ),
                     _loc("SYNC_FOUNDATION_FILES_HEADER", "Foundation files changed:"),
-                    *[f"- {path}" for path in foundation[:12]],
+                    *[f"- {path}" for path in advisory_files[:12]],
                     _loc("SYNC_CODEX_RUN_PRIMARY", "Codex: run $sync-guidelines"),
                     _loc(
                         "SYNC_CLAUDE_RUN_ALSO",
@@ -139,7 +123,7 @@ def build_segments(changed: list[str] | None = None) -> list[str]:
                 ]
             )
         )
-    elif structure:
+    elif advisory_level == "structure":
         segments.append(
             "\n".join(
                 [
@@ -147,7 +131,7 @@ def build_segments(changed: list[str] | None = None) -> list[str]:
                     _loc(
                         "SYNC_STRUCTURE_FILES_HEADER", "Domain structure files changed:"
                     ),
-                    *[f"- {path}" for path in structure[:12]],
+                    *[f"- {path}" for path in advisory_files[:12]],
                     _loc(
                         "SYNC_REPORT_BOTH_NOTE",
                         "When you run sync, report both AUTO-FIX and REVIEW targets "
