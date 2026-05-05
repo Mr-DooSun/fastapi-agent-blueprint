@@ -146,17 +146,32 @@ def test_parameterized_orm_passes() -> None:
 
 
 def test_pydantic_field_suppresses_secret() -> None:
-    content = _PWD + ": str = Field(..., alias=" + _DQ + "db_pass" + _DQ + ")"
+    # Detection IS triggered (password = "literal") but Field() elsewhere in
+    # the same content trips the whole-content allow-list, suppressing the error.
+    # This validates the suppress mechanism is reachable, not vacuously absent.
+    content = (
+        _PWD + " = " + _DQ + "admin123" + _DQ + "\ndb_" + _PWD + ": str = Field(...)\n"
+    )
     assert check_code_safety(_SRC, content) == []
 
 
 def test_os_environ_suppresses_secret() -> None:
-    content = _PWD + " = os.environ[" + _DQ + "DB_PASS" + _DQ + "]"
+    # Detection IS triggered (password = "literal") but os.environ in the
+    # same content trips the allow-list.
+    content = (
+        _PWD + " = " + _DQ + "fallback_val" + _DQ + "\n"
+        "actual = os.environ[" + _DQ + "DB_" + _PWD.upper() + _DQ + "]\n"
+    )
     assert check_code_safety(_SRC, content) == []
 
 
 def test_settings_reference_suppresses_secret() -> None:
-    content = _PWD + " = settings.db_pass"
+    # Detection IS triggered (password = "literal") but settings.* reference
+    # in the same content trips the allow-list.
+    content = (
+        _PWD + " = " + _DQ + "fallback_pwd" + _DQ + "\n"
+        "actual = settings.db_" + _PWD + "\n"
+    )
     assert check_code_safety(_SRC, content) == []
 
 
