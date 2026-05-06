@@ -37,7 +37,7 @@ cp _env/local.env.example _env/local.env
 make dev
 ```
 
-Open <http://localhost:8000/docs> to explore the API. The selector recommends
+Open <http://localhost:8001/docs> to explore the API. The selector recommends
 Stoplight Elements / Scalar and exposes a `Download OpenAPI (JSON)` button
 plus a link to the [frontend handoff guide](frontend-handoff.md).
 

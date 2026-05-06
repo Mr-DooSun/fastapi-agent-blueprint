@@ -41,14 +41,21 @@ make demo
 This exercises the `auth` and `user` domains end-to-end — register, JWT token issuance, authenticated CRUD, token refresh, and logout:
 
 ```text
-→ Health check           { "status": "ok" }
-→ Register               { "success": true, "data": { "accessToken": "...", "refreshToken": "..." } }
-→ Create a user          { "success": true, "data": { "id": 2, "username": "bob", ... } }
-→ List users             { "data": [...], "pagination": { "totalItems": 2 } }
-→ Update the user        { "success": true }
-→ Delete the user        { "success": true }
-→ Refresh token          { "data": { "accessToken": "..." } }
-→ Logout                 { "success": true }
+→ Health check
+{ "status": "ok" }
+
+→ Register (creates user account + returns JWT token pair)
+{ "success": true, "data": { "accessToken": "...", "refreshToken": "..." } }
+
+→ Create a second user (JWT-authenticated)
+{ "success": true, "data": { "id": 2, "username": "bob", ... } }
+
+→ List users (page=1, pageSize=10)
+{ "data": [ { "id": 1, "username": "alice" }, { "id": 2, "username": "bob" } ],
+  "pagination": { "currentPage": 1, "totalItems": 2, "hasNext": false } }
+
+→ Update the user    → Delete the user
+→ Refresh token      → Logout
 → Done. API docs: http://127.0.0.1:8001/docs
 ```
 

@@ -42,13 +42,13 @@ This brings in:
 
 ```bash
 uv add dependency-injector pydantic-settings structlog asgi-correlation-id
-# Optional extras:
-uv add "fastapi-agent-blueprint[admin]"  # NiceGUI admin
-uv add "fastapi-agent-blueprint[aws]"    # S3 / DynamoDB / S3 Vectors
-uv add "fastapi-agent-blueprint[otel]"   # OpenTelemetry
+# Optional — copy the exact version pins from pyproject.toml [project.optional-dependencies]:
+uv add nicegui                                     # admin
+uv add aioboto3 boto3                              # aws (S3 / DynamoDB / S3 Vectors)
+uv add opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp-proto-grpc  # otel
 ```
 
-Alternatively, copy the relevant `[project.optional-dependencies]` sections from `pyproject.toml`.
+Or copy the relevant `[project.optional-dependencies]` sections verbatim from `pyproject.toml` to pin to the tested versions.
 
 ### Step 3 — Adopt one domain pattern
 
