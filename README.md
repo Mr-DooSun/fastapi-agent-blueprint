@@ -89,6 +89,8 @@ Clone → quickstart → CRUD → JWT auth → background worker → RAG query:
 make quickstart && make demo && make demo-rag
 ```
 
+![API demo: health check → register → JWT → CRUD](docs/assets/cast/demo.gif)
+
 Full integration walkthrough (auth · RBAC · worker · admin · RAG · OTEL): [`docs/canonical-demo.md`](docs/canonical-demo.md)
 
 ---
