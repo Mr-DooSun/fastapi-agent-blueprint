@@ -73,3 +73,9 @@ The core reading order lives in [`../README.md`](../README.md).
 | # | Title |
 |---|-------|
 | [044](044-superpowers-gstack-process-governor-evaluation.md) | Superpowers / gstack / process governor evaluation memo |
+
+### Project status snapshots
+
+| File | Description |
+|------|-------------|
+| [project-status/project-status-pre-v0.4.0.md](project-status/project-status-pre-v0.4.0.md) | Major changes v0.2.0 → v0.4.0 (26 rows archived 2026-05-06) |
