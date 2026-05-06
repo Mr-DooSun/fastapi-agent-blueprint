@@ -13,11 +13,11 @@ A minimal CRUD example mirroring the [`src/user/`](../../src/user/) layout.
 ## Quick Start
 
 ```bash
-curl -X POST http://localhost:8000/v1/todo \
+curl -X POST http://localhost:8001/v1/todo \
   -H "Content-Type: application/json" \
   -d '{"title": "My first todo"}'
 
-curl http://localhost:8000/v1/todos
+curl http://localhost:8001/v1/todos
 
-curl -X DELETE http://localhost:8000/v1/todo/{todo_id}
+curl -X DELETE http://localhost:8001/v1/todo/{todo_id}
 ```

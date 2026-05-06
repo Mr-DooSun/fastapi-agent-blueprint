@@ -82,7 +82,7 @@ In a second terminal, `make demo` exercises the `user` domain and
 ## Why this blueprint
 
 - **Write domain logic once, expose it everywhere.** HTTP (FastAPI) + worker (Taskiq) + admin (NiceGUI) share a single domain layer. MCP server is on the roadmap.
-- **Zero-boilerplate CRUD.** Inherit `BaseRepository[DTO]` and `BaseService[Create, Update, DTO]` to get 7 async methods — including paginated list with `QueryFilter` — for free.
+- **Zero-boilerplate CRUD.** Inherit `BaseRepository[DTO]` and `BaseService[Create, Update, DTO]` to get 8 async methods — including paginated list with `QueryFilter` — for free.
 - **Auto domain discovery.** Drop a folder into `src/{name}/`, it auto-registers. No container edits, no bootstrap edits.
 - **Pluggable infra, env-switchable.** PostgreSQL / MySQL / SQLite · DynamoDB · S3 / MinIO · S3 Vectors · SQS / RabbitMQ / InMemory · OpenAI / Bedrock for both LLM and embeddings.
 - **Architecture enforced at commit time.** A pre-commit hook blocks `Domain → Infrastructure` imports so the DDD contract cannot rot.
@@ -94,13 +94,13 @@ In a second terminal, `make demo` exercises the `user` domain and
 
 | Feature | FastAPI Agent Blueprint | [tiangolo/full-stack](https://github.com/fastapi/full-stack-fastapi-template) | [s3rius/template](https://github.com/s3rius/FastAPI-template) | [teamhide/boilerplate](https://github.com/teamhide/fastapi-boilerplate) |
 |---|:-:|:-:|:-:|:-:|
-| Zero-boilerplate CRUD (7 methods) | **Yes** | No | No | No |
+| Zero-boilerplate CRUD (8 methods) | **Yes** | No | No | No |
 | Auto domain discovery | **Yes** | No | No | No |
 | Architecture enforcement (pre-commit) | **Yes** | No | No | No |
 | AI workflow skills (Claude + Codex) | **14 + 15** | 0 | 0 | 0 |
 | Vector infrastructure (S3 Vectors) | **Yes** | No | No | No |
 | Multi-interface (API + Worker + Admin + MCP) | **3 + 1 planned** | 2 | 1 | 1 |
-| Architecture Decision Records | **40** | 0 | 0 | 0 |
+| Architecture Decision Records | **18 active · 30 archived** | 0 | 0 | 0 |
 | Type-safe generics across layers | **Yes** | Partial | Partial | No |
 | IoC container DI | **Yes** | No | No | No |
 
@@ -266,16 +266,17 @@ Full table and setup guide: [`docs/ai-development.md`](docs/ai-development.md).
 | Set up Claude Code or Codex CLI | [`docs/ai-development.md`](docs/ai-development.md) |
 | Add a domain by hand (no AI tools) | [`docs/tutorial/first-domain.md`](docs/tutorial/first-domain.md) (Path B) |
 | See detailed env vars, tech stack, project tree | [`docs/reference.md`](docs/reference.md) |
-| Understand why a decision was made | [ADR index](docs/history/README.md) (40 records) |
+| Understand why a decision was made | [ADR index](docs/history/README.md) (18 active · 30 archived) |
 | Follow what's next | [Roadmap](docs/reference.md#roadmap) · [issue tracker](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues) |
 
 ---
 
-## Coming soon
+## Roadmap
 
 - **MCP server interface** — expose domain services as agent tools via FastMCP ([#18](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/18))
 - **pgvector** — additional vector backend alongside S3 Vectors ([#11](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/11))
-- **JWT authentication** ([#4](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/4)) · **Structured logging** ([#9](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/9))
+
+See [full roadmap](docs/reference.md#roadmap) · [open issues](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues)
 
 ---
 

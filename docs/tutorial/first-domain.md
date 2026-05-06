@@ -368,14 +368,11 @@ def bootstrap_order_domain(
 
 ## Step 4 — Verify it works
 
-Restart the quickstart server (leave the running one running — it
-**already picked up the new domain** via `discover_domains()`; you just
-need `make quickstart` to re-create the SQLite schema with the new
-table):
+Stop the running server (Ctrl+C in the first terminal), then restart it
+to re-create the SQLite schema with the new `order` table:
 
 ```bash
-rm -f ./quickstart.db
-# restart make quickstart in the first terminal
+rm -f ./quickstart.db && make quickstart
 ```
 
 > The `order` table is auto-created at boot in `ENV=quickstart` mode

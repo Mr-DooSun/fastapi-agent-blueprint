@@ -12,7 +12,7 @@ Instead, please email the maintainers directly. We will respond within 48 hours 
 
 | Version | Supported |
 |---------|-----------|
-| 0.1.x   | Yes       |
+| 0.5.x   | Yes       |
 
 ## Disclosure Policy
 
