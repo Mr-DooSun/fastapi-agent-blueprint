@@ -1,13 +1,16 @@
-"""Unit tests for governor.sync_advisory.classify_advisory (PR-A.5).
+"""Unit tests for governor.sync_advisory.classify_advisory (PR-A.5 + F-1).
 
 Positive corpus: file paths that must trigger foundation or structure advisory.
 Negative corpus: file paths that must return (None, []).
+Section 7: CLI bridge (sync_advisory_cli) output format and fail-open.
 """
 
 from __future__ import annotations
 
+import io
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / ".agents" / "shared"))
@@ -187,3 +190,58 @@ def test_foundation_prefixes_nonempty_tuple() -> None:
 def test_structure_markers_nonempty_tuple() -> None:
     assert isinstance(STRUCTURE_MARKERS, tuple)
     assert len(STRUCTURE_MARKERS) >= 4
+
+
+# ---------------------------------------------------------------------------
+# 7. CLI bridge (sync_advisory_cli) — output format and fail-open (F-1)
+# ---------------------------------------------------------------------------
+
+
+def _run_cli(stdin_text: str) -> list[str]:
+    """Run sync_advisory_cli.main() with the given stdin, return stdout lines."""
+    import governor.sync_advisory_cli as cli_mod
+
+    captured = io.StringIO()
+    with (
+        patch("sys.stdin", io.StringIO(stdin_text)),
+        patch("sys.stdout", captured),
+    ):
+        cli_mod.main()
+    return [line for line in captured.getvalue().splitlines() if line]
+
+
+def test_cli_foundation_output() -> None:
+    lines = _run_cli("AGENTS.md\nsrc/user/service.py\n")
+    assert lines[0] == "foundation"
+    assert "AGENTS.md" in lines[1:]
+
+
+def test_cli_structure_output() -> None:
+    lines = _run_cli("src/user/infrastructure/di/container.py\n")
+    assert lines[0] == "structure"
+    assert "src/user/infrastructure/di/container.py" in lines[1:]
+
+
+def test_cli_none_output() -> None:
+    lines = _run_cli("src/user/service.py\n")
+    assert lines == ["none"]
+
+
+def test_cli_empty_stdin_returns_none() -> None:
+    lines = _run_cli("")
+    assert lines == ["none"]
+
+
+def test_cli_fail_open_on_classify_error() -> None:
+    """Any exception inside main() must produce 'none' cleanly (HC-5.5 fail-open)."""
+    import governor.sync_advisory as adv_mod
+    import governor.sync_advisory_cli as cli_mod
+
+    captured = io.StringIO()
+    with (
+        patch("sys.stdin", io.StringIO("AGENTS.md\n")),
+        patch("sys.stdout", captured),
+        patch.object(adv_mod, "classify_advisory", side_effect=RuntimeError("boom")),
+    ):
+        cli_mod.main()
+    assert captured.getvalue().strip() == "none"

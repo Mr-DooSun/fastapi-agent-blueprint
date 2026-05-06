@@ -69,11 +69,28 @@ COMPLETION_OUT=$(python3 "${HOOK_DIR}/completion_gate.py" 2>/dev/null || true)
 
 [ -z "$CHANGED" ] && exit 0
 
-# Foundation: project-wide impact
-FOUNDATION=$(echo "$CHANGED" | grep -E '^(src/_core/|src/_apps/|pyproject\.toml$|\.pre-commit-config\.yaml$|AGENTS\.md$|CLAUDE\.md$|\.codex/|\.agents/|\.claude/rules/|\.claude/hooks/|\.claude/settings\.json$|docs/ai/shared/|docs/ai/shared/skills/)' || true)
+# Delegate classification to governor.sync_advisory via Python shim (F-1 SOT).
+# HC-5.5 fail-open: if the shim is unavailable, fall back to inline grep patterns.
+FOUNDATION=""
+STRUCTURE=""
+_ADVISORY_OK=0
+if _ADVISORY_RAW=$(printf '%s\n' "$CHANGED" \
+        | PYTHONPATH="${SHARED_DIR}" python3 -m governor.sync_advisory_cli 2>/dev/null); then
+    _ADVISORY_LEVEL=$(echo "$_ADVISORY_RAW" | head -1)
+    _ADVISORY_FILES=$(echo "$_ADVISORY_RAW" | tail -n +2 | grep -v '^$' || true)
+    case "$_ADVISORY_LEVEL" in
+        foundation) FOUNDATION="$_ADVISORY_FILES"; _ADVISORY_OK=1 ;;
+        structure)  STRUCTURE="$_ADVISORY_FILES";  _ADVISORY_OK=1 ;;
+        none)       _ADVISORY_OK=1 ;;
+        *)          _ADVISORY_OK=1 ;;  # future extension — treat unknown level as none
+    esac
+fi
 
-# Domain Structure: domain-level architectural impact (exclude _core/_apps)
-STRUCTURE=$(echo "$CHANGED" | grep -E '^src/[^_].*/((infrastructure/di/|interface/server/routers/|domain/protocols/|domain/dtos/))' || true)
+if [ "$_ADVISORY_OK" -eq 0 ]; then
+    # Fallback: governor.sync_advisory_cli unavailable (Python absent, import error, etc.)
+    FOUNDATION=$(echo "$CHANGED" | grep -E '^(src/_core/|src/_apps/|pyproject\.toml$|\.pre-commit-config\.yaml$|AGENTS\.md$|CLAUDE\.md$|\.codex/|\.agents/|\.claude/rules/|\.claude/hooks/|\.claude/settings\.json$|docs/ai/shared/|docs/ai/shared/skills/)' || true)
+    STRUCTURE=$(echo "$CHANGED" | grep -E '^src/[^_].*/((infrastructure/di/|interface/server/routers/|domain/protocols/|domain/dtos/))' || true)
+fi
 
 if [ -n "$FOUNDATION" ]; then
     echo ""

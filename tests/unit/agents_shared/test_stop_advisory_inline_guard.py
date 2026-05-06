@@ -1,19 +1,26 @@
-"""Static guards and fail-open behavioral tests for PR-A.5.
+"""Static guards and fail-open behavioral tests for PR-A.5 + F-1.
 
 After PR-A.5, the Codex stop-sync-reminder hook must delegate classification
 logic to governor.sync_advisory rather than redeclaring FOUNDATION_PREFIXES /
 STRUCTURE_MARKERS inline.
 
-Guards:
+After F-1, the Claude bash hook must also delegate via governor.sync_advisory_cli
+with a HC-5.5 fail-open fallback to inline grep patterns.
+
+Codex Python hook guards:
   1. FOUNDATION_PREFIXES tuple not defined inline in the hook.
   2. STRUCTURE_MARKERS tuple not defined inline in the hook.
   3. Hook imports classify_advisory from governor.sync_advisory (not facade).
   4. No getattr(governor, ...) bypass in the hook.
 
-Behavioral tests:
+Codex behavioral tests:
   5. When _SYNC_OK=False (import failed), build_segments must not emit any
      sync advisory segment (HC-5.5 fail-open — IC-19 always-fallback does
      not apply when the import itself failed).
+
+Claude bash hook guards (F-1):
+  6. Bash hook invokes governor.sync_advisory_cli (primary classification path).
+  7. Bash hook retains a fail-open fallback (HC-5.5: inline grep when Python unavailable).
 """
 
 from __future__ import annotations
@@ -59,10 +66,15 @@ def _load_codex_stop_sync() -> types.ModuleType:
 
 
 _HOOK = REPO_ROOT / ".codex" / "hooks" / "stop-sync-reminder.py"
+_CLAUDE_HOOK = REPO_ROOT / ".claude" / "hooks" / "stop-sync-reminder.sh"
 
 
 def _text() -> str:
     return _HOOK.read_text(encoding="utf-8")
+
+
+def _bash_text() -> str:
+    return _CLAUDE_HOOK.read_text(encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -148,3 +160,37 @@ def test_sync_ok_false_no_advisory_segment() -> None:
             assert marker not in seg, (
                 f"Sync advisory appeared despite _SYNC_OK=False: {marker!r} found in segment"
             )
+
+
+# ---------------------------------------------------------------------------
+# 6. Claude bash hook delegates to governor.sync_advisory_cli (F-1)
+# ---------------------------------------------------------------------------
+
+
+def test_claude_bash_hook_delegates_to_sync_advisory_cli() -> None:
+    """stop-sync-reminder.sh must invoke governor.sync_advisory_cli (F-1 primary path)."""
+    text = _bash_text()
+    assert "sync_advisory_cli" in text, (
+        f"{_CLAUDE_HOOK.name}: does not invoke governor.sync_advisory_cli. "
+        "F-1 migration: primary classification must delegate to the shared governor module."
+    )
+
+
+# ---------------------------------------------------------------------------
+# 7. Claude bash hook retains fail-open fallback (HC-5.5)
+# ---------------------------------------------------------------------------
+
+
+def test_claude_bash_hook_has_fail_open_fallback() -> None:
+    """stop-sync-reminder.sh must retain the inline grep fallback for HC-5.5 compliance."""
+    text = _bash_text()
+    assert "_ADVISORY_OK" in text, (
+        f"{_CLAUDE_HOOK.name}: _ADVISORY_OK flag absent — HC-5.5 fail-open fallback "
+        "must be present so classification degrades gracefully when Python is unavailable."
+    )
+    # The inline grep fallback patterns must still be present in the file so the
+    # hook remains functional when Python is entirely unavailable.
+    assert "grep -E" in text, (
+        f"{_CLAUDE_HOOK.name}: inline grep -E fallback patterns absent. "
+        "HC-5.5 requires a working fallback when Python is unavailable."
+    )

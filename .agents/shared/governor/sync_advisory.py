@@ -1,21 +1,21 @@
-"""Shared sync-advisory classification (PR-A.5).
+"""Shared sync-advisory classification (PR-A.5 + F-1).
 
 Single source of truth for ``FOUNDATION_PREFIXES`` / ``STRUCTURE_MARKERS``
-and the ``classify_advisory`` decision function. Extracted from the inline
-declarations in ``.codex/hooks/stop-sync-reminder.py`` so both the Codex
-Python hook and future Claude-side migrations consume identical rules
-(IC-2 single-source goal).
+and the ``classify_advisory`` decision function. Both the Codex Python hook
+(``.codex/hooks/stop-sync-reminder.py``) and the Claude bash hook
+(``.claude/hooks/stop-sync-reminder.sh``) delegate here via thin shims,
+satisfying IC-2 (single SOT) and IC-14 (no inline policy redeclaration).
 
-The ``.claude/hooks/stop-sync-reminder.sh`` bash hook is NOT yet migrated
-(F-1 follow-up — see GitHub issue linked in PR-A.5 Footer).
+The bash hook uses ``governor.sync_advisory_cli`` (same package) as its
+bridge, with a fail-open inline-grep fallback for environments where Python
+is unavailable (HC-5.5).
 
-Semantic note — bash vs Python matching:
-  The bash hook uses anchored regex patterns (``pyproject.toml$``,
-  ``CLAUDE.md$``, ``.claude/settings.json$``) while this module uses
-  ``str.startswith`` prefix matching. Paths like ``pyproject.toml.bak``
-  would match here but not in the bash hook. Such paths are not produced
-  by normal git operations, so the divergence is accepted until F-1
-  unifies both sides.
+Semantic note — primary vs fallback matching:
+  This module uses ``str.startswith`` prefix matching. The bash fallback
+  (inactive under normal conditions) uses anchored ``grep -E`` patterns.
+  Paths like ``pyproject.toml.bak`` would match the Python path but not
+  the bash fallback. Such paths are not produced by normal git operations,
+  so the divergence is accepted and confined to the fallback-only path.
 """
 
 from __future__ import annotations
