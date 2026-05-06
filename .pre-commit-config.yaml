@@ -93,6 +93,17 @@ repos:
         pass_filenames: true
         files: '^(AGENTS\.md|CLAUDE\.md|CONTRIBUTING\.md|CODE_OF_CONDUCT\.md|SECURITY\.md|docs/ai/shared/.*\.md|docs/history/.*\.md|\.claude/rules/.*\.md|\.claude/hooks/.*|\.claude/skills/.*\.md|\.codex/rules/.*|\.codex/hooks/.*|\.agents/.*\.(py|md)|\.github/pull_request_template\.md|\.github/workflows/.*\.ya?ml)$'
 
+      # State lifecycle health check (PR-A.3):
+      # FAIL-HARD on git-tracked state files (.claude/state/, .codex/state/).
+      # WARN-ONLY (exit 0) when stale marker count exceeds threshold.
+      # pass_filenames: false — checks fixed state dirs, not changed-file list.
+      - id: state-lifecycle-check
+        name: "State lifecycle: no tracked state files (warn on stale markers)"
+        language: system
+        entry: python3 tools/check_state_lifecycle.py
+        pass_filenames: false
+        always_run: true
+
       # Guard G closure enforcement (post-ADR 047):
       # The canonical Guard G enforcement target moved from the per-PR
       # governor-review-log/ archive to the PR-description Governor Footer
