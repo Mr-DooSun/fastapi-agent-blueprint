@@ -25,7 +25,7 @@ problem framing → approach options → plan → implement
 | implement | Write the code following project patterns. | `/new-domain`, `/add-api`, `/add-worker-task`, `/add-admin-page`, `/add-cross-domain`, `/migrate-domain` | n/a (this *is* the work) |
 | verify | Confirm the change does what it claims via tests, runs, or schema validation. | `/test-domain run`, `pytest`, `make demo`, `make demo-rag`, `alembic upgrade head` | Mandatory by default |
 | self-review | Audit the change against project constraints before declaring done. | `/review-architecture`, `/security-review` (when applicable) | Mandatory by default |
-| completion gate | Cross-check drift, generate ADR/follow-up if needed, signal end-of-work. | `/review-pr`, `/sync-guidelines` | Currently advisory; mandatory once Phase 4 hook lands |
+| completion gate | Cross-check drift, generate ADR/follow-up if needed, signal end-of-work. | `/review-pr`, `/sync-guidelines` | Mandatory-by-default; non-blocking reminder via Phase 4 hook + Governor Footer Lint CI |
 
 Steps are sequential. Returning to an earlier step is permitted (e.g. `verify` failure may force re-`plan`); skipping a mandatory step requires either an exception token (§3) or an automatic escape condition (§3 auto-escapes).
 
@@ -63,7 +63,7 @@ The rule does *not* apply when:
 
 If unsure, `approach options` is performed.
 
-`completion gate` becomes mandatory at the end of the migration (Phase 4 Stop hook). Until then, it is advisory.
+`completion gate` is mandatory-by-default (Phase 4 Stop hook shipped in #123 / PR #128). Non-blocking: the hook emits a reminder; the Governor Footer Lint CI enforces presence + shape when governance paths are touched.
 
 ## §3 Allowed Exceptions
 
