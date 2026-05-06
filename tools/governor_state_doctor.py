@@ -269,13 +269,14 @@ def check_hook_interpreter(root: Path = PROJECT_ROOT) -> CheckResult:
 
     commands = _collect_hook_commands(root)
     for cmd in commands:
-        # The first token after optional env modifiers is the interpreter/file
         parts = cmd.split()
         if not parts:
             continue
-        # e.g. "bash .claude/hooks/stop-sync-reminder.sh"
-        # e.g. "python3 .codex/hooks/stop-sync-reminder.py"
-        hook_rel = parts[-1] if len(parts) >= 2 else parts[0]
+        # Use the last token as the hook file path. For simple commands like
+        # "bash script.sh" or "python3 hook.py" this is always correct.
+        # Complex forms (e.g. "bash -c '...'") are not used in this repo's
+        # hooks.json, so the last-token heuristic is sufficient here.
+        hook_rel = parts[-1]
 
         hook_path = (
             (root / hook_rel).resolve()

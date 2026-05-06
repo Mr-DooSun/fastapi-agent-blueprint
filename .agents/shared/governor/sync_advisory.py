@@ -8,6 +8,14 @@ Python hook and future Claude-side migrations consume identical rules
 
 The ``.claude/hooks/stop-sync-reminder.sh`` bash hook is NOT yet migrated
 (F-1 follow-up — see GitHub issue linked in PR-A.5 Footer).
+
+Semantic note — bash vs Python matching:
+  The bash hook uses anchored regex patterns (``pyproject.toml$``,
+  ``CLAUDE.md$``, ``.claude/settings.json$``) while this module uses
+  ``str.startswith`` prefix matching. Paths like ``pyproject.toml.bak``
+  would match here but not in the bash hook. Such paths are not produced
+  by normal git operations, so the divergence is accepted until F-1
+  unifies both sides.
 """
 
 from __future__ import annotations
@@ -23,7 +31,8 @@ FOUNDATION_PREFIXES: tuple[str, ...] = (
     ".claude/rules/",
     ".claude/settings.json",
     "docs/ai/shared/",
-    "docs/ai/shared/skills/",
+    # "docs/ai/shared/skills/" omitted — already covered by "docs/ai/shared/"
+    # prefix via str.startswith; keeping it would be a redundant entry.
     "src/_apps/",
     "src/_core/",
     "pyproject.toml",

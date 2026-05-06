@@ -39,16 +39,22 @@ def run_command(args: list[str]) -> subprocess.CompletedProcess[str]:
 
 def changed_files() -> list[str]:
     if _GATE_OK and _impl is not None:
-        return _impl()
-    # Fallback when governor module is unavailable (HC-5.5 fail-open).
+        try:
+            return _impl()
+        except Exception:  # noqa: BLE001, S110 — HC-5.5: execution fail-open, fall through
+            pass
+    # Fallback when governor module is unavailable or _impl() raises (HC-5.5).
+    # sorted() applied for consistent ordering with changed_files_via_git().
     tracked = run_command(["git", "diff", "--name-only", "HEAD"])
     untracked = run_command(["git", "ls-files", "--others", "--exclude-standard"])
-    seen: list[str] = []
-    for chunk in (tracked.stdout, untracked.stdout):
-        for line in chunk.splitlines():
-            if line and line not in seen:
-                seen.append(line)
-    return seen
+    return sorted(
+        {
+            line
+            for chunk in (tracked.stdout, untracked.stdout)
+            for line in chunk.splitlines()
+            if line
+        }
+    )
 
 
 def extract_python_paths(command: str) -> list[Path]:

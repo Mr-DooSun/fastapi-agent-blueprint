@@ -79,3 +79,9 @@ The core reading order lives in [`../README.md`](../README.md).
 | File | Description |
 |------|-------------|
 | [project-status/project-status-pre-v0.4.0.md](project-status/project-status-pre-v0.4.0.md) | Major changes v0.2.0 → v0.4.0 (26 rows archived 2026-05-06) |
+
+### Governor review log (closed archive)
+
+| Directory | Description |
+|-----------|-------------|
+| [governor-review-log/](governor-review-log/) | 18 per-PR cross-tool review entries from PR #125 to PR #158. Closed historical archive (ADR 047 D6). New reviews use PR-description Governor Footer blocks instead. |

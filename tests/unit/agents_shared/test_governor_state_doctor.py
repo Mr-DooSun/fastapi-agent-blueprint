@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -349,3 +350,27 @@ def test_run_all_real_project_all_pass() -> None:
     results = run_all(_REPO_ROOT)
     failures = [f"{r.name}: {r.detail}" for r in results if not r.ok]
     assert not failures, "Doctor found issues:\n" + "\n".join(failures)
+
+
+def test_c5_governor_markers_real_import() -> None:
+    """C5 subprocess import: governor.markers must be importable via PYTHONPATH.
+
+    This test is NOT mocked so it exercises the real import path that
+    check_hook_interpreter validates. A broken governor package or wrong
+    PYTHONPATH setup will cause this test (not just the mocked run_all) to fail.
+    """
+    shared = _REPO_ROOT / ".agents" / "shared"
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(shared)
+    import_code = "from governor.markers import consume_phase2_markers; print('ok')"
+    proc = subprocess.run(
+        [sys.executable, "-c", import_code],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert proc.returncode == 0, (
+        f"governor.markers import failed via PYTHONPATH={shared}:\n{proc.stderr}"
+    )
+    assert "ok" in proc.stdout
