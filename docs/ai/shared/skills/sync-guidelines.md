@@ -107,6 +107,7 @@ Before closing:
 - verify both wrappers keep the same Phase/Step overview count as the shared
   procedure
 - verify shared procedures do not contain tool-specific instructions
+- **`project-status.md` table hygiene**: count rows in the `Recent Major Changes` table; if row count exceeds 15, flag for archival; scan cells for multi-line content that would break markdown table rendering; when a new version ships, archive pre-release rows to `docs/history/archive/project-status/` following the PR-B.1 pattern
 
 Emit the full sync contract and clearly state whether the quality gate is closed
 or waiting on review follow-up.

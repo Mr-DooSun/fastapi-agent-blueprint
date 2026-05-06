@@ -106,6 +106,7 @@ Read each `.claude/rules/` file and compare against current code:
 - [ ] Recent Major Changes includes every notable PR / feature merged since the documented "Last synced" date?
 - [ ] Architecture Violation Status matches the live grep results?
 - [ ] Not Yet Implemented matches project-dna.md §8 "Not implemented"?
+- [ ] Recent Major Changes table row count ≤ 15? (current: run `grep -c "^|" .claude/rules/project-status.md`); if > 15, flag for archival at next version release following the PR-B.1 pattern
 
 ### project_overview
 - [ ] Infrastructure Options matches the subdirectories under `src/_core/infrastructure/`?
