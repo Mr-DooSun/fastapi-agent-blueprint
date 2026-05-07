@@ -12,7 +12,7 @@ and the "why not X?" questions that come up on HN and Reddit.
 | Zero-boilerplate CRUD (8 methods) | **Yes** | No | No | No |
 | Auto domain discovery | **Yes** | No | No | No |
 | Architecture enforcement (pre-commit) | **Yes** | No | No | No |
-| AI workflow skills (Claude + Codex) | **14 + 15** | 0 | 0 | 0 |
+| AI workflow skills (Claude + Codex) | **14 + 14** | 0 | 0 | 0 |
 | Vector infrastructure (S3 Vectors) | **Yes** | No | No | No |
 | Multi-interface (API + Worker + Admin + MCP) | **3 + 1 planned** | 2 | 1 | 1 |
 | Architecture Decision Records | **18 active · 30 archived** | 0 | 0 | 0 |

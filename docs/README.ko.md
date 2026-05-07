@@ -84,7 +84,7 @@ make quickstart   # :8001 에 FastAPI 기동, SQLite 스키마 자동 생성
 - **도메인 자동 발견.** `src/{name}/` 에 폴더 하나만 두면 자동 등록. Container 수정도, bootstrap 수정도 필요 없음.
 - **환경변수 한 줄로 교체 가능한 인프라.** PostgreSQL / MySQL / SQLite · DynamoDB · S3 / MinIO · S3 Vectors · SQS / RabbitMQ / InMemory · LLM/Embedding 모두 OpenAI / Bedrock.
 - **커밋 시점에 아키텍처 강제.** Pre-commit 훅이 `Domain → Infrastructure` import 를 차단하여 DDD 계약이 썩지 않도록 보장.
-- **AI 네이티브 워크플로우.** Claude Code 14개 + Codex CLI 15개 스킬이 동일한 `AGENTS.md` 규칙을 공유 — 한 줄로 도메인 스캐폴딩, 라우트 추가, 아키텍처 감사가 가능.
+- **AI 네이티브 워크플로우.** Claude Code 14개 + Codex CLI 14개 스킬이 동일한 `AGENTS.md` 규칙을 공유 — 한 줄로 도메인 스캐폴딩, 라우트 추가, 아키텍처 감사가 가능.
 
 ---
 
@@ -95,7 +95,7 @@ make quickstart   # :8001 에 FastAPI 기동, SQLite 스키마 자동 생성
 | 보일러플레이트 제로 CRUD (8개 메서드) | **Yes** | No | No | No |
 | 도메인 자동 발견 | **Yes** | No | No | No |
 | 아키텍처 자동 강제 (pre-commit) | **Yes** | No | No | No |
-| AI 워크플로우 스킬 (Claude + Codex) | **14 + 15** | 0 | 0 | 0 |
+| AI 워크플로우 스킬 (Claude + Codex) | **14 + 14** | 0 | 0 | 0 |
 | 벡터 인프라 (S3 Vectors) | **Yes** | No | No | No |
 | 멀티 인터페이스 (API + Worker + Admin + MCP) | **3 + 1 예정** | 2 | 1 | 1 |
 | Architecture Decision Records | **18 active · 30 archived** | 0 | 0 | 0 |
