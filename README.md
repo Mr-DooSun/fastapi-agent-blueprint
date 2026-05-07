@@ -119,7 +119,7 @@ Full integration walkthrough (auth · RBAC · worker · admin · RAG · OTEL): [
 **AI-assisted acceleration**
 
 - `/new-domain order` scaffolds **44 files** (15 source + 25 `__init__.py` + 4 tests) in one command
-- **14 Claude Code + 15 Codex CLI skills** sharing one `AGENTS.md` rules file
+- **14 Claude Code + 14 Codex CLI skills** sharing one `AGENTS.md` rules file
 - Both tools supported equally — swap `/` for `$` to switch between them
 - Full setup: [`docs/ai-development.md`](docs/ai-development.md)
 - Manual path: [`docs/tutorial/first-domain.md`](docs/tutorial/first-domain.md) (Path B)
@@ -141,7 +141,7 @@ Full integration walkthrough (auth · RBAC · worker · admin · RAG · OTEL): [
 | Zero-boilerplate CRUD (8 methods) | **Yes** | No | No | No |
 | Auto domain discovery | **Yes** | No | No | No |
 | Architecture enforcement (pre-commit) | **Yes** | No | No | No |
-| AI workflow skills (Claude + Codex) | **14 + 15** | 0 | 0 | 0 |
+| AI workflow skills (Claude + Codex) | **14 + 14** | 0 | 0 | 0 |
 | Vector infrastructure (S3 Vectors) | **Yes** | No | No | No |
 | Multi-interface (API + Worker + Admin + MCP) | **3 + 1 planned** | 2 | 1 | 1 |
 | Architecture Decision Records | **18 active · 30 archived** | 0 | 0 | 0 |

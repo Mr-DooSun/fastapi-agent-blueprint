@@ -95,7 +95,7 @@ make quickstart   # :8001 에 FastAPI 기동, SQLite 스키마 자동 생성
 | 보일러플레이트 제로 CRUD (8개 메서드) | **Yes** | No | No | No |
 | 도메인 자동 발견 | **Yes** | No | No | No |
 | 아키텍처 자동 강제 (pre-commit) | **Yes** | No | No | No |
-| AI 워크플로우 스킬 (Claude + Codex) | **14 + 15** | 0 | 0 | 0 |
+| AI 워크플로우 스킬 (Claude + Codex) | **14 + 14** | 0 | 0 | 0 |
 | 벡터 인프라 (S3 Vectors) | **Yes** | No | No | No |
 | 멀티 인터페이스 (API + Worker + Admin + MCP) | **3 + 1 예정** | 2 | 1 | 1 |
 | Architecture Decision Records | **18 active · 30 archived** | 0 | 0 | 0 |
