@@ -37,7 +37,7 @@ cp _env/local.env.example _env/local.env
 make dev
 ```
 
-Open <http://localhost:8000/docs> to explore the API. The selector recommends
+Open <http://localhost:8001/docs> to explore the API. The selector recommends
 Stoplight Elements / Scalar and exposes a `Download OpenAPI (JSON)` button
 plus a link to the [frontend handoff guide](frontend-handoff.md).
 
@@ -134,48 +134,55 @@ infrastructure clients.
 ## Project structure
 
 ```
-src/
-├── _apps/                       # App entry points
-│   ├── server/                  # FastAPI HTTP server
-│   ├── worker/                  # Taskiq async worker
-│   └── admin/                   # NiceGUI admin app (mounted on server)
+fastapi-agent-blueprint/
+├── src/
+│   ├── _apps/                       # App entry points
+│   │   ├── server/                  # FastAPI HTTP server
+│   │   ├── worker/                  # Taskiq async worker
+│   │   └── admin/                   # NiceGUI admin app (mounted on server)
+│   │
+│   ├── _core/                       # Shared infrastructure
+│   │   ├── common/                  # Pagination, security, text utils, UUID helpers
+│   │   ├── domain/
+│   │   │   ├── protocols/           # BaseRepositoryProtocol[ReturnDTO]
+│   │   │   └── services/            # BaseService[CreateDTO, UpdateDTO, ReturnDTO]
+│   │   ├── infrastructure/
+│   │   │   ├── persistence/
+│   │   │   │   ├── rdb/             # Database, BaseRepository[ReturnDTO]
+│   │   │   │   └── nosql/dynamodb/  # DynamoDBClient, BaseDynamoRepository
+│   │   │   ├── vectors/
+│   │   │   │   ├── s3/              # S3VectorClient, BaseS3VectorStore
+│   │   │   │   └── in_memory/       # In-memory vector store (quickstart)
+│   │   │   ├── embedding/           # PydanticAI embedding adapter
+│   │   │   ├── llm/                 # build_llm_model factory
+│   │   │   ├── storage/             # S3 / MinIO ObjectStorageClient
+│   │   │   ├── taskiq/              # Broker adapters, TaskiqManager
+│   │   │   ├── http/                # HttpClient, BaseHttpGateway
+│   │   │   ├── observability/       # OTEL setup (ADR 046)
+│   │   │   ├── rag/                 # RagPipeline, StubAnswerAgent (ADR 040)
+│   │   │   ├── di/                  # CoreContainer
+│   │   │   └── discovery.py         # Auto domain discovery
+│   │   ├── application/dtos/        # BaseRequest, BaseResponse, SuccessResponse
+│   │   ├── exceptions/              # Handlers, BaseCustomException
+│   │   └── config.py                # Settings (pydantic-settings)
+│   │
+│   └── user/                        # Reference domain
+│       ├── domain/
+│       │   ├── dtos/                # UserDTO
+│       │   ├── protocols/           # UserRepositoryProtocol
+│       │   ├── services/            # UserService(BaseService[...])
+│       │   └── exceptions/          # UserNotFoundException
+│       ├── infrastructure/
+│       │   ├── database/models/     # UserModel
+│       │   ├── repositories/        # UserRepository(BaseRepository[UserDTO])
+│       │   └── di/                  # UserContainer
+│       └── interface/
+│           ├── server/              # routers/, schemas/, bootstrap/
+│           ├── worker/              # payloads/, tasks/, bootstrap/
+│           └── admin/               # configs/, pages/ (NiceGUI)
 │
-├── _core/                       # Shared infrastructure
-│   ├── common/                  # Pagination, security, text utils, UUID helpers
-│   ├── domain/
-│   │   ├── protocols/           # BaseRepositoryProtocol[ReturnDTO]
-│   │   └── services/            # BaseService[CreateDTO, UpdateDTO, ReturnDTO]
-│   ├── infrastructure/
-│   │   ├── database/            # Database, BaseRepository[ReturnDTO]
-│   │   ├── dynamodb/            # DynamoDBClient, BaseDynamoRepository
-│   │   ├── embedding/           # PydanticAI embedding adapter
-│   │   ├── http/                # HttpClient, BaseHttpGateway
-│   │   ├── s3vectors/           # S3VectorClient, BaseS3VectorStore
-│   │   ├── taskiq/              # Broker adapters, TaskiqManager
-│   │   ├── storage/             # S3 / MinIO
-│   │   ├── di/                  # CoreContainer
-│   │   └── discovery.py         # Auto domain discovery
-│   ├── application/dtos/        # BaseRequest, BaseResponse, SuccessResponse
-│   ├── exceptions/              # Handlers, BaseCustomException
-│   └── config.py                # Settings (pydantic-settings)
-│
-├── user/                        # Reference domain
-│   ├── domain/
-│   │   ├── dtos/                # UserDTO
-│   │   ├── protocols/           # UserRepositoryProtocol
-│   │   ├── services/            # UserService(BaseService[...])
-│   │   └── exceptions/          # UserNotFoundException
-│   ├── infrastructure/
-│   │   ├── database/models/     # UserModel
-│   │   ├── repositories/        # UserRepository(BaseRepository[UserDTO])
-│   │   └── di/                  # UserContainer
-│   └── interface/
-│       ├── server/              # routers/, schemas/, bootstrap/
-│       ├── worker/              # payloads/, tasks/, bootstrap/
-│       └── admin/               # configs/, pages/ (NiceGUI)
-│
-├── migrations/                  # Alembic
-└── _env/                        # Environment variables
+├── migrations/                      # Alembic
+└── _env/                            # Environment variable files (gitignored)
 ```
 
 ---
@@ -278,12 +285,12 @@ for the live view.
 
 - [ ] FastMCP interface ([#18](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/18))
 - [ ] Additional vector backend: pgvector ([#11](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/11))
-- [ ] JWT authentication ([#4](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/4))
+- [x] JWT authentication ([#4](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/4))
 - [x] PydanticAI Agent integration ([#15](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/15))
 
 ### Phase 2 — Production readiness
 
-- [ ] Structured logging — structlog ([#9](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/9))
+- [x] Structured logging — structlog ([#9](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/9))
 - [ ] Error notifications ([#17](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/17))
 - [ ] CRUD data validation ([#10](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/10))
 
@@ -311,7 +318,7 @@ for the live view.
 ## Selected ADRs
 
 Every technical choice in this project is captured as an ADR.
-The 13 load-bearing decisions a contributor must understand live at
+The 14 load-bearing decisions a contributor must understand live at
 [`docs/history/README.md`](history/README.md); historical / superseded / tooling decisions
 are preserved under [`docs/history/archive/`](history/archive/).
 

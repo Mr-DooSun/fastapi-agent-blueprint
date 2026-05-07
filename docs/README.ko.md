@@ -80,7 +80,7 @@ make quickstart   # :8001 에 FastAPI 기동, SQLite 스키마 자동 생성
 ## 왜 이 블루프린트인가
 
 - **도메인 로직을 한 번만 쓰고, 어디서든 노출.** HTTP (FastAPI) + Worker (Taskiq) + Admin (NiceGUI) 가 하나의 Domain 레이어를 공유합니다. MCP 서버는 로드맵에 있음.
-- **보일러플레이트 제로 CRUD.** `BaseRepository[DTO]` 와 `BaseService[Create, Update, DTO]` 를 상속하면 `QueryFilter` 기반 페이징 목록을 포함한 7개 async 메서드를 즉시 확보.
+- **보일러플레이트 제로 CRUD.** `BaseRepository[DTO]` 와 `BaseService[Create, Update, DTO]` 를 상속하면 `QueryFilter` 기반 페이징 목록을 포함한 8개 async 메서드를 즉시 확보.
 - **도메인 자동 발견.** `src/{name}/` 에 폴더 하나만 두면 자동 등록. Container 수정도, bootstrap 수정도 필요 없음.
 - **환경변수 한 줄로 교체 가능한 인프라.** PostgreSQL / MySQL / SQLite · DynamoDB · S3 / MinIO · S3 Vectors · SQS / RabbitMQ / InMemory · LLM/Embedding 모두 OpenAI / Bedrock.
 - **커밋 시점에 아키텍처 강제.** Pre-commit 훅이 `Domain → Infrastructure` import 를 차단하여 DDD 계약이 썩지 않도록 보장.
@@ -92,13 +92,13 @@ make quickstart   # :8001 에 FastAPI 기동, SQLite 스키마 자동 생성
 
 | 기능 | FastAPI Agent Blueprint | [tiangolo/full-stack](https://github.com/fastapi/full-stack-fastapi-template) | [s3rius/template](https://github.com/s3rius/FastAPI-template) | [teamhide/boilerplate](https://github.com/teamhide/fastapi-boilerplate) |
 |---|:-:|:-:|:-:|:-:|
-| 보일러플레이트 제로 CRUD (7개 메서드) | **Yes** | No | No | No |
+| 보일러플레이트 제로 CRUD (8개 메서드) | **Yes** | No | No | No |
 | 도메인 자동 발견 | **Yes** | No | No | No |
 | 아키텍처 자동 강제 (pre-commit) | **Yes** | No | No | No |
 | AI 워크플로우 스킬 (Claude + Codex) | **14 + 15** | 0 | 0 | 0 |
 | 벡터 인프라 (S3 Vectors) | **Yes** | No | No | No |
 | 멀티 인터페이스 (API + Worker + Admin + MCP) | **3 + 1 예정** | 2 | 1 | 1 |
-| Architecture Decision Records | **40** | 0 | 0 | 0 |
+| Architecture Decision Records | **18 active · 30 archived** | 0 | 0 | 0 |
 | 전 계층 타입 안전 제네릭 | **Yes** | 부분 | 부분 | No |
 | IoC Container DI | **Yes** | No | No | No |
 
@@ -230,16 +230,17 @@ Codex CLI 를 쓴다면 `/` 대신 `$`. 하네스 없이 손으로 만들고 싶
 | Claude Code / Codex CLI 설정 | [`docs/ai-development.ko.md`](ai-development.ko.md) |
 | 도메인을 수동으로 추가 (AI 도구 없이) | [`docs/tutorial/first-domain.md`](tutorial/first-domain.md) (Path B) |
 | 상세 env 변수 · 기술 스택 · 프로젝트 트리 | [`docs/reference.md`](reference.md) |
-| 어떤 결정을 왜 했는지 | [ADR 인덱스](history/README.md) (40개 기록) |
+| 어떤 결정을 왜 했는지 | [ADR 인덱스](history/README.md) (18 active · 30 archived) |
 | 다음 계획 | [Roadmap](reference.md#roadmap) · [이슈 트래커](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues) |
 
 ---
 
-## Coming soon
+## 로드맵
 
 - **MCP 서버 인터페이스** — FastMCP 로 도메인 서비스를 에이전트 도구로 노출 ([#18](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/18))
 - **pgvector** — S3 Vectors 와 병행할 추가 벡터 백엔드 ([#11](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/11))
-- **JWT 인증** ([#4](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/4)) · **구조화 로깅** ([#9](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/9))
+
+전체 로드맵: [docs/reference.md#roadmap](reference.md#roadmap) · [이슈 트래커](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues)
 
 ---
 

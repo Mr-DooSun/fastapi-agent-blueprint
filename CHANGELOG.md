@@ -7,13 +7,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-07
+
+This release completes the production feature surface and prepares the project
+for OSS launch. Three themes: **(1) Production feature completion** — JWT
+authentication domain with refresh-token rotation, NiceGUI admin JWT + minimal
+RBAC, and `/docs` selector revamp with `frontend-handoff.md`; **(2) Governance
+maturity** — ADR 047 full rollout (governor-review-log folded into PR Footer
+blocks), harness sync advisory SOT migration across both tools; **(3) OSS
+launch readiness** — `docs/adoption.md`, `docs/comparison.md`,
+`docs/compatibility.md`, `SUPPORT.md`, expanded `CONTRIBUTING.md`,
+`docs/README.md` index, terminal demo GIFs, and truthfulness fixes across
+README / SECURITY.md / examples / tutorial.
+
 ### Added
 
-- Optional OpenTelemetry tracing for PydanticAI Agents (`[otel]` extra: `opentelemetry-api/sdk/exporter-otlp-proto-grpc`). New `OTEL_ENABLED` + `OTEL_EXPORTER_OTLP_ENDPOINT` settings; `_maybe_configure_otel` runs at server/worker bootstrap under service names `fastapi-agent-blueprint-server` / `fastapi-agent-blueprint-worker`. When the extra is missing the bootstrap logs `otel_extra_not_installed` (warning) and continues; when `OTEL_ENABLED=true` without an endpoint, Settings validation rejects in every env. Recipe doc `docs/operations/observability-otel.md` covers Jaeger, Tempo, and Phoenix endpoints plus the HTTP exporter swap. ADR 046 follow-up — Langfuse recipe deferred to #137. ([#136](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/136))
+- JWT authentication domain (`src/auth/`) — HS256 access/refresh tokens, DB-backed rotation/revocation, `/v1/auth/register`, `/v1/auth/login`, `/v1/auth/refresh`, `/v1/auth/logout`, `/v1/auth/me`, Bearer protection for user API routes ([#4](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/4))
+- NiceGUI admin JWT login + minimal RBAC — credential check via auth-domain, `User.role` DB field (`UserRole` enum), `ADMIN_BOOTSTRAP_*` idempotent seeding; legacy env-var auth provider removed ([#154](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/154), [PR #155](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/155))
+- `/docs` selector revamp — GitHub-flavoured layout, built-in light/dark toggle with `localStorage` persistence, `GET /openapi-download.json` (Content-Disposition: attachment); `docs/frontend-handoff.md` covering OpenAPI contract, camelCase serialisation, JWT flow, CORS, and Bruno/Postman/Hey API/Orval recipes ([#156](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/156))
+- `docs/adoption.md` — greenfield and partial-import adoption paths for teams onboarding from an existing FastAPI project
+- `docs/comparison.md` — standalone deep-dive comparison including Litestar, Robyn, cookiecutter, and full-stack-fastapi-template with per-claim evidence links
+- `docs/compatibility.md` — Python / FastAPI / Pydantic / SQLAlchemy / Claude Code / Codex CLI / OS compatibility matrix
+- `SUPPORT.md` — in-scope / out-of-scope / breaking-change policy / response SLA / single-maintainer statement
+- `CONTRIBUTING.md` expanded — first-PR-friendly areas, test execution guide, architecture guardrails, review expectations, skill harness change policy
+- `docs/README.md` — docs folder index providing entry points for all reference documents
+- Terminal demo GIFs (`docs/assets/cast/demo.gif`, `docs/assets/cast/new-domain.gif`) demonstrating end-to-end API flow and `/new-domain` domain scaffolding
+- `docs/canonical-demo.md` — full integration walkthrough (auth · RBAC · worker · admin · RAG · OTEL · tests)
+- `/sync-guidelines` project-status.md table hygiene check — step 3 extended to verify row-count consistency between the status table and archived rows ([#176](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/176))
 
 ### Changed
 
-- **BREAKING** — `boto3` and `aioboto3` moved from core `[project.dependencies]` to a new `[project.optional-dependencies].aws` extra (alongside the `types-aiobotocore-*` stubs relocated from the `dev` group). Non-AWS deployments no longer pay the ~100 MB boto3 install cost; the four AWS-backed infrastructure clients (`ObjectStorageClient`, `ObjectStorage`, `DynamoDBClient`, `S3VectorClient`) and the `DynamoModel` / `BaseDynamoRepository` helpers now lazy-import `aioboto3` / `boto3` / `botocore` inside `__init__` or lazy module-level singletons. CoreContainer Selectors already return `providers.Object(None)` for the disabled branch (#101), so lazy imports never fire when the matching AWS env vars are unset. Contributors running `make setup` get the extra automatically; the main CI `test` job now runs `uv sync --group dev --extra admin --extra aws`. Migration: add `--extra aws` to your `uv sync` command if you use S3/MinIO, DynamoDB, or S3 Vectors. The `minimal-install` CI job is extended to assert the 4 AWS client modules import cleanly and every AWS-backed Selector resolves to `None` without the extra ([#104](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/104))
+- README restructured — hero tagline `Production FastAPI architecture, with AI-assisted domain scaffolding built in.`, 60/40 two-column Why section (Production rigor primary / AI-assisted acceleration first-class amplifier), Quickstart → Canonical demo → Why → Compare section order; ADR/governance mentions moved to deeper sections
+- Governor-Review Provenance Consolidation full rollout (ADR 047) — per-PR `governor-review-log/` archive folded into PR-description `## Governor Footer` block; durable ICs promoted into ADR 047 Consequences (`ADR047-G1 ~ ADR047-G27`) or `project-dna.md`; historical archive at `docs/history/archive/governor-review-log/` ([#157](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/157))
+- Harness governance improvements — sync advisory SOT migrated to `governor.sync_advisory` module for both Claude bash hook and Codex stop hook; completion-gate fossil sweep; lifecycle invariant tests; shared changed-files delegation; override de-recommendation in `/plan-feature` ([#162](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/162)–[#182](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/182))
+- pyproject.toml `keywords` and `classifiers` moved to correct `[project]` table; 12 discovery keywords added (`fastapi`, `ddd`, `agent`, `llm`, `rag`, `template`, `boilerplate`, `claude-code`, `codex-cli`, `taskiq`, `nicegui`, `pydantic-ai`)
+
+### Fixed
+
+- Stale claims corrected: ADR count `40` → `18 active · 30 archived`; CRUD method count `7` → `8`; `examples/todo/` port `8000` → `8001`; `docs/tutorial/first-domain.md` Step 4 self-contradiction resolved to single-restart flow; `SECURITY.md` supported versions updated to `0.4.x` / `0.5.x`
+- Demo script (`scripts/demo.sh`) JWT token fallback field corrected
+
+### Removed
+
+- `governor-review-log/` working directory — migrated to `docs/history/archive/governor-review-log/` as closed historical archive ([#157](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/157))
+
+## [0.5.0] - 2026-04-29
+
+This release hardens the AI agent workflow governance and delivers production
+infrastructure across three themes: **(1) AI workflow governance** — Hybrid
+Harness v1 (7-step Default Coding Flow, shared governor module, localized
+reminders), Tier 1 Language Policy, Reasoning-Level Consistency Guards,
+Governor Footer CI; **(2) Production infrastructure** — AI Usage Ledger
+(`ai_usage` domain), Taskiq smart retry with task-scoped structured logging,
+optional OpenTelemetry tracing; **(3) Contributor experience** — unified
+Quality Gate review contract, `/plan-feature` Approach Options stage,
+`examples/todo/` reference domain.
+
+### Added
+
+- Hybrid Harness v1 — 7-step Default Coding Flow (`framing → approach options → plan → implement → verify → self-review → completion gate`), exception-token parser ([PR #126](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/126)), verify-first adapters ([PR #127](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/127)), completion-gate Stop adapter with governor sync advisory ([PR #128](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/128)), shared governor module eliminating four hook duplicates ([PR #130](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/130)); ADR 045 ([#117](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/117))
+- AGENT_LOCALE localized hook reminders — `governor/locale.py` canonical locale module (18 keys, ko/en), `python -m governor.locale` CLI, IC-19 always-fallback enforcement at every emit callsite ([#133](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/133), [PR #134](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/134))
+- Tier 1 Language Policy — `AGENTS.md § Language Policy` enforcing English-only prose on governance/harness/contributor-facing paths; `tools/check_language_policy.py`, pre-commit hook, CI enforcement, bilingual escape-token vocabulary + `LOCALE_DATA_FILES` as two narrowly-scoped exceptions ([#131](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/131), [PR #132](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/132))
+- Reasoning-Level Consistency Guards (Layer 2 Governor) — four guards: F (volatile workspace facts re-verification), G (R-point closure completeness), H (effect vs. process question discrimination), I (self-licensing detection); IC-RG-1 through IC-RG-5; canonical in `AGENTS.md` ([PR #143](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/143))
+- Cross-tool prompt template standardisation — canonical cross-review prompt templates for `/review-pr`, `/review-architecture`, `/security-review`, `/sync-guidelines` with R-point closure categories and `Sync Required` field ([#144](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/144), [PR #147](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/147))
+- Governor Footer CI — `tools/check_governor_footer.py` + `Governor Footer Lint` GitHub Actions workflow; PR-description `## Governor Footer` block as canonical G-closure record; ADR 047 ([#145](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/145), [PR #148](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/148))
+- AI Usage Ledger — `ai_usage` domain with `AgentUsageRecord` / `PromptSnapshot` value objects, RDB migrations, admin and API surfaces for per-call usage accounting ([#75](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/75), [PR #149](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/149))
+- Taskiq smart retry middleware — task-scoped structlog context binding, structured task failure logging, permanent-aware retry strategy wired through worker bootstrap ([#120](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/120), [PR #150](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/150))
+- Optional OpenTelemetry tracing — `[otel]` extra (`opentelemetry-api/sdk/exporter-otlp-proto-grpc`), `OTEL_ENABLED` + `OTEL_EXPORTER_OTLP_ENDPOINT` settings, `_maybe_configure_otel` at server/worker bootstrap, Jaeger/Tempo/Phoenix recipe at `docs/operations/observability-otel.md`; ADR 046 Pillar 1 ([#136](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/136))
+- `/plan-feature` Approach Options stage — Phase 1 now presents 2–3 candidate approaches with trade-offs and a recommendation before architecture analysis ([#116](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/116))
+- Quality Gate Skill unified review contract — `/review-pr`, `/review-architecture`, `/security-review` emit a consistent `Scope / Sources Loaded / Findings / Drift Candidates / Next Actions / Completion State / Sync Required` output shape; `/sync-guidelines` documented as the closure step ([#113](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/113))
+- `examples/todo/` contributor reference — minimal CRUD example mirroring `src/user/` layout, not subject to auto-discovery (copy to `src/todo/` to run); `/review-architecture` recognises the `examples` profile and relaxes §5 Test Coverage and §2 Auth requirements ([#112](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/112), [#119](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/119))
+
+### Changed
+
+- Responsibility-Driven Refactor (ADR 043) — `error_mapper.py` promoted to the infra ACL (domain services raise domain exceptions only); `ClassifierProtocol` / `PydanticAIClassifier` / `StubClassifier` align with the ADR 040 consumer pattern; `_core/infrastructure/ai/providers.py` unifies `parse_model_name` and provider builder; `AdminCrudServiceProtocol` + `extra_services_config` give admin layer type stability; bootstrap conductor decomposed into private functions; `BaseEmbeddingProtocol` / `BaseVectorStoreProtocol` switch to `typing.Protocol`
+- **BREAKING** — `boto3` and `aioboto3` moved from core `[project.dependencies]` to `[project.optional-dependencies].aws` extra; four AWS-backed clients now lazy-import `aioboto3`/`boto3`/`botocore`; non-AWS deployments no longer pay the boto3 install cost. Migration: add `--extra aws` to your `uv sync` command if you use S3/MinIO, DynamoDB, or S3 Vectors ([#104](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/104))
+
+### Removed
+
+- `tools/check_g_closure.py` + legacy `check-g-closure` pre-commit hook — superseded by `tools/check_governor_footer.py` + `Governor Footer Lint` CI ([#145](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/145), ADR 047)
 
 ## [0.4.0] - 2026-04-21
 
@@ -134,7 +206,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ADR documentation (001-013)
 - CONTRIBUTING guide and issue templates
 
-[Unreleased]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/releases/tag/v0.1.0

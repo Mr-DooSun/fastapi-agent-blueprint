@@ -2,6 +2,19 @@
 
 Thank you for your interest in contributing! This guide will help you get started.
 
+## Your first PR
+
+The easiest places to land your first contribution:
+
+- **Add an example** under [`examples/`](examples/) — small, self-contained, mirrors the `src/{domain}/` layout. See [`examples/README.md`](examples/README.md) for the acceptance criteria.
+- **Fix a `good first issue`** — check the [`good first issue` label](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues?q=is%3Aopen+label%3A%22good+first+issue%22) for scoped, bounded tasks.
+- **Fix a documentation error** — broken links, stale examples, missing step. No architecture knowledge required.
+- **Write an ADR** — if you encounter an architecture decision that isn't documented, write an [ADR](docs/history/README.md) following the existing format.
+
+Not sure where to start? Open a [Discussion](https://github.com/Mr-DooSun/fastapi-agent-blueprint/discussions) with a brief description of what you want to do — it's faster than opening a PR that might need significant revision.
+
+---
+
 ## Development Setup
 
 > First time evaluating the project? Run `make quickstart` instead — it
@@ -162,11 +175,25 @@ acceptance criteria every example PR must meet.
 ## Running Tests
 
 ```bash
-make test
+# SQLite in-memory — no external infra required
+pytest tests/ -v
 
-# With coverage
-make test-cov
+# Unit tests only
+pytest tests/unit/ -v
+
+# Integration tests only
+pytest tests/integration/ -v
+
+# Against real PostgreSQL (requires docker-compose.local.yml postgres service)
+make test-pg
+
+# Against DynamoDB Local (requires docker dynamodb-local container)
+make test-dynamo
 ```
+
+The CI pipeline runs `pytest tests/` against SQLite. PostgreSQL and DynamoDB tests are optional but appreciated for changes that touch the infrastructure layer.
+
+Examples under `examples/` are contributor references and are not subject to the full production test baseline — a single unit test is acceptable.
 
 ## Code Quality
 
@@ -178,14 +205,23 @@ make format      # Auto-format
 make pre-commit  # Run all pre-commit hooks
 ```
 
-## Architecture Rules
+## Architecture guardrails
 
-Shared rules live in [AGENTS.md](AGENTS.md). These rules are additionally enforced by pre-commit hooks:
+Shared rules live in [AGENTS.md](AGENTS.md). Pre-commit hooks enforce the critical ones automatically:
 
-- **Domain layer cannot import from Infrastructure** -- dependency inversion via Protocol
-- **Model objects never leave the Repository** -- convert to DTO using `model_validate()`
-- **No separate Mapper classes** -- use inline conversion
-- **No Entity pattern** -- use DTOs only (see [ADR 004](docs/history/004-dto-entity-responsibility.md))
+- **Domain → Infrastructure import is banned** — use Protocols (dependency inversion). The `no-domain-infra-import` hook rejects commits that break this.
+- **Model objects must not leave the Repository** — convert to DTO via `model_validate(from_attributes=True)`.
+- **No Mapper classes** — inline conversion is the pattern.
+- **No Entity pattern** — DTO-only (see [ADR 004](docs/history/004-dto-entity-responsibility.md)).
+
+Run the guards manually at any time:
+
+```bash
+make pre-commit   # runs all pre-commit hooks against staged files
+make lint         # ruff check + mypy
+```
+
+If you change files in `AGENTS.md`, `.claude/`, `.codex/`, or `docs/ai/shared/`, run `/sync-guidelines` (Claude Code) or `$sync-guidelines` (Codex CLI) before the final commit. The completion gate will remind you if you forget.
 
 ## Note on Commit History
 
@@ -211,12 +247,18 @@ i18n: internationalization
 
 This is enforced by a pre-commit hook (`commitlint`). Invalid messages will be rejected.
 
-## Pull Request Process
+## Pull Request process and review expectations
 
-1. Create a feature branch from `main`
-2. Make your changes following `AGENTS.md` and any relevant tool-specific harness docs
-3. Run `make check` (lint + format check + tests)
-4. Submit a PR using the [PR template](.github/pull_request_template.md)
+1. Create a feature branch from `main`.
+2. Make your changes following `AGENTS.md` and any relevant tool-specific harness docs.
+3. Run `make check` (lint + format check + tests) and confirm it passes locally.
+4. Submit a PR using the [PR template](.github/pull_request_template.md).
+
+Review expectations:
+- **First response within 1–3 days** — this project is maintained by one person. For time-sensitive fixes, tag the PR "urgent" and mention it in a [Discussion](https://github.com/Mr-DooSun/fastapi-agent-blueprint/discussions).
+- **Conventional Commits are enforced** — `commitlint` rejects non-conforming messages on commit.
+- **PRs must include the `## Governor Footer` block** if they touch `AGENTS.md`, harness files, or `docs/ai/shared/` — see the [PR template](.github/pull_request_template.md) for the format. CI will fail without it.
+- **Architecture-only PRs** (no feature, just structure) are welcome — they get faster review.
 
 ## Code of Conduct
 

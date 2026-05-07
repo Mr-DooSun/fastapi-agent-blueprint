@@ -1,9 +1,34 @@
 [project]
 name = "fastapi-agent-blueprint"
-version = "0.4.0"
+version = "0.6.0"
 description = "FastAPI DDD template, built for AI agent backends — zero-boilerplate CRUD, auto domain discovery, async architecture"
 readme = "README.md"
 requires-python = ">=3.12.9"
+keywords = [
+    "fastapi",
+    "ddd",
+    "agent",
+    "llm",
+    "rag",
+    "template",
+    "boilerplate",
+    "claude-code",
+    "codex-cli",
+    "taskiq",
+    "nicegui",
+    "pydantic-ai",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Framework :: FastAPI",
+    "Typing :: Typed",
+]
 dependencies = [
     "aiohttp>=3.13.0",
     "aiomysql>=0.2.0",

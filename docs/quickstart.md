@@ -37,8 +37,9 @@ In a second terminal:
 make demo
 ```
 
-This hits the `user` domain via `curl`: health check → create → get → list →
-update → delete. Raw script is at [`scripts/demo.sh`](../scripts/demo.sh).
+This exercises the `auth` and `user` domains: health check → register (JWT token pair) →
+create user → list → update → delete → refresh token → logout.
+Raw script: [`scripts/demo.sh`](../scripts/demo.sh).
 
 ## What does `quickstart` actually configure?
 

@@ -18,16 +18,15 @@
 </p>
 
 <p align="center">
-  <b>Production-ready FastAPI blueprint for AI agent backends.</b><br>
-  DDD layers · zero-boilerplate CRUD · auto domain discovery · multi-interface (API · worker · admin · MCP-ready) ·<br>
-  vector / embedding / LLM infra · built-in AI dev skills for Claude Code &amp; Codex CLI.
+  <b>Production FastAPI architecture, with AI-assisted domain scaffolding built in.</b><br>
+  DDD layers · zero-boilerplate CRUD · 4 interfaces. Claude Code and Codex CLI can scaffold new domains through the same production workflow.
 </p>
 
 <p align="center">
   <a href="#try-it-in-60-seconds">60s Quickstart</a>
-  · <a href="#architecture-at-a-glance">Architecture</a>
-  · <a href="#ai-native-development">AI Skills</a>
+  · <a href="#why-this-blueprint">Why</a>
   · <a href="#how-it-compares">Comparison</a>
+  · <a href="#architecture-at-a-glance">Architecture</a>
   · <a href="docs/README.ko.md">한국어</a>
 </p>
 
@@ -50,24 +49,27 @@ make setup        # one-time: venv + deps via uv
 make quickstart   # FastAPI on :8001, SQLite schema auto-created
 ```
 
-In a second terminal, `make demo` exercises the `user` domain and
-`make demo-rag` exercises the `docs` domain (end-to-end RAG: upload → chunk
-→ embed → retrieve → answer with citations, zero credentials):
+In a second terminal, `make demo` exercises the `auth` + `user` domains
+(JWT register → CRUD → refresh → logout) and `make demo-rag` exercises the
+`docs` domain (end-to-end RAG: upload → chunk → embed → retrieve → answer
+with citations, zero credentials):
 
 ```text
 → Health check
 { "status": "ok" }
 
+→ Register
+{ "success": true, "data": { "accessToken": "...", "refreshToken": "..." } }
+
 → Create a user
-{ "success": true, "data": { "id": 1, "username": "alice",
-                             "fullName": "Alice Liddell", ... } }
+{ "success": true, "data": { "id": 2, "username": "bob", ... } }
 
 → List users (page=1, pageSize=10)
-{ "data": [ { "id": 1, "username": "alice", ... } ],
-  "pagination": { "currentPage": 1, "totalItems": 1,
-                  "hasNext": false, ... } }
+{ "data": [ { "id": 1, "username": "alice" }, { "id": 2, "username": "bob" } ],
+  "pagination": { "currentPage": 1, "totalItems": 2, "hasNext": false } }
 
 → Update the user    → Delete the user
+→ Refresh token      → Logout
 → Done. API docs: http://127.0.0.1:8001/docs
 ```
 
@@ -79,14 +81,56 @@ In a second terminal, `make demo` exercises the `user` domain and
 
 ---
 
+## Platform in action
+
+Clone → quickstart → CRUD → JWT auth → background worker → RAG query:
+
+```bash
+make quickstart && make demo && make demo-rag
+```
+
+![API demo: health check → register → JWT → CRUD](docs/assets/cast/demo.gif)
+
+Full integration walkthrough (auth · RBAC · worker · admin · RAG · OTEL): [`docs/canonical-demo.md`](docs/canonical-demo.md)
+
+---
+
 ## Why this blueprint
 
-- **Write domain logic once, expose it everywhere.** HTTP (FastAPI) + worker (Taskiq) + admin (NiceGUI) share a single domain layer. MCP server is on the roadmap.
-- **Zero-boilerplate CRUD.** Inherit `BaseRepository[DTO]` and `BaseService[Create, Update, DTO]` to get 7 async methods — including paginated list with `QueryFilter` — for free.
-- **Auto domain discovery.** Drop a folder into `src/{name}/`, it auto-registers. No container edits, no bootstrap edits.
-- **Pluggable infra, env-switchable.** PostgreSQL / MySQL / SQLite · DynamoDB · S3 / MinIO · S3 Vectors · SQS / RabbitMQ / InMemory · OpenAI / Bedrock for both LLM and embeddings.
-- **Architecture enforced at commit time.** A pre-commit hook blocks `Domain → Infrastructure` imports so the DDD contract cannot rot.
-- **AI-native workflows.** 14 Claude Code skills + 15 Codex CLI skills sharing one `AGENTS.md` rules file — scaffold a domain, add a route, or audit architecture with a single command.
+<table>
+<tr>
+<td width="60%" valign="top">
+
+**Production rigor**
+
+- **DDD layers (4-tier)** — Interface · Domain · Infrastructure · Application, enforced by pre-commit import guard
+- **Zero-boilerplate CRUD** — 8 async methods via `BaseService` + `BaseRepository`, paginated list with `QueryFilter` included
+- **Auto domain discovery** — drop a folder into `src/{name}/`, it auto-registers. No container edits, no bootstrap edits
+- **Pluggable infra** — PostgreSQL / MySQL / SQLite · DynamoDB · S3 / MinIO · S3 Vectors · SQS / RabbitMQ · OpenAI / Bedrock
+- **OpenTelemetry** — `[otel]` extra, `OTEL_ENABLED` env flag, Jaeger/Tempo/Phoenix recipe
+- **JWT + RBAC** — HS256 auth domain, DB-backed refresh rotation, `User.role` admin gating
+- **AI Usage Ledger** — per-call LLM accounting, `ai_usage` domain, admin + API surfaces
+- **Taskiq smart retry** — task-scoped structured logging, permanent-aware retry policy
+- **Frontend handoff** — OpenAPI download, Bruno/Postman/Hey API/Orval recipes, JWT flow, camelCase contract ([`docs/frontend-handoff.md`](docs/frontend-handoff.md))
+
+</td>
+<td width="40%" valign="top">
+
+**AI-assisted acceleration**
+
+- `/new-domain order` scaffolds **44 files** (15 source + 25 `__init__.py` + 4 tests) in one command
+- **14 Claude Code + 15 Codex CLI skills** sharing one `AGENTS.md` rules file
+- Both tools supported equally — swap `/` for `$` to switch between them
+- Full setup: [`docs/ai-development.md`](docs/ai-development.md)
+- Manual path: [`docs/tutorial/first-domain.md`](docs/tutorial/first-domain.md) (Path B)
+
+![/new-domain order → 44 files scaffolded → tests pass](docs/assets/cast/new-domain.gif)
+
+> Works as a normal FastAPI blueprint. With Claude Code or Codex CLI, the same domain workflow becomes AI-assisted and repeatable.
+
+</td>
+</tr>
+</table>
 
 ---
 
@@ -94,15 +138,54 @@ In a second terminal, `make demo` exercises the `user` domain and
 
 | Feature | FastAPI Agent Blueprint | [tiangolo/full-stack](https://github.com/fastapi/full-stack-fastapi-template) | [s3rius/template](https://github.com/s3rius/FastAPI-template) | [teamhide/boilerplate](https://github.com/teamhide/fastapi-boilerplate) |
 |---|:-:|:-:|:-:|:-:|
-| Zero-boilerplate CRUD (7 methods) | **Yes** | No | No | No |
+| Zero-boilerplate CRUD (8 methods) | **Yes** | No | No | No |
 | Auto domain discovery | **Yes** | No | No | No |
 | Architecture enforcement (pre-commit) | **Yes** | No | No | No |
 | AI workflow skills (Claude + Codex) | **14 + 15** | 0 | 0 | 0 |
 | Vector infrastructure (S3 Vectors) | **Yes** | No | No | No |
 | Multi-interface (API + Worker + Admin + MCP) | **3 + 1 planned** | 2 | 1 | 1 |
-| Architecture Decision Records | **40** | 0 | 0 | 0 |
+| Architecture Decision Records | **18 active · 30 archived** | 0 | 0 | 0 |
 | Type-safe generics across layers | **Yes** | Partial | Partial | No |
 | IoC container DI | **Yes** | No | No | No |
+
+Full comparison including Litestar, Robyn, cookiecutter, and adoption paths: [`docs/comparison.md`](docs/comparison.md)
+
+---
+
+## AI use case: document QA (`src/docs/`)
+
+The blueprint ships a worked RAG example — upload documents, ask questions,
+get structured answers with citations. It proves the building blocks
+(vectors, embeddings, LLM agent, worker, admin) compose end-to-end.
+
+```bash
+make quickstart   # terminal 1
+make demo-rag     # terminal 2 — seeds 3 docs, runs a query
+```
+
+```text
+POST /v1/docs/documents   # chunk → embed → upsert
+POST /v1/docs/query       # embed question → top-k retrieval → agent answer
+GET  /admin/docs          # browse + query playground
+```
+
+Under the hood, the RAG orchestration is a **reusable `_core` pattern**
+([ADR 040](docs/history/040-rag-as-reusable-pattern.md)), not a domain.
+`src/docs/` is one consumer; future AI domains (`support_bot`, `product_qa`)
+inject the same `RagPipeline` instead of duplicating chunking + retrieval
+code:
+
+```python
+# src/_core/domain/services/rag_pipeline.py
+class RagPipeline(Generic[TChunk]):
+    async def answer(self, question, top_k=5, filters=None) -> tuple[QueryAnswer, list[TChunk]]:
+        ...  # embed → vector_store.search → answer_agent.answer
+```
+
+Zero-config path uses a **stub embedder** (keyword bag-of-words) and **stub
+answer agent** (templated response from retrieved chunks), both in
+`src/_core/infrastructure/rag/`. Set `EMBEDDING_PROVIDER` + `LLM_PROVIDER`
+in `.env` to swap in real providers — the pipeline is the same.
 
 ---
 
@@ -187,95 +270,31 @@ One business logic, multiple surfaces:
 
 ---
 
-## AI use case: document QA (`src/docs/`)
-
-The blueprint ships a worked RAG example — upload documents, ask questions,
-get structured answers with citations. It proves the building blocks
-(vectors, embeddings, LLM agent, worker, admin) compose end-to-end.
-
-```bash
-make quickstart   # terminal 1
-make demo-rag     # terminal 2 — seeds 3 docs, runs a query
-```
-
-```text
-POST /v1/docs/documents   # chunk → embed → upsert
-POST /v1/docs/query       # embed question → top-k retrieval → agent answer
-GET  /admin/docs          # browse + query playground
-```
-
-Under the hood, the RAG orchestration is a **reusable `_core` pattern**
-([ADR 040](docs/history/040-rag-as-reusable-pattern.md)), not a domain.
-`src/docs/` is one consumer; future AI domains (`support_bot`, `product_qa`)
-inject the same `RagPipeline` instead of duplicating chunking + retrieval
-code:
-
-```python
-# src/_core/domain/services/rag_pipeline.py
-class RagPipeline(Generic[TChunk]):
-    async def answer(self, question, top_k=5, filters=None) -> tuple[QueryAnswer, list[TChunk]]:
-        ...  # embed → vector_store.search → answer_agent.answer
-```
-
-Zero-config path uses a **stub embedder** (keyword bag-of-words) and **stub
-answer agent** (templated response from retrieved chunks), both in
-`src/_core/infrastructure/rag/`. Set `EMBEDDING_PROVIDER` + `LLM_PROVIDER`
-in `.env` to swap in real providers — the pipeline is the same.
-
----
-
-## AI-native development
-
-Both **Claude Code** and **OpenAI Codex CLI** are first-class. They share one rules file ([`AGENTS.md`](AGENTS.md)) and one workflow reference layer ([`docs/ai/shared/`](docs/ai/shared/)); tool-specific harnesses layer on top.
-
-| | Claude Code | Codex CLI |
-|---|---|---|
-| Skills | 14 slash commands (`.claude/skills/`) | 15 workflow skills (`.agents/skills/`) |
-| Config | `CLAUDE.md` + `.mcp.json` | `.codex/config.toml` + `.codex/hooks.json` |
-| Hooks | PostToolUse auto-format | 6 hooks (format · security · session-start · …) |
-
-### Your first domain in 10 minutes
-
-```text
-/onboard            # adaptive walkthrough — beginner to advanced
-/new-domain product # scaffolds 15 source files + 25 __init__.py + 4 tests
-/add-api "add GET /product/top-selling to product"
-/review-architecture product
-```
-
-Swap `/` for `$` if you are on Codex CLI. Prefer no harness at all?
-The [**"Your first domain in 10 minutes" tutorial**](docs/tutorial/first-domain.md)
-walks both paths side-by-side — one harness command vs. 9 Python files —
-and ends with a passing `pytest` run plus `curl` against the real server.
-
-Selected skills (all available in both tools): `onboard`, `new-domain`,
-`add-api`, `add-worker-task`, `add-admin-page`, `review-architecture`,
-`security-review`, `review-pr`, `plan-feature`, `fix-bug`.
-Full table and setup guide: [`docs/ai-development.md`](docs/ai-development.md).
-
----
-
 ## Learn more
 
 | I want to… | Read |
 |---|---|
 | Spin it up and poke around | [`docs/quickstart.md`](docs/quickstart.md) |
+| See everything work end-to-end (auth · RBAC · worker · RAG · OTEL) | [`docs/canonical-demo.md`](docs/canonical-demo.md) |
 | Build a real domain, end-to-end | [`docs/tutorial/first-domain.md`](docs/tutorial/first-domain.md) |
 | See small, pattern-focused example apps | [`examples/`](examples/) |
 | Understand the architecture in depth | [`docs/ai/shared/architecture-diagrams.md`](docs/ai/shared/architecture-diagrams.md) · [`AGENTS.md`](AGENTS.md) |
 | Set up Claude Code or Codex CLI | [`docs/ai-development.md`](docs/ai-development.md) |
 | Add a domain by hand (no AI tools) | [`docs/tutorial/first-domain.md`](docs/tutorial/first-domain.md) (Path B) |
+| Adopt into an existing FastAPI project | [`docs/adoption.md`](docs/adoption.md) |
+| Check Python / FastAPI / tool version support | [`docs/compatibility.md`](docs/compatibility.md) |
 | See detailed env vars, tech stack, project tree | [`docs/reference.md`](docs/reference.md) |
-| Understand why a decision was made | [ADR index](docs/history/README.md) (40 records) |
+| Understand why a decision was made | [ADR index](docs/history/README.md) (18 active · 30 archived) |
 | Follow what's next | [Roadmap](docs/reference.md#roadmap) · [issue tracker](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues) |
 
 ---
 
-## Coming soon
+## Roadmap
 
 - **MCP server interface** — expose domain services as agent tools via FastMCP ([#18](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/18))
 - **pgvector** — additional vector backend alongside S3 Vectors ([#11](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/11))
-- **JWT authentication** ([#4](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/4)) · **Structured logging** ([#9](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/9))
+
+See [full roadmap](docs/reference.md#roadmap) · [open issues](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues)
 
 ---
 
