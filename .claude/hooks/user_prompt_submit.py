@@ -72,13 +72,25 @@ def read_prompt() -> str:
 def main() -> int:
     if not _SHARED_OK:
         return 0
+    # Read stdin once; reuse for both token parsing and ledger update.
+    prompt = read_prompt()
     try:
-        prompt = read_prompt()
         payload = parse_exception_token(prompt)
         write_marker(payload)
         print(json.dumps(payload, ensure_ascii=False), file=sys.stderr)
     except Exception:  # noqa: BLE001 — HC-5.5 fail-open
         return 0
+
+    # Work-ledger: persist last_prompt for cross-session context continuity.
+    # Separate try block so a ledger I/O failure never masks the token result.
+    if prompt:
+        try:
+            from work_ledger import update_last_prompt  # noqa: PLC0415
+
+            update_last_prompt(prompt)
+        except Exception:  # noqa: BLE001,S110 — HC-5.5 fail-open
+            pass
+
     return 0
 
 

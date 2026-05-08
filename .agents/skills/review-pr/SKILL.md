@@ -18,7 +18,7 @@ metadata:
 3. Resolve the review target and load the shared rule sources (Phase 0).
 4. Review changed files against the shared architecture and security rules (Phase 1).
 5. Determine `Drift Candidates` and whether `Sync Required` is `true` or `false` (Phase 2).
-6. Report using the shared review contract: `Scope`, `Sources Loaded`, `Findings`, `Drift Candidates`, `Next Actions`, `Completion State`, `Sync Required` (Phase 3).
+6. Report using the shared review contract: `Scope`, `Effect Answer`, `Sources Loaded`, `Findings`, `Drift Candidates`, `Next Actions`, `Completion State`, `Sync Required` (Phase 3). `Effect Answer` is mandatory — see `docs/ai/shared/skills/review-pr.md` § Review Contract for the field definition and Guard H context.
 7. Optionally post the final review after user confirmation (Phase 4).
 
 For cross-tool review prompts, use the `Cross-Tool Review Prompt Template`

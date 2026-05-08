@@ -183,3 +183,6 @@ quickstart.db
 # Per-session governor state (exception-token markers, etc.) — Phase 2 #121
 .claude/state/
 .codex/state/
+
+# Work-ledger runtime state (cross-session context; machine-written, not committed)
+.agents/state/

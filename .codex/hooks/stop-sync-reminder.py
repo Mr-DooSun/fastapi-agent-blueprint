@@ -180,6 +180,12 @@ def main() -> int:
         with contextlib.suppress(Exception):
             completion_gate.cleanup_stale_verify_logs(completion_gate.STATE_DIR)
 
+    # (6) Work-ledger: refresh verification snapshot (fail-open).
+    with contextlib.suppress(Exception):
+        from work_ledger import update_verification_from_git  # noqa: PLC0415
+
+        update_verification_from_git()
+
     if segments:
         print(json.dumps({"systemMessage": "\n\n".join(segments)}))
     return 0

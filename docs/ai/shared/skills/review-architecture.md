@@ -22,6 +22,11 @@ shared architecture rules, then decide whether the audit also requires
 Every result must include:
 
 - `Scope` - audit target, audited domains, important exclusions
+- `Effect Answer` - 1-3 sentence evidence-based summary of what the audited domain/code *actually*
+  does or exposes. Must come from reading the source, not from restating the checklist procedure.
+  Purpose: Guard H (AGENTS.md § Reasoning-Level Consistency Guards) — effect questions must be
+  answered with evidence first. Write `Effect Answer: N/A — process question` for checklist-only
+  process questions.
 - `Sources Loaded` - exact shared rule sources used for the audit
 - `Findings` - only open issues; each item includes `severity`, `rule source`,
   `file:line`, `impact`, and `recommended fix`

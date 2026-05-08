@@ -36,6 +36,12 @@ Also run when the user explicitly asks for a security audit.
 Every result must include:
 
 - `Scope` - audit target, audited domains/files, important exclusions
+- `Effect Answer` - 1-3 sentence evidence-based summary of what security properties the audited
+  code *actually* exposes or protects. Must come from reading the source, not from procedure
+  restatement. Purpose: Guard H (AGENTS.md § Reasoning-Level Consistency Guards) — security
+  questions are almost always effect-type; "I ran the security checklist" is a process answer,
+  not an effect answer. Write `Effect Answer: N/A — process question` only for checklist-only
+  process queries.
 - `Sources Loaded` - exact shared rule sources used for the audit
 - `Findings` - only open issues; each item includes `severity`, `rule source`,
   `file:line`, `impact`, and `recommended fix`
