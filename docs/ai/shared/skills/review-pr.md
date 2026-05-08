@@ -32,6 +32,11 @@ the shared rule sources above.
 Every result must include the sections below.
 
 - `Scope` - PR number/title, base/head refs, affected domains, changed file count
+- `Effect Answer` - 1-3 sentence evidence-based summary of what this PR *actually* does or exposes.
+  Must be grounded in the diff read, not a restatement of the review procedure.
+  Purpose: Guard H (AGENTS.md § Reasoning-Level Consistency Guards) — effect questions must be
+  answered with evidence first, before process/procedure content. If the question is process-only
+  (e.g. "was the review checklist followed?"), write `Effect Answer: N/A — process question`.
 - `Sources Loaded` - exact shared rule sources used for the review
 - `Findings` - only open issues; each item includes `severity`, `rule source`,
   `file:line`, `impact`, and `recommended fix`
@@ -111,6 +116,11 @@ Scope
 - PR #128: Add DynamoDB-backed docs query path
 - Affected domains: docs, _core
 - Changed files: 7
+
+Effect Answer
+- This PR adds a new DynamoDB-backed query path in the docs domain and
+  wires it through the DI container. It does not change existing RDB behaviour.
+  No security-sensitive surfaces are touched.
 
 Sources Loaded
 - AGENTS.md

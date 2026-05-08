@@ -67,6 +67,16 @@ fi
 # Fail-open: helper crash → markers not cleaned, advisory unaffected (HC-4.7).
 COMPLETION_OUT=$(python3 "${HOOK_DIR}/completion_gate.py" 2>/dev/null || true)
 
+# Work-ledger: refresh verification snapshot from git on every Stop (fail-open).
+PYTHONPATH="${SHARED_DIR}" python3 -c "
+import sys; sys.path.insert(0, '${SHARED_DIR}')
+try:
+    from work_ledger import update_verification_from_git
+    update_verification_from_git()
+except Exception:
+    pass
+" 2>/dev/null || true
+
 [ -z "$CHANGED" ] && exit 0
 
 # Delegate classification to governor.sync_advisory via Python shim (F-1 SOT).

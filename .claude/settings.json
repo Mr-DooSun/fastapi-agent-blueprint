@@ -12,6 +12,10 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/check-required-plugins.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-start-context.sh"
           }
         ]
       }

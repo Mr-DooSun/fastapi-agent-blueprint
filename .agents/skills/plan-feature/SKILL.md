@@ -18,6 +18,8 @@ metadata:
 3. Architecture Impact Analysis — layer, domain, DTO, cross-domain (Phase 2)
 4. Security Checkpoint — 6-item assessment matrix (Phase 3)
 5. Task Breakdown — skill mapping, supervision levels, execution order (Phase 4)
+6. Work-ledger update — after task breakdown is confirmed, record goal/scope/plan via
+   `from work_ledger import update_goal_scope_plan; update_goal_scope_plan(goal=..., scope=..., plan=..., updated_by="skill:plan-feature")`
 
 1. Read `AGENTS.md` and `docs/ai/shared/skills/plan-feature.md` for the full procedure.
 2. Read `docs/ai/shared/planning-checklists.md` for question bank and templates.

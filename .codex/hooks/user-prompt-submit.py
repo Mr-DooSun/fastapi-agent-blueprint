@@ -100,6 +100,14 @@ def main() -> int:
         with contextlib.suppress(Exception):  # HC-5.5 fail-open
             write_marker(result.payload)
         print(json.dumps(result.payload, ensure_ascii=False), file=sys.stderr)
+
+    # Work-ledger: persist last_prompt for cross-session context continuity.
+    if prompt:
+        with contextlib.suppress(Exception):  # HC-5.5 fail-open
+            from work_ledger import update_last_prompt  # noqa: PLC0415
+
+            update_last_prompt(prompt)
+
     return 0
 
 

@@ -235,6 +235,13 @@ Effect questions must not be answered with process content (new actions, more ce
 - Process questions: answer with action candidates.
 - Mixed questions: effect first, process second, separately labelled.
 
+**Mechanical enforcement in review/audit skills.** The review contract for `/review-pr`,
+`/review-architecture`, and `/security-review` includes a mandatory `Effect Answer` field placed
+before `Findings`. This field requires a 1-3 sentence evidence-based summary of what the change
+*actually* does or exposes, grounded in the diff or source read — not in the review procedure.
+Reviewers who skip or placeholder this field have structurally violated Guard H.
+See `docs/ai/shared/skills/review-pr.md` § Review Contract for the exact field definition.
+
 ### I. Self-Licensing Detection — Sanity Check Before Defending a Challenged Conclusion
 
 **Trigger.** This guard fires only when the user pushes back on a stated conclusion: a *correction*, *challenge*, or *evidence request* directed at that conclusion. General follow-up or clarifying questions do not fire it.
