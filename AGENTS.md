@@ -47,57 +47,26 @@ When fields match, Request is passed directly to Service — creating a separate
 
 ## Language Policy
 
-The repository is contributor-facing for both internal teammates and external OSS contributors. Shared rule sources, harness configuration, and AI-governance artefacts must be readable by any contributor regardless of language environment.
+Tier 1 paths are **English-only prose**. Korean prose is hard-blocked by the pre-commit hook (`tier1-language-policy`, invoking `tools/check_language_policy.py`).
 
-The driving failure mode is Korean prose leaking into Tier 1 files via AI sessions running in Korean conversational mode. Other-language leaks have not been observed in this repository, so the **machine-enforced scope today is Korean (Hangul) prose**. The intent of the policy is broader — Tier 1 paths should be English-only — but only Korean is currently detected and blocked. Other-language detection (Chinese, Japanese, etc.) and encoded payloads (base64, HTML entities) are tracked as out-of-scope for this PR; if leaks of those forms appear, expand the checker first, then update this policy text to match.
-
-### Tier 1 paths (Korean prose blocked; English encouraged for everything else)
-
-All new prose, comments, docstrings, log strings, and user-facing terminal output under the following paths should be written in English; **Korean prose is blocked by the pre-commit hook**:
+### Tier 1 paths (canonical scope of `tools/check_language_policy.py::TIER1_GLOBS`)
 
 - `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`
-- `docs/ai/shared/**`
-- `docs/history/**` (every ADR and archive entry, including `archive/governor-review-log/**`)
+- `docs/ai/shared/**`, `docs/history/**`
 - `.claude/rules/**`, `.claude/hooks/**`, `.claude/skills/**`
-- `.codex/rules/**`, `.codex/hooks/**`
-- `.agents/**` (skills and the shared governor package)
-- `.github/pull_request_template.md` and `.github/workflows/**`
-
-The path list above is the **canonical scope of the language-policy checker** (`tools/check_language_policy.py::TIER1_GLOBS`). It overlaps with — but is not identical to — Tier A + Tier B of [`governor-paths.md`](docs/ai/shared/governor-paths.md). The governor-paths file controls independent review triggers (every file under `.claude/**`, `.codex/**`, `.agents/**` triggers); the language-policy checker scopes to *files where prose is realistic* — Markdown, Python, shell, and the PR template / CI workflows. Config files like `.codex/hooks.json`, `.claude/settings.json`, and `.codex/config.toml` are intentionally outside the language-policy scope today; if Korean leaks into a settings string, treat it as a checker-extension follow-up rather than a policy violation.
+- `.codex/rules/**`, `.codex/hooks/**`, `.agents/**`
+- `.github/pull_request_template.md`, `.github/workflows/**`
 
 ### Two narrowly-scoped exceptions
 
-The escape-token vocabulary `[trivial]/[자명]`, `[hotfix]/[긴급]`, `[exploration]/[탐색]` (see § Default Coding Flow → Exception Tokens) is machine-parseable and pinned by `^\s*\[(trivial|hotfix|exploration|자명|긴급|탐색)\](?:\s|$)`. The Korean half of each token, and references to that vocabulary in parser source, docstrings, and the token table itself, are permitted in Tier 1 paths under this token-scoped allowlist. The allowlist is scoped per-file in `tools/check_language_policy.py::TOKEN_LITERALS_BY_FILE` so a token literal cannot launder Korean prose elsewhere.
-
-A second, narrowly-scoped carve-out covers **locale data files** explicitly listed in `tools/check_language_policy.py::LOCALE_DATA_FILES` (currently only `.agents/shared/governor/locale.py`). These files are the canonical runtime source for translated terminal output and may contain Korean (and future other-language) translation strings by design — see § Exemptions below for invariants.
-
-### Two specific prohibitions
-
-1. **No hidden Korean rationale** in Tier 1 paths — Korean text inside HTML comments, backtick-quoted attribute values, or hand-written metadata is **blocked by the line-grep checker**. Korean smuggled through base64 / HTML entities / other encodings is **not** detected today; the policy intent rejects them, but enforcement is best-effort. Hidden Korean rationale recreates information asymmetry between Korean-reading and non-Korean-reading contributors — the exact failure mode this policy exists to prevent.
-2. **No new Korean prose lines, even when "just adding a translation for the team"** — except inside files explicitly listed in `tools/check_language_policy.py::LOCALE_DATA_FILES`. If translation matters for a specific document, create a sibling file (e.g. `docs/README.ko.md` is the existing reference pattern) and link to it. Tier 1 documents themselves stay English.
-
-### Exemptions
-
-- `README.md` — the Korean-language link label pointing to `docs/README.ko.md` is an i18n affordance pointing to a deliberately translated sibling document. `README.md` is intentionally not in the Tier 1 glob.
-- `docs/README.ko.md` itself and any future `docs/*.{lang}.md` translation files (parallel translations, not in-line bilingualism).
-- `docs/history/archive/governor-review-log/**` — Korean text inside a line prefixed with `> Original user/owner statement (ko, verbatim):`, `> Original reviewer verdict (ko, verbatim):`, or `> Historical Korean excerpt (ko, verbatim):` is preserved provenance. English normalised meaning must follow on the next line. Multi-line preserved Korean must repeat the prefix on every line.
-- Locale data files listed in `tools/check_language_policy.py::LOCALE_DATA_FILES` (currently `.agents/shared/governor/locale.py`) — these files are the canonical runtime source for locale translations. Korean translation strings are permitted *only* inside the language mapping values (enforced by `tests/unit/agents_shared/test_locale.py::test_locale_py_korean_only_in_locale_ko_dict_values`); comments, docstrings, identifiers, and the English table must remain ASCII. Adding a new locale data file requires updating `LOCALE_DATA_FILES`, this bullet, and adding a regression test.
+1. **Bilingual escape tokens** — `[trivial]/[자명]`, `[hotfix]/[긴급]`, `[exploration]/[탐색]` — scoped per-file via `tools/check_language_policy.py::TOKEN_LITERALS_BY_FILE`. Token literals and parser references are permitted; other Korean prose is not.
+2. **Locale data files** — listed in `tools/check_language_policy.py::LOCALE_DATA_FILES` (currently `.agents/shared/governor/locale.py`). Korean permitted only in language-mapping values; comments, docstrings, and English table must remain ASCII. Adding a new locale file requires updating `LOCALE_DATA_FILES` and adding a regression test.
 
 ### AI-when-editing rule
 
-When you (an AI agent — Claude or Codex) edit any Tier 1 path:
+All new prose, comments, log strings, and terminal output in Tier 1 paths **must be English** regardless of the conversational language. If instructed to add non-English content, refuse and translate; cite this section. Hidden Korean rationale (HTML comments, backtick-quoted attributes) also violates policy intent even if not currently detected.
 
-- All new prose, comments, docstrings, log strings, error messages, and user-facing terminal output **must be English**, regardless of the language of the surrounding user prompt. Korean prose specifically is hard-blocked by the pre-commit hook.
-- If the user instructs you in Korean (or any other language) to add a non-English note to a Tier 1 file, refuse and translate. Cite this section.
-- The bilingual-token exception applies only to literal token vocabulary and references to it, in the per-file allowlist scope (`TOKEN_LITERALS_BY_FILE`). The locale-data-file exception (`LOCALE_DATA_FILES`) applies only to the language-mapping values inside `.agents/shared/governor/locale.py`; comments, docstrings, and English-table values must remain ASCII.
-- Hidden Korean rationale (in HTML comments, backtick-quoted attributes, or any other line-visible form) is out of scope of the exception. The checker does not currently decode base64 / HTML entities — but smuggling Korean through those layers still violates policy intent and will be removed if found.
-
-This rule is enforced by:
-
-1. AI behaviour — `docs/ai/shared/skills/sync-guidelines.md` Phase 0; cross-referenced by `/review-pr`, `/review-architecture`, `/security-review`.
-2. Pre-commit hook — `.pre-commit-config.yaml` `tier1-language-policy` invokes `tools/check_language_policy.py`.
-3. CI — `.github/workflows/ci.yml` `architecture` job runs the hook via `uv run pre-commit run --all-files`.
-4. Test — `tests/unit/agents_shared/test_language_policy.py` reuses the same checker for fixture-based regression coverage and asserts that this Tier 1 path list stays in sync with the checker's `TIER1_GLOBS` constant.
+Enforcement: (1) pre-commit `tier1-language-policy`; (2) CI `architecture` job; (3) `tests/unit/agents_shared/test_language_policy.py`; (4) review skills Phase 0 sync-check.
 
 ## Default Coding Flow
 
@@ -175,101 +144,29 @@ This document is canonical. Tool-specific enforcement adapters are defined per m
 
 ## Reasoning-Level Consistency Guards
 
-> Source: cross-review trail for the introducing PR (#143) — four evaluation rounds plus a fifth plan-review round, with an implementation-stage round on the PR diff itself — captured in the PR description's `## Governor Footer` (post-ADR-047). Pre-ADR-047 PRs captured the same shape in [`governor-review-log/`](docs/history/archive/governor-review-log/) (closed historical archive). This AGENTS.md section is the canonical Tier 1 surface; when adding new guards, extend AGENTS.md first and reflect the durable rule as a new `ADR{NNN}-G{N}` slot in the relevant ADR Consequences.
+> Canonical body: this AGENTS.md section (ADR047-G23). CLAUDE.md § Claude Collaboration Rules and `.codex/hooks/session-start.py` carry pointer cross-refs. When adding guards, extend AGENTS.md first and record a new `ADR{NNN}-G{N}` slot in the relevant ADR.
 
-This section applies to **every reasoning step — conversation, cross-review, document generation — across all tools**. It complements the PR-level governor (§ Default Coding Flow + `.agents/shared/governor/`), which operates on changed files. The guards here address miss patterns at the conversation level — patterns the PR-level governor does not cover.
+Applies to **every reasoning step** — conversation, cross-review, document generation — across all tools. Complements the PR-level governor; these guards address conversation-level miss patterns the file-level governor does not cover.
 
-The four guards (F, G, H, I) are constitutional guidance enforced by tool / human discipline. Phase 2 may add mechanical checks where feasible (G is the most amenable; F / H / I require natural-language analysis and remain text-only).
-
-### Application order
-
-```
-H (intent classification) → F (evidence verification)
-  → [if challenged conclusion] I (self-licensing check)
-  → [for review output] G (closure classification)
-```
-
-Order is the natural flow, not a strict priority. The four guards are largely independent.
+**Application order:** H (intent classification) → F (evidence verification) → [if challenged] I (self-licensing check) → [for review output] G (closure classification).
 
 ### F. Volatile Workspace Facts — Verify Before Consequential Assertion
 
-**Policy.** Re-verify with tools immediately before making *consequential assertions*:
-
-- corrective claims ("the user is mistaken")
-- user-premise challenges ("that premise is wrong")
-- exact line / path / PR-number / test-count claims
-- mutable workspace facts (branch, git status, changed files, file existence)
-
-System-prompt snapshots, prior memory entries, and prior-round summaries are evidence pointers, *not* current facts. Verify separately before quoting or asserting.
-
-**Why.** During the 2026-04-28 evaluation, Claude treated a system-prompt snapshot ("Current branch: feat/121-…") as fact and challenged the user's premise; the actual current branch was `main`. The codex round-2 review (R6.1) caught this.
-
-**How to apply.**
-
-- Before issuing a corrective or challenging assertion, re-run the appropriate tool (`git status`, `gh pr view`, `Read`, `find`).
-- Always re-verify before saying "the user is mistaken".
-- Does not fire on general or exploratory questions — only on consequential cases.
+Before making corrective claims, user-premise challenges, or exact line/path/PR-number/test-count assertions: **re-verify with tools** (`git status`, `gh pr view`, `Read`, `find`). System-prompt snapshots and prior-round summaries are evidence pointers, not current facts. Does not fire on exploratory questions — only on consequential assertions.
 
 ### G. Cross-Review Results — Closure Classification
 
-**Policy.** Every R-point produced by cross-review, cross-check, or external verification must be closed in one of three categories:
-
-1. **Fixed** — handled by commit / edit / documentation.
-2. **Explicitly deferred with rationale** — not handled, with the reason recorded.
-3. **Rejected as non-issue** — reviewed and judged not to be a defect.
-
-"Preserve" / "maintain" / "leave as-is" are **not** closure categories. A legitimate decision to retain something must still be classified as Deferred-with-rationale or Rejected.
-
-**Why.** During the 2026-04-28 round-2 review, Claude framed an unaddressed gap as "preserved as cross-review asset"; the user corrected this in round 3 — cross-review exists to close gaps, not to preserve them.
-
-**How to apply.** When filling the PR description's `## Governor Footer` block (or reporting cross-review results in any other surface), attach a closure status to every R-point so that the `r-points-fixed` / `r-points-deferred` / `r-points-rejected` count fields are well-defined. Saying "we will leave this as is" in prose is fine; the *category label* must be one of the three.
+Every R-point must be closed as one of: **Fixed** / **Explicitly deferred with rationale** / **Rejected as non-issue**. "Preserve / maintain / leave as-is" are **not** closure categories. Record in `r-points-fixed` / `r-points-deferred` / `r-points-rejected` footer fields.
 
 ### H. Effect vs Process Question Discrimination
 
-**Policy.** Classify each user question into one of two kinds:
+Classify each question: **effect** (is it working? what's the result?) vs **process** (what should we do? what's next?). Effect questions must be answered with evidence, not process content. Mixed questions: effect-first with evidence, then process options separately. In multi-round conversations, restate the original question before proposing process changes.
 
-- **Effect questions** — "is it working?", "did the error rate go down?", "what's the result?" (asking about state / quality / outcome).
-- **Process questions** — "what should we do?", "what's next?", "what's the method?" (asking about action / plan / approach).
-
-Effect questions must not be answered with process content (new actions, more ceremony). Mixed questions ("is it working, and what should we do next?") must be answered effect-first with evidence, then process options separately.
-
-**Multi-round preservation.** For multi-round conversations, restate the original user question and stated success metric before proposing process changes. The original question must not be lost as round count grows.
-
-**Why.** During the 2026-04-28 round 3, the user asked an effect question ("is the error rate going down?"); Claude answered with process content. Round 4's retrospective evidence (186 logged R / F points) demonstrated the effect question could in fact be answered with data.
-
-**How to apply.**
-
-- Classify before composing the response.
-- Effect questions: answer with evidence or data. If no data exists, say so explicitly. Do not substitute process content.
-- Process questions: answer with action candidates.
-- Mixed questions: effect first, process second, separately labelled.
-
-**Mechanical enforcement in review/audit skills.** The review contract for `/review-pr`,
-`/review-architecture`, and `/security-review` includes a mandatory `Effect Answer` field placed
-before `Findings`. This field requires a 1-3 sentence evidence-based summary of what the change
-*actually* does or exposes, grounded in the diff or source read — not in the review procedure.
-Reviewers who skip or placeholder this field have structurally violated Guard H.
-See `docs/ai/shared/skills/review-pr.md` § Review Contract for the exact field definition.
+**Review-skill enforcement:** `/review-pr`, `/review-architecture`, `/security-review` require a mandatory `Effect Answer` field (1–3 sentence evidence-based summary of what the change *actually* does) before `Findings`. Skipping this field violates Guard H. See `docs/ai/shared/skills/review-pr.md` § Review Contract.
 
 ### I. Self-Licensing Detection — Sanity Check Before Defending a Challenged Conclusion
 
-**Trigger.** This guard fires only when the user pushes back on a stated conclusion: a *correction*, *challenge*, or *evidence request* directed at that conclusion. General follow-up or clarifying questions do not fire it.
-
-**Policy.** Before defending the conclusion, explicitly check:
-
-1. Did the conclusion start from a stale or incorrect premise?
-2. Is the reasoning circular — am I evaluating my own output by criteria I authored, or stacking new recommendations to defend earlier ones?
-3. Could the user's intuition be a real domain signal that I am missing?
-
-State the result of this check as the first sentence of the response, before any defence.
-
-**Why.** During the 2026-04-28 evaluation, rounds 1 and 2 drifted toward adding ceremony; Claude defended this drift. Only when the user pushed back at round 3 ("is that really the conclusion?") did codex retract the entire round-2 list ("none of the six recommendations from round 2 should be retained as-is").
-
-**How to apply.**
-
-- On detected pushback, run the three-step check first, surface the result, then proceed.
-- Re-verifying premises is the default; defence is conditional.
-- General questions or requests for additional information do not fire this guard.
+Fires when the user pushes back on a stated conclusion (correction, challenge, or evidence request). Before defending, explicitly check: (1) Was the premise stale or incorrect? (2) Is the reasoning circular? (3) Could the user's intuition be a real domain signal? State the check result first, then proceed. General follow-up questions do not fire this guard.
 
 ## Layer Architecture (3-Tier Hybrid)
 
@@ -468,40 +365,9 @@ uv run alembic current
 
 ## Drift Management
 
-- `AGENTS.md` is the canonical source for shared rules; tool-specific harness docs must point here instead of re-copying rules
-- Keep root `AGENTS.md` short and stable; when local context needs more detail, prefer named skills instead of expanding the root doc
-- `AGENTS.override.md` may be used only if it is explicitly subject to the same drift-management and language-policy governance as `AGENTS.md` itself
-- Codex memories are personal/session optimization only; do not treat them as a shared rule source
-- Shared rule sources: `AGENTS.md`, `docs/ai/shared/`, `docs/ai/shared/skills/`, `.claude/`, `.codex/`, and `.agents/`
-- Update related documentation in the same change when shared rules or harness behavior changes
-  - `README.md`
-  - `docs/README.ko.md`
-  - `CONTRIBUTING.md`
-  - `CLAUDE.md`
-  - `docs/ai/shared/` and `docs/ai/shared/skills/`
-  - `.claude/rules/` and `.claude/skills/` references when relevant
-  - `.codex/hooks.json`, `.codex/rules/`, and `.agents/skills/` when relevant
-- When modifying a skill procedure, verify both `.claude/skills/` and `.agents/skills/` wrappers reference the same shared procedure
-  - For Hybrid C skills: `docs/ai/shared/skills/{name}.md` is the canonical source for the procedure
-  - Claude and Codex wrappers must stay in sync with the shared procedure's Phase/Step structure
-- If architecture or shared patterns change, inspect drift before closing the work
-  - Claude workflow entry point: `/sync-guidelines`
-  - Codex workflow: use `$sync-guidelines` or follow the documented verification steps in `README.md` / `CONTRIBUTING.md`
-  - Both tools should run sync after architecture changes — not just the active tool
-- Language drift: any new prose in non-token contexts under paths listed in § Language Policy → Tier 1 must be English. Bilingual escape tokens and locale data files (`LOCALE_DATA_FILES`) are the two narrowly-scoped exceptions. Run `python3 tools/check_language_policy.py` before closing the work to confirm zero violations.
+> Full rules and Skill Split Convention (Hybrid C): [`docs/ai/shared/drift-checklist.md`](docs/ai/shared/drift-checklist.md) § Drift Management Rules. Entry point: `/sync-guidelines` (Claude) · `$sync-guidelines` (Codex).
 
-### Skill Split Convention (Hybrid C)
-
-When extracting shared skill procedures to `docs/ai/shared/skills/`:
-
-**Wrapper keeps** (`.claude/skills/`, `.agents/skills/`):
-- Tool-specific frontmatter (name, description, argument-hint, metadata, etc.)
-- Phase/Step overview (1-2 line summary per phase — agent sees the full flow before reading external file)
-- Tool-specific post-steps (e.g., Claude's `.claude/rules/*` update)
-- User interaction flow when it differs between tools
-
-**Shared procedure contains** (`docs/ai/shared/skills/{name}.md`):
-- Detailed steps per phase (inspection targets, conditions, branching logic)
-- Output format examples
-- Checklists, file lists, grep patterns
-- Cross-references to other `docs/ai/shared/` documents
+- `AGENTS.md` is the canonical source for shared rules — tool-specific harness docs point here, never re-copy
+- Shared rule sources: `AGENTS.md`, `docs/ai/shared/`, `.claude/`, `.codex/`, `.agents/`
+- Update related docs in the same change when shared rules or harness behavior changes (see drift-checklist.md for the full sync checklist)
+- Language drift: new prose in Tier 1 paths must be English — run `python3 tools/check_language_policy.py` before closing work

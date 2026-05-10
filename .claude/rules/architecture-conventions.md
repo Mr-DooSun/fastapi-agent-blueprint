@@ -49,16 +49,10 @@ Key differences from RDB/DynamoDB:
 - Service-owned CRUD write validation hooks are canonical in `AGENTS.md` § CRUD Write Validation; keep rule details there.
 
 ## Broker Selection
-- providers.Selector in CoreContainer: SQS/RabbitMQ/InMemory by BROKER_TYPE env var
-- Task code: `from src._apps.worker.broker import broker` — no conditional logic
-- stg/prod require explicit BROKER_TYPE setting
+- `BROKER_TYPE` env var: SQS/RabbitMQ/InMemory via `providers.Selector` in CoreContainer. Task code uses `from src._apps.worker.broker import broker` with no conditional logic; stg/prod require explicit `BROKER_TYPE`.
 
 ## Storage Selection
-- Parameter switching in CoreContainer: S3/MinIO by STORAGE_TYPE env var
-- Both use the same `ObjectStorageClient` class — only constructor parameters differ
-- S3: `region_name`, MinIO: `endpoint_url` + dummy `region_name="us-east-1"`
-- No `providers.Selector` needed (same class, different params — contrast with Broker)
-- Settings computed properties (`storage_access_key`, etc.) resolve to S3/MinIO fields based on STORAGE_TYPE
+- `STORAGE_TYPE` env var: S3/MinIO, same `ObjectStorageClient` class with different constructor params (no `providers.Selector` needed — contrast with Broker). Settings computed properties (`storage_access_key`, etc.) resolve fields by `STORAGE_TYPE`.
 
 ## Embedding (PydanticAI Adapter)
 - Single `PydanticAIEmbeddingAdapter` replaces per-provider clients (ADR 039)
@@ -75,17 +69,6 @@ Key differences from RDB/DynamoDB:
 - Domain services inject the Selector-resolved `llm_model` and create `Agent(model=llm_model)` at init; stub propagates transparently
 - Supports OpenAI, Anthropic, Bedrock providers via `model_name` prefix
 - Agents are reusable across requests (create once at service init)
-
-## Structured Logging (#9)
-
-- Pipeline: `structlog` ProcessorFormatter + `asgi-correlation-id`. JSON (stg/prod) / console (dev/local/quickstart) renderer auto-selected via `settings.effective_log_json`.
-- Server: `configure_logging()` → `TrustedHost → CORS → RequestLogMiddleware → CorrelationIdMiddleware`. Starlette wraps later-added middlewares around earlier ones, so `CorrelationIdMiddleware` is added last on purpose to sit outermost on the request.
-- Worker: `configure_logging()` → `app.add_middlewares(StructlogContextMiddleware())` binds task id / correlation id into contextvars; values passed through `with_labels(correlation_id=...)` on the dispatcher are lifted automatically.
-- Logger acquisition rule: all application code uses `structlog.stdlib.get_logger(__name__)`.
-  - Existing `logging.getLogger(__name__)` callers still flow through the ProcessorFormatter bridge, but new code unifies on the structlog API.
-- No sensitive-field logging: fields excluded from Response via `model_dump(exclude={...})` (e.g. `password`, `token`, `access_key`, `secret_key`) must not appear in `logger.info(event, password=...)` / `logger.bind(...)` calls either.
-- SQLAlchemy echo: `DATABASE_ECHO=true` is mapped to `logging.getLogger("sqlalchemy.engine").setLevel(INFO)`. The engine handler is registered exactly once so the same query is not double-emitted by stdlib and structlog simultaneously.
-- Env vars: `LOG_LEVEL` (DEBUG/INFO/WARNING/ERROR), `LOG_JSON_FORMAT` (None/True/False — `None` derives the renderer from ENV automatically).
 
 ## Object Roles
 
