@@ -111,41 +111,26 @@ grep -r "class.*Mapper" src/ --include="*.py"
 
 ## DynamoDB Local
 ```bash
-# Start DynamoDB Local container
 docker run -d -p 8000:8000 amazon/dynamodb-local
-
-# Run DynamoDB integration tests
 pytest tests/integration/ -v -k "dynamo"
 ```
 
 ## Broker
 ```bash
-# InMemory (default, no setup needed)
-BROKER_TYPE=inmemory python run_worker_local.py --env local
-
-# RabbitMQ
+BROKER_TYPE=inmemory python run_worker_local.py --env local   # default
 BROKER_TYPE=rabbitmq RABBITMQ_URL=amqp://guest:guest@localhost:5672/ python run_worker_local.py --env local
 ```
 
 ## Storage
 ```bash
-# MinIO (local development)
 STORAGE_TYPE=minio python run_server_local.py --env local
-
-# AWS S3
 STORAGE_TYPE=s3 python run_server_local.py --env local
 ```
 
 ## Admin Dashboard
 ```bash
-# The admin dashboard mounts only when the `admin` extra is installed (#104)
-uv sync --extra admin            # install nicegui
-# → http://127.0.0.1:8001/admin
-# Login uses auth-domain credentials (POST /v1/auth/login) plus a `user.role` admin
-# check (#154 / PR #155). Seed an admin via `ADMIN_BOOTSTRAP_USERNAME`,
-# `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD` env vars (idempotent on boot).
-
-# When not installed, the server boots normally and emits a structured log line:
-#   event="admin_mount_skipped" reason="nicegui_not_installed"
-#   install_hint="uv sync --extra admin"
+uv sync --extra admin   # install; → http://127.0.0.1:8001/admin
+# Login: auth-domain JWT + user.role admin check (#154/PR#155)
+# Seed admin: ADMIN_BOOTSTRAP_USERNAME/EMAIL/PASSWORD env vars (idempotent on boot)
+# If not installed: server boots normally, emits admin_mount_skipped log
 ```

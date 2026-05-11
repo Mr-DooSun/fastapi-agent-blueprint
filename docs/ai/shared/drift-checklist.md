@@ -219,3 +219,37 @@ Use these scenario checks when validating the redesigned workflow:
 - [ ] Security feature active in code but stale in `project-dna` -> `/security-review` should continue auditing and report stale-reference drift instead of ending in `SKIP`
 - [ ] Shared procedure changed without wrapper updates -> `/sync-guidelines` should detect Hybrid C drift for both Claude and Codex wrappers
 - [ ] Docs-only checklist meaning change -> `/sync-guidelines` should classify it as `REVIEW`, not a silent `AUTO-FIX`
+
+## Drift Management Rules
+
+> Moved from `AGENTS.md` § Drift Management (issue #186, PR #188). Pointer in AGENTS.md.
+
+- `AGENTS.md` is the canonical source for shared rules; tool-specific harness docs must point here instead of re-copying rules
+- Keep root `AGENTS.md` short and stable; when local context needs more detail, prefer named skills instead of expanding the root doc
+- `AGENTS.override.md` may be used only if it is explicitly subject to the same drift-management and language-policy governance as `AGENTS.md` itself
+- Codex memories are personal/session optimization only; do not treat them as a shared rule source
+- Shared rule sources: `AGENTS.md`, `docs/ai/shared/`, `docs/ai/shared/skills/`, `.claude/`, `.codex/`, and `.agents/`
+- Update related documentation in the same change when shared rules or harness behavior changes:
+  - `README.md`, `docs/README.ko.md`, `CONTRIBUTING.md`, `CLAUDE.md`
+  - `docs/ai/shared/` and `docs/ai/shared/skills/`
+  - `.claude/rules/` and `.claude/skills/` references when relevant
+  - `.codex/hooks.json`, `.codex/rules/`, and `.agents/skills/` when relevant
+- When modifying a skill procedure, verify both `.claude/skills/` and `.agents/skills/` wrappers reference the same shared procedure
+  - For Hybrid C skills: `docs/ai/shared/skills/{name}.md` is the canonical source
+  - Claude and Codex wrappers must stay in sync with the shared procedure's Phase/Step structure
+- If architecture or shared patterns change, inspect drift before closing the work:
+  - Claude entry point: `/sync-guidelines`; Codex: `$sync-guidelines`
+  - Both tools should run sync after architecture changes — not just the active tool
+
+### Skill Split Convention (Hybrid C)
+
+**Wrapper keeps** (`.claude/skills/`, `.agents/skills/`):
+- Tool-specific frontmatter (name, description, argument-hint, metadata)
+- Phase/Step overview (1-2 line summary per phase)
+- Tool-specific post-steps (e.g. Claude's `.claude/rules/*` update)
+- User interaction flow when it differs between tools
+
+**Shared procedure contains** (`docs/ai/shared/skills/{name}.md`):
+- Detailed steps per phase (inspection targets, conditions, branching logic)
+- Output format examples, checklists, file lists, grep patterns
+- Cross-references to other `docs/ai/shared/` documents
