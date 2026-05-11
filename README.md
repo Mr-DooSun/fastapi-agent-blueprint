@@ -18,13 +18,14 @@
 </p>
 
 <p align="center">
-  <b>Production FastAPI architecture, with AI-assisted domain scaffolding built in.</b><br>
-  DDD layers · zero-boilerplate CRUD · 4 interfaces. Claude Code and Codex CLI can scaffold new domains through the same production workflow.
+  <b>FastAPI backend blueprint for AI agent applications.</b><br>
+  DDD domains · SQLAlchemy/Alembic · Taskiq workers · admin UI · RAG infrastructure · Claude/Codex collaboration harness.
 </p>
 
 <p align="center">
   <a href="#try-it-in-60-seconds">60s Quickstart</a>
   · <a href="#why-this-blueprint">Why</a>
+  · <a href="#ai-collaboration-harness">AI Collaboration</a>
   · <a href="#how-it-compares">Comparison</a>
   · <a href="#architecture-at-a-glance">Architecture</a>
   · <a href="docs/README.ko.md">한국어</a>
@@ -106,6 +107,7 @@ Full integration walkthrough (auth · RBAC · worker · admin · RAG · OTEL): [
 - **DDD layers (4-tier)** — Interface · Domain · Infrastructure · Application, enforced by pre-commit import guard
 - **Zero-boilerplate CRUD** — 8 async methods via `BaseService` + `BaseRepository`, paginated list with `QueryFilter` included
 - **Auto domain discovery** — drop a folder into `src/{name}/`, it auto-registers. No container edits, no bootstrap edits
+- **Agent backend surfaces** — REST API, async worker, admin UI, and a planned MCP interface over the same domain logic
 - **Pluggable infra** — PostgreSQL / MySQL / SQLite · DynamoDB · S3 / MinIO · S3 Vectors · SQS / RabbitMQ · OpenAI / Bedrock
 - **OpenTelemetry** — `[otel]` extra, `OTEL_ENABLED` env flag, Jaeger/Tempo/Phoenix recipe
 - **JWT + RBAC** — HS256 auth domain, DB-backed refresh rotation, `User.role` admin gating
@@ -118,19 +120,37 @@ Full integration walkthrough (auth · RBAC · worker · admin · RAG · OTEL): [
 
 **AI-assisted acceleration**
 
-- `/new-domain order` scaffolds **44 files** (15 source + 25 `__init__.py` + 4 tests) in one command
-- **14 Claude Code + 14 Codex CLI skills** sharing one `AGENTS.md` rules file
-- Both tools supported equally — swap `/` for `$` to switch between them
+- **Claude/Codex collaboration harness** — shared `AGENTS.md`, mirrored skills, and hook-backed workflow reminders
+- `/new-domain order` or `$new-domain order` scaffolds **44 files** (15 source + 25 `__init__.py` + 4 tests) in one command
+- **14 Claude Code + 14 Codex CLI skills** sharing the same architecture and review rules
+- **AI-assisted development (AIDD)** — humans keep product judgment; agents follow repeatable domain, test, review, and drift-check workflows
 - Full setup: [`docs/ai-development.md`](docs/ai-development.md)
 - Manual path: [`docs/tutorial/first-domain.md`](docs/tutorial/first-domain.md) (Path B)
 
 ![/new-domain order → 44 files scaffolded → tests pass](docs/assets/cast/new-domain.gif)
 
-> Works as a normal FastAPI blueprint. With Claude Code or Codex CLI, the same domain workflow becomes AI-assisted and repeatable.
+> Works as a normal FastAPI blueprint. With Claude Code or Codex CLI, the same production workflow becomes AI-assisted and repeatable.
 
 </td>
 </tr>
 </table>
+
+---
+
+## AI collaboration harness
+
+Most templates stop at generated files. This blueprint also ships the
+collaboration layer that keeps AI coding agents useful after the first
+scaffold:
+
+- **Shared source of truth** — `AGENTS.md` defines the architecture, DTO rules, logging rules, security constraints, and default coding flow.
+- **Claude Code + Codex parity** — tool-specific harnesses point back to the same shared rules instead of drifting into separate playbooks.
+- **Repo-local skills** — domain scaffolding, API work, admin pages, worker tasks, migrations, tests, architecture review, security review, and guideline sync.
+- **Governed changes** — pre-commit checks, import guards, language policy, and review workflows catch architecture drift before it becomes team debt.
+
+The result is a backend starter that can be used by hand, then accelerated by
+AI tools without asking every contributor to remember the whole architecture
+from scratch.
 
 ---
 

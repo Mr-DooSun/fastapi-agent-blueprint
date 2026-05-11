@@ -1,17 +1,25 @@
 [project]
 name = "fastapi-agent-blueprint"
 version = "0.6.0"
-description = "FastAPI DDD template, built for AI agent backends — zero-boilerplate CRUD, auto domain discovery, async architecture"
+description = "FastAPI backend blueprint for AI agent apps: DDD domains, SQLAlchemy, Taskiq, RAG infra, and Claude/Codex collaboration harness"
 readme = "README.md"
 requires-python = ">=3.12.9"
 keywords = [
     "fastapi",
-    "ddd",
-    "agent",
+    "backend-blueprint",
+    "clean-architecture",
+    "domain-driven-design",
+    "dependency-injection",
+    "ai-agents",
+    "ai-assisted-development",
+    "coding-agents",
     "llm",
     "rag",
-    "template",
-    "boilerplate",
+    "backend-template",
+    "fastapi-template",
+    "sqlalchemy",
+    "alembic",
+    "pydantic",
     "claude-code",
     "codex-cli",
     "taskiq",
