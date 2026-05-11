@@ -224,3 +224,41 @@ Output format
   reinforcement / block merge
 - Sync Required: true or false
 ```
+
+## Self-Structured Review Checklist
+
+Use when a cross-tool reviewer is unavailable (single-tool environment). Record
+`reviewer: self-structured` in the Governor Footer. Work through each item
+below and surface any findings as R-points with the same closure categories
+(`Fixed` / `Deferred-with-rationale` / `Rejected`).
+
+**F — Volatile workspace facts**
+- [ ] All line numbers, file paths, branch names, and PR numbers cited in this
+  review have been re-verified from current tool output (not from memory or
+  prior-session snapshots).
+
+**G — Closure discipline**
+- [ ] Every question or alternative I raised during planning is closed with
+  `Fixed`, `Deferred-with-rationale`, or `Rejected`. Labels such as "preserve",
+  "maintain", or "leave as-is" are not used.
+
+**H — Effect vs process**
+- [ ] Effect questions ("does this break X?") are answered with evidence
+  (grep, test run, diff scan), not substituted by process descriptions
+  ("I followed the steps").
+
+**I — Self-licensing check**
+- [ ] Before defending any challenged conclusion, I re-verified the premise
+  and checked for circular reasoning (concluding what I set out to prove).
+
+**Contract verification**
+- [ ] External interfaces (API response shapes, OpenAPI spec, `frontend-handoff.md`)
+  match the implementation.
+
+**Security surface**
+- [ ] Any new endpoint, auth change, file upload, or external call has been
+  checked against `docs/ai/shared/security-checklist.md`.
+
+**Test coverage**
+- [ ] If the change touches build-out, security, or external-contract paths,
+  a regression test exists or the absence is explicitly deferred with rationale.

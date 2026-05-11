@@ -51,6 +51,9 @@ Read top-to-bottom; each builds on the ones above it.
 | # | Title | Why it matters |
 |---|-------|----------------|
 | [045](045-hybrid-harness-target-architecture.md) | Hybrid Harness Target Architecture | The 7-step Default Coding Flow + escape-token vocabulary + Claude/Codex adapter strategy that route AI-assisted work into framing → plan → verify → review by default. |
+| [046](046-observability-strategy.md) | Observability Strategy (OTEL + Langfuse opt-in) | `[otel]` extra, `OTEL_ENABLED` bootstrap, Langfuse opt-in recipe, and deferred prompt domain — the observability layer a contributor needs to understand before adding instrumented services. |
+| [047](047-governor-review-provenance-consolidation.md) | Governor Review Provenance Consolidation | Folds per-PR `governor-review-log/` into PR-description `## Governor Footer` blocks (CI-linted by `tools/check_governor_footer.py`). The canonical record for all governor-changing PR audit trails. |
+| [048](048-independent-review-generalization.md) | Independent Review Generalization | Generalizes Pillar 2 to accept three modes (`cross-tool` / `self-structured` / `human`). Constrains `[skip-governor-footer]` bypass to non-governor-changing PRs. Read before customizing governance files. |
 
 ## Archive
 
@@ -65,7 +68,7 @@ the rationale behind each archival bucket.
 
 ## Writing a new ADR
 
-Numbering continues sequentially (next free number is 046). Only add a new
+Numbering continues sequentially (next free number is 049). Only add a new
 ADR when the decision is **load-bearing** — i.e. it constrains how future
 code will be written, not merely which tool was picked. Purely
 operational choices can be captured in `CHANGELOG.md` or a PR description.

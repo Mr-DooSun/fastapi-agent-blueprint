@@ -136,7 +136,7 @@ The shared constitution and the tool-level entry points. These files transitivel
 
 ### `.github/pull_request_template.md`
 
-- **Current role**: GitHub PR template. Original purpose was simple change-summary + checklist. Round-4 (Pillar 5) added a "Governor-Changing PR" section that artefact-locks cross-tool review, self-application proof, and review-trail link.
+- **Current role**: GitHub PR template. Original purpose was simple change-summary + checklist. Round-4 (Pillar 5) added a "Governor-Changing PR" section that artefact-locks independent review (generalized by ADR 048 from the original cross-tool-only model), self-application proof, and review-trail link.
 - **Why it exists**: Round-4 review found that user-memory-only enforcement of cross-tool review is insufficient for new contributors and new sessions. PR template moves the requirement into a repo artefact.
 - **Replacement feasibility**: None.
 - **Final location**: unchanged.
@@ -331,7 +331,7 @@ rather than primary entry points (`Overlay`).
 
 ### `governor-review-log/` (directory) — closed historical archive
 
-- **Current role**: **Closed historical archive** (ADR 047 D6). Holds the 18 entries written between PR #125 and PR #158 documenting the Phase 1~5 build-out of the hybrid harness. No new entries are added — cross-tool review provenance for new PRs lives in the PR description's `## Governor Footer` block (`tools/check_governor_footer.py`).
+- **Current role**: **Closed historical archive** (ADR 047 D6). Holds the 18 entries written between PR #125 and PR #158 documenting the Phase 1~5 build-out of the hybrid harness. No new entries are added — independent review provenance for new PRs lives in the PR description's `## Governor Footer` block (`tools/check_governor_footer.py`).
 - **Why it exists**: Round-4 self-coherence review (PR #125) made cross-tool review trails first-class repo artefacts during the harness build-out. ADR 047 retired the per-PR archive obligation after the build-out closed; the directory is preserved as a frozen historical record because the IC declarations inside still serve as alias targets for ADR 047's IC Classification Table.
 - **Replacement feasibility**: Replaced by PR-description Governor Footer + ADR Consequences (`ADR{NNN}-G{N}` slots). Existing entries are not migrated; they remain as historical context.
 - **Final location**: unchanged. README.md banner declares the archive closed.
@@ -377,7 +377,7 @@ rather than primary entry points (`Overlay`).
 - **Final location**: `tools/check_governor_footer.py`.
 - **Migration risk**: Low. Scope bounded to the PR description body (CI fetches via `gh pr view`). V1 does not validate ADR slot existence, count consistency with R-points, or reviewer vocabulary.
 - **Stability impact**: High. Without it, removing `check_g_closure.py` would leave Guard G as text-only enforcement — codex design review flagged this as the single biggest risk of the ADR 047 rollout.
-- **Notes**: Wired in CI via `.github/workflows/governor-footer-lint.yml` (event triggers `opened` / `synchronize` / `reopened` / `edited`; sticky comment on failure; `[skip-governor-footer]` token bypass). Regression-covered by `tests/unit/tools/test_governor_footer.py` (29 cases).
+- **Notes**: Wired in CI via `.github/workflows/governor-footer-lint.yml` (event triggers `opened` / `synchronize` / `reopened` / `edited`; sticky comment on failure; `[skip-governor-footer]` token bypass — non-governor-changing PRs only; governor-changing use is a hard CI failure per ADR 048-G1). Regression-covered by `tests/unit/tools/test_governor_footer.py` (31 cases).
 
 ---
 

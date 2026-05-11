@@ -20,9 +20,17 @@ V1 validates block shape only:
   literal ``none``.
 - ``links`` accepts URLs or the literal ``n/a``.
 
-V1 does NOT validate: that touched-adr-consequences IDs actually exist in any
-ADR (semantic check); round count consistency with R-points totals; reviewer
-identifier vocabulary.
+Does NOT validate: that touched-adr-consequences IDs actually exist in any
+ADR (semantic check); round count consistency with R-points totals.
+
+``reviewer`` field is intentionally open-vocabulary by design (ADR 047 D2 /
+ADR 048 D3). The linter accepts any non-blank string. The three documented
+modes are a tool name (e.g. ``codex-cli``, ``claude-code``), ``self-structured``
+(single-tool structured checklist per ADR 048 D4), or
+``human:<github-handle>``. Multiple modes may be comma-separated. This
+open-vocabulary design was present from the initial implementation;
+ADR 048 D3 formally documents the accepted vocabulary without changing
+the linter code.
 
 Used by:
 - ``.github/workflows/governor-footer-lint.yml`` CI workflow.
@@ -44,6 +52,15 @@ HEADING = "## Governor Footer"
 FENCED_CODE_RE = re.compile(r"^[ ]{0,3}(```|~~~)")
 HEADING_RE = re.compile(r"^##\s")
 BYPASS_TOKEN = "[skip-governor-footer]"  # noqa: S105 — opt-in escape token, not a credential
+_FENCED_BLOCK_RE = re.compile(r"```.*?```|~~~.*?~~~", re.DOTALL)
+_CODE_SPAN_RE = re.compile(r"`[^`\n]+`")
+
+
+def _body_without_code(body: str) -> str:
+    """Strip fenced code blocks and inline code spans for bypass-token detection."""
+    without_fenced = _FENCED_BLOCK_RE.sub("", body)
+    return _CODE_SPAN_RE.sub("", without_fenced)
+
 
 FIELD_ORDER = (
     "trigger",
@@ -192,7 +209,7 @@ def parse_footer(
     and value-grammar violations populate ``violations``.
     """
 
-    if BYPASS_TOKEN in body:
+    if BYPASS_TOKEN in _body_without_code(body):
         return None, []
 
     raw_lines = body.splitlines()
@@ -270,7 +287,7 @@ def parse_footer(
                 Violation(
                     source,
                     rounds_lineno,
-                    "rounds must be >= 1 when trigger: yes (cross-tool review must run at least once)",
+                    "rounds must be >= 1 when trigger: yes (independent review must run at least once)",
                 )
             )
 
@@ -320,7 +337,20 @@ def check_body(
     else:
         is_governor = False
 
-    if BYPASS_TOKEN in body:
+    if BYPASS_TOKEN in _body_without_code(body):
+        if is_governor:
+            # Governor-changing PRs cannot bypass mandatory independent review (ADR 048-G1).
+            # Use docs/ai/shared/governor-paths.md § Exclusions for path-level exemptions.
+            return [
+                Violation(
+                    source,
+                    0,
+                    f"'{BYPASS_TOKEN}' cannot be used in governor-changing PRs (ADR 048-G1:"
+                    " independent review is mandatory). Add a valid '## Governor Footer' block."
+                    " To exempt a specific path pattern, add it to"
+                    " docs/ai/shared/governor-paths.md § Exclusions instead.",
+                )
+            ]
         return []
 
     fields, violations = parse_footer(body, source=source)
@@ -331,7 +361,10 @@ def check_body(
                 Violation(
                     source,
                     0,
-                    "governor-changing PR is missing the '## Governor Footer' block (ADR 047 D2)",
+                    "governor-changing PR is missing the '## Governor Footer' block (ADR 047 D2)."
+                    " See .github/pull_request_template.md for the format."
+                    " reviewer accepts: a tool name (cross-tool), 'self-structured' (single-tool env),"
+                    " or 'human:<handle>'.",
                 )
             )
         else:

@@ -115,7 +115,7 @@ Auto-escape detection is best-effort; the user may always restate their intent v
 
 #### Policy / harness doc carve-out (governance-loosening guard)
 
-The doc-only auto-escape **does not apply** to policy or harness docs as defined in [`governor-paths.md`](governor-paths.md) Tier A. When any Tier-A path is in `changed_files`, the change is treated as governor-changing: full `framing` → `plan` → `verify` → `self-review` (with cross-tool review sub-step, see §5) → `completion gate`. The rationale (Codex review R8): a governor that is strict on code but lax on its own rule sources will silently drift away from its own discipline.
+The doc-only auto-escape **does not apply** to policy or harness docs as defined in [`governor-paths.md`](governor-paths.md) Tier A. When any Tier-A path is in `changed_files`, the change is treated as governor-changing: full `framing` → `plan` → `verify` → `self-review` (with independent review sub-step, see §5) → `completion gate`. The rationale (Codex review R8): a governor that is strict on code but lax on its own rule sources will silently drift away from its own discipline.
 
 The canonical path list and the small set of exclusions (e.g. log-only backfill PRs) live in [`governor-paths.md`](governor-paths.md). Do **not** duplicate the list here.
 
@@ -180,7 +180,7 @@ The asymmetry in the last row is critical (Codex review R7). Phase 3 verificatio
 
 - **Claude side**: file edits trigger `PostToolUse Edit|Write`. Phase 3 verification-first hook attaches there to suggest test runs after a code edit.
 - **Codex side**: file edits do not surface in `PostToolUse`. Phase 3 detection runs on the **Stop side** by computing `git status --porcelain` over the working tree and triggering the verification reminder when changed source files exist without a corresponding test run.
-- **Both sides**: UserPromptSubmit recognises the exception-token vocabulary identically (Phase 2). As of Phase 5 (#124, Hybrid Harness v1 milestone), the shared parser, marker writer, lifecycle reader, verify-first decision, and completion-gate logic all live in [`.agents/shared/governor/`](../../../.agents/shared/governor/). Hook scripts under `.claude/hooks/` and `.codex/hooks/` are thin shims that import from this package; they cannot redeclare reminder strings or governor-paths globs inline (`tests/unit/agents_shared/test_governor_boundary.py`). The hybrid governance model — escape-token vocabulary, dual-tool adapters, scope-of-impact-driven cross-tool review — is permanent; only the *implementation* moved into the shared module. ADR 047 retargets the cross-tool review *capture location* from `governor-review-log/` to the PR-description `## Governor Footer` block (CI-linted) without changing the trigger or review obligation itself.
+- **Both sides**: UserPromptSubmit recognises the exception-token vocabulary identically (Phase 2). As of Phase 5 (#124, Hybrid Harness v1 milestone), the shared parser, marker writer, lifecycle reader, verify-first decision, and completion-gate logic all live in [`.agents/shared/governor/`](../../../.agents/shared/governor/). Hook scripts under `.claude/hooks/` and `.codex/hooks/` are thin shims that import from this package; they cannot redeclare reminder strings or governor-paths globs inline (`tests/unit/agents_shared/test_governor_boundary.py`). The hybrid governance model — escape-token vocabulary, dual-tool adapters, scope-of-impact-driven independent review — is permanent; only the *implementation* moved into the shared module. ADR 047 retargets the independent review *capture location* from `governor-review-log/` to the PR-description `## Governor Footer` block (CI-linted) without changing the trigger or review obligation itself.
 
 ### Canonical-truth precedence
 
@@ -193,7 +193,7 @@ When tool runtime config conflicts with shared rules, shared rules in `AGENTS.md
 | `AGENTS.md` § Default Coding Flow | 1 (this PR) | Constitutional guidance |
 | `target-operating-model.md` (this file) | 1 | Long-form reference |
 | Skill body (3-layer) | 1 | Per-skill mandatory phase + Default Flow Position |
-| `.github/pull_request_template.md` § Governor Footer | 1 (Pillar 5; rewritten by ADR 047) | Required PR-description block carrying cross-tool review provenance + closure counts; CI-linted via `tools/check_governor_footer.py` |
+| `.github/pull_request_template.md` § Governor Footer | 1 (Pillar 5; rewritten by ADR 047, generalized by ADR 048) | Required PR-description block carrying independent review provenance + closure counts; CI-linted via `tools/check_governor_footer.py` |
 | ADR Consequences (`ADR{NNN}-G{N}` slots, e.g. ADR 047) | 1 (Pillar 4 successor; ADR 047 D3) | Durable governance constraints inherited across PRs; `governor-review-log/` is the closed historical archive |
 | Session-start | 2 | Optional banner reminder |
 | UserPromptSubmit hook | 2 | Token-recognition + soft route hint |
@@ -201,14 +201,22 @@ When tool runtime config conflicts with shared rules, shared rules in `AGENTS.md
 | Stop completion gate | 4 | Hard reminder (commit-time) when verification was skipped without an exception token; **and** when policy/harness paths were touched without a Governor Footer block in the PR description (post-ADR-047 — replaces the prior governor-review-log entry check) |
 | Shared parser/policy module | 5 | Single source for both adapters |
 
-### Cross-Tool Review Cadence (Pillar 2)
+### Independent Review Cadence (Pillar 2)
 
-Cross-tool review is a sub-step of `self-review`, mandatory **only** when the change is governor-changing as defined in [`governor-paths.md`](governor-paths.md) (Tier A / B / C minus exclusions). Non-governor-changing PRs are exempt to avoid heavy ceremony.
+Independent review is a sub-step of `self-review`, mandatory **only** when the change is governor-changing as defined in [`governor-paths.md`](governor-paths.md) (Tier A / B / C minus exclusions). Non-governor-changing PRs are exempt to avoid heavy ceremony.
+
+**Review modes (one is sufficient per PR):**
+
+| Mode | Description | `reviewer` field |
+|---|---|---|
+| `cross-tool` | Another AI tool reads the change set (e.g. `codex exec -m gpt-5.5 --sandbox read-only "<review prompt>"`) | tool name (e.g. `codex-cli`) |
+| `self-structured` | Single-tool environment — apply the structured checklist in `skills/review-pr.md` § "Self-Structured Review Checklist" | `self-structured` |
+| `human` | A human reviewer (not the PR author) reviews the governor-changing surface | `human:<github-handle>` |
 
 Per round (each PR may need one or several):
 
 1. **Trigger detection** — Stop or UserPromptSubmit hook (Phases 2~4) detects that `changed_files` intersects the governor-changing trigger glob defined in [`governor-paths.md`](governor-paths.md). Until those hooks land, the trigger detection is performed manually by the author against that file.
-2. **Reviewer invocation** — `codex exec -m gpt-5.5 --sandbox read-only "<review prompt>"` (or any cross-tool reviewer with equivalent capability). The shared prompt template lives in `docs/ai/shared/skills/{review-pr,review-architecture,security-review,sync-guidelines}.md` "Cross-Tool Review Prompt Template".
+2. **Reviewer invocation** — invoke the chosen review mode. The shared prompt template for `cross-tool` and `self-structured` modes lives in `docs/ai/shared/skills/{review-pr,review-architecture,security-review,sync-guidelines}.md` "Cross-Tool Review Prompt Template" / "Self-Structured Review Checklist".
 3. **R-points capture** — review output is annotated with `R1`, `R2`, … per finding, and the closure counts (`Fixed` / `Deferred-with-rationale` / `Rejected` per Guard G) are recorded in the PR description's `## Governor Footer` block (post-ADR-047). The pre-ADR-047 obligation to write `governor-review-log/pr-{NNN}-{slug}.md` is retired for new PRs; the directory is a closed historical archive.
 4. **Resolution discipline** — every R-point is either fixed in the PR or explicitly deferred with a rationale; deferred items become "Inherited Constraints" carried in the relevant ADR's Consequences (`ADR{NNN}-G{N}` slot) when they are durable governance rules, in `project-dna.md` or domain docs when they are durable domain invariants, or in the footer's `pr-scope-notes` line when they apply only to the current PR.
 5. **Self-application** — `/review-architecture` and `/sync-guidelines` outputs are summarised in the PR description prose (a heading, a few bullets) so reviewers can verify the change-surface was checked. They are no longer archived per-PR as a separate section since the value comes from running them, not from preserving the output.
@@ -218,7 +226,7 @@ Two recurring rounds are common and recommended for large governor-changing PRs:
 - *Plan-stage round* — review the plan or design document before implementation.
 - *Implementation round* — review the change set after implementation, before merge.
 
-The same PR may iterate (Round 1 → fix → Round 2 → fix → Round 3) until Final Verdict is `merge-ready` or `minor fixes recommended` with no blockers.
+**Round cap:** resolve each R-point within 2 rounds (initial + follow-up). A third round is a signal to split the PR. The same PR may still iterate beyond 2 rounds for large changes, but each additional round should be justified.
 
 ## §6 Canonical Truth Map
 

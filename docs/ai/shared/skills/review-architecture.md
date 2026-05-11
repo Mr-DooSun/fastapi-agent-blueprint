@@ -221,3 +221,36 @@ Output format
   review / block merge
 - Sync Required: true or false
 ```
+
+## Self-Structured Review Checklist
+
+Use when a cross-tool reviewer is unavailable (single-tool environment). Record
+`reviewer: self-structured` in the Governor Footer. Work through each item
+below and surface any findings as R-points with the same closure categories
+(`Fixed` / `Deferred-with-rationale` / `Rejected`).
+
+**F — Volatile workspace facts**
+- [ ] All line numbers, file paths, and domain counts cited in this review have
+  been re-verified from current tool output (not from memory or prior snapshots).
+
+**G — Closure discipline**
+- [ ] Every question or alternative raised during the review is closed with
+  `Fixed`, `Deferred-with-rationale`, or `Rejected`. Non-canonical labels not
+  used.
+
+**H — Effect vs process**
+- [ ] Architecture-compliance questions ("does this violate the layer rule?")
+  are answered with grep/read evidence, not process descriptions.
+
+**I — Self-licensing check**
+- [ ] Before defending an "adequate" verdict, the premise was re-verified and
+  circular reasoning checked.
+
+**Layer-rule verification**
+- [ ] No Domain → Infrastructure imports (grep result: zero matches).
+- [ ] No Mapper classes, no Entity pattern remnants.
+- [ ] DTO / VO / Model object roles follow `architecture-conventions.md`.
+
+**Test coverage**
+- [ ] Domain has at least the baseline test suite (unit, integration, or e2e
+  depending on profile — see skill §5 Test Coverage section).

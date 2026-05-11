@@ -24,8 +24,8 @@ Issue #117 introduced a hybrid local process governor. The four documents below,
 ### Hybrid Harness v1 status
 
 - **Phase 5 shipped** (#124 — 2026-05-03): governor *policy* consolidated into [`.agents/shared/governor/`](.agents/shared/governor/); Claude / Codex hook scripts are thin shims enforced by `tests/unit/agents_shared/test_governor_boundary.py`; future governor changes must go into the shared package, not per-tool inline copies.
-- **[ADR 047](docs/history/047-governor-review-provenance-consolidation.md) steady state**: cross-tool review provenance moves to the PR description `## Governor Footer` block (CI-linted); durable governance constraints promoted to ADR Consequences (`ADR{NNN}-G{N}` slots); `governor-review-log/` archive frozen as closed historical record.
-- **Permanent governance model**: escape-token vocabulary, dual-tool adapters, and scope-of-impact-driven cross-tool review remain permanent (target-operating-model §3 / §7).
+- **[ADR 047](docs/history/047-governor-review-provenance-consolidation.md) / [ADR 048](docs/history/048-independent-review-generalization.md) steady state**: independent review provenance lives in the PR description `## Governor Footer` block (CI-linted); durable governance constraints promoted to ADR Consequences (`ADR{NNN}-G{N}` slots); `governor-review-log/` archive frozen as closed historical record.
+- **Permanent governance model**: escape-token vocabulary, dual-tool adapters, and scope-of-impact-driven independent review remain permanent (target-operating-model §3 / §7).
 
 ## Project Scale
 
@@ -63,7 +63,7 @@ All new prose, comments, docstrings, log strings, and user-facing terminal outpu
 - `.agents/**` (skills and the shared governor package)
 - `.github/pull_request_template.md` and `.github/workflows/**`
 
-The path list above is the **canonical scope of the language-policy checker** (`tools/check_language_policy.py::TIER1_GLOBS`). It overlaps with — but is not identical to — Tier A + Tier B of [`governor-paths.md`](docs/ai/shared/governor-paths.md). The governor-paths file controls cross-tool review triggers (every file under `.claude/**`, `.codex/**`, `.agents/**` triggers); the language-policy checker scopes to *files where prose is realistic* — Markdown, Python, shell, and the PR template / CI workflows. Config files like `.codex/hooks.json`, `.claude/settings.json`, and `.codex/config.toml` are intentionally outside the language-policy scope today; if Korean leaks into a settings string, treat it as a checker-extension follow-up rather than a policy violation.
+The path list above is the **canonical scope of the language-policy checker** (`tools/check_language_policy.py::TIER1_GLOBS`). It overlaps with — but is not identical to — Tier A + Tier B of [`governor-paths.md`](docs/ai/shared/governor-paths.md). The governor-paths file controls independent review triggers (every file under `.claude/**`, `.codex/**`, `.agents/**` triggers); the language-policy checker scopes to *files where prose is realistic* — Markdown, Python, shell, and the PR template / CI workflows. Config files like `.codex/hooks.json`, `.claude/settings.json`, and `.codex/config.toml` are intentionally outside the language-policy scope today; if Korean leaks into a settings string, treat it as a checker-extension follow-up rather than a policy violation.
 
 ### Two narrowly-scoped exceptions
 
@@ -145,16 +145,25 @@ Auto-escapes (no token required): `changed_files == 0`, *general* doc-only chang
 
 > **Doc-only carve-out** (Pillar 3 / Codex review R8 — added to prevent governance loosening). The doc-only auto-escape applies only to **general docs** such as `README.md`, `CHANGELOG.md`, contributor guides, and `docs/` content that is not policy or harness governance. The auto-escape does **not** apply to any path classified under Tier A of [`docs/ai/shared/governor-paths.md`](docs/ai/shared/governor-paths.md). Such changes go through normal `framing` → `plan` → `verify` → `self-review` even though they look doc-only, because they redefine the rules of the system.
 
-### Self-Review Step — Cross-Tool Review Trigger (Pillar 2)
+### Self-Review Step — Independent Review Trigger (Pillar 2)
 
-`self-review` is mandatory by default. When the change touches any path classified under **Tier A or Tier B (or Tier C, if introduced)** of [`docs/ai/shared/governor-paths.md`](docs/ai/shared/governor-paths.md) — and is not entirely covered by an exclusion in the same file — `self-review` must include a **cross-tool review** as a mandatory sub-step:
+`self-review` is mandatory by default. When the change touches any path classified under **Tier A or Tier B (or Tier C)** of [`docs/ai/shared/governor-paths.md`](docs/ai/shared/governor-paths.md) — and is not entirely covered by an exclusion in the same file — `self-review` must include an **independent review** as a mandatory sub-step.
 
-- run `codex exec -m gpt-5.5 --sandbox read-only "<review prompt>"` (or any cross-tool reviewer of equivalent capability) on the change set;
+**Independent review modes (one is sufficient; record the mode in the footer's `reviewer` field):**
+
+| Mode | When to use | `reviewer` field value |
+|---|---|---|
+| `cross-tool` | Another AI tool (e.g. `codex exec -m gpt-5.5 --sandbox read-only "<review prompt>"`) reads the change set | `codex-cli`, `claude-code`, or tool name |
+| `self-structured` | Single-tool environment — apply the structured self-review checklist in `docs/ai/shared/skills/review-pr.md` § "Self-Structured Review Checklist"; include a checklist evidence summary (checked items and any deferred rationale) in the PR body | `self-structured` |
+| `human` | A human reviewer (not the PR author) reviews the governor-changing surface | `human:<github-handle>` |
+
+**Round cap guidance:** resolve each R-point within 2 rounds (initial + follow-up). If a third round is needed, treat it as a signal to split the PR. Each round is counted in the footer's `rounds` field.
+
 - capture the resulting `Findings` / `Drift Candidates` / `Sync Required` / Final Verdict in the **PR description's `## Governor Footer` block** (post-ADR-047 — `tools/check_governor_footer.py --require-governor-footer` enforces presence + shape via the `Governor Footer Lint` CI workflow). Durable governance constraints derived from the review are added to the relevant ADR's Consequences section (e.g. ADR 047 §"Durable Governance Constraints (ADR047-G1 ~ ADR047-G27)"); durable domain invariants go to `project-dna.md` or the relevant domain doc;
 - address surfaced R-points or explicitly defer with rationale (closure label vocabulary `Fixed` / `Deferred-with-rationale` / `Rejected` per AGENTS.md guard G — the linter parses the footer's `r-points-*` counts);
 - the existing `docs/history/archive/governor-review-log/` directory is a **closed historical archive** for entries written before PR #158 (ADR 047) — see [`governor-review-log/README.md`](docs/history/archive/governor-review-log/README.md) for the alias map back to ADR 047 G-slots.
 
-Non-governor-changing PRs are **exempt** from cross-tool review (issue #117 Non-Goals: avoid heavy ceremony).
+Non-governor-changing PRs are **exempt** from independent review (issue #117 Non-Goals: avoid heavy ceremony).
 
 ### Skill Mapping
 

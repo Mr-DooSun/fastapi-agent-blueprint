@@ -79,6 +79,7 @@ The core reading order lives in [`../README.md`](../README.md).
 | File | Description |
 |------|-------------|
 | [project-status/project-status-pre-v0.4.0.md](project-status/project-status-pre-v0.4.0.md) | Major changes v0.2.0 → v0.4.0 (26 rows archived 2026-05-06) |
+| [project-status/project-status-v0.4.0-v0.5.0.md](project-status/project-status-v0.4.0-v0.5.0.md) | Major changes v0.4.0 → v0.5.0 (18 rows archived 2026-05-11, PR #187) |
 
 ### Governor review log (closed archive)
 

@@ -287,15 +287,71 @@ def test_log_only_backfill_is_not_governor_changing():
     assert violations == []
 
 
-def test_bypass_token_skips_validation():
+def test_bypass_token_skips_non_governor_pr():
     body = "# PR description\n\n[skip-governor-footer]\n\nMalformed footer below.\n\n## Governor Footer\n- trigger: maybe\n"
+    violations = cgf.check_body(
+        body,
+        source="t",
+        require_governor_footer=True,
+        changed_files=["src/user/service.py"],
+    )
+    assert violations == []
+
+
+def test_bypass_token_blocked_for_governor_pr():
+    body = "# PR description\n\n[skip-governor-footer]\n"
     violations = cgf.check_body(
         body,
         source="t",
         require_governor_footer=True,
         changed_files=["AGENTS.md"],
     )
+    assert len(violations) == 1
+    assert "[skip-governor-footer]" in violations[0].reason
+    assert "ADR 048-G1" in violations[0].reason
+
+
+def test_bypass_token_in_non_ci_mode_allows_governor_file():
+    # Without --require-governor-footer, is_governor is always False,
+    # so the escape token still works for local dry-runs (ADR 048 D3).
+    body = "# PR description\n\n[skip-governor-footer]\n"
+    violations = cgf.check_body(
+        body,
+        source="t",
+        require_governor_footer=False,
+        changed_files=["AGENTS.md"],
+    )
     assert violations == []
+
+
+def test_bypass_token_in_code_span_does_not_trigger():
+    # Mentioning `[skip-governor-footer]` inside inline code or a fenced block
+    # in the PR description (e.g. documentation) must not activate the bypass.
+    body = (
+        "## Changes\n\n"
+        "- `tools/check_governor_footer.py`: `[skip-governor-footer]` → hard Violation\n\n"
+        "```\n"
+        "example: [skip-governor-footer]\n"
+        "```\n\n"
+        "## Governor Footer\n"
+        "- trigger: yes\n"
+        "- reviewer: codex-cli\n"
+        "- rounds: 1\n"
+        "- r-points-fixed: 0\n"
+        "- r-points-deferred: 0\n"
+        "- r-points-rejected: 0\n"
+        "- touched-adr-consequences: none\n"
+        "- pr-scope-notes: none\n"
+        "- final-verdict: merge-ready\n"
+        "- links: n/a\n"
+    )
+    violations = cgf.check_body(
+        body,
+        source="t",
+        require_governor_footer=True,
+        changed_files=["AGENTS.md"],
+    )
+    assert violations == [], violations
 
 
 def test_changed_files_at_file_form(tmp_path: Path):

@@ -200,3 +200,35 @@ Output format
   block merge
 - Sync Required: true or false
 ```
+
+## Self-Structured Review Checklist
+
+Use when a cross-tool reviewer is unavailable (single-tool environment). Record
+`reviewer: self-structured` in the Governor Footer. Work through each item
+below and surface any findings as R-points with the same closure categories
+(`Fixed` / `Deferred-with-rationale` / `Rejected`).
+
+**F — Volatile workspace facts**
+- [ ] All file paths and section references cited in this sync review have been
+  re-verified from current file reads (not from memory or prior-session state).
+
+**G — Closure discipline**
+- [ ] Every drift candidate identified is closed with `Fixed`,
+  `Deferred-with-rationale`, or `Rejected`. Non-canonical labels not used.
+
+**H — Effect vs process**
+- [ ] Drift questions ("is this file out of sync?") are answered by actually
+  diffing the canonical and the copy, not by describing the sync process.
+
+**I — Self-licensing check**
+- [ ] Before declaring "Sync Required: false", the full consumer table in
+  `governor-paths.md` was checked, not just the files I already intended to
+  touch.
+
+**Canonical-to-pointer verification**
+- [ ] Every file that should link to the canonical source actually links to it
+  (no re-declaration of path lists or rules that belong in the canonical).
+
+**Language Policy**
+- [ ] Any Tier 1 file modified contains only English prose (bilingual escape
+  tokens and `LOCALE_DATA_FILES` are the two narrow exceptions).

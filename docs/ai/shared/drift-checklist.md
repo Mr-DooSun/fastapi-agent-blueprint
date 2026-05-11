@@ -54,7 +54,7 @@ Read CLAUDE.md and verify Claude-only guidance still matches the harness:
 
 The canonical definition of "governor-changing PR" is in [`governor-paths.md`](governor-paths.md). Do not duplicate the path list here; consult that file when running this check.
 
-After ADR 047, cross-tool review provenance lives in the PR description's `## Governor Footer` block (CI-linted) and durable governance constraints live in ADR Consequences slots (`ADR{NNN}-G{N}`). The pre-ADR-047 `governor-review-log/` archive is closed; this check no longer enumerates that directory for new PRs.
+After ADR 047 / ADR 048, independent review provenance lives in the PR description's `## Governor Footer` block (CI-linted) and durable governance constraints live in ADR Consequences slots (`ADR{NNN}-G{N}`). The pre-ADR-047 `governor-review-log/` archive is closed; this check no longer enumerates that directory for new PRs.
 
 - [ ] Enumerate merged PRs touching the Tier A / B / C globs since the last sync run:
   ```bash
@@ -65,7 +65,7 @@ After ADR 047, cross-tool review provenance lives in the PR description's `## Go
 - [ ] For each `touched-adr-consequences` ID in the footer, verify the corresponding `ADR{NNN}-G{N}` slot body exists in the cited ADR's Consequences section (or, for new slots, was added in the same PR). Treat dangling references as `REVIEW` drift, never silent `AUTO-FIX`.
 - [ ] For every governor-changing PR whose footer declares a new durable governance constraint (`touched-adr-consequences != none`), verify the corresponding `ADR{NNN}-G{N}` slot body landed in the same merge.
 - [ ] Apply the exclusions from `governor-paths.md`: log-only backfill PRs to the frozen archive and `/sync-guidelines` cosmetic-only PRs are exempt.
-- [ ] If a PR was merged that touched the trigger glob *and* had no `Governor Footer Lint` CI run (e.g. linter was bypassed via `[skip-governor-footer]`): surface as `REVIEW` drift, never silent `AUTO-FIX`.
+- [ ] If a PR was merged that touched the trigger glob *and* had no `Governor Footer Lint` CI run or the CI passed without a footer (e.g. linter was not enabled, or CI was skipped entirely): surface as `REVIEW` drift, never silent `AUTO-FIX`. Note: `[skip-governor-footer]` in CI mode is a hard failure for governor-changing PRs since ADR 048 — a green CI run with the bypass token on a governor-changing PR is only possible if the CI workflow was disabled.
 
 ## 2. Skills ↔ Code Consistency Check
 

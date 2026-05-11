@@ -258,6 +258,8 @@ Review expectations:
 - **First response within 1–3 days** — this project is maintained by one person. For time-sensitive fixes, tag the PR "urgent" and mention it in a [Discussion](https://github.com/Mr-DooSun/fastapi-agent-blueprint/discussions).
 - **Conventional Commits are enforced** — `commitlint` rejects non-conforming messages on commit.
 - **PRs must include the `## Governor Footer` block** if they touch `AGENTS.md`, harness files, or `docs/ai/shared/` — see the [PR template](.github/pull_request_template.md) for the format. CI will fail without it.
+  - The `reviewer` field accepts three modes: a tool name (`codex-cli`, `claude-code`, etc.) for cross-tool review; `self-structured` if you only have one AI tool available (apply the Self-Structured Review Checklist in `docs/ai/shared/skills/review-pr.md` and include evidence in the PR body); or `human:<github-handle>` for human review. Single-tool users: use `self-structured` — CI does not require a second AI tool.
+  - To skip the footer entirely on a non-governor-changing PR, add `[skip-governor-footer]` anywhere in the PR body.
 - **Architecture-only PRs** (no feature, just structure) are welcome — they get faster review.
 
 ## Code of Conduct

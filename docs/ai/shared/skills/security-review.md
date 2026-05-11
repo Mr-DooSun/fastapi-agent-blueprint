@@ -237,3 +237,39 @@ Output format
   block merge
 - Sync Required: true or false
 ```
+
+## Self-Structured Review Checklist
+
+Use when a cross-tool reviewer is unavailable (single-tool environment). Record
+`reviewer: self-structured` in the Governor Footer. Work through each item
+below and surface any findings as R-points with the same closure categories
+(`Fixed` / `Deferred-with-rationale` / `Rejected`).
+
+**F — Volatile workspace facts**
+- [ ] All file paths, line numbers, and dependency versions cited in this review
+  have been re-verified from current tool output.
+
+**G — Closure discipline**
+- [ ] Every security question raised is closed with `Fixed`,
+  `Deferred-with-rationale`, or `Rejected`. Non-canonical labels not used.
+
+**H — Effect vs process**
+- [ ] Security-impact questions ("can this be exploited?") are answered with
+  code evidence, not process descriptions ("I followed the checklist").
+
+**I — Self-licensing check**
+- [ ] Before issuing a "clean" verdict, the premises were re-verified and
+  circular reasoning checked.
+
+**OWASP surface**
+- [ ] The change set was checked against `docs/ai/shared/security-checklist.md`
+  OWASP Top 10 items relevant to the diff surface.
+
+**Auth / credential safety**
+- [ ] No secrets, tokens, or credentials logged or exposed in responses.
+- [ ] New endpoints use the correct auth dependency (`get_current_user` or
+  equivalent).
+
+**Input validation**
+- [ ] All external inputs (request body, path params, query params) are
+  validated at the Pydantic schema layer before reaching domain code.

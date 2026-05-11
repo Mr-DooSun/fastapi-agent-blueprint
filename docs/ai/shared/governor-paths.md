@@ -30,7 +30,7 @@ The doc-only auto-escape (`target-operating-model.md` §3) does **not** apply to
 - `.codex/**` (config, hooks, settings — entire directory; rules already in Tier A)
 - `.agents/**` (skills, future shared modules — entire directory)
 
-Tier B includes Tier A's `.claude/rules/**` and `.codex/rules/**` (those are the policy subset of Tier B). Mentioning both `Tier A` and `Tier B` separately is intentional: Tier A captures the *policy* lens (carve-out from doc-only escape), Tier B captures the *tool surface* lens (full directory triggers cross-tool review).
+Tier B includes Tier A's `.claude/rules/**` and `.codex/rules/**` (those are the policy subset of Tier B). Mentioning both `Tier A` and `Tier B` separately is intentional: Tier A captures the *policy* lens (carve-out from doc-only escape), Tier B captures the *tool surface* lens (full directory triggers independent review).
 
 ### Tier C — Other Repo-Level Governance Artefacts (trigger if introduced)
 
@@ -66,7 +66,7 @@ A reviewer or hook decides "is this PR governor-changing?" by:
 When the rules above classify a PR as governor-changing (and after [ADR 047](../../history/047-governor-review-provenance-consolidation.md) D2/D5), the PR must produce:
 
 - A **`## Governor Footer` block** in the PR description (10-field machine-parseable shape, closure-label vocabulary `Fixed` / `Deferred-with-rationale` / `Rejected`). The `Governor Footer Lint` CI workflow runs `tools/check_governor_footer.py --require-governor-footer` against the PR body and changed-file list and **fails the build** if the footer is missing, mis-shaped, or declares `trigger: no` on a governor-changing change set.
-- At least one round of cross-tool review captured in the footer (`rounds: N >= 1`, `reviewer: <comma-list>`, R-points closed).
+- At least one round of independent review captured in the footer (`rounds: N >= 1`, `reviewer: <mode or comma-list>`, R-points closed). Accepted reviewer modes: a tool name (e.g. `codex-cli`), `self-structured`, or `human:<handle>` — see `AGENTS.md` § Independent Review Trigger.
 - Durable governance constraints introduced by the PR added as new `ADR{NNN}-G{N}` slot bodies in the relevant ADR's Consequences section. Durable domain invariants go to `docs/ai/shared/project-dna.md` or the relevant domain doc (e.g. §15 Auth Domain Pattern, §16 Docs Frontend Contract). PR-scope and superseded constraints stay only in the PR description's `pr-scope-notes` field.
 - The pre-ADR-047 obligation (`docs/history/archive/governor-review-log/pr-{NNN}-{slug}.md`) is **retired** for new PRs. The directory remains as a frozen historical archive for the 18 entries written before PR #158 — see [`governor-review-log/README.md`](../../history/archive/governor-review-log/README.md) for the alias map.
 
@@ -74,10 +74,10 @@ When the rules above classify a PR as governor-changing (and after [ADR 047](../
 
 | Consumer | Purpose |
 |---|---|
-| `AGENTS.md` § Default Coding Flow → Self-Review trigger | Mandatory cross-tool review condition |
+| `AGENTS.md` § Default Coding Flow → Self-Review trigger | Mandatory independent review condition |
 | `AGENTS.md` § Default Coding Flow → Doc-only carve-out | Auto-escape exclusion |
 | `docs/ai/shared/target-operating-model.md` §3 | Auto-escape carve-out |
-| `docs/ai/shared/target-operating-model.md` §5 Cross-Tool Review Cadence | Trigger detection |
+| `docs/ai/shared/target-operating-model.md` §5 Independent Review Cadence | Trigger detection |
 | `docs/ai/shared/migration-strategy.md` Phase 4 acceptance | Hard reminder trigger |
 | `docs/ai/shared/drift-checklist.md` §1D | Sync verification |
 | `.github/pull_request_template.md` § Governor-Changing PR | Author self-classification |
@@ -90,7 +90,7 @@ If you add a new consumer, add the row above so the canonical surface stays visi
 This file is itself governor-changing (Tier A, `docs/ai/shared/**`). Any edit must:
 
 - Be reflected by all consumers above (verify their copies are still link-only, not duplicate-list).
-- Be captured in the PR description's `## Governor Footer` block (post-ADR-047) — the Footer's `rounds` / `r-points-*` fields cover the Round 1+ cross-tool review of the path-list change. CI's `Governor Footer Lint` workflow validates the Footer shape.
+- Be captured in the PR description's `## Governor Footer` block (post-ADR-047) — the Footer's `rounds` / `r-points-*` fields cover the Round 1+ independent review of the path-list change. CI's `Governor Footer Lint` workflow validates the Footer shape.
 - Add a new `ADR{NNN}-G{N}` slot to the relevant ADR's Consequences section if the edit introduces a durable governance constraint that future PRs must inherit.
 
 This recursion is intentional: a change to the canonical paths definition is a high-impact governor change.
