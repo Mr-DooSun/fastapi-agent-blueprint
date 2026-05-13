@@ -3,7 +3,7 @@
 This document covers how to enable and operate the OpenTelemetry (OTEL) tracing
 pipeline for PydanticAI Agents in the fastapi-agent-blueprint.
 
-> Langfuse opt-in recipe (prompt evaluation, dataset regression) is a separate
+> Langfuse OTLP/HTTP opt-in recipe is a separate
 > doc at [`docs/operations/observability-langfuse.md`](observability-langfuse.md)
 > — tracked in [#137](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/137).
 
