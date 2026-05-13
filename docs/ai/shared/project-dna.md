@@ -6,7 +6,7 @@
 > This file is auto-extracted/updated from `src/user/` (reference domain) and `src/_core/` (Base classes)
 > when `/sync-guidelines` is run. **Run `/sync-guidelines` instead of editing manually.**
 >
-> Last updated: 2026-04-22 (ADR 043 responsibility-driven refactor sync)
+> Last updated: 2026-05-14 (OTEL and Langfuse observability security sync)
 
 ## Section Index
 §0 Project Scale and Design Philosophy |
@@ -593,6 +593,8 @@ class {Name}Container(containers.DeclarativeContainer):
 | AWS S3 Vectors (aioboto3) | Active | BaseS3VectorStore + S3VectorClient (optional infra, via `aws` extra) |
 | Embedding (PydanticAI) | Active | PydanticAIEmbeddingAdapter, BaseEmbeddingProtocol, auto-dimension, multi-provider |
 | LLM (PydanticAI Agent) | Active | build_llm_model(), LLMConfig, Agent structured output |
+| OpenTelemetry tracing | Active | Optional `[otel]` extra, `OTEL_ENABLED` + `OTEL_EXPORTER_OTLP_ENDPOINT`, server/worker `_maybe_configure_otel()`, PydanticAI Agent instrumentation |
+| Langfuse observability recipe | Active | Opt-in local OTLP/HTTP trace ingestion stack via `docker-compose.langfuse.yml`; `make observability-langfuse` generates ignored `_env/langfuse.env` with random local secrets |
 | Text chunking (semantic-text-splitter) | Active | chunk_text(), chunk_text_by_tokens() in src._core.common.text_utils |
 | Structured Logging (structlog) | Active | structlog + asgi-correlation-id, RequestLogMiddleware (server), StructlogContextMiddleware (worker), LOG_LEVEL / LOG_JSON_FORMAT env vars, sqlalchemy.engine double-emit fix (#9) |
 | JWT/Authentication | Active | `src/auth/` provides HS256 access/refresh tokens, refresh-token rotation/revocation persistence, `/v1/auth/*`, and Bearer protection for `user` API routes (#4) |
