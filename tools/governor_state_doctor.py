@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Standalone diagnostic CLI for governor state lifecycle health.
 
-Six checks:
+Seven checks:
 
     C1  gitignore_registered  — .claude/state/ and .codex/state/ in .gitignore
     C2  no_git_tracked_state  — no state/*.json files tracked by git
     C3  stop_hook_schema      — Stop entry in hooks.json + settings.json is valid
     C4  marker_glob_coverage  — Stop hooks reference all known marker globs
-    C5  hook_interpreter      — Hook files exist; .sh exec bit; Stop .py imports governor
-    C6  stale_stats           — Counts stale (>24 h) markers in both state dirs
+    C5  hook_interpreter      — Hook files exist; .sh exec bit; launcher imports governor
+    C6  hook_command_canaries — Runs configured Codex hook commands in isolated state
+    C7  stale_stats           — Counts stale (>24 h) markers in both state dirs
 
 Usage:
     python3 tools/governor_state_doctor.py [--json]
@@ -17,17 +18,20 @@ Usage:
     --text  human-readable summary to stdout
 
 Exit codes:
-    0 — all six checks passed
+    0 — all seven checks passed
     1 — one or more checks failed
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import shlex
 import stat
 import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -237,7 +241,7 @@ def check_marker_glob_coverage(root: Path = PROJECT_ROOT) -> CheckResult:
 
 
 # ---------------------------------------------------------------------------
-# C5 — hook file existence, .sh exec bit, Stop .py governor import
+# C5 — hook file existence, .sh exec bit, launcher governor import
 # ---------------------------------------------------------------------------
 
 
@@ -293,18 +297,21 @@ def check_hook_interpreter(root: Path = PROJECT_ROOT) -> CheckResult:
             if not (mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)):
                 issues.append(f"{hook_rel}: .sh hook missing exec bit")
 
-    # Stop .py import check: verify governor.markers is importable via subprocess.
+    # Import check: verify the configured launcher can import governor.markers.
     # PYTHONPATH is set to .agents/shared so the subprocess can resolve governor.*
     # without an f-string path injection.
     stop_py = root / ".codex" / "hooks" / "stop-sync-reminder.py"
     if stop_py.exists():
         shared = root / ".agents" / "shared"
+        launcher = root / ".agents" / "shared" / "harness-python.sh"
         env = os.environ.copy()
         env["PYTHONPATH"] = str(shared)
+        env["HARNESS_LAUNCHER_STRICT"] = "1"
         import_code = "from governor.markers import consume_phase2_markers; print('ok')"
         try:
             proc = subprocess.run(  # noqa: S603
-                [sys.executable, "-c", import_code],
+                ["sh", str(launcher), "-c", import_code],
+                cwd=root,
                 capture_output=True,
                 text=True,
                 timeout=15,
@@ -312,10 +319,11 @@ def check_hook_interpreter(root: Path = PROJECT_ROOT) -> CheckResult:
             )
             if proc.returncode != 0 or "ok" not in proc.stdout:
                 issues.append(
-                    f"governor.markers import failed: {proc.stderr.strip()[:200]}"
+                    "launcher governor.markers import failed: "
+                    f"{proc.stderr.strip()[:200]}"
                 )
         except subprocess.TimeoutExpired:
-            issues.append("governor.markers import check timed out")
+            issues.append("launcher governor.markers import check timed out")
     else:
         issues.append(
             ".codex/hooks/stop-sync-reminder.py not found (skip import check)"
@@ -331,12 +339,220 @@ def check_hook_interpreter(root: Path = PROJECT_ROOT) -> CheckResult:
     return CheckResult(
         "C5_hook_interpreter",
         True,
-        "All hook files exist; .sh exec bits OK; governor.markers importable",
+        "All hook files exist; .sh exec bits OK; launcher imports governor.markers",
     )
 
 
 # ---------------------------------------------------------------------------
-# C6 — stale marker statistics
+# C6 — configured hook command canaries with isolated state
+# ---------------------------------------------------------------------------
+
+_STATE_SNAPSHOT_DIRS = (
+    Path(".claude/state"),
+    Path(".codex/state"),
+    Path(".agents/state"),
+)
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _snapshot_real_state(root: Path) -> dict[str, tuple[int, int, str]]:
+    snapshot: dict[str, tuple[int, int, str]] = {}
+    for rel_dir in _STATE_SNAPSHOT_DIRS:
+        base = root / rel_dir
+        if not base.exists():
+            continue
+        for path in sorted(base.rglob("*")):
+            if not path.is_file():
+                continue
+            stat_result = path.stat()
+            snapshot[str(path.relative_to(root))] = (
+                stat_result.st_size,
+                stat_result.st_mtime_ns,
+                _sha256(path),
+            )
+    return snapshot
+
+
+def _first_codex_command(root: Path, event_name: str) -> str | None:
+    hooks_json = root / ".codex" / "hooks.json"
+    try:
+        data = json.loads(hooks_json.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+    for block in data.get("hooks", {}).get(event_name, []):
+        for hook in block.get("hooks", []):
+            command = hook.get("command", "").strip()
+            if command:
+                return command
+    return None
+
+
+def _run_configured_hook(
+    root: Path,
+    command: str,
+    payload: str,
+    env: dict[str, str],
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(  # noqa: S603
+        shlex.split(command),
+        input=payload,
+        cwd=root,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+
+
+def _load_single_json_stream(text: str, *, allow_empty: bool = False) -> dict | None:
+    stripped = text.strip()
+    if not stripped:
+        if allow_empty:
+            return None
+        raise ValueError("empty JSON stream")
+    return json.loads(stripped)
+
+
+def _find_json_line(text: str) -> dict:
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("{"):
+            continue
+        return json.loads(stripped)
+    raise ValueError("no JSON object line found")
+
+
+def _assert_system_message_stdout(stdout: str, *, allow_empty: bool = False) -> None:
+    data = _load_single_json_stream(stdout, allow_empty=allow_empty)
+    if data is None:
+        return
+    if not isinstance(data, dict) or not isinstance(data.get("systemMessage"), str):
+        raise ValueError("stdout JSON missing systemMessage string")
+
+
+def _assert_pre_tool_deny(stdout: str) -> None:
+    data = _load_single_json_stream(stdout)
+    output = data.get("hookSpecificOutput", {}) if isinstance(data, dict) else {}
+    if output.get("hookEventName") != "PreToolUse":
+        raise ValueError("PreToolUse output missing hookEventName")
+    if output.get("permissionDecision") != "deny":
+        raise ValueError("PreToolUse did not deny destructive command")
+
+
+def _assert_user_prompt_token(stderr: str) -> None:
+    data = _find_json_line(stderr)
+    if data.get("matched") is not True or data.get("token") != "trivial":
+        raise ValueError("UserPromptSubmit did not parse [trivial] token")
+
+
+def _assert_stdout_empty_or_json(stdout: str) -> None:
+    if not stdout.strip():
+        return
+    _load_single_json_stream(stdout)
+
+
+def check_hook_command_canaries(root: Path = PROJECT_ROOT) -> CheckResult:
+    """Run configured Codex hook commands against isolated temp state."""
+
+    payloads = {
+        "SessionStart": "",
+        "UserPromptSubmit": json.dumps({"prompt": "[trivial] doctor canary"}),
+        "PreToolUse": json.dumps({"tool_input": {"command": "git reset --hard"}}),
+        "PostToolUse": json.dumps(
+            {"tool_input": {"command": "uv run pytest tests/unit/agents_shared -q"}}
+        ),
+        "Stop": "",
+    }
+    validators = {
+        "SessionStart": lambda proc: _assert_system_message_stdout(proc.stdout),
+        "UserPromptSubmit": lambda proc: _assert_user_prompt_token(proc.stderr),
+        "PreToolUse": lambda proc: _assert_pre_tool_deny(proc.stdout),
+        "PostToolUse": lambda proc: _assert_stdout_empty_or_json(proc.stdout),
+        "Stop": lambda proc: _assert_system_message_stdout(
+            proc.stdout, allow_empty=True
+        ),
+    }
+
+    issues: list[str] = []
+    event_data: dict[str, dict] = {}
+    before = _snapshot_real_state(root)
+
+    with tempfile.TemporaryDirectory(prefix="harness-doctor-state-") as temp_state:
+        env = os.environ.copy()
+        env["HARNESS_STATE_ROOT"] = temp_state
+        env["HARNESS_LAUNCHER_STRICT"] = "1"
+        env["HARNESS_DEBUG"] = "1"
+        env.setdefault("CODEX_THREAD_ID", "doctor-canary")
+
+        for event_name, payload in payloads.items():
+            command = _first_codex_command(root, event_name)
+            if command is None:
+                issues.append(f"{event_name}: no configured Codex hook command")
+                continue
+            try:
+                proc = _run_configured_hook(root, command, payload, env)
+            except (FileNotFoundError, subprocess.TimeoutExpired, ValueError) as exc:
+                issues.append(f"{event_name}: command failed to run: {exc}")
+                continue
+
+            event_data[event_name] = {
+                "command": command,
+                "returncode": proc.returncode,
+                "stdout_bytes": len(proc.stdout.encode("utf-8")),
+                "stderr_bytes": len(proc.stderr.encode("utf-8")),
+            }
+            if proc.returncode != 0:
+                issues.append(
+                    f"{event_name}: exit {proc.returncode}; stderr={proc.stderr[:200]!r}"
+                )
+                continue
+            try:
+                validators[event_name](proc)
+            except (json.JSONDecodeError, ValueError, KeyError) as exc:
+                issues.append(
+                    f"{event_name}: contract validation failed: {exc}; "
+                    f"stdout={proc.stdout[:200]!r}; stderr={proc.stderr[:200]!r}"
+                )
+
+    after = _snapshot_real_state(root)
+    if before != after:
+        before_keys = set(before)
+        after_keys = set(after)
+        added = sorted(after_keys - before_keys)
+        removed = sorted(before_keys - after_keys)
+        changed = sorted(k for k in before_keys & after_keys if before[k] != after[k])
+        issues.append("real state changed during isolated canary run")
+        event_data["state_diff"] = {
+            "added": added,
+            "removed": removed,
+            "changed": changed,
+        }
+
+    if issues:
+        return CheckResult(
+            "C6_hook_command_canaries",
+            False,
+            "; ".join(issues),
+            {"issues": issues, "events": event_data},
+        )
+    return CheckResult(
+        "C6_hook_command_canaries",
+        True,
+        "Configured Codex hook canaries passed with real state unchanged",
+        {"events": event_data},
+    )
+
+
+# ---------------------------------------------------------------------------
+# C7 — stale marker statistics
 # ---------------------------------------------------------------------------
 
 _STATE_DIRS = (
@@ -372,7 +588,7 @@ def check_stale_stats(root: Path = PROJECT_ROOT) -> CheckResult:
 
     detail = f"{total_stale} stale marker(s) found across both state dirs"
     return CheckResult(
-        "C6_stale_stats",
+        "C7_stale_stats",
         True,  # informational — never fails on its own
         detail,
         {"state_dirs": stats, "total_stale": total_stale},
@@ -389,6 +605,7 @@ _CHECKS = [
     check_stop_hook_schema,
     check_marker_glob_coverage,
     check_hook_interpreter,
+    check_hook_command_canaries,
     check_stale_stats,
 ]
 

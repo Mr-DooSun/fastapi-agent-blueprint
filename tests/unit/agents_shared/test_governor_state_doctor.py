@@ -4,7 +4,7 @@ Each check function is tested with:
   * a passing fixture (expected ok=True)
   * one or more failure fixtures (expected ok=False)
 
-Integration smoke: ``test_run_all_real_project`` runs all six checks
+Integration smoke: ``test_run_all_real_project`` runs all seven checks
 against the actual project root and asserts all pass.
 """
 
@@ -28,6 +28,7 @@ if str(_TOOLS_DIR) not in sys.path:
 from governor_state_doctor import (  # noqa: E402  # type: ignore[import]
     CheckResult,
     check_gitignore_registered,
+    check_hook_command_canaries,
     check_hook_interpreter,
     check_marker_glob_coverage,
     check_no_git_tracked_state,
@@ -328,43 +329,48 @@ def test_stale_stats_verify_log_counted(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_run_all_returns_six_results() -> None:
+def test_run_all_returns_seven_results() -> None:
     with patch("governor_state_doctor.subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
+        mock_run.return_value.stderr = ""
         mock_run.return_value.returncode = 0
         results = run_all(_REPO_ROOT)
-    assert len(results) == 6
+    assert len(results) == 7
     assert all(isinstance(r, CheckResult) for r in results)
 
 
 def test_run_all_names_are_unique() -> None:
     with patch("governor_state_doctor.subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
+        mock_run.return_value.stderr = ""
         results = run_all(_REPO_ROOT)
     names = [r.name for r in results]
     assert len(names) == len(set(names)), "Duplicate check names"
 
 
 def test_run_all_real_project_all_pass() -> None:
-    """Integration smoke: all six checks must pass on the real project."""
+    """Integration smoke: all seven checks must pass on the real project."""
     results = run_all(_REPO_ROOT)
     failures = [f"{r.name}: {r.detail}" for r in results if not r.ok]
     assert not failures, "Doctor found issues:\n" + "\n".join(failures)
 
 
 def test_c5_governor_markers_real_import() -> None:
-    """C5 subprocess import: governor.markers must be importable via PYTHONPATH.
+    """C5 launcher import: governor.markers must be importable via PYTHONPATH.
 
-    This test is NOT mocked so it exercises the real import path that
+    This test is NOT mocked so it exercises the real launcher path that
     check_hook_interpreter validates. A broken governor package or wrong
     PYTHONPATH setup will cause this test (not just the mocked run_all) to fail.
     """
     shared = _REPO_ROOT / ".agents" / "shared"
+    launcher = shared / "harness-python.sh"
     env = os.environ.copy()
     env["PYTHONPATH"] = str(shared)
+    env["HARNESS_LAUNCHER_STRICT"] = "1"
     import_code = "from governor.markers import consume_phase2_markers; print('ok')"
     proc = subprocess.run(
-        [sys.executable, "-c", import_code],
+        ["sh", str(launcher), "-c", import_code],
+        cwd=_REPO_ROOT,
         capture_output=True,
         text=True,
         env=env,
@@ -374,3 +380,21 @@ def test_c5_governor_markers_real_import() -> None:
         f"governor.markers import failed via PYTHONPATH={shared}:\n{proc.stderr}"
     )
     assert "ok" in proc.stdout
+
+
+def test_c6_hook_command_canaries_real_state_unchanged() -> None:
+    before = {
+        path: path.stat().st_mtime_ns
+        for rel in (".codex/state", ".claude/state", ".agents/state")
+        for path in (_REPO_ROOT / rel).rglob("*")
+        if (_REPO_ROOT / rel).exists() and path.is_file()
+    }
+    result = check_hook_command_canaries(_REPO_ROOT)
+    after = {
+        path: path.stat().st_mtime_ns
+        for rel in (".codex/state", ".claude/state", ".agents/state")
+        for path in (_REPO_ROOT / rel).rglob("*")
+        if (_REPO_ROOT / rel).exists() and path.is_file()
+    }
+    assert result.ok is True, result.detail
+    assert before == after
