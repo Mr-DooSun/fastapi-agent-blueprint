@@ -209,7 +209,7 @@ Independent review is a sub-step of `self-review`, mandatory **only** when the c
 
 | Mode | Description | `reviewer` field |
 |---|---|---|
-| `cross-tool` | Another AI tool reads the change set (e.g. `codex exec -m gpt-5.5 --sandbox read-only "<review prompt>"`) | tool name (e.g. `codex-cli`) |
+| `cross-tool` | Another AI tool reads the change set (e.g. `codex exec --sandbox read-only "<review prompt>"`, with stronger model/effort only when warranted) | tool name (e.g. `codex-cli`) |
 | `self-structured` | Single-tool environment — apply the structured checklist in `skills/review-pr.md` § "Self-Structured Review Checklist" | `self-structured` |
 | `human` | A human reviewer (not the PR author) reviews the governor-changing surface | `human:<github-handle>` |
 
@@ -227,6 +227,27 @@ Two recurring rounds are common and recommended for large governor-changing PRs:
 - *Implementation round* — review the change set after implementation, before merge.
 
 **Round cap:** resolve each R-point within 2 rounds (initial + follow-up). A third round is a signal to split the PR. The same PR may still iterate beyond 2 rounds for large changes, but each additional round should be justified.
+
+### Model And Effort Cost Policy
+
+Default to the cheapest model and reasoning effort that still fits the risk of
+the task. Cost control must not weaken governance; it should route higher-cost
+review only to changes where the extra signal is load-bearing.
+
+| Work class | Default posture | Escalate when |
+|---|---|---|
+| Routine / mechanical | Default or cheaper coding model, low or medium effort, no broad doc loading | Tests fail in a non-obvious way, behavior is ambiguous, or the change crosses module boundaries |
+| Local feature / bug fix | Default coding model, medium effort, targeted file reads | The change alters public APIs, data contracts, auth, storage, or long-lived architecture |
+| Governor / security / external contract | Stronger model or higher effort allowed; independent review required when governor-changing | The first review surfaces unresolved R-points, threat modeling is uncertain, or cross-tool diversity is material |
+| Cross-tool review | Start from the normal review prompt and read-only sandbox | Use a premium model or `xhigh` only as an escalation example, not as the default invocation |
+
+For OpenAI API call sites in this repository, use only documented knobs:
+`reasoning.effort` to cap reasoning-token spend, `max_output_tokens` (or the
+endpoint-specific equivalent) to cap generated output, `prompt_cache_key` for
+requests with shared long prefixes, and stable prompt-prefix layout (static
+instructions first, dynamic user context last) to improve prompt-cache hits.
+These are API-level controls; Codex/Claude CLI sessions should use the
+equivalent model/effort routing only when those tools expose it explicitly.
 
 ## §6 Canonical Truth Map
 
@@ -326,7 +347,7 @@ This trace is a meta-trace: the present PR's Phase 0.5 was itself a sample of cr
 | framing | Determine whether Claude-only design risks Codex-side blind spots. | direct discussion |
 | approach options | Compare: (1) Codex auto-call via Bash, (2) user manual paste, (3) plan-only annotation. Chose (1). | direct discussion (architecture commitment present — touched cross-tool design) |
 | plan | Add Phase 0.5 step to plan; list questions to ask Codex. | direct edit of plan file |
-| implement | Install codex CLI; run `codex exec -m gpt-5.5 --sandbox read-only` with structured review prompt. | `codex exec` |
+| implement | Install codex CLI; run `codex exec --sandbox read-only` with a structured review prompt, escalating model only if the review surface requires it. | `codex exec` |
 | verify | Read codex review output; cross-check 7 review points against the plan. | manual reading |
 | self-review | Apply the 7 review points to the plan as a "Codex Review feedback applied" section. | direct plan edit |
 | completion gate | Save the trace as Appendix B Trace 4 here so future cross-tool design has a precedent. | this entry |

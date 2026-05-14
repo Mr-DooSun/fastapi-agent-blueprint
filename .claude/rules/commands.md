@@ -1,6 +1,6 @@
 # Suggested Commands
 
-> Last synced: 2026-05-01 via /sync-guidelines (#154 admin JWT RBAC + #156 /docs selector revamp reviewed; no `make` / pytest / lint / migration command surface changes.)
+> Last synced: 2026-05-14 via /sync-guidelines (harness launcher + `make check` target split).
 > Purpose: Quick reference for Claude Code when executing shell commands.
 > Also referenced when running Skills.
 > Default Flow context: see [`AGENTS.md` § Default Coding Flow](../../AGENTS.md#default-coding-flow). The commands below are consulted by the `implement` and `verify` steps; this file is **not** a primary entry point in the Default Flow.
@@ -33,6 +33,12 @@ pytest tests/unit/ -v
 pytest tests/integration/ -v
 pytest tests/e2e/ -v
 pytest tests/integration/ -v -k "dynamo"  # DynamoDB tests only (requires docker dynamodb-local)
+
+# Local verification target split
+make check         # fast local alias for check-core
+make check-core    # lint + format check + core tests
+make check-full    # CI-parity checks; requires admin + aws extras and dynamodb-local
+make check-minimal # no-extra minimal-install regression
 
 # Run against real PostgreSQL (docker-compose.local.yml postgres service)
 make test-pg

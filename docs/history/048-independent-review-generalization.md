@@ -55,7 +55,7 @@ Replace the "cross-tool only" requirement with an **independent review** require
 
 | Mode | Definition | `reviewer` field value |
 |---|---|---|
-| `cross-tool` | Another AI tool (e.g. `codex exec -m gpt-5.5 --sandbox read-only`) reads the change set. Captures the "different model catches different errors" benefit. | Tool name (e.g. `codex-cli`, `claude-code`) |
+| `cross-tool` | Another AI tool (e.g. `codex exec --sandbox read-only`, escalating model/effort only when warranted) reads the change set. Captures the "different model catches different errors" benefit. | Tool name (e.g. `codex-cli`, `claude-code`) |
 | `self-structured` | Single-tool environment. The author applies the **Self-Structured Review Checklist** (F / G / H / I guards + contract verification + security surface + test coverage) defined in `docs/ai/shared/skills/review-pr.md` § "Self-Structured Review Checklist". | `self-structured` |
 | `human` | A human reviewer (not the PR author) reviews the governor-changing surface. | `human:<github-handle>` |
 

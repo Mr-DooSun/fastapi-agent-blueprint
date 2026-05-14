@@ -586,18 +586,18 @@ Eighteen hook scripts (6 Claude shell + 4 Claude Python implementations + 8 Code
 
 ### `.claude/hooks/stop-sync-reminder.sh`
 
-- **Current role**: Stop hook reminding the user to run `/sync-guidelines` if shared rule sources changed. AGENT_LOCALE (#133) resolves advisory header/footer strings via `python -m governor.locale KEY`.
+- **Current role**: Stop hook reminding the user to run `/sync-guidelines` if shared rule sources changed. AGENT_LOCALE (#133) resolves advisory header/footer strings through `.agents/shared/harness-python.sh -m governor.locale KEY`.
 - **Why it exists**: Drift management closure.
 - **Bucket**: Keep.
 - **Notes**: Phase 4 (#123) completion-gate output (`COMPLETION_OUT`) is captured and merged after the sync-advisory block (HC-4.1 non-blocking; printed only when `CHANGED` is non-empty). IC-11 Option A requires `COMPLETION_OUT` to be computed before the early-exit guard so markers are consumed on every Stop regardless of file changes.
 
 ### `.claude/hooks/pre_tool_security.py`
 
-- **Current role**: Python implementation of pre-tool security checks. The `.sh` wrapper at `.claude/hooks/pre-tool-security.sh` reads stdin and pipes to this `.py` module via `python3`.
+- **Current role**: Python implementation of pre-tool security checks. The `.sh` wrapper at `.claude/hooks/pre-tool-security.sh` reads stdin and pipes to this `.py` module through `.agents/shared/harness-python.sh`.
 - **Why it exists**: Cleaner separation between hook contract (the `.sh` matched against `.claude/settings.json` matchers) and security-check logic (the `.py` module). Mirrors `.codex/hooks/_shared.py` + `.codex/hooks/pre-tool-security.py` separation on the Codex side.
 - **Bucket**: Keep.
 - **Migration risk**: Low.
-- **Notes**: Earlier draft of this matrix (initial Phase 1 pass) misclassified this as Drop. Self-verification during cross-link work caught the misclassification: `.claude/hooks/pre-tool-security.sh` line 6 explicitly invokes `python3 "$(dirname "$0")/pre_tool_security.py"`. The two files are an active pair, not duplication.
+- **Notes**: Earlier draft of this matrix (initial Phase 1 pass) misclassified this as Drop. Self-verification during cross-link work caught the misclassification: `.claude/hooks/pre-tool-security.sh` invokes `.claude/hooks/pre_tool_security.py` via the shared launcher. The two files are an active pair, not duplication.
 
 ### `.codex/hooks/_shared.py`
 

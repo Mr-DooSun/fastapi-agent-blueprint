@@ -122,7 +122,7 @@ The shared-policy part is identical across tools; the adapters differ because th
 
 **Shared policy**:
 - Common parser, policy logic, and reminder templates extracted to `.agents/shared/governor/` so both adapters import the same module rather than maintain parallel implementations.
-- The shared module is Python (Codex hooks are Python); Claude shell hooks call it via `python3 -m agents_shared_governor.parse_prompt < /dev/stdin` or equivalent.
+- The shared module is Python (Codex hooks are Python); Claude shell hooks call it through `.agents/shared/harness-python.sh` so hook execution uses the project-compatible interpreter.
 
 **Claude adapter**: shell hooks call into the shared module.
 **Codex adapter**: Python hooks `import` the shared module directly.

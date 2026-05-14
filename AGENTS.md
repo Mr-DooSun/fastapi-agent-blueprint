@@ -122,7 +122,7 @@ Auto-escapes (no token required): `changed_files == 0`, *general* doc-only chang
 
 | Mode | When to use | `reviewer` field value |
 |---|---|---|
-| `cross-tool` | Another AI tool (e.g. `codex exec -m gpt-5.5 --sandbox read-only "<review prompt>"`) reads the change set | `codex-cli`, `claude-code`, or tool name |
+| `cross-tool` | Another AI tool (e.g. `codex exec --sandbox read-only "<review prompt>"`, escalating model/effort only when warranted) reads the change set | `codex-cli`, `claude-code`, or tool name |
 | `self-structured` | Single-tool environment — apply the structured self-review checklist in `docs/ai/shared/skills/review-pr.md` § "Self-Structured Review Checklist"; include a checklist evidence summary (checked items and any deferred rationale) in the PR body | `self-structured` |
 | `human` | A human reviewer (not the PR author) reviews the governor-changing surface | `human:<github-handle>` |
 
@@ -343,7 +343,10 @@ make diagrams     # regenerate SVGs under docs/assets/architecture/
 ```bash
 make test
 make test-cov
-make check
+make check        # fast local alias for check-core
+make check-core   # lint + format check + core tests
+make check-full   # CI-parity checks; requires admin + aws extras and dynamodb-local
+make check-minimal
 ```
 
 ### Lint / Format
