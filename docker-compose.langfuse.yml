@@ -19,9 +19,9 @@ services:
     environment:
       <<: &langfuse-env
         NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL:-http://localhost:3000}
-        NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-local-langfuse-nextauth-secret}
-        SALT: ${LANGFUSE_SALT:-local-langfuse-salt}
-        ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+        NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:?LANGFUSE_NEXTAUTH_SECRET is required}
+        SALT: ${LANGFUSE_SALT:?LANGFUSE_SALT is required}
+        ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:?LANGFUSE_ENCRYPTION_KEY is required}
         TELEMETRY_ENABLED: ${LANGFUSE_TELEMETRY_ENABLED:-false}
         LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: ${LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES:-true}
 
@@ -29,29 +29,29 @@ services:
         LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_INIT_ORG_NAME:-FastAPI Agent Blueprint}
         LANGFUSE_INIT_PROJECT_ID: ${LANGFUSE_INIT_PROJECT_ID:-local-dev}
         LANGFUSE_INIT_PROJECT_NAME: ${LANGFUSE_INIT_PROJECT_NAME:-Local Development}
-        LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_INIT_PROJECT_PUBLIC_KEY:-pk-lf-local-dev}
-        LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_INIT_PROJECT_SECRET_KEY:-sk-lf-local-dev}
+        LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_INIT_PROJECT_PUBLIC_KEY:?LANGFUSE_INIT_PROJECT_PUBLIC_KEY is required}
+        LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_INIT_PROJECT_SECRET_KEY:?LANGFUSE_INIT_PROJECT_SECRET_KEY is required}
         LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-admin@example.com}
         LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME:-Admin}
-        LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-local-langfuse-admin}
+        LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:?LANGFUSE_INIT_USER_PASSWORD is required}
 
-        DATABASE_URL: postgresql://${LANGFUSE_POSTGRES_USER:-postgres}:${LANGFUSE_POSTGRES_PASSWORD:-postgres}@langfuse-postgres:5432/${LANGFUSE_POSTGRES_DB:-postgres}
+        DATABASE_URL: postgresql://${LANGFUSE_POSTGRES_USER:-postgres}:${LANGFUSE_POSTGRES_PASSWORD:?LANGFUSE_POSTGRES_PASSWORD is required}@langfuse-postgres:5432/${LANGFUSE_POSTGRES_DB:-postgres}
 
-        CLICKHOUSE_MIGRATION_URL: clickhouse://${LANGFUSE_CLICKHOUSE_USER:-clickhouse}:${LANGFUSE_CLICKHOUSE_PASSWORD:-clickhouse}@langfuse-clickhouse:9000
+        CLICKHOUSE_MIGRATION_URL: clickhouse://${LANGFUSE_CLICKHOUSE_USER:-clickhouse}:${LANGFUSE_CLICKHOUSE_PASSWORD:?LANGFUSE_CLICKHOUSE_PASSWORD is required}@langfuse-clickhouse:9000
         CLICKHOUSE_URL: http://langfuse-clickhouse:8123
         CLICKHOUSE_USER: ${LANGFUSE_CLICKHOUSE_USER:-clickhouse}
-        CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-clickhouse}
+        CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:?LANGFUSE_CLICKHOUSE_PASSWORD is required}
         CLICKHOUSE_CLUSTER_ENABLED: ${LANGFUSE_CLICKHOUSE_CLUSTER_ENABLED:-false}
 
         REDIS_HOST: langfuse-redis
         REDIS_PORT: 6379
-        REDIS_AUTH: ${LANGFUSE_REDIS_AUTH:-myredissecret}
+        REDIS_AUTH: ${LANGFUSE_REDIS_AUTH:?LANGFUSE_REDIS_AUTH is required}
         REDIS_TLS_ENABLED: ${LANGFUSE_REDIS_TLS_ENABLED:-false}
 
         LANGFUSE_S3_EVENT_UPLOAD_BUCKET: ${LANGFUSE_S3_BUCKET:-langfuse}
         LANGFUSE_S3_EVENT_UPLOAD_REGION: ${LANGFUSE_S3_REGION:-auto}
         LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_ROOT_USER:-minio}
-        LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_ROOT_PASSWORD:-miniosecret}
+        LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_ROOT_PASSWORD:?LANGFUSE_MINIO_ROOT_PASSWORD is required}
         LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
         LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: true
         LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
@@ -59,7 +59,7 @@ services:
         LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: ${LANGFUSE_S3_BUCKET:-langfuse}
         LANGFUSE_S3_MEDIA_UPLOAD_REGION: ${LANGFUSE_S3_REGION:-auto}
         LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_ROOT_USER:-minio}
-        LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_ROOT_PASSWORD:-miniosecret}
+        LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_ROOT_PASSWORD:?LANGFUSE_MINIO_ROOT_PASSWORD is required}
         LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://localhost:9090
         LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: true
         LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
@@ -71,7 +71,7 @@ services:
         LANGFUSE_S3_BATCH_EXPORT_ENDPOINT: http://langfuse-minio:9000
         LANGFUSE_S3_BATCH_EXPORT_EXTERNAL_ENDPOINT: http://localhost:9090
         LANGFUSE_S3_BATCH_EXPORT_ACCESS_KEY_ID: ${LANGFUSE_MINIO_ROOT_USER:-minio}
-        LANGFUSE_S3_BATCH_EXPORT_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_ROOT_PASSWORD:-miniosecret}
+        LANGFUSE_S3_BATCH_EXPORT_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_ROOT_PASSWORD:?LANGFUSE_MINIO_ROOT_PASSWORD is required}
         LANGFUSE_S3_BATCH_EXPORT_FORCE_PATH_STYLE: true
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/public/health || exit 1"]
@@ -108,7 +108,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${LANGFUSE_POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${LANGFUSE_POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${LANGFUSE_POSTGRES_PASSWORD:?LANGFUSE_POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${LANGFUSE_POSTGRES_DB:-postgres}
     ports:
       - "127.0.0.1:5433:5432"
@@ -128,7 +128,7 @@ services:
     environment:
       CLICKHOUSE_DB: default
       CLICKHOUSE_USER: ${LANGFUSE_CLICKHOUSE_USER:-clickhouse}
-      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-clickhouse}
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:?LANGFUSE_CLICKHOUSE_PASSWORD is required}
     volumes:
       - langfuse_clickhouse_data:/var/lib/clickhouse
       - langfuse_clickhouse_logs:/var/log/clickhouse-server
@@ -143,9 +143,9 @@ services:
     image: redis:7-alpine
     container_name: fastapi-agent-blueprint-langfuse-redis
     restart: unless-stopped
-    command: ["redis-server", "--requirepass", "${LANGFUSE_REDIS_AUTH:-myredissecret}"]
+    command: ["redis-server", "--requirepass", "${LANGFUSE_REDIS_AUTH:?LANGFUSE_REDIS_AUTH is required}"]
     environment:
-      REDIS_AUTH: ${LANGFUSE_REDIS_AUTH:-myredissecret}
+      REDIS_AUTH: ${LANGFUSE_REDIS_AUTH:?LANGFUSE_REDIS_AUTH is required}
     ports:
       - "127.0.0.1:6380:6379"
     healthcheck:
@@ -162,7 +162,7 @@ services:
     command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
     environment:
       MINIO_ROOT_USER: ${LANGFUSE_MINIO_ROOT_USER:-minio}
-      MINIO_ROOT_PASSWORD: ${LANGFUSE_MINIO_ROOT_PASSWORD:-miniosecret}
+      MINIO_ROOT_PASSWORD: ${LANGFUSE_MINIO_ROOT_PASSWORD:?LANGFUSE_MINIO_ROOT_PASSWORD is required}
     ports:
       - "127.0.0.1:9090:9000"
       - "127.0.0.1:9091:9001"
@@ -191,7 +191,7 @@ configs:
         otlphttp/langfuse:
           endpoint: http://langfuse-web:3000/api/public/otel
           headers:
-            Authorization: Basic ${LANGFUSE_OTEL_BASIC_AUTH:-cGstbGYtbG9jYWwtZGV2OnNrLWxmLWxvY2FsLWRldg==}
+            Authorization: Basic ${LANGFUSE_OTEL_BASIC_AUTH:?LANGFUSE_OTEL_BASIC_AUTH is required}
             x-langfuse-ingestion-version: "4"
 
       service:

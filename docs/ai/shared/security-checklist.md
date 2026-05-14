@@ -154,6 +154,12 @@ Check configuration files and pyproject.toml:
   - Verify Settings class uses `validation_alias`
 - [ ] [Always][MEDIUM] Field default values do not contain actual secrets
   - Grep: `Field(default=` -> verify whether default contains actual credentials
+- [ ] [Always][HIGH] Docker Compose and operations recipes do not ship reusable secret defaults
+  - Grep compose/operations interpolation: `\$\{[^}]*(SECRET|PASSWORD|TOKEN|AUTH|KEY)[^}]*:-[^}]+\}` in `docker-compose*.yml` and `docs/operations/`
+  - Grep env templates: `^[A-Z0-9_]*(SECRET|PASSWORD|TOKEN|AUTH|KEY)[A-Z0-9_]*=.+` in `_env/*.example`
+  - Verify secret-bearing variables are required (`:?`) or generated into gitignored local env files before startup
+  - Verify committed env-template values are obvious placeholders documented as non-deployable (`REPLACE_ME`, `unused`, local-only dummy values) rather than reusable credentials
+  - Exclude non-secret identifiers such as public keys only after checking paired secret/key usage
 
 ## 6. Error Handling & Logging
 
@@ -183,6 +189,19 @@ Check middleware and exception handling files:
 - [ ] [Always][MEDIUM] `configure_logging()` is invoked before middleware stack in both server and worker bootstrap
   - Grep: `configure_logging\(\)` call site in `src/_apps/server/app.py` / `src/_apps/worker/app.py`
   - Reason: un-configured structlog falls back to stdlib default, bypassing ProcessorFormatter JSON renderer and correlation-id binding
+
+### Observability / Trace Ingestion
+- [ ] [When applicable][HIGH] OTEL collector or exporter credentials are not hardcoded
+  - Detection condition: Check **project-dna.md section 8** "OpenTelemetry tracing" or "Langfuse observability recipe" status -> [SKIP] if both are not implemented
+  - Grep: `Authorization: Basic|\$\{[^}]*(OTEL|LANGFUSE)[^}]*(SECRET|PASSWORD|TOKEN|AUTH|KEY)[^}]*:-`
+  - Verify collector exporter headers and Langfuse project secrets come from required env vars or generated gitignored local env files
+- [ ] [When applicable][MEDIUM] OTLP receiver exposure is local-only or authenticated
+  - Detection condition: Same as above
+  - Grep: `endpoint:\s*0\.0\.0\.0:4318|4317|4318` in collector configs and Docker Compose port mappings
+  - Verify local recipes publish OTLP ports to `127.0.0.1` and remote deployments require network isolation or receiver auth
+- [ ] [When applicable][MEDIUM] Trace payload sensitivity is documented before enabling production OTEL
+  - Detection condition: Same as above
+  - Verify operations docs mention that GenAI spans may include prompts, input/output messages, or system instructions, and require backend access control / retention decisions for production-like use
 
 ### Rate Limiting
 - [ ] [When applicable][MEDIUM] Rate limiting middleware configuration status

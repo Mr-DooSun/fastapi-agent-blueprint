@@ -16,10 +16,10 @@ PydanticAI Agent execution
 │   │
 │   ├─ Base (otel extra): token usage, latency, input/output messages
 │   │
-│   └─ Langfuse opt-in recipe adds:
-│       ├─ Prompt version → trace linkage (requires Langfuse SDK/API)
-│       ├─ Evaluation scores and datasets
-│       └─ A/B prompt label analysis
+│   └─ Langfuse opt-in recipe:
+│       ├─ Current recipe receives OTLP traces only
+│       ├─ Prompt version → trace linkage requires Langfuse SDK/API
+│       └─ Evaluation scores, datasets, and A/B labels require SDK/API or span processing
 │
 └─ Usage path: result.usage() ──→ Self DB (ai_usage_log)
     ├─ Customers: per-org AI call history
@@ -34,7 +34,7 @@ PydanticAI Agent execution
 |-----------|--------|-----|-----|
 | Agent Framework | PydanticAI v1.0+ | Pydantic-native structured output, OTEL standard, FastAPI DI philosophy, v1.0 stable | [037](../../docs/history/037-pydanticai-agent-integration.md) |
 | Trace output | OTEL (OTLP exporter) | Backend-agnostic; `Agent.instrument_all()` one line; any OTLP backend works | [046](../../docs/history/046-otel-core-langfuse-recipe-prompt-domain-defer.md) |
-| Langfuse | Opt-in recipe | MIT OSS; adds prompt linking + eval + A/B analysis on top of OTEL traces; not required at quickstart | [046](../../docs/history/046-otel-core-langfuse-recipe-prompt-domain-defer.md) |
+| Langfuse | Opt-in recipe | MIT OSS; current recipe receives OTLP traces only; prompt linking, eval, and A/B analysis require Langfuse SDK/API or span processing; not required at quickstart | [046](../../docs/history/046-otel-core-langfuse-recipe-prompt-domain-defer.md) |
 | Customer Billing | Self-owned `ai_usage` domain | Business-critical data cannot depend on external system | [046](../../docs/history/046-otel-core-langfuse-recipe-prompt-domain-defer.md) |
 | Prompt domain | **Deferred** | No real demand yet (no non-developer editing, <3 prompts). `PromptSnapshot` VO defines the contract. | [046](../../docs/history/046-otel-core-langfuse-recipe-prompt-domain-defer.md) |
 
@@ -44,7 +44,7 @@ Teams choosing an OTLP backend:
 
 | Backend | Self-host | Prompt mgmt | Evaluation | Best for |
 |---------|-----------|-------------|------------|----------|
-| **Langfuse** | Docker Compose (5 services) | ✅ full | ✅ datasets, scores | Full LLMOps (prompt iteration + eval loop) |
+| **Langfuse** | Docker Compose (5 services) | Full when SDK/API is integrated; not from OTLP-only recipe | Datasets and scores when SDK/API is integrated | Full LLMOps (prompt iteration + eval loop) |
 | Arize Phoenix | Docker (single container) | ❌ | ✅ basic | Trace inspection + drift detection |
 | Grafana Tempo | Docker | ❌ | ❌ | Existing Grafana stack |
 | Jaeger | Docker (single container) | ❌ | ❌ | Simple trace inspection |

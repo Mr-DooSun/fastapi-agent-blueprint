@@ -7,6 +7,15 @@ Langfuse is not part of `make quickstart` or the base Docker Compose file. Use
 this stack only when a team wants the Langfuse UI on top of the existing OTEL
 trace path.
 
+This Compose recipe is local-development infrastructure. It publishes host
+ports on `127.0.0.1` and expects local-only secrets in `_env/langfuse.env`; do
+not reuse it as a production deployment manifest.
+
+GenAI spans may include prompts, input/output messages, and system
+instructions. Before enabling OTEL traces in a production-like environment,
+decide who can access the trace backend and how long trace payloads are
+retained.
+
 ## What you get
 
 With the OTEL core enabled, Langfuse can display the GenAI spans emitted by
@@ -80,6 +89,15 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 make observability-langfuse
 ```
 
+On first run, `make observability-langfuse` creates `_env/langfuse.env` with
+random local secrets and then starts the stack with `docker compose --env-file`.
+The generated file is ignored by git. To create the file without starting
+containers, run:
+
+```bash
+make langfuse-env
+```
+
 The stack starts these local ports:
 
 | Service | Local URL |
@@ -93,17 +111,18 @@ The stack starts these local ports:
 
 ClickHouse is internal to the Compose network and is not published to the host.
 
-The default bootstrap credentials are for local development only:
+The generated bootstrap credentials are for local development only:
 
-| Credential | Default |
+| Credential | Source |
 |---|---|
-| Login email | `admin@example.com` |
-| Login password | `local-langfuse-admin` |
-| Project public key | `pk-lf-local-dev` |
-| Project secret key | `sk-lf-local-dev` |
+| Login email | `LANGFUSE_INIT_USER_EMAIL` in `_env/langfuse.env` |
+| Login password | `LANGFUSE_INIT_USER_PASSWORD` in `_env/langfuse.env` |
+| Project public key | `LANGFUSE_INIT_PROJECT_PUBLIC_KEY` in `_env/langfuse.env` |
+| Project secret key | `LANGFUSE_INIT_PROJECT_SECRET_KEY` in `_env/langfuse.env` |
 
-For production-like testing, override the `LANGFUSE_INIT_*` and secret
-environment variables before starting the stack.
+For production-like testing, replace every generated secret in
+`_env/langfuse.env` before starting the stack. The Compose file intentionally
+requires secret environment variables instead of carrying checked-in defaults.
 
 Set the HTTP traces endpoint:
 
@@ -117,7 +136,7 @@ make dev
 
 If you override `LANGFUSE_INIT_PROJECT_PUBLIC_KEY` or
 `LANGFUSE_INIT_PROJECT_SECRET_KEY`, also set `LANGFUSE_OTEL_BASIC_AUTH` to the
-base64 value of `public_key:secret_key` before running
+base64 value of `public_key:secret_key` in `_env/langfuse.env` before running
 `make observability-langfuse`:
 
 ```bash

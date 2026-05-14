@@ -1,4 +1,6 @@
-.PHONY: help setup quickstart demo demo-rag dev worker observability-langfuse observability-langfuse-down test lint format check clean diagrams
+.PHONY: help setup quickstart demo demo-rag dev worker langfuse-env observability-langfuse observability-langfuse-down test lint format check clean diagrams
+
+LANGFUSE_ENV_FILE := _env/langfuse.env
 
 ## Show available commands
 help:
@@ -49,13 +51,28 @@ dev:
 worker:
 	uv run python run_worker_local.py
 
+## Create local Langfuse env file with random secrets
+langfuse-env: $(LANGFUSE_ENV_FILE)
+
+$(LANGFUSE_ENV_FILE):
+	@echo "→ Creating $(LANGFUSE_ENV_FILE) with local random secrets"
+	@set -e; \
+		mkdir -p "$(dir $(LANGFUSE_ENV_FILE))"; \
+		tmp="$(LANGFUSE_ENV_FILE).tmp"; \
+		trap 'rm -f "$$tmp"' 0; \
+		rm -f "$$tmp"; \
+		umask 077; \
+		bash scripts/create-langfuse-env.sh > "$$tmp"; \
+		chmod 600 "$$tmp"; \
+		mv "$$tmp" "$(LANGFUSE_ENV_FILE)"
+
 ## Start the opt-in Langfuse observability stack
-observability-langfuse:
-	docker compose -f docker-compose.langfuse.yml up -d
+observability-langfuse: $(LANGFUSE_ENV_FILE)
+	docker compose --env-file $(LANGFUSE_ENV_FILE) -f docker-compose.langfuse.yml up -d
 
 ## Stop the opt-in Langfuse observability stack
-observability-langfuse-down:
-	docker compose -f docker-compose.langfuse.yml down
+observability-langfuse-down: $(LANGFUSE_ENV_FILE)
+	docker compose --env-file $(LANGFUSE_ENV_FILE) -f docker-compose.langfuse.yml down
 
 ## Run all tests (SQLite in-memory by default)
 test:
