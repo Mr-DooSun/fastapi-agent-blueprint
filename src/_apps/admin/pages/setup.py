@@ -10,7 +10,6 @@ from src._core.infrastructure.admin.error_handler import (
     admin_error_boundary,
 )
 from src.auth.domain.exceptions.auth_exceptions import AdminSetupForbiddenException
-from src.user.domain.exceptions.user_exceptions import UserAlreadyExistsException
 
 
 @ui.page("/admin/setup")
@@ -62,10 +61,9 @@ async def setup_page():
                 ui.notify("Setup is already complete. Please log in.", type="warning")
                 ui.navigate.to("/admin/login")
                 return
-            except UserAlreadyExistsException as exc:
-                ui.notify(exc.message, type="negative")
-                return
             except Exception as exc:  # noqa: BLE001 - delegated to AdminErrorHandler
+                # Includes UserAlreadyExistsException (4xx) → AdminErrorHandler
+                # surfaces exc.message as a warning and logs with context.
                 await AdminErrorHandler.handle(exc, context="admin_setup_create")
                 return
 
