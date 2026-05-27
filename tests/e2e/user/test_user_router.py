@@ -96,14 +96,28 @@ async def test_create_user_with_token(admin_override):
 
 
 @pytest.mark.asyncio
-async def test_get_users_with_token():
+async def test_admin_can_read_users(admin_override):
     async with _client() as client:
-        token_data = await _register(client, "listowner")
-        response = await client.get("/v1/users", headers=_auth_headers(token_data))
-    assert response.status_code == 200
-    data = response.json()
-    assert data["success"] is True
-    assert isinstance(data["data"], list)
+        created = await client.post(
+            "/v1/user",
+            json={
+                "username": "readtarget",
+                "fullName": "Read Target",
+                "email": "readtarget@example.com",
+                "password": "secret",
+            },
+        )
+        user_id = created.json()["data"]["id"]
+        listing = await client.get("/v1/users")
+        single = await client.get(f"/v1/user/{user_id}")
+        by_ids = await client.get(f"/v1/user/by-ids?ids={user_id}")
+
+    assert listing.status_code == 200
+    assert isinstance(listing.json()["data"], list)
+    assert single.status_code == 200
+    assert single.json()["data"]["id"] == user_id
+    assert by_ids.status_code == 200
+    assert [item["id"] for item in by_ids.json()["data"]] == [user_id]
 
 
 @pytest.mark.asyncio
@@ -256,6 +270,22 @@ async def test_user_cud_is_forbidden_for_non_admin():
 
 
 @pytest.mark.asyncio
+async def test_user_reads_are_forbidden_for_non_admin():
+    """User reads expose other users' PII, so they are admin-only too (#199)."""
+    async with _client() as client:
+        token_data = await _register(client, "rbacreader")
+        headers = _auth_headers(token_data)
+
+        listing = await client.get("/v1/users", headers=headers)
+        single = await client.get("/v1/user/1", headers=headers)
+        by_ids = await client.get("/v1/user/by-ids?ids=1", headers=headers)
+
+    for response in (listing, single, by_ids):
+        assert response.status_code == 403, response.text
+        assert response.json()["errorCode"] == "FORBIDDEN"
+
+
+@pytest.mark.asyncio
 async def test_admin_can_create_user_with_real_token(test_db):
     """A real token whose DB role is admin passes the gate (full auth chain)."""
     async with _client() as client:
@@ -285,7 +315,7 @@ async def test_bootstrap_admin_is_forbidden():
     )
     try:
         async with _client() as client:
-            response = await client.post(
+            create = await client.post(
                 "/v1/user",
                 json={
                     "username": "bootstrapblocked",
@@ -294,11 +324,13 @@ async def test_bootstrap_admin_is_forbidden():
                     "password": "secret",
                 },
             )
+            read = await client.get("/v1/users")
     finally:
         reset_current_user_override(app)
 
-    assert response.status_code == 403, response.text
-    assert response.json()["errorCode"] == "FORBIDDEN"
+    for response in (create, read):
+        assert response.status_code == 403, response.text
+        assert response.json()["errorCode"] == "FORBIDDEN"
 
 
 @pytest.mark.asyncio
