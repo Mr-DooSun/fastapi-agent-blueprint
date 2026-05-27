@@ -9,6 +9,7 @@ from src._apps.admin.pages import (
     accounts,  # noqa: F401 (registers @ui.page)
     change_password,  # noqa: F401 (registers @ui.page)
     dashboard,  # noqa: F401 (registers @ui.page)
+    error,  # noqa: F401 (registers @ui.page)
     login,  # noqa: F401 (registers @ui.page)
     setup,  # noqa: F401 (registers @ui.page)
 )

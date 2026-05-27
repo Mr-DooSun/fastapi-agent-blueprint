@@ -5,11 +5,16 @@ from src._core.infrastructure.admin.auth import (
     AdminAuthProvider,
     get_admin_account_use_case,
 )
+from src._core.infrastructure.admin.error_handler import (
+    AdminErrorHandler,
+    admin_error_boundary,
+)
 from src.auth.domain.exceptions.auth_exceptions import AdminSetupForbiddenException
 from src.user.domain.exceptions.user_exceptions import UserAlreadyExistsException
 
 
 @ui.page("/admin/setup")
+@admin_error_boundary(context="admin_setup")
 async def setup_page():
     """One-time first-admin setup wizard.
 
@@ -58,10 +63,10 @@ async def setup_page():
                 ui.navigate.to("/admin/login")
                 return
             except UserAlreadyExistsException as exc:
-                ui.notify(str(exc.message), type="negative")
+                ui.notify(exc.message, type="negative")
                 return
-            except Exception as exc:
-                ui.notify(f"Error: {exc}", type="negative")
+            except Exception as exc:  # noqa: BLE001 - delegated to AdminErrorHandler
+                await AdminErrorHandler.handle(exc, context="admin_setup_create")
                 return
 
             # Clear bootstrap session flag; user must log in as the new admin.
