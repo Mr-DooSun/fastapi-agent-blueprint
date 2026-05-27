@@ -599,7 +599,7 @@ class {Name}Container(containers.DeclarativeContainer):
 | Structured Logging (structlog) | Active | structlog + asgi-correlation-id, RequestLogMiddleware (server), StructlogContextMiddleware (worker), LOG_LEVEL / LOG_JSON_FORMAT env vars, sqlalchemy.engine double-emit fix (#9) |
 | JWT/Authentication | Active | `src/auth/` provides HS256 access/refresh tokens, refresh-token rotation/revocation persistence, `/v1/auth/*`, and Bearer protection for `user` API routes (#4) |
 | File Upload (UploadFile) | Not implemented | |
-| RBAC/Permissions | Active | Page-level admin permissions via `User.permissions` (JSON column) added in #194. `User.role` determines admin status; `permissions` list controls which admin pages each admin can access. `/admin/accounts` UI manages accounts and per-page permission grants. Bootstrap one-time setup wizard creates the first real admin with all permissions. |
+| RBAC/Permissions | Active | Page-level admin permissions via `User.permissions` (JSON column) added in #194. `User.role` determines admin status; `permissions` list controls which admin pages each admin can access. `/admin/accounts` UI manages accounts and per-page permission grants. Bootstrap one-time setup wizard creates the first real admin with all permissions. Server-route RBAC for `/v1/user` (reads + CUD) added in #199 via the `require_admin` interface dependency (`role == admin` and not `is_bootstrap_admin`); non-user `/v1/*` route-level role gating is not yet implemented. |
 | Rate Limiting (slowapi) | Not implemented | |
 | WebSocket | Not implemented | |
 
