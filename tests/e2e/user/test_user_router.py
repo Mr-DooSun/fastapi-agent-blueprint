@@ -1,11 +1,49 @@
 import pytest
+import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import update
 
 from src._apps.server.app import app
+from src._apps.server.testing import (
+    override_current_user,
+    reset_current_user_override,
+)
+from src.user.domain.dtos.user_dto import USER_ROLE_ADMIN, USER_ROLE_USER
+from src.user.infrastructure.database.models.user_model import UserModel
+from tests.factories.user_factory import make_user_dto
 
 
 def _client() -> AsyncClient:
     return AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost")
+
+
+@pytest_asyncio.fixture
+async def admin_override():
+    """Force ``get_current_user`` to return a non-bootstrap admin for the test.
+
+    The existing CUD behaviour tests are now admin-gated; this override lets
+    them keep asserting business logic without minting a real admin token. It
+    is always reset on teardown so it cannot leak into other tests.
+    """
+    override_current_user(app, make_user_dto(role=USER_ROLE_ADMIN))
+    try:
+        yield
+    finally:
+        reset_current_user_override(app)
+
+
+async def _promote_to_admin(test_db, user_id: int) -> None:
+    async with test_db.session() as session:
+        await session.execute(
+            update(UserModel).where(UserModel.id == user_id).values(role="admin")
+        )
+        await session.commit()
+
+
+async def _role_of(test_db, user_id: int) -> str:
+    async with test_db.session() as session:
+        model = await session.get(UserModel, user_id)
+        return model.role
 
 
 async def _register(client: AsyncClient, suffix: str) -> dict:
@@ -36,7 +74,7 @@ async def test_user_routes_require_authentication():
 
 
 @pytest.mark.asyncio
-async def test_create_user_with_token():
+async def test_create_user_with_token(admin_override):
     async with _client() as client:
         token_data = await _register(client, "createowner")
         response = await client.post(
@@ -69,7 +107,7 @@ async def test_get_users_with_token():
 
 
 @pytest.mark.asyncio
-async def test_create_user_duplicate_returns_field_errors():
+async def test_create_user_duplicate_returns_field_errors(admin_override):
     payload = {
         "username": "e2edup",
         "fullName": "E2E Duplicate",
@@ -103,7 +141,7 @@ async def test_create_user_duplicate_returns_field_errors():
 
 
 @pytest.mark.asyncio
-async def test_create_users_duplicate_payload_is_all_or_nothing():
+async def test_create_users_duplicate_payload_is_all_or_nothing(admin_override):
     payload = [
         {
             "username": "e2ebatchdup",
@@ -140,7 +178,9 @@ async def test_create_users_duplicate_payload_is_all_or_nothing():
 
 
 @pytest.mark.asyncio
-async def test_update_user_allows_own_email_and_rejects_another_users_email():
+async def test_update_user_allows_own_email_and_rejects_another_users_email(
+    admin_override,
+):
     first_payload = {
         "username": "e2eupdateone",
         "fullName": "E2E Update One",
@@ -184,3 +224,106 @@ async def test_update_user_allows_own_email_and_rejects_another_users_email():
             "type": "unique",
         }
     ]
+
+
+# RBAC (#199) ===============================================================
+
+
+@pytest.mark.asyncio
+async def test_user_cud_is_forbidden_for_non_admin():
+    """A real (role=user) token reaches require_admin and is rejected with 403."""
+    user_payload = {
+        "username": "rbacnew",
+        "fullName": "RBAC New",
+        "email": "rbacnew@example.com",
+        "password": "secret",
+    }
+
+    async with _client() as client:
+        token_data = await _register(client, "rbacuser")
+        headers = _auth_headers(token_data)
+
+        create = await client.post("/v1/user", headers=headers, json=user_payload)
+        batch = await client.post("/v1/users", headers=headers, json=[user_payload])
+        update_one = await client.put(
+            "/v1/user/1", headers=headers, json={"fullName": "x"}
+        )
+        delete_one = await client.delete("/v1/user/1", headers=headers)
+
+    for response in (create, batch, update_one, delete_one):
+        assert response.status_code == 403, response.text
+        assert response.json()["errorCode"] == "FORBIDDEN"
+
+
+@pytest.mark.asyncio
+async def test_admin_can_create_user_with_real_token(test_db):
+    """A real token whose DB role is admin passes the gate (full auth chain)."""
+    async with _client() as client:
+        token_data = await _register(client, "rbacadmin")
+        await _promote_to_admin(test_db, token_data["user"]["id"])
+
+        response = await client.post(
+            "/v1/user",
+            headers=_auth_headers(token_data),
+            json={
+                "username": "rbacadmincreated",
+                "fullName": "RBAC Admin Created",
+                "email": "rbacadmincreated@example.com",
+                "password": "secret",
+            },
+        )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["data"]["username"] == "rbacadmincreated"
+
+
+@pytest.mark.asyncio
+async def test_bootstrap_admin_is_forbidden():
+    """Bootstrap admins are setup-only and must not pass the API admin gate."""
+    override_current_user(
+        app, make_user_dto(role=USER_ROLE_ADMIN, is_bootstrap_admin=True)
+    )
+    try:
+        async with _client() as client:
+            response = await client.post(
+                "/v1/user",
+                json={
+                    "username": "bootstrapblocked",
+                    "fullName": "Bootstrap Blocked",
+                    "email": "bootstrapblocked@example.com",
+                    "password": "secret",
+                },
+            )
+    finally:
+        reset_current_user_override(app)
+
+    assert response.status_code == 403, response.text
+    assert response.json()["errorCode"] == "FORBIDDEN"
+
+
+@pytest.mark.asyncio
+async def test_update_user_ignores_role_escalation(admin_override, test_db):
+    """role/permissions in the PUT body are silently ignored (no self-escalation)."""
+    async with _client() as client:
+        created = await client.post(
+            "/v1/user",
+            json={
+                "username": "noescalation",
+                "fullName": "No Escalation",
+                "email": "noescalation@example.com",
+                "password": "secret",
+            },
+        )
+        user_id = created.json()["data"]["id"]
+        updated = await client.put(
+            f"/v1/user/{user_id}",
+            json={
+                "fullName": "No Escalation Updated",
+                "role": "admin",
+                "permissions": ["accounts"],
+            },
+        )
+
+    assert created.status_code == 200, created.text
+    assert updated.status_code == 200, updated.text
+    assert await _role_of(test_db, user_id) == USER_ROLE_USER

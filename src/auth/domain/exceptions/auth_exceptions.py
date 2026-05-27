@@ -46,6 +46,17 @@ class RefreshTokenRevokedException(BaseCustomException):
         )
 
 
+class ForbiddenException(BaseCustomException):
+    """Authenticated caller lacks the required role for an API route."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=403,
+            message="Forbidden",
+            error_code="FORBIDDEN",
+        )
+
+
 class AdminSetupRequiredException(BaseCustomException):
     """Bootstrap credential used when no real admin exists — route to setup wizard."""
 

@@ -2,7 +2,10 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 
 from src._core.application.dtos.base_response import SuccessResponse
-from src.auth.interface.server.dependencies.auth_dependencies import get_current_user
+from src.auth.interface.server.dependencies.auth_dependencies import (
+    get_current_user,
+    require_admin,
+)
 from src.user.domain.services.user_service import UserService
 from src.user.infrastructure.di.user_container import UserContainer
 from src.user.interface.server.schemas.user_schema import (
@@ -22,6 +25,7 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
     summary="Create user",
     response_model=SuccessResponse[UserResponse],
     response_model_exclude={"pagination"},
+    dependencies=[Depends(require_admin)],
 )
 @inject
 async def create_user(
@@ -40,6 +44,7 @@ async def create_user(
     summary="Create users (batch)",
     response_model=SuccessResponse[list[UserResponse]],
     response_model_exclude={"pagination"},
+    dependencies=[Depends(require_admin)],
 )
 @inject
 async def create_users(
@@ -122,6 +127,7 @@ async def get_user_by_user_id(
     summary="Update user",
     response_model=SuccessResponse[UserResponse],
     response_model_exclude={"pagination"},
+    dependencies=[Depends(require_admin)],
 )
 @inject
 async def update_user_by_user_id(
@@ -141,6 +147,7 @@ async def update_user_by_user_id(
     summary="Delete user",
     response_model=SuccessResponse,
     response_model_exclude={"data", "pagination"},
+    dependencies=[Depends(require_admin)],
 )
 @inject
 async def delete_user_by_user_id(
