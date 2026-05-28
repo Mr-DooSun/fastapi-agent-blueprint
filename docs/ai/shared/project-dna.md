@@ -6,7 +6,7 @@
 > This file is auto-extracted/updated from `src/user/` (reference domain) and `src/_core/` (Base classes)
 > when `/sync-guidelines` is run. **Run `/sync-guidelines` instead of editing manually.**
 >
-> Last updated: 2026-05-14 (OTEL and Langfuse observability security sync)
+> Last updated: 2026-05-28 (#206 admin audit log Phase 2 — UI + scheduler + cleanup)
 
 ## Section Index
 §0 Project Scale and Design Philosophy |
