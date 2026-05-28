@@ -22,6 +22,7 @@ def login_page():
         ).classes("full-width")
 
         async def try_login():
+            target: str | None = None
             async with button_loading(login_btn):
                 try:
                     session = await get_admin_auth_provider().authenticate(
@@ -30,12 +31,15 @@ def login_page():
                     )
                 except AdminSetupRequiredException:
                     app.storage.user["setup_granted"] = True
-                    ui.navigate.to("/admin/setup")
+                    target = "/admin/setup"
                 except (InvalidCredentialsException, AdminCredentialDisabledException):
                     ui.notify("Invalid credentials", type="negative")
                 else:
                     AdminAuthProvider.login(session)
-                    ui.navigate.to("/admin/")
+                    target = "/admin/"
+            # Navigate only after loading state is cleared (button not yet torn down).
+            if target:
+                ui.navigate.to(target)
 
         password.on("keydown.enter", try_login)
         login_btn = ui.button("Login", on_click=try_login).classes("q-mt-md full-width")

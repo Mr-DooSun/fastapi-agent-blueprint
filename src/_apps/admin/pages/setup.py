@@ -48,6 +48,7 @@ async def setup_page():
                 ui.notify("All fields are required", type="warning")
                 return
 
+            setup_already_complete = False
             async with button_loading(create_btn):
                 try:
                     (
@@ -60,16 +61,17 @@ async def setup_page():
                         bootstrap_username=settings.admin_bootstrap_username,
                     )
                 except AdminSetupForbiddenException:
-                    ui.notify(
-                        "Setup is already complete. Please log in.", type="warning"
-                    )
-                    ui.navigate.to("/admin/login")
-                    return
+                    setup_already_complete = True
                 except Exception as exc:  # noqa: BLE001 - delegated to handler
                     # Includes UserAlreadyExistsException (4xx) → AdminErrorHandler
                     # surfaces exc.message as a warning and logs with context.
                     await AdminErrorHandler.handle(exc, context="admin_setup_create")
                     return
+            # Navigate only after loading state is cleared (button not yet torn down).
+            if setup_already_complete:
+                ui.notify("Setup is already complete. Please log in.", type="warning")
+                ui.navigate.to("/admin/login")
+                return
 
             # Clear bootstrap session flag; user must log in as the new admin.
             AdminAuthProvider.logout()

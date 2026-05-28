@@ -93,13 +93,16 @@ class BaseAdminPage:
         """
         skeleton = self._render_list_skeleton()
         try:
+            # Flush the skeleton to the client before the (slow) fetch so it is
+            # actually visible during loading — not just built then replaced.
+            await ui.context.client.connected()
             dtos, pagination = await self._fetch_list_data(page, search)
         except Exception as exc:  # noqa: BLE001 - delegated to AdminErrorHandler
-            skeleton.delete()
             await AdminErrorHandler.handle(exc, context=f"{self.domain_name}_list")
             return
+        finally:
+            skeleton.delete()  # finally: also covers cancellation / disconnect
 
-        skeleton.delete()
         self.render_list_header()
         self.render_search_bar(search)
         self.render_list_summary(pagination)
@@ -113,14 +116,17 @@ class BaseAdminPage:
         """
         skeleton = self._render_detail_skeleton()
         try:
+            # Flush the skeleton to the client before the (slow) fetch so it is
+            # actually visible during loading — not just built then replaced.
+            await ui.context.client.connected()
             dto = await self._fetch_detail_data(record_id)
         except Exception as exc:  # noqa: BLE001 - delegated to AdminErrorHandler
-            skeleton.delete()
             await AdminErrorHandler.handle(exc, context=f"{self.domain_name}_detail")
             self._render_back_button()
             return
+        finally:
+            skeleton.delete()  # finally: also covers cancellation / disconnect
 
-        skeleton.delete()
         self.render_detail_header(record_id)
         self.render_detail_card(dto)
 
