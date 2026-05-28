@@ -17,6 +17,11 @@ Design invariants (codex-reviewed):
 
 from __future__ import annotations
 
+import functools
+import inspect
+from collections.abc import Awaitable, Callable
+from typing import Any, ParamSpec, TypeVar
+
 import structlog
 from asgi_correlation_id import correlation_id as _correlation_id
 from nicegui import app
@@ -165,6 +170,33 @@ def configure_audit_logger(logger: AuditLogger) -> None:
     _audit_logger = logger
 
 
+# Separate provider for the repository so the audit-log UI page can query
+# (list_filtered / get_by_id / delete_older_than) without going through the
+# logger facade. Configured alongside the logger in ``bootstrap_admin``.
+_audit_repository: AdminAuditLogRepository | None = None
+
+
+def configure_audit_repository(repository: AdminAuditLogRepository) -> None:
+    """Wire the process-wide audit repository (used by the UI + cleanup task)."""
+    global _audit_repository
+    _audit_repository = repository
+
+
+def get_audit_repository() -> AdminAuditLogRepository:
+    """Return the configured audit repository.
+
+    Raises ``RuntimeError`` when unconfigured — unlike the logger fallback,
+    queries are explicit operator actions and a misconfiguration should be
+    surfaced (caught by ``@admin_error_boundary`` on the audit-log page).
+    """
+    if _audit_repository is None:
+        raise RuntimeError(
+            "AuditLogRepository is not configured; "
+            "call configure_audit_repository() in bootstrap_admin."
+        )
+    return _audit_repository
+
+
 def get_audit_logger() -> AuditLogger | _NoopAuditLogger:
     """Return the configured audit logger, or a silent noop fallback.
 
@@ -176,3 +208,92 @@ def get_audit_logger() -> AuditLogger | _NoopAuditLogger:
     if _audit_logger is None:
         return _noop_audit_logger
     return _audit_logger
+
+
+# ── @audit_action decorator (#206 Phase 2) ──────────────────────────────────
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+# A capture hook may be sync or async; it receives the same positional/keyword
+# arguments as the wrapped callable, plus ``result=`` on the after-hook path.
+CaptureHook = Callable[..., Awaitable[dict | None] | dict | None]
+
+
+async def _safe_capture(
+    hook: CaptureHook | None,
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+    **extra: Any,
+) -> dict | None:
+    """Run an optional capture hook in best-effort mode.
+
+    Returns ``None`` on any exception so a buggy ``before_fn`` / ``after_fn``
+    cannot change the wrapped callable's result or raise.
+    """
+    if hook is None:
+        return None
+    try:
+        result = hook(*args, **kwargs, **extra)
+        if inspect.isawaitable(result):
+            result = await result
+        return result  # type: ignore[return-value]
+    except Exception as exc:  # noqa: BLE001 - capture is best-effort
+        _logger.warning(
+            "audit_capture_hook_failed",
+            exc_info=exc,
+            hook=getattr(hook, "__qualname__", repr(hook)),
+        )
+        return None
+
+
+def audit_action(
+    action: AdminAction,
+    domain: str,
+    *,
+    before_fn: CaptureHook | None = None,
+    after_fn: CaptureHook | None = None,
+) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
+    """Wrap an async write callable with SUCCESS / FAILURE audit logging.
+
+    On exception, logs FAILURE (``failure_reason = exc.error_code`` or the
+    exception type name) and **re-raises** so any outer ``@admin_error_boundary``
+    still notifies the operator and the error stays visible. Audit-write
+    failures are absorbed by :meth:`AuditLogger.log` (Phase 1 invariant).
+
+    Optional ``before_fn`` / ``after_fn`` hooks let callers attach state
+    snapshots; their own exceptions are swallowed via :func:`_safe_capture`
+    so the audit subsystem cannot break the business operation.
+    """
+
+    def decorator(
+        func: Callable[P, Awaitable[R]],
+    ) -> Callable[P, Awaitable[R]]:
+        @functools.wraps(func)
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            before_state = await _safe_capture(before_fn, args, kwargs)
+            try:
+                result = await func(*args, **kwargs)
+            except Exception as exc:  # noqa: BLE001 - boundary, re-raised below
+                await get_audit_logger().log(
+                    action=action,
+                    domain=domain,
+                    result=AuditResult.FAILURE,
+                    before_state=before_state,
+                    failure_reason=getattr(exc, "error_code", None)
+                    or type(exc).__name__,
+                )
+                raise
+            after_state = await _safe_capture(after_fn, args, kwargs, result=result)
+            await get_audit_logger().log(
+                action=action,
+                domain=domain,
+                result=AuditResult.SUCCESS,
+                before_state=before_state,
+                after_state=after_state,
+            )
+            return result
+
+        return wrapper
+
+    return decorator

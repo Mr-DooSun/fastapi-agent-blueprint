@@ -8,6 +8,8 @@ from nicegui import ui
 
 from src._core.domain.protocols.admin_service_protocol import AdminCrudServiceProtocol
 from src._core.domain.value_objects.query_filter import QueryFilter
+from src._core.infrastructure.admin.audit import AdminAction, AuditResult
+from src._core.infrastructure.admin.audit.logger import get_audit_logger
 from src._core.infrastructure.admin.error_handler import AdminErrorHandler
 
 if TYPE_CHECKING:
@@ -45,6 +47,10 @@ class BaseAdminPage:
     default_sort_order: str = "desc"
     page_size: int = 20
     readonly: bool = True
+    # Per-domain opt-in for VIEW_LIST / VIEW_DETAIL audit events (#206 Phase 2).
+    # Default off — read-event volume is high relative to forensic value and
+    # should be a deliberate choice. Compliance-heavy domains can flip this.
+    log_reads: bool = False
     # Declare extra services by alias → container attr name.
     # Bootstrap resolves each by attr name from the domain container and stores
     # the callable in ``_extra_services``. Use ``_get_extra_service(alias)`` to
@@ -103,6 +109,13 @@ class BaseAdminPage:
         finally:
             skeleton.delete()  # finally: also covers cancellation / disconnect
 
+        if self.log_reads:
+            await get_audit_logger().log(
+                action=AdminAction.VIEW_LIST,
+                domain=self.domain_name,
+                result=AuditResult.SUCCESS,
+            )
+
         self.render_list_header()
         self.render_search_bar(search)
         self.render_list_summary(pagination)
@@ -126,6 +139,14 @@ class BaseAdminPage:
             return
         finally:
             skeleton.delete()  # finally: also covers cancellation / disconnect
+
+        if self.log_reads:
+            await get_audit_logger().log(
+                action=AdminAction.VIEW_DETAIL,
+                domain=self.domain_name,
+                result=AuditResult.SUCCESS,
+                record_id=str(record_id),
+            )
 
         self.render_detail_header(record_id)
         self.render_detail_card(dto)

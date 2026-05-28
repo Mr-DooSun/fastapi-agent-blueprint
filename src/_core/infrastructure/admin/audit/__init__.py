@@ -14,6 +14,8 @@ from :mod:`src._core.infrastructure.admin.audit.logger`.
 from src._core.infrastructure.admin.audit.dtos.audit_log_dto import (
     AdminAction,
     AuditLogDTO,
+    AuditLogFilter,
+    AuditLogSummaryDTO,
     AuditResult,
 )
 from src._core.infrastructure.admin.audit.models.audit_log_model import AdminAuditLog
@@ -25,6 +27,8 @@ __all__ = [
     "AdminAuditLog",
     "AdminAuditLogRepository",
     "AuditLogDTO",
+    "AuditLogFilter",
+    "AuditLogSummaryDTO",
     "AuditResult",
     "safe_user_snapshot",
 ]

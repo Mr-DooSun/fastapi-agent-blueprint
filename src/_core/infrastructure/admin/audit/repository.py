@@ -1,24 +1,37 @@
-"""Append-only repository for the admin audit log (#196 Phase 1).
+"""Append-only repository for the admin audit log.
 
-Phase 1 only needs ``insert``; query APIs (filtered list / detail) ship in
-Phase 2 with the ``/admin/audit-log`` page.
+Phase 1 (#196 PR #205) shipped ``insert``. Phase 2 (#206) adds the query
+surface used by ``/admin/audit-log`` and the cleanup task: ``list_filtered``
+(summary projection + total), ``get_by_id`` (full row with JSON state for the
+detail dialog), and ``delete_older_than`` (retention cleanup).
 """
 
-from src._core.infrastructure.admin.audit.dtos.audit_log_dto import AuditLogDTO
+from datetime import datetime
+
+from sqlalchemy import delete, func, select
+
+from src._core.infrastructure.admin.audit.dtos.audit_log_dto import (
+    AdminAction,
+    AuditLogDTO,
+    AuditLogFilter,
+    AuditLogSummaryDTO,
+    AuditResult,
+)
 from src._core.infrastructure.admin.audit.models.audit_log_model import AdminAuditLog
 from src._core.infrastructure.persistence.rdb.database import Database
 
 
 class AdminAuditLogRepository:
-    """Minimal repository — INSERT only.
+    """Append-only audit-log repository.
 
     Deliberately not a ``BaseRepository`` subclass: an audit log is append-only
-    and is not modelled as a generic CRUD entity. The query surface is added in
-    Phase 2 when the audit-log UI lands.
+    plus retention cleanup, not a generic CRUD entity.
     """
 
     def __init__(self, database: Database) -> None:
         self._database = database
+
+    # ── Write ────────────────────────────────────────────────────────────────
 
     async def insert(self, dto: AuditLogDTO) -> None:
         """Persist a single audit-log entry.
@@ -43,3 +56,100 @@ class AdminAuditLogRepository:
         async with self._database.session() as session:
             session.add(model)
             await session.commit()
+
+    # ── Read (Phase 2 / #206) ───────────────────────────────────────────────
+
+    async def list_filtered(
+        self,
+        filter_vo: AuditLogFilter,
+        *,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> tuple[list[AuditLogSummaryDTO], int]:
+        """Return a page of summary rows + total count for the audit-log UI.
+
+        The summary projection deliberately omits ``before_state`` /
+        ``after_state`` so the list payload stays small; the detail dialog
+        fetches the full row via :meth:`get_by_id`.
+        """
+        stmt = self._apply_filter(select(AdminAuditLog), filter_vo).order_by(
+            AdminAuditLog.created_at.desc()
+        )
+        count_stmt = self._apply_filter(select(func.count(AdminAuditLog.id)), filter_vo)
+        offset = max(page - 1, 0) * page_size
+
+        async with self._database.session() as session:
+            total = (await session.execute(count_stmt)).scalar_one()
+            result = await session.execute(stmt.offset(offset).limit(page_size))
+            rows = result.scalars().all()
+
+        summaries = [
+            AuditLogSummaryDTO(
+                id=row.id,
+                admin_user_id=row.admin_user_id,
+                admin_username=row.admin_username,
+                action=AdminAction(row.action),
+                domain=row.domain,
+                record_id=row.record_id,
+                result=AuditResult(row.result),
+                failure_reason=row.failure_reason,
+                ip_address=row.ip_address,
+                correlation_id=row.correlation_id,
+                created_at=row.created_at,
+            )
+            for row in rows
+        ]
+        return summaries, total
+
+    async def get_by_id(self, audit_id: int) -> AuditLogDTO | None:
+        """Return one full audit row (with JSON state) for the detail dialog."""
+        async with self._database.session() as session:
+            row = await session.get(AdminAuditLog, audit_id)
+            if row is None:
+                return None
+            return AuditLogDTO(
+                id=row.id,
+                admin_user_id=row.admin_user_id,
+                admin_username=row.admin_username,
+                action=AdminAction(row.action),
+                domain=row.domain,
+                record_id=row.record_id,
+                before_state=row.before_state,
+                after_state=row.after_state,
+                result=AuditResult(row.result),
+                failure_reason=row.failure_reason,
+                ip_address=row.ip_address,
+                correlation_id=row.correlation_id,
+                created_at=row.created_at,
+            )
+
+    async def delete_older_than(self, cutoff: datetime) -> int:
+        """Delete entries strictly older than ``cutoff``. Returns deleted count."""
+        async with self._database.session() as session:
+            result = await session.execute(
+                delete(AdminAuditLog).where(AdminAuditLog.created_at < cutoff)
+            )
+            await session.commit()
+            return result.rowcount or 0
+
+    # ── Helpers ──────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _apply_filter(stmt, filter_vo: AuditLogFilter):
+        if filter_vo.username_like:
+            stmt = stmt.where(
+                AdminAuditLog.admin_username.ilike(f"%{filter_vo.username_like}%")
+            )
+        if filter_vo.actions:
+            stmt = stmt.where(
+                AdminAuditLog.action.in_([a.value for a in filter_vo.actions])
+            )
+        if filter_vo.domains:
+            stmt = stmt.where(AdminAuditLog.domain.in_(filter_vo.domains))
+        if filter_vo.result is not None:
+            stmt = stmt.where(AdminAuditLog.result == filter_vo.result.value)
+        if filter_vo.since is not None:
+            stmt = stmt.where(AdminAuditLog.created_at >= filter_vo.since)
+        if filter_vo.until is not None:
+            stmt = stmt.where(AdminAuditLog.created_at < filter_vo.until)
+        return stmt

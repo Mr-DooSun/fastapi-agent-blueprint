@@ -111,6 +111,16 @@ def admin_layout(
                     if _is_accounts:
                         _acc_label.classes("text-weight-bold text-blue-800")
 
+        if permissions is None or "audit_log" in permissions:
+            _is_audit = current_domain == "audit_log"
+            with ui.item(on_click=lambda: ui.navigate.to("/admin/audit-log")):
+                with ui.item_section().props("avatar"):
+                    ui.icon("fact_check").classes("text-blue-800" if _is_audit else "")
+                with ui.item_section():
+                    _audit_label = ui.label("Audit Log")
+                    if _is_audit:
+                        _audit_label.classes("text-weight-bold text-blue-800")
+
 
 def _app_username() -> str | None:
     from nicegui import app
