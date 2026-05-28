@@ -144,10 +144,17 @@ class AdminAuditLogRepository:
             )
 
     async def delete_older_than(self, cutoff: datetime) -> int:
-        """Delete entries strictly older than ``cutoff``. Returns deleted count."""
+        """Delete entries strictly older than ``cutoff``. Returns deleted count.
+
+        Aware datetimes are normalized to naive UTC before binding so the
+        scheduler/ad-hoc callers can pass either shape without tripping
+        asyncpg's "can't compare offset-naive and offset-aware" on Postgres
+        (``AdminAuditLog.created_at`` is a tz-naive column — see ``_to_naive_utc``).
+        """
+        naive_cutoff = self._to_naive_utc(cutoff)
         async with self._database.session() as session:
             result = await session.execute(
-                delete(AdminAuditLog).where(AdminAuditLog.created_at < cutoff)
+                delete(AdminAuditLog).where(AdminAuditLog.created_at < naive_cutoff)
             )
             await session.commit()
             return result.rowcount or 0
