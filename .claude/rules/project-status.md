@@ -1,6 +1,6 @@
 # Project Status
 
-> Last synced: 2026-05-28 via #198 (admin loading states)
+> Last synced: 2026-05-28 via #196 Phase 1 (admin audit log)
 
 ## Current Version Context
 - Latest release: v0.6.0 (2026-05-07)
@@ -24,6 +24,7 @@
 | Server-Route RBAC for /v1/user | #199 | Adds the `require_admin` interface dependency (`role == admin` and not `is_bootstrap_admin` → `403 FORBIDDEN`) plus a dedicated API `ForbiddenException`. All `/v1/user` routes (reads + CUD) become admin-only via a single router-level gate (default-deny for new routes); non-admin self-service stays on `/v1/auth/me`. Role is read live from the DB per request, and unauthenticated calls still resolve to 401 before the role check. Non-user `/v1/*` route-level gating remains a follow-up. |
 | Centralized Admin Error Handling | #195 | Adds `AdminErrorHandler` + `@admin_error_boundary`, a global `app.on_exception` safety net, and an unauthenticated `/admin/error` page (`src/_core/infrastructure/admin/error_handler.py`). Admin errors route centrally across page boundary / event callbacks / global handler: only 4xx `BaseCustomException.message` is shown (warning), `>=500`/generic show a generic message (negative), and raw `str(exc)` never reaches the UI — full detail goes to the structured log with `context`/`admin_user`/`error_type`/`error_code`. `BaseAdminPage.render_*` delegate to the handler; `str(exc)` leaks removed from docs/ai_usage/accounts/setup/change_password. AST tests enforce the no-leak rule and `/admin/error` gate-exemption (IC-195-1). |
 | Admin Loading States | #198 | Adds `button_loading` async context manager (`layout.py`) applied to every admin write button (docs Ask, accounts create/save/remove, setup, change-password, login) — Quasar `loading`+`disable` cleared in `finally`; navigation/refresh kept outside the context. `BaseAdminPage.render_list/render_detail` render a structure-mirroring skeleton (`await ui.context.client.connected()` before fetch so it is visible during slow loads; deleted in `finally`); list rows = `min(page_size, 8)`, detail rows = `max(visible columns, 4)`. |
+| Admin Audit Log (Phase 1) | #196 | Adds `src/_core/infrastructure/admin/audit/` (model + `0007` migration + `AdminAuditLogRepository` + `AuditLogger` facade + `safe_user_snapshot` whitelist serializer) and instruments login/logout, account create/update-perms/delete, first-admin create, and password change to record `SUCCESS`/`FAILURE` entries with `error_code` as `failure_reason` (no raw `str(exc)`; no password hash in snapshots). `AuditLogger.log` never raises into the caller (insert errors swallowed via structlog). Phase 2 will add the `/admin/audit-log` UI, the `@audit_action` decorator generalization, read-event opt-in, and the Taskiq retention cleanup job. |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN
