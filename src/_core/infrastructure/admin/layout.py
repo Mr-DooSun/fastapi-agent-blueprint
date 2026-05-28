@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
 from nicegui import ui
@@ -9,6 +11,27 @@ from src.auth.domain.dtos.auth_dto import AdminSessionDTO
 
 if TYPE_CHECKING:
     from src._core.infrastructure.admin.base_admin_page import BaseAdminPage
+
+
+@asynccontextmanager
+async def button_loading(button: ui.button) -> AsyncIterator[None]:
+    """Show Quasar ``loading`` + ``disable`` on a button while an async op runs.
+
+    Gives immediate feedback on slow admin write actions and blocks duplicate
+    submits. Cleanup runs in ``finally`` so the button is always re-enabled —
+    even when the wrapped block raises or returns early.
+
+    Usage::
+
+        async def on_click() -> None:
+            async with button_loading(submit_btn):
+                await slow_operation()
+    """
+    button.props("loading disable")
+    try:
+        yield
+    finally:
+        button.props(remove="loading disable")
 
 
 def admin_layout(

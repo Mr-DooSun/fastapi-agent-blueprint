@@ -10,7 +10,7 @@ from src._core.infrastructure.admin.error_handler import (
     AdminErrorHandler,
     admin_error_boundary,
 )
-from src._core.infrastructure.admin.layout import admin_layout
+from src._core.infrastructure.admin.layout import admin_layout, button_loading
 from src.auth.domain.exceptions.auth_exceptions import InvalidCredentialsException
 
 # page_configs is injected by bootstrap_admin() after discovery
@@ -56,26 +56,29 @@ async def change_password_page():
                 ui.notify("Passwords do not match", type="warning")
                 return
 
-            try:
-                await get_admin_account_use_case().change_password(
-                    user_id=session.user_id,
-                    current_password=current_pw.value,
-                    new_password=new_pw.value,
-                )
-            except InvalidCredentialsException:
-                ui.notify("Current password is incorrect", type="negative")
-                return
-            except Exception as exc:  # noqa: BLE001 - delegated to AdminErrorHandler
-                await AdminErrorHandler.handle(exc, context="admin_change_password")
-                return
+            async with button_loading(change_btn):
+                try:
+                    await get_admin_account_use_case().change_password(
+                        user_id=session.user_id,
+                        current_password=current_pw.value,
+                        new_password=new_pw.value,
+                    )
+                except InvalidCredentialsException:
+                    ui.notify("Current password is incorrect", type="negative")
+                    return
+                except Exception as exc:  # noqa: BLE001 - delegated to handler
+                    await AdminErrorHandler.handle(exc, context="admin_change_password")
+                    return
 
             ui.notify("Password changed successfully", type="positive")
             AdminAuthProvider.logout()
             ui.navigate.to("/admin/login")
 
-        ui.button("Change Password", on_click=do_change).classes(
-            "q-mt-md full-width"
-        ).props("color=primary")
+        change_btn = (
+            ui.button("Change Password", on_click=do_change)
+            .classes("q-mt-md full-width")
+            .props("color=primary")
+        )
 
         if not is_forced:
             ui.button("Cancel", on_click=lambda: ui.navigate.to("/admin/")).classes(

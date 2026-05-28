@@ -9,7 +9,7 @@ from src._core.infrastructure.admin.error_handler import (
     AdminErrorHandler,
     admin_error_boundary,
 )
-from src._core.infrastructure.admin.layout import admin_layout
+from src._core.infrastructure.admin.layout import admin_layout, button_loading
 from src.auth.domain.exceptions.auth_exceptions import (
     AdminLastAccountsGuardException,
     AdminSelfActionForbiddenException,
@@ -70,18 +70,19 @@ async def accounts_page():
                 ui.notify("All fields are required", type="warning")
                 return
             selected = [k for k, cb in perm_checkboxes.items() if cb.value]
-            try:
-                new_admin, temp_pw = await use_case.create_account(
-                    CreateAdminAccountDTO(
-                        username=username,
-                        full_name=full_name,
-                        email=email,
-                        permissions=selected,
+            async with button_loading(create_btn):
+                try:
+                    new_admin, temp_pw = await use_case.create_account(
+                        CreateAdminAccountDTO(
+                            username=username,
+                            full_name=full_name,
+                            email=email,
+                            permissions=selected,
+                        )
                     )
-                )
-            except Exception as exc:  # noqa: BLE001 - delegated to AdminErrorHandler
-                await AdminErrorHandler.handle(exc, context="admin_account_create")
-                return
+                except Exception as exc:  # noqa: BLE001 - delegated to handler
+                    await AdminErrorHandler.handle(exc, context="admin_account_create")
+                    return
 
             new_username.set_value("")
             new_full_name.set_value("")
@@ -92,8 +93,10 @@ async def accounts_page():
             ui.notify("Admin '" + new_admin.username + "' created", type="positive")
             await refresh_list()
 
-        ui.button("Create", on_click=create_account).props("color=primary").classes(
-            "q-mt-sm"
+        create_btn = (
+            ui.button("Create", on_click=create_account)
+            .props("color=primary")
+            .classes("q-mt-sm")
         )
 
     await refresh_list()
@@ -141,29 +144,31 @@ def _render_admin_list(
 
                             async def save_perms(a=a):
                                 selected = [k for k, cb in perm_cbs.items() if cb.value]
-                                try:
-                                    await use_case.update_permissions(
-                                        admin_id=a.id,
-                                        permissions=selected,
-                                        requesting_admin_id=requesting_admin_id,
-                                    )
-                                except AdminLastAccountsGuardException:
-                                    ui.notify(
-                                        "Cannot remove the last accounts-permission holder",
-                                        type="negative",
-                                    )
-                                    return
-                                except Exception as exc:  # noqa: BLE001 - delegated
-                                    await AdminErrorHandler.handle(
-                                        exc, context="admin_account_update_permissions"
-                                    )
-                                    return
+                                async with button_loading(save_btn):
+                                    try:
+                                        await use_case.update_permissions(
+                                            admin_id=a.id,
+                                            permissions=selected,
+                                            requesting_admin_id=requesting_admin_id,
+                                        )
+                                    except AdminLastAccountsGuardException:
+                                        ui.notify(
+                                            "Cannot remove the last accounts-permission holder",
+                                            type="negative",
+                                        )
+                                        return
+                                    except Exception as exc:  # noqa: BLE001 - delegated
+                                        await AdminErrorHandler.handle(
+                                            exc,
+                                            context="admin_account_update_permissions",
+                                        )
+                                        return
                                 ui.notify("Permissions updated", type="positive")
                                 dlg.close()
                                 await refresh_cb()
 
                             with ui.row().classes("q-mt-md"):
-                                ui.button("Save", on_click=save_perms).props(
+                                save_btn = ui.button("Save", on_click=save_perms).props(
                                     "color=primary"
                                 )
                                 ui.button("Cancel", on_click=dlg.close).props("flat")
@@ -184,42 +189,45 @@ def _render_admin_list(
                             )
 
                             async def confirm_remove(a=a):
-                                try:
-                                    await use_case.delete_account(
-                                        admin_id=a.id,
-                                        requesting_admin_id=requesting_admin_id,
-                                    )
-                                except AdminSelfActionForbiddenException:
+                                success = False
+                                async with button_loading(remove_btn):
+                                    try:
+                                        await use_case.delete_account(
+                                            admin_id=a.id,
+                                            requesting_admin_id=requesting_admin_id,
+                                        )
+                                        success = True
+                                    except AdminSelfActionForbiddenException:
+                                        ui.notify(
+                                            "Cannot remove your own account",
+                                            type="negative",
+                                        )
+                                    except AdminLastAccountsGuardException:
+                                        ui.notify(
+                                            "Cannot remove the last accounts-permission holder",
+                                            type="negative",
+                                        )
+                                    except Exception as exc:  # noqa: BLE001 - delegated
+                                        await AdminErrorHandler.handle(
+                                            exc, context="admin_account_delete"
+                                        )
+                                # Keep dlg.close() / refresh outside the loading
+                                # context (§11 convention) — button is still
+                                # alive here, the dialog hide happens after the
+                                # loading state has cleared.
+                                if success:
                                     ui.notify(
-                                        "Cannot remove your own account",
-                                        type="negative",
+                                        "Admin '" + a.username + "' removed",
+                                        type="positive",
                                     )
-                                    dlg.close()
-                                    return
-                                except AdminLastAccountsGuardException:
-                                    ui.notify(
-                                        "Cannot remove the last accounts-permission holder",
-                                        type="negative",
-                                    )
-                                    dlg.close()
-                                    return
-                                except Exception as exc:  # noqa: BLE001 - delegated
-                                    dlg.close()
-                                    await AdminErrorHandler.handle(
-                                        exc, context="admin_account_delete"
-                                    )
-                                    return
-                                ui.notify(
-                                    "Admin '" + a.username + "' removed",
-                                    type="positive",
-                                )
                                 dlg.close()
-                                await refresh_cb()
+                                if success:
+                                    await refresh_cb()
 
                             with ui.row():
-                                ui.button("Remove", on_click=confirm_remove).props(
-                                    "color=negative"
-                                )
+                                remove_btn = ui.button(
+                                    "Remove", on_click=confirm_remove
+                                ).props("color=negative")
                                 ui.button("Cancel", on_click=dlg.close).props("flat")
                         dlg.open()
 

@@ -9,6 +9,7 @@ from src._core.infrastructure.admin.error_handler import (
     AdminErrorHandler,
     admin_error_boundary,
 )
+from src._core.infrastructure.admin.layout import button_loading
 from src.auth.domain.exceptions.auth_exceptions import AdminSetupForbiddenException
 
 
@@ -47,24 +48,29 @@ async def setup_page():
                 ui.notify("All fields are required", type="warning")
                 return
 
-            try:
-                (
-                    new_admin,
-                    temp_password,
-                ) = await get_admin_account_use_case().create_first_admin(
-                    username=username,
-                    full_name=full_name,
-                    email=email,
-                    bootstrap_username=settings.admin_bootstrap_username,
-                )
-            except AdminSetupForbiddenException:
+            setup_already_complete = False
+            async with button_loading(create_btn):
+                try:
+                    (
+                        new_admin,
+                        temp_password,
+                    ) = await get_admin_account_use_case().create_first_admin(
+                        username=username,
+                        full_name=full_name,
+                        email=email,
+                        bootstrap_username=settings.admin_bootstrap_username,
+                    )
+                except AdminSetupForbiddenException:
+                    setup_already_complete = True
+                except Exception as exc:  # noqa: BLE001 - delegated to handler
+                    # Includes UserAlreadyExistsException (4xx) → AdminErrorHandler
+                    # surfaces exc.message as a warning and logs with context.
+                    await AdminErrorHandler.handle(exc, context="admin_setup_create")
+                    return
+            # Navigate only after loading state is cleared (button not yet torn down).
+            if setup_already_complete:
                 ui.notify("Setup is already complete. Please log in.", type="warning")
                 ui.navigate.to("/admin/login")
-                return
-            except Exception as exc:  # noqa: BLE001 - delegated to AdminErrorHandler
-                # Includes UserAlreadyExistsException (4xx) → AdminErrorHandler
-                # surfaces exc.message as a warning and logs with context.
-                await AdminErrorHandler.handle(exc, context="admin_setup_create")
                 return
 
             # Clear bootstrap session flag; user must log in as the new admin.
@@ -97,6 +103,8 @@ async def setup_page():
                 )
                 ui.timer(8.0, lambda: ui.navigate.to("/admin/login"), once=True)
 
-        ui.button("Create Admin Account", on_click=create_first_admin).classes(
-            "q-mt-md full-width"
-        ).props("color=primary")
+        create_btn = (
+            ui.button("Create Admin Account", on_click=create_first_admin)
+            .classes("q-mt-md full-width")
+            .props("color=primary")
+        )

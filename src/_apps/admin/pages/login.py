@@ -4,6 +4,7 @@ from src._core.infrastructure.admin.auth import (
     AdminAuthProvider,
     get_admin_auth_provider,
 )
+from src._core.infrastructure.admin.layout import button_loading
 from src.auth.domain.exceptions.auth_exceptions import (
     AdminCredentialDisabledException,
     AdminSetupRequiredException,
@@ -21,19 +22,24 @@ def login_page():
         ).classes("full-width")
 
         async def try_login():
-            try:
-                session = await get_admin_auth_provider().authenticate(
-                    username.value,
-                    password.value,
-                )
-            except AdminSetupRequiredException:
-                app.storage.user["setup_granted"] = True
-                ui.navigate.to("/admin/setup")
-            except (InvalidCredentialsException, AdminCredentialDisabledException):
-                ui.notify("Invalid credentials", type="negative")
-            else:
-                AdminAuthProvider.login(session)
-                ui.navigate.to("/admin/")
+            target: str | None = None
+            async with button_loading(login_btn):
+                try:
+                    session = await get_admin_auth_provider().authenticate(
+                        username.value,
+                        password.value,
+                    )
+                except AdminSetupRequiredException:
+                    app.storage.user["setup_granted"] = True
+                    target = "/admin/setup"
+                except (InvalidCredentialsException, AdminCredentialDisabledException):
+                    ui.notify("Invalid credentials", type="negative")
+                else:
+                    AdminAuthProvider.login(session)
+                    target = "/admin/"
+            # Navigate only after loading state is cleared (button not yet torn down).
+            if target:
+                ui.navigate.to(target)
 
         password.on("keydown.enter", try_login)
-        ui.button("Login", on_click=try_login).classes("q-mt-md full-width")
+        login_btn = ui.button("Login", on_click=try_login).classes("q-mt-md full-width")
