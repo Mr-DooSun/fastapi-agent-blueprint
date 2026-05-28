@@ -11,6 +11,15 @@ from src._apps.worker.di.container import create_worker_container
 # the ``@broker.task`` decorator registers them with the broker before the
 # worker starts pulling jobs (#206 audit retention cleanup).
 from src._apps.worker.tasks import audit_cleanup_task as _audit_cleanup  # noqa: F401
+
+# Wire ``Provide[CoreContainer.database]`` markers in the cross-cutting tasks
+# at module-import time so resolution works in BOTH process families:
+# - worker process (executes the task)
+# - scheduler process (introspects @broker.task schedule labels)
+# Without module-level wire, the wire call inside the startup event only runs
+# in the worker — scheduler-side direct invocation would hit an unresolved
+# Provide marker.
+container.wire(modules=[_audit_cleanup])
 from src._core.config import settings
 from src._core.infrastructure.discovery import discover_domains
 from src._core.infrastructure.logging.configure import configure_logging
@@ -56,10 +65,6 @@ def _register_startup_event(app: AsyncBroker) -> None:
     @app.on_event("startup")
     async def startup(state: TaskiqState):
         worker_container = create_worker_container(core_container=container)
-        # Wire the cross-cutting audit cleanup task so its ``Provide`` markers
-        # resolve at invocation. Domain tasks wire themselves in their own
-        # bootstrap modules (#206).
-        container.wire(modules=[_audit_cleanup])
         _bootstrap_domains(worker_container=worker_container)
 
 

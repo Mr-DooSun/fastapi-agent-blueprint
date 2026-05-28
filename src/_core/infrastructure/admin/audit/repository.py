@@ -6,7 +6,7 @@ surface used by ``/admin/audit-log`` and the cleanup task: ``list_filtered``
 detail dialog), and ``delete_older_than`` (retention cleanup).
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import delete, func, select
 
@@ -19,6 +19,8 @@ from src._core.infrastructure.admin.audit.dtos.audit_log_dto import (
 )
 from src._core.infrastructure.admin.audit.models.audit_log_model import AdminAuditLog
 from src._core.infrastructure.persistence.rdb.database import Database
+
+_UTC = UTC
 
 
 class AdminAuditLogRepository:
@@ -59,6 +61,24 @@ class AdminAuditLogRepository:
 
     # ── Read (Phase 2 / #206) ───────────────────────────────────────────────
 
+    # Summary projection: every column EXCEPT ``before_state`` / ``after_state``
+    # so the list query doesn't fetch the JSON payload (the detail dialog gets
+    # it via :meth:`get_by_id`). codex must-fix: keep the list/detail split
+    # honest at the SQL layer, not just the DTO surface.
+    _SUMMARY_COLUMNS = (
+        AdminAuditLog.id,
+        AdminAuditLog.admin_user_id,
+        AdminAuditLog.admin_username,
+        AdminAuditLog.action,
+        AdminAuditLog.domain,
+        AdminAuditLog.record_id,
+        AdminAuditLog.result,
+        AdminAuditLog.failure_reason,
+        AdminAuditLog.ip_address,
+        AdminAuditLog.correlation_id,
+        AdminAuditLog.created_at,
+    )
+
     async def list_filtered(
         self,
         filter_vo: AuditLogFilter,
@@ -72,7 +92,7 @@ class AdminAuditLogRepository:
         ``after_state`` so the list payload stays small; the detail dialog
         fetches the full row via :meth:`get_by_id`.
         """
-        stmt = self._apply_filter(select(AdminAuditLog), filter_vo).order_by(
+        stmt = self._apply_filter(select(*self._SUMMARY_COLUMNS), filter_vo).order_by(
             AdminAuditLog.created_at.desc()
         )
         count_stmt = self._apply_filter(select(func.count(AdminAuditLog.id)), filter_vo)
@@ -81,7 +101,7 @@ class AdminAuditLogRepository:
         async with self._database.session() as session:
             total = (await session.execute(count_stmt)).scalar_one()
             result = await session.execute(stmt.offset(offset).limit(page_size))
-            rows = result.scalars().all()
+            rows = result.all()
 
         summaries = [
             AuditLogSummaryDTO(
@@ -135,7 +155,20 @@ class AdminAuditLogRepository:
     # ── Helpers ──────────────────────────────────────────────────────────────
 
     @staticmethod
-    def _apply_filter(stmt, filter_vo: AuditLogFilter):
+    def _to_naive_utc(value: datetime) -> datetime:
+        """Normalize a timezone-aware datetime to naive UTC.
+
+        ``AdminAuditLog.created_at`` is ``sa.DateTime()`` — timezone-naive on
+        both SQLite and Postgres. Binding aware datetimes against a naive
+        column raises on asyncpg/Postgres, so callers' aware values must be
+        converted before they hit the query.
+        """
+        if value.tzinfo is None:
+            return value
+        return value.astimezone(_UTC).replace(tzinfo=None)
+
+    @classmethod
+    def _apply_filter(cls, stmt, filter_vo: AuditLogFilter):
         if filter_vo.username_like:
             stmt = stmt.where(
                 AdminAuditLog.admin_username.ilike(f"%{filter_vo.username_like}%")
@@ -149,7 +182,11 @@ class AdminAuditLogRepository:
         if filter_vo.result is not None:
             stmt = stmt.where(AdminAuditLog.result == filter_vo.result.value)
         if filter_vo.since is not None:
-            stmt = stmt.where(AdminAuditLog.created_at >= filter_vo.since)
+            stmt = stmt.where(
+                AdminAuditLog.created_at >= cls._to_naive_utc(filter_vo.since)
+            )
         if filter_vo.until is not None:
-            stmt = stmt.where(AdminAuditLog.created_at < filter_vo.until)
+            stmt = stmt.where(
+                AdminAuditLog.created_at < cls._to_naive_utc(filter_vo.until)
+            )
         return stmt

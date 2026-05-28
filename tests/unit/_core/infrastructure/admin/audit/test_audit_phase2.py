@@ -147,6 +147,21 @@ async def test_get_by_id_returns_none_for_missing(test_db):
 
 
 @pytest.mark.asyncio
+async def test_list_filtered_accepts_timezone_aware_since(test_db):
+    """codex must-fix: tz-aware datetimes must be normalized to naive UTC
+    before binding against the tz-naive ``created_at`` column."""
+    repo = AdminAuditLogRepository(test_db)
+    await _insert_row(repo, admin_username="tzcheck")
+
+    aware_since = datetime.now(UTC) - timedelta(hours=1)  # tz-aware
+    rows, _total = await repo.list_filtered(
+        AuditLogFilter(username_like="tzcheck", since=aware_since)
+    )
+    # Should not raise; the inserted row from the last hour is included.
+    assert any(r.admin_username == "tzcheck" for r in rows)
+
+
+@pytest.mark.asyncio
 async def test_delete_older_than_only_removes_old(test_db):
     repo = AdminAuditLogRepository(test_db)
 

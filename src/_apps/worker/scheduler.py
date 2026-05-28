@@ -20,6 +20,12 @@ from __future__ import annotations
 from taskiq import TaskiqScheduler
 from taskiq.schedule_sources import LabelScheduleSource
 
+# Importing ``worker.app`` triggers ``bootstrap_app(broker)`` so middlewares
+# and the cross-cutting task wiring run in the scheduler process too. Without
+# it, the scheduler process has an unbootstrapped broker and any direct task
+# invocation (e.g. integration tests, manual debugging) would hit unresolved
+# ``Provide`` markers.
+from src._apps.worker import app as _worker_app  # noqa: F401
 from src._apps.worker.broker import broker
 
 # Side-effect imports so the schedule labels of cross-cutting tasks are

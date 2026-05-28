@@ -30,6 +30,14 @@ from src._core.infrastructure.persistence.rdb.database import Database
 _logger = structlog.stdlib.get_logger(__name__)
 
 
+def _naive_utc_now() -> datetime:
+    """Naive UTC ``now()`` for comparison against ``AdminAuditLog.created_at``,
+    which is a timezone-naive ``DateTime`` column. Avoids
+    asyncpg/Postgres binding errors for aware datetimes against
+    ``timestamp without time zone``."""
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 @broker.task(
     task_name=f"{settings.task_name_prefix}._core.admin.audit_cleanup",
     # Daily at 03:00 UTC. Adjust by env if needed; the schedule label is what
@@ -45,7 +53,7 @@ async def audit_cleanup_task(
 
     Returns the number of rows deleted (also logged as ``audit_log_cleanup``).
     """
-    cutoff = datetime.now(UTC) - timedelta(days=settings.audit_log_retention_days)
+    cutoff = _naive_utc_now() - timedelta(days=settings.audit_log_retention_days)
     repo = AdminAuditLogRepository(database)
     deleted = await repo.delete_older_than(cutoff)
     _logger.info(
