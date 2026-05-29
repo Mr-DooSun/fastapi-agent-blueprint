@@ -389,6 +389,16 @@ Check LLM model factory, configuration, and Agent-using services:
   - Grep: `LLMContextLengthExceededException` raised when input exceeds model context window
   - Long-running or batched LLM calls run via Worker (not in request handler) to avoid request-thread blocking
   - Per-request token / cost limits considered for endpoints exposed to external users
+  - **max_tokens cap (#197 Phase 4 / #210)**: `AI_MAX_TOKENS_PER_REQUEST` (None=uncapped, `ge=1 le=200_000`) is threaded into both PydanticAI agents via `Agent(model_settings={"max_tokens": n})`; omitted entirely when uncapped so the provider default applies (never `{"max_tokens": None}`).
+
+### Per-User Rate Limiting (#197 Phase 4 / #210)
+- [ ] [When applicable][HIGH] LLM-invoking routes are rate-limited per authenticated user
+  - Detection condition: Check **project-dna.md section 8** "LLM (PydanticAI Agent)" status -> [SKIP] if "not implemented"
+  - slowapi `@limiter.limit` is applied **only** to the LLM routes (`POST /v1/docs/query`, `POST /v1/classify`) — NOT a global SlowAPIMiddleware (a global default would throttle admin NiceGUI assets / Swagger / login and break the admin UI).
+  - The limiter key is the authenticated `sub` (`request.state.user_id`, set by `UserIdentityMiddleware` from the DB-free `AuthService.extract_subject`), with IP fallback for unauthenticated/invalid tokens. `extract_subject` never raises.
+  - Breach returns HTTP 429 with the project envelope (`error_code="RATE_LIMITED"`, `errorDetails=null`) — no limit internals leaked.
+  - `RATE_LIMIT_ENABLED` (default True) gates the middleware + limiter registration; `RATE_LIMIT_PER_MINUTE` (`ge=1 le=1000`, default 60) bounds the per-minute allowance.
+  - **Proxy caveat**: behind a load balancer the IP fallback collapses unauthenticated clients to the LB IP; authenticated traffic keys by `sub`. X-Forwarded-For handling is a deployment follow-up.
 
 ### Rate Limit Handling
 - [ ] [When applicable][HIGH] LLM API rate limit errors caught and wrapped into domain exceptions

@@ -134,6 +134,11 @@ For 422 validation errors, `errorDetails.errors` is an array of field-level
 problems pulled from FastAPI / pydantic. Treat `success: false` as the sole
 discriminator — do not branch on HTTP status alone.
 
+The AI routes (`POST /v1/docs/query`, `POST /v1/classify`) are rate-limited
+per authenticated user. When the limit is exceeded they return **HTTP 429**
+with `errorCode: "RATE_LIMITED"` and `errorDetails: null` — back off and retry
+later (the limit is per-minute; default 60/min).
+
 ### 2.6 Pagination
 
 Two patterns coexist depending on the storage backend.

@@ -25,6 +25,7 @@ Interface → Application → Domain ← Infrastructure
 - Embedding: Optional (EMBEDDING_PROVIDER env var, PydanticAIEmbeddingAdapter — OpenAI/Bedrock/Google/Ollama)
 - LLM: Optional (LLM_PROVIDER env var, build_llm_model() — OpenAI/Anthropic/Bedrock)
 - Message Broker: SQS/RabbitMQ/InMemory (BROKER_TYPE env var)
+- LLM guardrails + budget/rate (#197 Phase 3/4): `GUARDRAILS_ENABLED` (runtime prompt-injection + PII guards), `AI_MAX_TOKENS_PER_REQUEST` (per-request generation cap), `RATE_LIMIT_ENABLED` / `RATE_LIMIT_PER_MINUTE` (slowapi per-user limit on `/v1/docs/query` + `/v1/classify`, in-memory)
 - Logging: structlog + asgi-correlation-id; default level INFO; controlled via `LOG_LEVEL` / `LOG_JSON_FORMAT` env vars (dev/local/quickstart → console, stg/prod → JSON, #9)
 
 ## Environment Config Validation
