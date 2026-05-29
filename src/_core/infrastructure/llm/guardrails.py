@@ -31,7 +31,10 @@ from typing import Final
 _INJECTION_RULES: Final[tuple[tuple[str, re.Pattern[str]], ...]] = (
     (
         "ignore_previous",
-        re.compile(r"ignore\s+(?:all\s+)?(?:previous|prior)\s+instructions", re.I),
+        re.compile(
+            r"ignore\s+(?:all\s+)?(?:(?:the|your)\s+)?(?:previous|prior)\s+instructions",
+            re.I,
+        ),
     ),
     (
         "disregard_above",
@@ -104,7 +107,12 @@ def scan_pii(text: str) -> set[str]:
     fabrication diff:
       - email  → lower-cased
       - ipv4   → dotted form as-is
-      - phone  → digits only (min 10 digits after stripping)
+      - phone  → digits only, with a leading ``1`` country code stripped for
+        11-digit US numbers so ``555-123-4567`` and ``+1 555 123 4567``
+        canonicalize to the same token. This biases toward FEWER false
+        positives (a missed fabricated number is less harmful than wrongly
+        blocking a legitimately-reformatted one). True international country
+        codes are not canonicalized — a documented Phase 3 strictness limit.
     """
     if not text:
         return set()
@@ -121,11 +129,25 @@ def scan_pii(text: str) -> set[str]:
     # Remove IPv4 matches before phone scanning so dotted quads aren't double-counted.
     phone_search_space = _IPV4.sub(" ", text)
     for m in _PHONE.findall(phone_search_space):
-        digits = _DIGITS.sub("", m)
-        if 10 <= len(digits) <= 15:
-            tokens.add(f"phone:{digits}")
+        normalized = _normalize_phone(m)
+        if normalized:
+            tokens.add(f"phone:{normalized}")
 
     return tokens
+
+
+def _normalize_phone(raw: str) -> str:
+    """Digits-only phone token, empty if not a plausible 10-15 digit number.
+
+    Strips a single leading ``1`` US country code on 11-digit numbers so the
+    same line formatted with/without ``+1`` canonicalizes identically.
+    """
+    digits = _DIGITS.sub("", raw)
+    if not (10 <= len(digits) <= 15):
+        return ""
+    if len(digits) == 11 and digits.startswith("1"):
+        digits = digits[1:]
+    return digits
 
 
 # ── Prompt-leak detection (log-only) ────────────────────────────────────────
