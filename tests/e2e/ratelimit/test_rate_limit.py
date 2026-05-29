@@ -76,3 +76,43 @@ async def test_health_route_is_not_rate_limited():
     async with _client() as client:
         statuses = [(await client.get("/health")).status_code for _ in range(10)]
     assert all(s == 200 for s in statuses), statuses
+
+
+async def _register(client: AsyncClient, suffix: str) -> str:
+    resp = await client.post(
+        "/v1/auth/register",
+        json={
+            "username": f"rl{suffix}",
+            "fullName": "RL User",
+            "email": f"rl{suffix}@example.com",
+            "password": "secret",
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    return resp.json()["data"]["accessToken"]
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_is_per_user_not_shared():
+    """User A exhausting their bucket must NOT throttle user B. The limiter keys
+    off the real Bearer token's `sub` via UserIdentityMiddleware (independent of
+    the get_current_user override), so two real tokens get two buckets."""
+    async with _client() as client:
+        token_a = await _register(client, "aaa")
+        token_b = await _register(client, "bbb")
+        headers_a = {"Authorization": f"Bearer {token_a}"}
+        headers_b = {"Authorization": f"Bearer {token_b}"}
+
+        body = {"text": "hello", "categories": ["a", "b"]}
+        # Exhaust user A (limit = 3).
+        a_statuses = [
+            (
+                await client.post("/v1/classify", json=body, headers=headers_a)
+            ).status_code
+            for _ in range(4)
+        ]
+        # User B's first call must still succeed.
+        b_first = await client.post("/v1/classify", json=body, headers=headers_b)
+
+    assert a_statuses[3] == 429, a_statuses
+    assert b_first.status_code == 200, b_first.text
