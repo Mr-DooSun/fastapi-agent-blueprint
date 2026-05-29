@@ -167,6 +167,31 @@ class AuthService:
             raise InvalidTokenException()
         return payload
 
+    def extract_subject(self, token: str) -> str | None:
+        """Best-effort decode returning the `sub` claim, or None — never raises.
+
+        Used by the rate-limit identity middleware (#197 Phase 4 / #210) to key
+        the limiter per authenticated user. Reuses the same signing config as
+        :meth:`_decode_token` but deliberately DROPS the ``options={"require": ...}``
+        and the token-type check: a rate-limit key only needs ``sub``, and an
+        expired/garbage token must quietly fall back to IP keying, not raise into
+        the request path. This is NOT an authentication check — the route's
+        ``Depends(get_current_user)`` remains the real gate.
+        """
+        try:
+            payload = jwt.decode(
+                token,
+                self._token_config.secret_key,
+                algorithms=[self._token_config.algorithm],
+                audience=self._token_config.audience,
+                issuer=self._token_config.issuer,
+                leeway=self._token_config.leeway_seconds,
+            )
+        except jwt.PyJWTError:
+            return None
+        sub = payload.get("sub")
+        return str(sub) if sub is not None else None
+
     def _user_id_from_payload(self, payload: dict[str, Any]) -> int:
         try:
             return int(payload["sub"])

@@ -274,3 +274,53 @@ async def test_expired_access_token_is_rejected(auth_service):
 
     with pytest.raises(TokenExpiredException):
         await auth_service.get_user_from_access_token(token)
+
+
+# ── extract_subject (rate-limit identity, #197 Phase 4 / #210) ───────────────
+
+
+@pytest.mark.asyncio
+async def test_extract_subject_returns_sub_for_valid_token(auth_service, user):
+    access_token, _ = await auth_service.issue_token_pair(user)
+    assert auth_service.extract_subject(access_token) == str(user.id)
+
+
+def test_extract_subject_returns_none_for_garbage(auth_service):
+    assert auth_service.extract_subject("not-a-jwt") is None
+    assert auth_service.extract_subject("") is None
+
+
+def test_extract_subject_returns_none_for_expired_without_raising(auth_service):
+    """Unlike _decode_token, extract_subject must NOT raise on an expired token —
+    it falls back to None (→ IP keying) so the request path is never broken."""
+    token_config = make_auth_token_config()
+    now = datetime.now(UTC)
+    payload: dict[str, Any] = {
+        "sub": "7",
+        "jti": "expired",
+        "type": "access",
+        "iat": now - timedelta(hours=2),
+        "exp": now - timedelta(hours=1),
+        "iss": token_config.issuer,
+        "aud": token_config.audience,
+    }
+    token = jwt.encode(
+        payload, token_config.secret_key, algorithm=token_config.algorithm
+    )
+    assert auth_service.extract_subject(token) is None
+
+
+def test_extract_subject_returns_none_for_wrong_signature(auth_service):
+    token_config = make_auth_token_config()
+    now = datetime.now(UTC)
+    payload: dict[str, Any] = {
+        "sub": "7",
+        "jti": "forged",
+        "type": "access",
+        "iat": now,
+        "exp": now + timedelta(hours=1),
+        "iss": token_config.issuer,
+        "aud": token_config.audience,
+    }
+    token = jwt.encode(payload, "wrong-secret-key", algorithm=token_config.algorithm)
+    assert auth_service.extract_subject(token) is None

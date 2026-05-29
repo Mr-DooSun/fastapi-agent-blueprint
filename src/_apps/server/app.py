@@ -23,6 +23,10 @@ def create_app():
             },
             403: {"model": ErrorResponse, "description": "Forbidden"},
             404: {"model": ErrorResponse, "description": "Resource not found"},
+            429: {
+                "model": ErrorResponse,
+                "description": "Rate limit exceeded (RATE_LIMITED)",
+            },
             500: {"model": ErrorResponse, "description": "Internal server error"},
         },
     )

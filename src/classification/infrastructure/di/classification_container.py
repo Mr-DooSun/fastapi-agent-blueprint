@@ -23,6 +23,7 @@ class ClassificationContainer(containers.DeclarativeContainer):
             PydanticAIClassifier,
             llm_model=core_container.llm_model,
             guardrails_enabled=settings.guardrails_enabled,
+            max_tokens=settings.ai_max_tokens_per_request,
         ),
         stub=providers.Singleton(StubClassifier),
     )

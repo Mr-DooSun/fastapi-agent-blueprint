@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Final, LiteralString
+from typing import TYPE_CHECKING, Any, Final, LiteralString
 
 import structlog
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from pydantic_ai.settings import ModelSettings
 
 from src._core.domain.dtos.rag import BaseChunkDTO, CitationDTO, QueryAnswerDTO
 from src._core.exceptions.llm_exceptions import (
@@ -56,10 +59,26 @@ class _AgentAnswer(BaseModel):
     answer: str = Field(..., description="The answer text")
 
 
+def _model_settings(max_tokens: int | None) -> ModelSettings | None:
+    """Build the per-request generation cap (#197 Phase 4 / #210).
+
+    Returns ``None`` (→ provider default) when uncapped — NOT
+    ``{"max_tokens": None}``, since an explicit ``None`` may be transmitted to
+    the provider as a real setting on some backends.
+    """
+    return {"max_tokens": max_tokens} if max_tokens else None
+
+
 class PydanticAIAnswerAgent:
     """Real LLM-backed RAG answerer via PydanticAI."""
 
-    def __init__(self, llm_model: Any, *, guardrails_enabled: bool = True) -> None:
+    def __init__(
+        self,
+        llm_model: Any,
+        *,
+        guardrails_enabled: bool = True,
+        max_tokens: int | None = None,
+    ) -> None:
         try:
             from pydantic_ai import Agent
         except ImportError:
@@ -73,6 +92,7 @@ class PydanticAIAnswerAgent:
             model=llm_model,
             output_type=_AgentAnswer,
             instructions=_INSTRUCTIONS,
+            model_settings=_model_settings(max_tokens),
         )
 
     async def answer(

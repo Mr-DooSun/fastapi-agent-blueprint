@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
 from src._core.application.dtos.base_response import SuccessResponse
+from src._core.infrastructure.ratelimit.limiter import limiter, rate_limit_value
 from src.auth.interface.server.dependencies.auth_dependencies import get_current_user
 from src.docs.domain.services.docs_query_service import DocsQueryService
 from src.docs.domain.services.document_service import DocumentService
@@ -125,8 +126,10 @@ async def delete_document(
     response_model_exclude={"pagination"},
     dependencies=[Depends(get_current_user)],
 )
+@limiter.limit(rate_limit_value)
 @inject
 async def query_docs(
+    request: Request,
     item: QueryRequest,
     docs_query_service: DocsQueryService = Depends(
         Provide[DocsContainer.docs_query_service]

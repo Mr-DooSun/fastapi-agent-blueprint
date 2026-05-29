@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Final, LiteralString
+from typing import TYPE_CHECKING, Any, Final, LiteralString
 
 import structlog
+
+if TYPE_CHECKING:
+    from pydantic_ai.settings import ModelSettings
 
 from src._core.exceptions.llm_exceptions import PromptInjectionDetected
 from src._core.infrastructure.llm.guardrails import detect_prompt_injection
@@ -26,10 +29,23 @@ _PERSONA: Final[LiteralString] = (
 _INSTRUCTIONS: Final[LiteralString] = _PERSONA + CLASSIFIER_INSTRUCTIONS_TAIL
 
 
+def _model_settings(max_tokens: int | None) -> ModelSettings | None:
+    """Per-request generation cap (#197 Phase 4 / #210). Returns ``None`` when
+    uncapped — never ``{"max_tokens": None}`` (an explicit None may transmit to
+    the provider)."""
+    return {"max_tokens": max_tokens} if max_tokens else None
+
+
 class PydanticAIClassifier:
     """Real LLM-backed classifier via PydanticAI Agent."""
 
-    def __init__(self, llm_model: Any, *, guardrails_enabled: bool = True) -> None:
+    def __init__(
+        self,
+        llm_model: Any,
+        *,
+        guardrails_enabled: bool = True,
+        max_tokens: int | None = None,
+    ) -> None:
         try:
             from pydantic_ai import Agent
         except ImportError:
@@ -43,6 +59,7 @@ class PydanticAIClassifier:
             model=llm_model,
             output_type=ClassificationDTO,
             instructions=_INSTRUCTIONS,
+            model_settings=_model_settings(max_tokens),
         )
 
     async def classify(

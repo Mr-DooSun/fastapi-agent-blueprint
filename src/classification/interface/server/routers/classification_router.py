@@ -1,7 +1,8 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from src._core.application.dtos.base_response import SuccessResponse
+from src._core.infrastructure.ratelimit.limiter import limiter, rate_limit_value
 from src.auth.interface.server.dependencies.auth_dependencies import get_current_user
 from src.classification.domain.services.classification_service import (
     ClassificationService,
@@ -27,8 +28,10 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
     response_model=SuccessResponse[ClassificationResponse],
     response_model_exclude={"pagination"},
 )
+@limiter.limit(rate_limit_value)
 @inject
 async def classify_text(
+    request: Request,
     item: ClassifyRequest,
     classification_service: ClassificationService = Depends(
         Provide[ClassificationContainer.classification_service]

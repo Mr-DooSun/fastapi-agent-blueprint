@@ -319,6 +319,38 @@ class Settings(BaseSettings):
         default=None, validation_alias="LLM_BEDROCK_REGION"
     )
 
+    # Per-request generation cap (#197 Phase 4 / #210). None = uncapped
+    # (provider default). When set, passed to both PydanticAI agents via
+    # ``Agent(model_settings={"max_tokens": ...})``.
+    ai_max_tokens_per_request: int | None = Field(
+        default=None,
+        validation_alias="AI_MAX_TOKENS_PER_REQUEST",
+        ge=1,
+        le=200_000,
+    )
+
+    # ----------------------------------------------------------------
+    # Rate limiting (#197 Phase 4 / #210 — slowapi, in-memory)
+    # ----------------------------------------------------------------
+    # Per-user rate limit on the two LLM-invoking routes (/v1/docs/query,
+    # /v1/classify). Keyed by the authenticated `sub`, IP fallback. Disable
+    # via RATE_LIMIT_ENABLED=false (kill-switch — skips the identity
+    # middleware + limiter registration; the @limiter.limit decorator no-ops).
+    rate_limit_enabled: bool = Field(
+        default=True,
+        validation_alias="RATE_LIMIT_ENABLED",
+        description=(
+            "Enable per-user rate limiting on /v1/docs/query and /v1/classify."
+        ),
+    )
+    rate_limit_per_minute: int = Field(
+        default=60,
+        validation_alias="RATE_LIMIT_PER_MINUTE",
+        ge=1,
+        le=1000,
+        description="Allowed requests per minute per user on the AI routes.",
+    )
+
     # ----------------------------------------------------------------
     # Observability (OpenTelemetry — Optional)
     # ----------------------------------------------------------------

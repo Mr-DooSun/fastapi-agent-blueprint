@@ -65,13 +65,37 @@ def _install_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(BaseCustomException, custom_exception_handler)
     app.add_exception_handler(Exception, generic_exception_handler)
 
+    # Rate limiting (#197 Phase 4 / #210). Registering the limiter on app.state
+    # + its exception handler is what activates the per-route @limiter.limit
+    # decorators. Gated by the kill-switch so disabling skips it entirely
+    # (the decorator also no-ops via Limiter(enabled=...)).
+    if settings.rate_limit_enabled:
+        from slowapi.errors import RateLimitExceeded
+
+        from src._core.infrastructure.ratelimit.limiter import (
+            limiter,
+            rate_limit_exceeded_handler,
+        )
+
+        app.state.limiter = limiter
+        app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
 
 def _install_middleware(app: FastAPI) -> None:
     # Starlette applies the LAST one added as the OUTERMOST.
     # CorrelationIdMiddleware must see the raw request first (so it can read /
     # generate X-Request-ID before the log middleware tries to bind it), so it
     # is added AFTER RequestLogMiddleware.
-    # Order after registration: Request → CorrelationId → RequestLog → CORS → TrustedHost → App
+    # UserIdentityMiddleware is added FIRST → innermost → runs just before the
+    # route, so request.state.user_id is set before the @limiter.limit key_func
+    # evaluates; CorrelationId stays outermost (429s still get a request id).
+    # Order on the way in: CorrelationId → RequestLog → CORS → TrustedHost → UserIdentity → App
+    if settings.rate_limit_enabled:
+        from src._core.infrastructure.ratelimit.middleware import (
+            UserIdentityMiddleware,
+        )
+
+        app.add_middleware(UserIdentityMiddleware)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
     app.add_middleware(
         CORSMiddleware,
