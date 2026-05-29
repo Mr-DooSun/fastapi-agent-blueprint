@@ -1,6 +1,6 @@
 # Project Overview
 
-> Last synced: 2026-05-01 via /sync-guidelines (#154 admin JWT RBAC + #156 /docs selector revamp reviewed; no Infrastructure / Environment / App Entrypoint surface changes — admin login provider transitioned from env-var to auth-domain JWT but the entrypoint `src/_apps/admin/` is unchanged.)
+> Last synced: 2026-05-29 via /sync-guidelines (#210 Phase 4 — added LLM guardrails + max_tokens + per-user rate-limit env knobs to Infrastructure Options).
 > For tech stack, refer to project-dna.md §8; for layer structure, refer to §1.
 > For the Optional infra toggle surface (env var → disabled behavior per infra), see AGENTS.md "Optional Infrastructure Toggles" + [ADR 042](../../docs/history/042-optional-infrastructure-di-pattern.md).
 > This file only contains **project-level context** not covered in project-dna.md.

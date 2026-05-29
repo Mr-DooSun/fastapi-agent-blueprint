@@ -600,7 +600,8 @@ class {Name}Container(containers.DeclarativeContainer):
 | JWT/Authentication | Active | `src/auth/` provides HS256 access/refresh tokens, refresh-token rotation/revocation persistence, `/v1/auth/*`, and Bearer protection for `user` API routes (#4) |
 | File Upload (UploadFile) | Not implemented | |
 | RBAC/Permissions | Active | Page-level admin permissions via `User.permissions` (JSON column) added in #194. `User.role` determines admin status; `permissions` list controls which admin pages each admin can access. `/admin/accounts` UI manages accounts and per-page permission grants. Bootstrap one-time setup wizard creates the first real admin with all permissions. Server-route RBAC for `/v1/user` (reads + CUD) added in #199 via the `require_admin` interface dependency (`role == admin` and not `is_bootstrap_admin`); non-user `/v1/*` route-level role gating is not yet implemented. |
-| Rate Limiting (slowapi) | Not implemented | |
+| Rate Limiting (slowapi) | Active | Per-user limit on `POST /v1/docs/query` + `POST /v1/classify` (#210). In-memory; targeted `@limiter.limit`, keyed by authenticated `sub`. Redis backend + non-AI-route DoS limits are follow-ups. See §14 "Budget + rate". |
+| LLM max_tokens cap | Active | `AI_MAX_TOKENS_PER_REQUEST` per-request generation cap on both PydanticAI agents (#210). Default None=uncapped. See §14. |
 | WebSocket | Not implemented | |
 
 > Extras note (#104, ADR 042): `nicegui` belongs to the `admin` extra; `boto3` / `aioboto3` / `types-aiobotocore-*` belong to the `aws` extra. Deployments install only what they need — `uv sync --extra admin --extra aws`; `make setup` installs both by default. When an extra is missing, the corresponding Selector branch returns `None` / `StubEmbedder` / `TestModel` for graceful degradation.
