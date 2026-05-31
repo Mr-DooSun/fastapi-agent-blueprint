@@ -25,6 +25,7 @@ def _make_safe_env(env_name: str = "prod") -> dict[str, str]:
         "DATABASE_HOST": "db.internal.example.com",
         "DATABASE_NAME": "myapp_db",
         "JWT_SECRET_KEY": "a-real-jwt-secret-key-with-enough-length",
+        "ADMIN_JWT_SECRET_KEY": "a-distinct-admin-jwt-secret-key-with-length",
         "TASK_NAME_PREFIX": "myapp",
         "BROKER_TYPE": "sqs",
         "AWS_SQS_ACCESS_KEY": "test-key",
@@ -93,7 +94,8 @@ class TestStrictEnvRejectsUnsafeDefaults:
             with pytest.raises(ValidationError) as exc_info:
                 _create_settings()
             error_message = str(exc_info.value)
-            assert "5 error(s)" in error_message
+            # +1 vs pre-ADR-049: ADMIN_JWT_SECRET_KEY must be explicitly set in strict envs
+            assert "6 error(s)" in error_message
 
     def test_admin_bootstrap_requires_password_when_enabled(self):
         env = {"ENV": "local", "ADMIN_BOOTSTRAP_ENABLED": "true", **_REQUIRED_VARS}
