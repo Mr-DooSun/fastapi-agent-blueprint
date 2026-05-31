@@ -1,6 +1,13 @@
 from dependency_injector import containers, providers
 
 from src._core.config import settings
+from src._core.infrastructure.admin.permission_registry import AdminPermissionRegistry
+from src.admin_identity.application.use_cases.admin_account_use_case import (
+    AdminAccountUseCase,
+)
+from src.admin_identity.application.use_cases.admin_auth_use_case import (
+    AdminAuthUseCase,
+)
 from src.admin_identity.domain.dtos.admin_identity_dto import AdminTokenConfig
 from src.admin_identity.domain.services.admin_auth_service import AdminAuthService
 from src.admin_identity.domain.services.admin_identity_service import (
@@ -49,4 +56,20 @@ class AdminIdentityContainer(containers.DeclarativeContainer):
         admin_refresh_token_repository=admin_refresh_token_repository,
         admin_repository=admin_repository,
         token_config=admin_token_config,
+    )
+
+    admin_auth_use_case = providers.Factory(
+        AdminAuthUseCase,
+        admin_auth_service=admin_auth_service,
+        admin_identity_service=admin_identity_service,
+        token_config=admin_token_config,
+    )
+
+    permission_registry = providers.Singleton(AdminPermissionRegistry)
+
+    admin_account_use_case = providers.Factory(
+        AdminAccountUseCase,
+        admin_auth_service=admin_auth_service,
+        admin_identity_service=admin_identity_service,
+        permission_registry=permission_registry,
     )
