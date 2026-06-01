@@ -75,10 +75,11 @@ class AdminVars:
     SHADOW: Final = "--admin-shadow"
     CARD_BORDER: Final = "--admin-card-border"
 
-    # Layout metrics.
+    # Layout metrics + typography.
     GRID_HEIGHT: Final = "--admin-grid-height"
     GRID_HEIGHT_COMPACT: Final = "--admin-grid-height-compact"
     LABEL_COL_WIDTH: Final = "--admin-label-col-width"
+    FONT: Final = "--admin-font"
 
 
 class AdminMetrics:
@@ -125,7 +126,20 @@ _LAYOUT_TOKENS: Final = {
     AdminVars.GRID_HEIGHT: "calc(100vh - 240px)",
     AdminVars.GRID_HEIGHT_COMPACT: "calc(100vh - 360px)",
     AdminVars.LABEL_COL_WIDTH: "160px",
+    # Wanted Sans (open-source) with a graceful system-font fallback — so the UI
+    # still renders cleanly if the CDN font fails to load.
+    AdminVars.FONT: (
+        '"Wanted Sans Variable", -apple-system, BlinkMacSystemFont, '
+        '"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    ),
 }
+
+# Wanted Sans webfont (open-sourced by Wanted). Pinned-ish via @latest with a
+# system fallback in the font stack; swap to a version tag for reproducibility.
+_FONT_CSS_URL: Final = (
+    "https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@latest/"
+    "packages/wanted-sans/fonts/webfonts/variable/complete/WantedSansVariable.min.css"
+)
 
 _CONTENT_DARK: Final = {
     AdminVars.BG: "#0b1120",
@@ -241,6 +255,9 @@ _HELPER_CSS: Final = """
 /* === Helper classes + Quasar component overrides (token-driven) === */
 body, .q-page-container {
   background-color: var(--admin-bg) !important;
+}
+body {
+  font-family: var(--admin-font) !important;
 }
 /* Chrome: dark header + sidebar, light text. */
 .admin-header {
@@ -397,5 +414,6 @@ def install_admin_theme_css() -> None:
 
     from src._core.config import settings
 
+    ui.add_head_html(f'<link rel="stylesheet" href="{_FONT_CSS_URL}">', shared=True)
     ui.add_css(build_admin_css(settings.admin_theme_palette), shared=True)
     _theme_css_installed = True
