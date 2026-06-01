@@ -19,3 +19,7 @@ metadata:
 4. Create config file and page route file in separate directories.
 5. Keep `BaseAdminPage` in config only; keep `@ui.page` in page only.
 6. Mask sensitive fields and do not add manual bootstrap registration.
+7. Custom / non-CRUD pages compose `admin.components` builders (never raw
+   `ui.card`/`ui.aggrid`/`ui.dialog`); every route uses `@admin_error_boundary`
+   and `require_auth*` as its first statement. See
+   `docs/ai/shared/admin-design-system.md`.
