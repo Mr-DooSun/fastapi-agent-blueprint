@@ -70,6 +70,7 @@ class AdminVars:
     TEXT_MUTED: Final = "--admin-text-muted"
     SUCCESS_BG: Final = "--admin-success-bg"
     ROW_ALT: Final = "--admin-row-alt"
+    ROW_HOVER: Final = "--admin-row-hover"
     GRID_HEIGHT: Final = "--admin-grid-height"
     GRID_HEIGHT_COMPACT: Final = "--admin-grid-height-compact"
     LABEL_COL_WIDTH: Final = "--admin-label-col-width"
@@ -101,6 +102,8 @@ class AdminClasses:
     SUCCESS_SURFACE: Final = "admin-success-surface"
     GRID: Final = "admin-grid"
     GRID_COMPACT: Final = "admin-grid-compact"
+    PAGINATION: Final = "admin-pagination"
+    EMPTY_STATE: Final = "admin-empty-state"
     PRE: Final = "admin-pre"
     HIDDEN: Final = "admin-hidden"
 
@@ -133,6 +136,7 @@ def build_admin_css() -> str:
   {AdminVars.TEXT_MUTED}: #64748b;
   {AdminVars.SUCCESS_BG}: #f0fdf4;
   {AdminVars.ROW_ALT}: #f8fafc;
+  {AdminVars.ROW_HOVER}: #eef2ff;
   {AdminVars.GRID_HEIGHT}: calc(100vh - 240px);
   {AdminVars.GRID_HEIGHT_COMPACT}: calc(100vh - 360px);
   {AdminVars.LABEL_COL_WIDTH}: 160px;
@@ -149,6 +153,7 @@ def build_admin_css() -> str:
   {AdminVars.TEXT_MUTED}: #94a3b8;
   {AdminVars.SUCCESS_BG}: #052e16;
   {AdminVars.ROW_ALT}: #0f172a;
+  {AdminVars.ROW_HOVER}: #1e293b;
 }}
 
 /* === Helper classes consuming the tokens === */
@@ -185,9 +190,22 @@ def build_admin_css() -> str:
   width: 100%;
   height: var({AdminVars.GRID_HEIGHT_COMPACT});
 }}
-.{AdminClasses.GRID} .ag-row-odd,
-.{AdminClasses.GRID_COMPACT} .ag-row-odd {{
-  background-color: var({AdminVars.ROW_ALT});
+/* AG Grid (NiceGUI 3.x quartz theme) reads these CSS custom properties from
+   the new theming API — set them on the grid element rather than overriding
+   the legacy .ag-row-odd class (which the quartz theme no longer emits). */
+.{AdminClasses.GRID},
+.{AdminClasses.GRID_COMPACT} {{
+  --ag-odd-row-background-color: var({AdminVars.ROW_ALT});
+  --ag-row-hover-color: var({AdminVars.ROW_HOVER});
+}}
+.{AdminClasses.PAGINATION} {{
+  justify-content: flex-end;
+}}
+.{AdminClasses.EMPTY_STATE} {{
+  color: var({AdminVars.TEXT_MUTED});
+  align-items: center;
+  text-align: center;
+  padding: 48px 0;
 }}
 .{AdminClasses.PRE} {{
   white-space: pre-wrap;

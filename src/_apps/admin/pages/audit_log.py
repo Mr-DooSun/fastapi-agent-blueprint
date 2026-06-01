@@ -77,7 +77,9 @@ async def audit_log_page() -> None:
         apply_btn = ui.button("Apply", on_click=lambda: _apply()).props("color=primary")
 
     grid_container = ui.column().classes("w-full")
-    pagination_container = ui.row().classes("q-gutter-sm items-center q-mt-sm")
+    pagination_container = ui.row().classes(
+        f"q-gutter-sm items-center q-mt-sm {AdminClasses.PAGINATION}"
+    )
 
     def _build_filter() -> AuditLogFilter:
         actions = tuple(AdminAction(a) for a in (action_select.value or []))

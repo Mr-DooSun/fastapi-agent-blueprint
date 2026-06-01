@@ -96,12 +96,16 @@ def test_css_defines_helper_class_selectors():
         AdminClasses.SUCCESS_SURFACE,
         AdminClasses.GRID,
         AdminClasses.GRID_COMPACT,
+        AdminClasses.PAGINATION,
+        AdminClasses.EMPTY_STATE,
         AdminClasses.PRE,
         AdminClasses.HIDDEN,
     ):
         assert f".{cls}" in css, f"selector .{cls} missing from CSS"
 
 
-def test_css_styles_alternating_grid_rows():
+def test_css_styles_alternating_grid_rows_via_theming_vars():
+    """NiceGUI 3.x quartz theme reads --ag-* custom properties, not .ag-row-odd."""
     css = build_admin_css()
-    assert ".ag-row-odd" in css
+    assert "--ag-odd-row-background-color" in css
+    assert "--ag-row-hover-color" in css
