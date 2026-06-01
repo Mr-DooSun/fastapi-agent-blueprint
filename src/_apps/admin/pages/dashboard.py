@@ -1,5 +1,6 @@
 from nicegui import ui
 
+from src._core.infrastructure.admin import components as c
 from src._core.infrastructure.admin.auth import require_auth_allowlisted
 from src._core.infrastructure.admin.base_admin_page import BaseAdminPage
 from src._core.infrastructure.admin.error_handler import admin_error_boundary
@@ -16,42 +17,21 @@ async def dashboard_page():
     if session is None:
         return
     admin_layout(page_configs, current_domain="", session=session)
-    ui.label("Dashboard").classes("text-h4 q-mb-lg")
-    ui.label("Welcome to the Admin Dashboard").classes("text-subtitle1 q-mb-lg")
+    c.page_header("Dashboard", subtitle="Welcome to the Admin Dashboard")
 
     permissions = set(session.permissions)
     visible_configs = [pc for pc in page_configs if pc.domain_name in permissions]
 
+    def _nav_card(icon: str, label: str, target: str) -> None:
+        with c.card(clickable_to=target):
+            with ui.row().classes("items-center q-pa-sm"):
+                ui.icon(icon).classes("text-h4 text-primary")
+                ui.label(label).classes("text-h6")
+
     with ui.row().classes("q-gutter-md"):
         for pc in visible_configs:
-            with (
-                ui.card()
-                .classes("cursor-pointer")
-                .on(
-                    "click",
-                    lambda p=pc: ui.navigate.to(f"/admin/{p.domain_name}"),
-                )
-            ):
-                with ui.row().classes("items-center q-pa-sm"):
-                    ui.icon(pc.icon).classes("text-h4 text-primary")
-                    ui.label(pc.display_name).classes("text-h6")
-
+            _nav_card(pc.icon, pc.display_name, f"/admin/{pc.domain_name}")
         if "accounts" in permissions:
-            with (
-                ui.card()
-                .classes("cursor-pointer")
-                .on("click", lambda: ui.navigate.to("/admin/accounts"))
-            ):
-                with ui.row().classes("items-center q-pa-sm"):
-                    ui.icon("manage_accounts").classes("text-h4 text-primary")
-                    ui.label("Accounts").classes("text-h6")
-
+            _nav_card("manage_accounts", "Accounts", "/admin/accounts")
         if "audit_log" in permissions:
-            with (
-                ui.card()
-                .classes("cursor-pointer")
-                .on("click", lambda: ui.navigate.to("/admin/audit-log"))
-            ):
-                with ui.row().classes("items-center q-pa-sm"):
-                    ui.icon("fact_check").classes("text-h4 text-primary")
-                    ui.label("Audit Log").classes("text-h6")
+            _nav_card("fact_check", "Audit Log", "/admin/audit-log")
