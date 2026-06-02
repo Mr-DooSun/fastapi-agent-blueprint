@@ -324,7 +324,8 @@ body, .q-page-container {
   text-align: center;
   padding: 48px 0;
 }
-.admin-login-bg {
+.admin-login-bg,
+.admin-login-bg .q-page-container {
   background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%) !important;
 }
 .admin-login-card {
