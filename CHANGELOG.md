@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-02
+
+This release reworks the NiceGUI admin **landing page** into an at-a-glance data
+dashboard and polishes the admin design system, while CRUD pages stay
+intentionally functional and copyable. Three threads: **(1) Dashboard** — a
+permission-aware read facade feeds domain record counts, audit totals/failures,
+an activity chart, and a recent-activity table, each degrading gracefully when
+its source is unavailable; **(2) Design system** — the first ECharts builder
+(`c.bar_chart`) joins the component library with a palette-aware fill and a
+height token; **(3) Look & feel** — the dark theme moves from blue-navy to a
+neutral charcoal/zinc cohesive across all presets, and the sidebar collapses to
+an icon-only mini rail.
+
+### Added
+
+- Admin dashboard read facade (`src/_apps/admin/dashboard_metrics.py`) — gathers all landing-page metrics concurrently with per-source isolation: never raises into the page, logs failures with `error_type` only (no `str(exc)` leak), and gates the audit read behind the `audit_log` permission so unauthorized operators never cause audit data to be read server-side ([#223](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/223))
+- Redesigned `/admin/` landing — domain record-count stat cards, audit totals + recent-failures, a "Recent Activity by Action" chart, a recent-activity table, and quick-action nav, replacing the flat nav-card grid; CRUD list/detail pages unchanged ([#223](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/223))
+- `c.bar_chart()` — first ECharts builder in the admin component library, with a palette-aware bar fill (`palette_accent`), the `--admin-chart-height` token, and `AdminClasses.CHART`; cataloged in `docs/ai/shared/admin-design-system.md` ([#223](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/223))
+
+### Changed
+
+- Admin dark theme retuned from blue-navy (`#0b1120` / `#161b2c`) to a neutral charcoal/zinc palette cohesive with the shadcn / supabase / linear chrome and lifted off near-OLED black for comfort, with a three-step page < chrome < card elevation; `.q-card` now binds its background to `--admin-surface` so the surface token actually applies ([#223](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/223))
+- Admin sidebar collapses to an icon-only **mini rail** instead of hiding entirely — the collapse control sits at the top of the drawer (separated from nav by a divider so it is discoverable and not mistaken for a nav item), nav items carry tooltips + `aria-label` for the collapsed rail, and the header hamburger is now mobile-only ([#223](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/223))
+
 ## [0.6.0] - 2026-05-07
 
 This release completes the production feature surface and prepares the project
@@ -206,7 +230,8 @@ Quality Gate review contract, `/plan-feature` Approach Options stage,
 - ADR documentation (001-013)
 - CONTRIBUTING guide and issue templates
 
-[Unreleased]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.3.0...v0.4.0
