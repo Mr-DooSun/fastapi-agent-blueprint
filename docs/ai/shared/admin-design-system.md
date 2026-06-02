@@ -48,6 +48,7 @@ Import surface: `from src._core.infrastructure.admin import components as c`.
 | `c.action_dialog(title, *, width=, subtitle=)` | context mgr | Dialog with arbitrary body; yields `(dialog, card)`; opens on exit |
 | `c.confirm_dialog(title, message, *, on_confirm, on_success=, danger=)` | async | Confirm-an-action; see contract below |
 | `c.data_grid(column_defs, row_data, *, compact=, row_click_to=, on_cell_click=, on_row_click=)` | leaf | AG Grid with the admin theme + shared defaults |
+| `c.bar_chart(categories, values)` | leaf | ECharts vertical bar; sized by `AdminClasses.CHART` / `--admin-chart-height`, bar fill tracks the active `ADMIN_THEME_PALETTE` accent |
 | `c.pagination(*, current, total_pages, on_prev, on_next)` | leaf | Prev / page / next row |
 | `c.empty_state(icon=)` | context mgr | Centered empty placeholder; add the message inside |
 | `c.toast_success / toast_warning / toast_error(message)` | leaf | Standardized `ui.notify` |
