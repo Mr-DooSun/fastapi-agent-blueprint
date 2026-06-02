@@ -126,21 +126,27 @@ _LAYOUT_TOKENS: Final = {
     AdminVars.GRID_HEIGHT: "calc(100vh - 240px)",
     AdminVars.GRID_HEIGHT_COMPACT: "calc(100vh - 360px)",
     AdminVars.LABEL_COL_WIDTH: "160px",
-    # Wanted Sans (open-source) with a graceful system-font fallback — so the UI
-    # still renders cleanly if the CDN font fails to load.
+    # Wanted Sans (self-hosted, see _FONT_FACE_CSS) with a graceful system-font
+    # fallback — so the UI still renders cleanly if the asset fails to load.
     AdminVars.FONT: (
         '"Wanted Sans Variable", -apple-system, BlinkMacSystemFont, '
         '"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     ),
 }
 
-# Wanted Sans webfont (open-sourced by Wanted), pinned to an exact tag for
-# reproducibility. The font stack in AdminVars.FONT falls back to system fonts,
-# so a CDN failure degrades gracefully rather than breaking the UI.
-_FONT_CSS_URL: Final = (
-    "https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@1.0.3/"
-    "packages/wanted-sans/fonts/webfonts/variable/complete/WantedSansVariable.min.css"
-)
+# Wanted Sans webfont (open-sourced by Wanted, SIL OFL 1.1) — self-hosted from
+# the repo (src/_apps/admin/static/fonts/), served at /admin-static by
+# bootstrap_admin(). No external CDN dependency. The AdminVars.FONT stack falls
+# back to system fonts if the asset is missing, so the UI degrades gracefully.
+_FONT_FACE_CSS: Final = """
+@font-face {
+  font-family: "Wanted Sans Variable";
+  font-style: normal;
+  font-weight: 400 1000;
+  font-display: swap;
+  src: url("/admin-static/fonts/WantedSansVariable.woff2") format("woff2-variations");
+}
+"""
 
 _CONTENT_DARK: Final = {
     AdminVars.BG: "#0b1120",
@@ -391,7 +397,7 @@ def build_admin_css(palette: str = DEFAULT_PALETTE) -> str:
         **_LAYOUT_TOKENS,
     }
     return (
-        f"/* === Admin theme (#193) — palette: {name} === */\n"
+        _FONT_FACE_CSS + f"/* === Admin theme (#193) — palette: {name} === */\n"
         ":root {\n" + _emit_vars(root_vars) + "\n}\n"
         ".body--dark {\n" + _emit_vars(_CONTENT_DARK) + "\n}\n" + _HELPER_CSS
     )
@@ -415,6 +421,5 @@ def install_admin_theme_css() -> None:
 
     from src._core.config import settings
 
-    ui.add_head_html(f'<link rel="stylesheet" href="{_FONT_CSS_URL}">', shared=True)
     ui.add_css(build_admin_css(settings.admin_theme_palette), shared=True)
     _theme_css_installed = True

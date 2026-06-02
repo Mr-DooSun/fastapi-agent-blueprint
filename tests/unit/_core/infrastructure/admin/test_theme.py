@@ -153,3 +153,12 @@ def test_css_defines_style_tokens_and_component_overrides():
     # Quasar components are restyled globally so every page inherits the look.
     assert ".q-card" in css
     assert ".admin-header .q-btn" in css  # header text is token-driven, not white
+
+
+def test_font_is_self_hosted_not_cdn():
+    """Wanted Sans is bundled + served locally (#193) — no external CDN."""
+    css = build_admin_css()
+    assert "@font-face" in css
+    assert '"Wanted Sans Variable"' in css
+    assert "/admin-static/fonts/WantedSansVariable.woff2" in css
+    assert "cdn.jsdelivr.net" not in css  # never reintroduce the CDN dependency
