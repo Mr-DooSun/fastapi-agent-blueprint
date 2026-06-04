@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-06-04
+
+An admin code-cleanup patch on top of 0.7.1.
+
+### Fixed
+
+- **Admin authorization redirect** — an operator hitting a page they lack permission for was redirected to `/admin/dashboard`, a non-existent route (blank page); now redirects to the real `/admin/` dashboard landing ([#229](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/229))
+
+### Changed
+
+- Internal admin tidy-ups (no user-facing behavior change) — renamed the `theme.palette_accent` helper to `palette_primary` (matches its `--q-primary` return value), simplified the drawer mini-rail nav state, removed a dead `app_username` alias, and stripped dev-process comments from shipped source ([#229](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/229))
+
 ## [0.7.1] - 2026-06-04
 
 A security-hardening patch on top of 0.7.0, closing findings from a security
@@ -265,7 +277,8 @@ Quality Gate review contract, `/plan-feature` Approach Options stage,
 - ADR documentation (001-013)
 - CONTRIBUTING guide and issue templates
 
-[Unreleased]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.5.0...v0.6.0
