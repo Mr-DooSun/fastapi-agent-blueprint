@@ -310,6 +310,20 @@ body {
   --ag-row-hover-color: var(--admin-row-hover);
   --ag-border-radius: var(--admin-radius);
 }
+/* AG Grid v33 hides cells via `:where(.ag-delay-render) ... { visibility:hidden }`
+   until its first render completes, then drops `ag-delay-render`. In the NiceGUI
+   embed that class can get stuck (the grid initializes before its container is
+   laid out), leaving rows permanently invisible — data is in the DOM but the
+   grid looks empty. Force our admin grids' cells visible; the zero-specificity
+   `:where()` rule cannot win against this. */
+.admin-grid .ag-cell,
+.admin-grid .ag-row,
+.admin-grid .ag-header-cell,
+.admin-grid-compact .ag-cell,
+.admin-grid-compact .ag-row,
+.admin-grid-compact .ag-header-cell {
+  visibility: visible !important;
+}
 .admin-chart {
   width: 100%;
   height: var(--admin-chart-height);

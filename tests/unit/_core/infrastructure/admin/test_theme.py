@@ -122,6 +122,14 @@ def test_css_styles_alternating_grid_rows_via_theming_vars():
     assert "--ag-row-hover-color" in css
 
 
+def test_css_forces_grid_cells_visible():
+    """AG Grid v33 can leave rows stuck `visibility:hidden` via `ag-delay-render`;
+    the theme forces admin grid cells visible (#234)."""
+    css = build_admin_css()
+    assert ".admin-grid .ag-cell" in css
+    assert "visibility: visible" in css
+
+
 def test_css_defines_style_tokens_and_component_overrides():
     """The theme drives shape/elevation tokens + Quasar component overrides."""
     css = build_admin_css()
