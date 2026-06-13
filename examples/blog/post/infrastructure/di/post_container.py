@@ -4,7 +4,9 @@ from examples.blog.author.infrastructure.repositories.author_repository import (
     AuthorRepository,
 )
 from examples.blog.post.domain.services.post_service import PostService
-from examples.blog.post.infrastructure.repositories.post_repository import PostRepository
+from examples.blog.post.infrastructure.repositories.post_repository import (
+    PostRepository,
+)
 
 
 class PostContainer(containers.DeclarativeContainer):

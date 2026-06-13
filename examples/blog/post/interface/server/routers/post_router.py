@@ -46,7 +46,9 @@ async def list_posts(
     responses = []
     for d in datas:
         author_name = await post_service.get_author_display_name(d.author_id)
-        responses.append(PostResponse(**d.model_dump(), author_display_name=author_name))
+        responses.append(
+            PostResponse(**d.model_dump(), author_display_name=author_name)
+        )
     return SuccessResponse(data=responses, pagination=pagination)
 
 

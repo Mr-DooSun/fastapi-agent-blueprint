@@ -1,7 +1,9 @@
 from dependency_injector import containers, providers
 
 from examples.blog.author.domain.services.author_service import AuthorService
-from examples.blog.author.infrastructure.repositories.author_repository import AuthorRepository
+from examples.blog.author.infrastructure.repositories.author_repository import (
+    AuthorRepository,
+)
 
 
 class AuthorContainer(containers.DeclarativeContainer):
