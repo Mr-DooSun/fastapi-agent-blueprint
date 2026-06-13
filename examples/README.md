@@ -94,7 +94,7 @@ Populated incrementally as contributors land the good-first-issues:
 | `todo/` | Minimal CRUD domain (zero infra) | 🟡 tracked issue |
 | `url-shortener/` | CRUD + Taskiq worker cleanup task | 🟡 tracked issue |
 | `blog/` | Two domains + Protocol-based cross-domain DIP | 🟡 tracked issue |
-| `webhook-receiver/` | Worker task driven by a broker message | 🟡 tracked issue |
+| `webhook_receiver/` | Worker task driven by a broker message | ✅ completed |
 | `simple-chatbot/` | Minimal PydanticAI Agent — no RAG | 🟡 tracked issue |
 
 Finished examples move from 🟡 to ✅ with a link to the PR that landed
