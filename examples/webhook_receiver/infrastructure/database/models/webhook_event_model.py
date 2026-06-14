@@ -15,6 +15,6 @@ class WebhookEventModel(Base):
     payload: Mapped[dict] = mapped_column(JSON, nullable=False)
     status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
     received_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), nullable=True
+        DateTime, server_default=func.now(), nullable=False
     )
     processed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

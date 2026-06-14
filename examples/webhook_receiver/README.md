@@ -113,5 +113,5 @@ rm -f ./quickstart.db
 ## Production References
 
 Compare this lightweight example with the production-ready code in:
-*   [src/user/interface/worker/tasks/user_test_task.py](file:///Users/vraj21/Desktop/fastapi-open-source/src/user/interface/worker/tasks/user_test_task.py) for the standard worker task wrapper pattern.
-*   [src/_core/infrastructure/taskiq/](file:///Users/vraj21/Desktop/fastapi-open-source/src/_core/infrastructure/taskiq/) for the generic broker abstraction and dependency injection selectors.
+*   [user_test_task.py](../../src/user/interface/worker/tasks/user_test_task.py) for the standard worker task wrapper pattern.
+*   [taskiq/](../../src/_core/infrastructure/taskiq/) for the generic broker abstraction and dependency injection selectors.
