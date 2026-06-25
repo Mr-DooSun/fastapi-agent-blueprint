@@ -1,7 +1,6 @@
 from typing import Protocol
 
-from src.simple_chatbot.domain.dtos.chatbot_dto import ChatMessageDTO
-
+from examples.simple_chatbot.domain.dtos.chatbot_dto import ChatMessageDTO
 from src._core.domain.protocols.repository_protocol import BaseRepositoryProtocol
 
 

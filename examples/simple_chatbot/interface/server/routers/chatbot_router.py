@@ -1,15 +1,17 @@
+from typing import Annotated
+
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
-from src.simple_chatbot.domain.services.chatbot_service import ChatService
-from src.simple_chatbot.infrastructure.di.simple_chatbot_container import (
+from fastapi import APIRouter, Depends, Path
+
+from examples.simple_chatbot.domain.services.chatbot_service import ChatService
+from examples.simple_chatbot.infrastructure.di.simple_chatbot_container import (
     SimpleChatbotContainer,
 )
-from src.simple_chatbot.interface.server.schemas.chatbot_schema import (
+from examples.simple_chatbot.interface.server.schemas.chatbot_schema import (
     ChatHistoryResponse,
     ChatRequest,
     ChatResponse,
 )
-
 from src._core.application.dtos.base_response import SuccessResponse
 
 router = APIRouter()
@@ -47,7 +49,7 @@ async def chat_reply(
 )
 @inject
 async def get_chat_message(
-    chat_id: int,
+    chat_id: Annotated[int, Path(ge=1)],
     chatbot_service: ChatService = Depends(
         Provide[SimpleChatbotContainer.chat_service]
     ),

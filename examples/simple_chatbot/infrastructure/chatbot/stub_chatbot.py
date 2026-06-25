@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from typing import Any
 
-from src.simple_chatbot.domain.dtos.chatbot_dto import ChatReply
+import structlog
 
-logger = logging.getLogger(__name__)
+from examples.simple_chatbot.domain.dtos.chatbot_dto import ChatReply
+
+logger = structlog.stdlib.get_logger(__name__)
 
 
 @dataclass

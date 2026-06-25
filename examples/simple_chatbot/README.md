@@ -7,7 +7,7 @@ It serves as a clean starting point for executing LLM-backed workflows within th
 ## How it works
 
 1. **Client Request:** The client sends a prompt via `POST /v1/chat`.
-2. **Execution & Structured Output:** `ChatService` invokes the LLM chatbot adapter which runs a PydanticAI Agent initialized with a structured output type `ChatReply(reply, confidence)` and the inline system prompt (`SYSTEM_PROMPT = "You are a helpful assistant."`).
+2. **Execution & Structured Output:** `ChatService` invokes the LLM chatbot adapter which runs a PydanticAI Agent initialized with a structured output type `ChatReply(reply, confidence)` and the inline instructions (`_INSTRUCTIONS = "You are a helpful assistant."`).
 3. **Token Usage Calculation:** Raw token usage is extracted from PydanticAI's `RunResult.usage()` in the service layer to calculate `tokens_used = (input_tokens + output_tokens)`.
 4. **Database Persistence:** The prompt, generated reply, and total tokens used are persisted to the `chatbot_message` database table as a `ChatMessageDTO` record.
 5. **API Response:** The endpoint returns the generated reply, the model's confidence, and the tokens used.
@@ -16,6 +16,9 @@ It serves as a clean starting point for executing LLM-backed workflows within th
 > [!NOTE]
 > Surfaces `tokens_used` for educational visibility only. For production-grade multi-tenant usage/cost tracking, see the `ai_usage` domain (#75).
 
+> [!IMPORTANT]
+> **Production Considerations:** Unlike the database-centric CRUD examples, this example communicates with a real external LLM. For production deployments, you must implement authentication, rate limiting, and cost/budget controls. Additionally, see [guardrails.py](file:///Users/vraj21/Desktop/fastapi-open-source/src/_core/infrastructure/llm/guardrails.py) for examples of protecting LLM boundaries against prompt-injection attacks.
+
 ## Running the Example
 
 ### 1. Copy the example to `src/`
@@ -23,7 +26,7 @@ It serves as a clean starting point for executing LLM-backed workflows within th
 Since the blueprint auto-discovers packages under `src/` on boot:
 
 ```bash
-cp -r examples/simple-chatbot src/simple_chatbot
+cp -r examples/simple_chatbot src/simple_chatbot
 ```
 
 ### 2. Configure Environment Variables
@@ -100,8 +103,8 @@ rm -f ./quickstart.db
 
 Unit tests are written to verify both the stub fallback flow and real LLM adapter integration (using PydanticAI's `TestModel` to mock model runs without requiring actual API keys).
 
-Run tests directly in the example folder:
+Run the unit tests:
 
 ```bash
-pytest examples/simple-chatbot/tests/ -v
+pytest tests/unit/simple_chatbot/ -v
 ```

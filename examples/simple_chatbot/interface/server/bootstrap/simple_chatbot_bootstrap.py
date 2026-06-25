@@ -1,8 +1,9 @@
 from fastapi import FastAPI
-from src.simple_chatbot.infrastructure.di.simple_chatbot_container import (
+
+from examples.simple_chatbot.infrastructure.di.simple_chatbot_container import (
     SimpleChatbotContainer,
 )
-from src.simple_chatbot.interface.server.routers import chatbot_router
+from examples.simple_chatbot.interface.server.routers import chatbot_router
 
 
 def create_simple_chatbot_container(
@@ -10,7 +11,7 @@ def create_simple_chatbot_container(
 ) -> None:
     """Wire dependencies into the simple-chatbot router package."""
     simple_chatbot_container.wire(
-        packages=["src.simple_chatbot.interface.server.routers"]
+        packages=["examples.simple_chatbot.interface.server.routers"]
     )
 
 

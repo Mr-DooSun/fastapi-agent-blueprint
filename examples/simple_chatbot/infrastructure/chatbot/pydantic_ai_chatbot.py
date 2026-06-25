@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Final
+from typing import Any, Final, LiteralString
 
-from src.simple_chatbot.domain.dtos.chatbot_dto import ChatReply
+from examples.simple_chatbot.domain.dtos.chatbot_dto import ChatReply
 
-SYSTEM_PROMPT: Final[str] = "You are a helpful assistant."
+_INSTRUCTIONS: Final[LiteralString] = "You are a helpful assistant."
 
 
 class PydanticAIChatbot:
@@ -22,7 +22,7 @@ class PydanticAIChatbot:
         self._agent: Agent[None, ChatReply] = Agent(
             model=llm_model,
             output_type=ChatReply,
-            system_prompt=SYSTEM_PROMPT,
+            instructions=_INSTRUCTIONS,
         )
 
     async def generate_reply(self, prompt: str) -> tuple[ChatReply, Any]:

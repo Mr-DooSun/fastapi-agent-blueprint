@@ -1,9 +1,12 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from src._core.application.dtos.base_request import BaseRequest
+from src._core.application.dtos.base_response import BaseResponse
 
 
-class ChatRequest(BaseModel):
+class ChatRequest(BaseRequest):
     """Validation schema for chat request body."""
 
     prompt: str = Field(
@@ -14,26 +17,29 @@ class ChatRequest(BaseModel):
     )
 
 
-class ChatResponse(BaseModel):
+class ChatResponse(BaseResponse):
     """Serialization schema for chatbot response (with tokens_used for educational visibility)."""
 
     reply: str = Field(..., description="The generated response from the chatbot")
     confidence: float = Field(
-        ..., description="Confidence score of the structured output model"
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Confidence score of the structured output model",
     )
     tokens_used: int = Field(
-        ..., description="Calculated total token usage (input + output)"
+        ..., ge=0, description="Calculated total token usage (input + output)"
     )
 
 
-class ChatHistoryResponse(BaseModel):
+class ChatHistoryResponse(BaseResponse):
     """Serialization schema for retrieved historical chatbot messages."""
 
     id: int = Field(..., description="The database primary key")
     prompt: str = Field(..., description="The original user prompt")
     reply: str = Field(..., description="The historical chatbot reply")
     tokens_used: int = Field(
-        ..., description="Number of tokens used in that generation"
+        ..., ge=0, description="Number of tokens used in that generation"
     )
     created_at: datetime = Field(
         ..., description="The date/time the message was persisted"

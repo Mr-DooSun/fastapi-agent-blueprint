@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from src.simple_chatbot.domain.dtos.chatbot_dto import (
+from examples.simple_chatbot.domain.dtos.chatbot_dto import (
     ChatMessageDTO,
     CreateChatMessageDTO,
 )
-from src.simple_chatbot.domain.protocols.chatbot_protocol import ChatbotProtocol
-from src.simple_chatbot.domain.protocols.chatbot_repository_protocol import (
+from examples.simple_chatbot.domain.protocols.chatbot_protocol import ChatbotProtocol
+from examples.simple_chatbot.domain.protocols.chatbot_repository_protocol import (
     ChatbotRepositoryProtocol,
 )
 

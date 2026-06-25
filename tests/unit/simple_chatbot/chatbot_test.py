@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import pytest
 
-# Test import mapping (via meta path redirection registered in conftest.py)
-from src.simple_chatbot.domain.dtos.chatbot_dto import ChatMessageDTO, ChatReply
-from src.simple_chatbot.domain.services.chatbot_service import ChatService
-from src.simple_chatbot.infrastructure.chatbot.pydantic_ai_chatbot import (
+# Test imports from examples.simple_chatbot package
+from examples.simple_chatbot.domain.dtos.chatbot_dto import ChatMessageDTO, ChatReply
+from examples.simple_chatbot.domain.services.chatbot_service import ChatService
+from examples.simple_chatbot.infrastructure.chatbot.pydantic_ai_chatbot import (
     PydanticAIChatbot,
 )
-from src.simple_chatbot.infrastructure.chatbot.stub_chatbot import StubChatbot
-from src.simple_chatbot.infrastructure.repositories.chatbot_repository import (
+from examples.simple_chatbot.infrastructure.chatbot.stub_chatbot import StubChatbot
+from examples.simple_chatbot.infrastructure.repositories.chatbot_repository import (
     ChatbotRepository,
 )
 
@@ -70,7 +70,8 @@ async def test_chatbot_real_agent_flow(test_db) -> None:
 
 def test_chatbot_request_validation() -> None:
     from pydantic import ValidationError
-    from src.simple_chatbot.interface.server.schemas.chatbot_schema import (
+
+    from examples.simple_chatbot.interface.server.schemas.chatbot_schema import (
         ChatRequest,
     )
 
