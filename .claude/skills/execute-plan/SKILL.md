@@ -20,8 +20,9 @@ description: Execute an approved multi-task plan through native project workflow
 4. Execute each task in dependency order, invoking the mapped implementation
    skill when available.
 5. Run each task's Verification Gates before marking it complete.
-6. Run Review Gates. Governor-changing work defaults to Claude cross review,
-   with `self-structured` or `human:<handle>` fallback when Claude tooling is
+6. Run Review Gates. Governor-changing work defaults to cross-tool review by
+   the other harness (Claude-implemented work → Codex review), with
+   `self-structured` or `human:<handle>` fallback when the reviewing tool is
    unavailable.
 7. Update the ledger to `stage="complete"` only after verification and review
    are satisfied.

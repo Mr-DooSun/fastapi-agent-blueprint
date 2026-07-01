@@ -22,7 +22,7 @@ problem framing → approach options → plan → implement
 | problem framing | Confirm the actual problem, scope, edge cases. Distinguish change-of-the-day vs. systemic issue. | `/plan-feature` Phase 0 (Requirements); `/fix-bug` Phase 1 (Reproduce); ad hoc | Mandatory by default |
 | approach options | Compare 2~3 design-level candidates with trade-offs. Recommend exactly one. | `/plan-feature` Phase 1 (Approach Options) | Conditionally mandatory (architecture commitment present) |
 | plan | Produce the implementation plan: tasks, ordering, validation. | `/plan-feature` Phase 4 (Tasks); `/fix-bug` Phase 2 (Trace) | Mandatory by default |
-| implement | Write the code following project patterns. | `/new-domain`, `/add-api`, `/add-worker-task`, `/add-admin-page`, `/add-cross-domain`, `/migrate-domain` | n/a (this *is* the work) |
+| implement | Write the code following project patterns. | `/new-domain`, `/add-api`, `/add-worker-task`, `/add-admin-page`, `/add-cross-domain`, `/migrate-domain`; `/execute-plan` (multi-task orchestration) | n/a (this *is* the work) |
 | verify | Confirm the change does what it claims via tests, runs, or schema validation. | `/test-domain run`, `pytest`, `make demo`, `make demo-rag`, `alembic upgrade head` | Mandatory by default |
 | self-review | Audit the change against project constraints before declaring done. | `/review-architecture`, `/security-review` (when applicable) | Mandatory by default |
 | completion gate | Cross-check drift, generate ADR/follow-up if needed, signal end-of-work. | `/review-pr`, `/sync-guidelines` | Mandatory-by-default; non-blocking reminder via Phase 4 hook + Governor Footer Lint CI |
@@ -31,7 +31,7 @@ Steps are sequential. Returning to an earlier step is permitted (e.g. `verify` f
 
 ### Step interaction with skills
 
-Each shared-procedure skill carries a `Default Flow Position` section that pins which step(s) the skill participates in. Implementation skills (Tier 2 Keep) belong to `implement`; review skills belong to `self-review` or `completion gate`; planning skills span `framing`/`approach options`/`plan`. See [harness-asset-matrix.md §Tier 2](harness-asset-matrix.md#tier-2--skills-3-layer-hybrid-c) for the per-skill mapping.
+Each shared-procedure skill carries a `Default Flow Position` section that pins which step(s) the skill participates in. Implementation skills (Tier 2 Keep) belong to `implement`; review skills belong to `self-review` or `completion gate`; planning skills span `framing`/`approach options`/`plan`; `execute-plan` consumes an approved Execution Packet and orchestrates `implement` → `verify` → `self-review` → `completion gate` for complex / governor-changing / multi-task work (§4 Native execution workflow). See [harness-asset-matrix.md §Tier 2](harness-asset-matrix.md#tier-2--skills-3-layer-hybrid-c) for the per-skill mapping.
 
 A skill must not invoke itself recursively. `/plan-feature` calling `/plan-feature` is forbidden; the recursion guard sits in each skill body.
 

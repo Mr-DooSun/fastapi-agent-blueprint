@@ -31,7 +31,7 @@ Schema v2
     "current_task": "<current task title, or null>",
     "tasks": [{"id": "<stable id>", "title": "<task>", "status": "<status>"}],
     "review": {
-      "mode": "claude-code|self-structured|human:<handle>|null",
+      "mode": "codex-cli|claude-code|self-structured|human:<handle>|null",
       "status": "not_required|pending|fallback|complete|blocked",
       "reason": "<fallback/blocking rationale, or null>"
     }
@@ -344,7 +344,7 @@ def build_workflow_advisory_segments(
                     [
                         "[native-workflow] Native workflow advisory.",
                         "Governor-changing work is missing review state.",
-                        "Default: Claude cross review; fallback: self-structured or human review with PR Footer rationale.",
+                        "Default: cross-tool review by the other harness; fallback: self-structured or human review with PR Footer rationale.",
                     ]
                 )
             )

@@ -228,7 +228,8 @@ Required fields:
   initial status.
 - **Verification Gates**: exact commands or manual probes with expected result.
 - **Review Gates**: self-review, architecture/security review, sync-guidelines,
-  Claude cross review, and fallback policy.
+  cross-tool review by the other harness when governor-changing, and fallback
+  policy.
 
 After approval, record the packet in the work ledger:
 

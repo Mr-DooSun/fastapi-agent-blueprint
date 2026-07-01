@@ -65,17 +65,25 @@ missing contract during execution.
    current task; do not mark the task complete until the failing gate passes or
    is explicitly deferred with rationale.
 6. **Run Review Gates** before completion. Governor-changing work defaults to
-   Claude cross review:
+   cross-tool review by the other harness — Codex-implemented work is reviewed
+   by Claude, Claude-implemented work is reviewed by Codex:
    ```bash
-   claude -p --model opus --effort max --permission-mode plan "<review prompt>"
+   # Codex-implemented change set → Claude reviews:
+   claude -p --permission-mode plan "<review prompt>"
+   # Claude-implemented change set → Codex reviews:
+   codex exec --sandbox read-only "<review prompt>"
    ```
-   If Claude authentication or tooling fails, use `self-structured` or
-   `human:<handle>` review instead, and record the fallback reason:
+   Start from the default model and effort; escalate to a stronger model or
+   higher effort only when warranted (AGENTS.md § Independent Review Trigger;
+   `target-operating-model.md` §5 Model And Effort Cost Policy).
+   If the reviewing tool's authentication or tooling fails, use
+   `self-structured` or `human:<handle>` review instead, and record the
+   fallback reason:
    ```python
    update_workflow_state(
        review_mode="self-structured",
        review_status="fallback",
-       review_reason="Claude CLI authentication unavailable",
+       review_reason="cross-tool CLI authentication unavailable",
        updated_by="skill:execute-plan",
    )
    ```

@@ -48,7 +48,7 @@ def test_execute_plan_hybrid_c_skill_exists_and_points_to_shared_procedure() -> 
     assert "## Default Flow Position" in shared_text
     assert "Execution Packet" in shared_text
     assert "update_workflow_state" in shared_text
-    assert "Claude cross review" in shared_text
+    assert "cross-tool review" in shared_text
     assert "self-structured" in shared_text
 
     for wrapper in (claude, codex):
