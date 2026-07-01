@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from examples.chatbot_with_guardrails.domain.dtos.chatbot_dto import (
+from ...domain.dtos.chatbot_dto import (
     ChatMessageDTO,
     CreateChatMessageDTO,
 )
-from examples.chatbot_with_guardrails.domain.protocols.chatbot_protocol import (
+from ...domain.protocols.chatbot_protocol import (
     ChatbotProtocol,
 )
-from examples.chatbot_with_guardrails.domain.protocols.chatbot_repository_protocol import (
+from ...domain.protocols.chatbot_repository_protocol import (
     ChatbotRepositoryProtocol,
 )
 

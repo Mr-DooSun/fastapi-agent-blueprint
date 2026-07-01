@@ -1,12 +1,13 @@
-from examples.chatbot_with_guardrails.domain.dtos.chatbot_dto import ChatMessageDTO
-from examples.chatbot_with_guardrails.domain.protocols.chatbot_repository_protocol import (
-    ChatbotRepositoryProtocol,
-)
-from examples.chatbot_with_guardrails.infrastructure.database.models.chatbot_model import (
-    ChatMessageModel,
-)
 from src._core.infrastructure.persistence.rdb.base_repository import BaseRepository
 from src._core.infrastructure.persistence.rdb.database import Database
+
+from ...domain.dtos.chatbot_dto import ChatMessageDTO
+from ...domain.protocols.chatbot_repository_protocol import (
+    ChatbotRepositoryProtocol,
+)
+from ...infrastructure.database.models.chatbot_model import (
+    ChatMessageModel,
+)
 
 
 class ChatbotRepository(BaseRepository[ChatMessageDTO], ChatbotRepositoryProtocol):

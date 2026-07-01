@@ -5,10 +5,11 @@ from typing import Any
 
 import structlog
 
-from examples.chatbot_with_guardrails.domain.dtos.chatbot_dto import ChatReply
 from src._core.exceptions.llm_exceptions import PromptInjectionDetected
 from src._core.infrastructure.llm.guardrail_telemetry import log_guardrail_event
 from src._core.infrastructure.llm.guardrails import detect_prompt_injection
+
+from ...domain.dtos.chatbot_dto import ChatReply
 
 _logger = structlog.stdlib.get_logger(__name__)
 _AGENT_NAME = "chatbot_with_guardrails_stub"

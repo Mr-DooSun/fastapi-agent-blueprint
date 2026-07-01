@@ -4,7 +4,6 @@ from typing import Any, Final, LiteralString
 
 import structlog
 
-from examples.chatbot_with_guardrails.domain.dtos.chatbot_dto import ChatReply
 from src._core.exceptions.llm_exceptions import (
     GuardrailBlocked,
     PromptInjectionDetected,
@@ -15,6 +14,8 @@ from src._core.infrastructure.llm.guardrails import (
     find_prompt_leak,
     scan_pii,
 )
+
+from ...domain.dtos.chatbot_dto import ChatReply
 
 _logger = structlog.stdlib.get_logger(__name__)
 _AGENT_NAME: Final[str] = "chatbot_with_guardrails"

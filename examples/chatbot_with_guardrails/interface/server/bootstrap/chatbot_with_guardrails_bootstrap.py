@@ -1,18 +1,16 @@
 from fastapi import FastAPI
 
-from examples.chatbot_with_guardrails.infrastructure.di.chatbot_with_guardrails_container import (
+from ....infrastructure.di.chatbot_with_guardrails_container import (
     ChatbotWithGuardrailsContainer,
 )
-from examples.chatbot_with_guardrails.interface.server.routers import chatbot_router
+from ..routers import chatbot_router
 
 
 def create_chatbot_with_guardrails_container(
     container: ChatbotWithGuardrailsContainer,
 ) -> None:
     """Wire dependencies into the chatbot-with-guardrails router package."""
-    container.wire(
-        packages=["examples.chatbot_with_guardrails.interface.server.routers"]
-    )
+    container.wire(modules=[chatbot_router])
 
 
 def setup_chatbot_with_guardrails_routes(app: FastAPI) -> None:
