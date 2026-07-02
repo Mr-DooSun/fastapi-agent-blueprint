@@ -13,7 +13,7 @@ The Default Coding Flow (ADR 045) mandates `framing → plan` before `implement`
 This ADR closes the gap with three coordinated changes:
 
 1. **Canonical rule** — a "Mid-Task Scope Expansion" subsection in `target-operating-model.md` §2 (synced to AGENTS.md § Default Coding Flow): a capability gap discovered during execution is *new implementation-class work*; the agent stops, reports the gap, and routes to `/plan-feature` / `$plan-feature`.
-2. **Advisory stage-gate hook** — a `PostToolUse Edit|Write` reminder (mirroring the verify-first Phase-3 contract, HC-3.3) that fires when a `.py` file under `src/` or `examples/` is edited while the work ledger's `workflow.stage` is inactive, no plan-waiver token marker (`[trivial]`/`[hotfix]`, see D6) is present, and the reminder has not already fired this session.
+2. **Advisory stage-gate hook** — a `PostToolUse Edit|Write` reminder (mirroring the verify-first Phase-3 contract, HC-3.3) that fires when a `.py` file under `src/` or `examples/` is edited while the work ledger's `workflow.stage` is inactive, no plan-waiver token marker (`[trivial]`/`[hotfix]`, see D6) is present — `[exploration]` does not suppress the gate — and the reminder has not already fired this session.
 3. **Direction & Non-goals** — a subsection in `project-dna.md` §0 giving planning and review steps a repo-level direction reference, so "is this aligned?" has a citable answer instead of living in issues and maintainer memory.
 
 ## Background
