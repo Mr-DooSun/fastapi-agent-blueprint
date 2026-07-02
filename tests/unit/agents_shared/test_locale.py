@@ -65,10 +65,11 @@ HANGUL_RE = re.compile(r"[가-힯ᄀ-ᇿ㄰-㆏]")
 
 _EXPECTED_KEYS = frozenset(
     {
-        # 3 reminder constants
+        # 4 reminder constants
         "REMINDER_TEXT",
         "GOVERNOR_REMINDER_WITH_PR",
         "GOVERNOR_REMINDER_NO_PR",
+        "STAGE_GATE_REMINDER",
         # 15 sync advisory keys (8 shell + 7 codex-only + 2 shared = 15 distinct)
         "SYNC_STRONG_HEADER",
         "SYNC_STRONG_FOOTER",
@@ -195,7 +196,7 @@ def test_locale_ko_keys_subset_of_en() -> None:
 
 
 def test_locale_keys_match_expected_inventory() -> None:
-    """The 18-key inventory is pinned. Adding a key requires updating
+    """The 19-key inventory is pinned. Adding a key requires updating
     _EXPECTED_KEYS in this test (forces awareness)."""
     assert set(locale_mod._LOCALE_EN) == _EXPECTED_KEYS
 

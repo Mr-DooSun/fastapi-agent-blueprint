@@ -136,6 +136,13 @@ The shared-policy part is identical across tools; the adapters differ because th
 
 **Risk**: Low (pure refactor by the time we reach Phase 5).
 
+### Post-v1 — Mid-Task Stage-Gate Adapters (ADR 050, issue #268)
+
+Policy lives in `.agents/shared/governor/stage_gate.py` (Phase-5 architecture reused). Adapter status:
+
+- **Claude adapter (shipped, #268)**: `PostToolUse Edit|Write` shim `.claude/hooks/post_tool_stage_gate.py` emitting `hookSpecificOutput.additionalContext` JSON — the documented model-visible non-blocking channel (ADR 050 D3).
+- **Codex adapter (deferred, #269)**: Codex has no PostToolUse. The parity shape mirrors Phase 3 ("Claude PostToolUse + Codex Stop changed-files"): a Stop-time advisory evaluating changed implementation files against the ledger stage, deduped per `CODEX_THREAD_ID`. Deferred-with-rationale: adapter-only work, split to keep the ADR 050 PR reviewable. Until it ships, Codex relies on the canonical rule (target-operating-model.md §2 "Mid-Task Scope Expansion") at prompt-routing time.
+
 ## §2 Rollback
 
 Every phase is single-PR-revertable. The repo is never left in an intermediate state where one tool implements a phase and the other does not, because each phase is merged as a unit (shared policy + both adapters + tests).
