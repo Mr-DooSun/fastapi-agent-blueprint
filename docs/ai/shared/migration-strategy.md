@@ -78,7 +78,7 @@ The shared-policy part is identical across tools; the adapters differ because th
 - After each `implement` step, the Default Flow expects a `verify` step within the same session (or before commit).
 - "Verification" includes: test invocation, `make demo`, `make demo-rag`, `alembic upgrade head` (for migration changes), or an explicit user confirmation.
 
-**Claude adapter**: extend `.claude/hooks/post-tool-format.sh` (or add a new sibling) on `PostToolUse Edit|Write` matchers. After Python file edits, suggest `/test-domain run {domain}`. Output is a stderr reminder, not a block.
+**Claude adapter**: extend `.claude/hooks/post-tool-format.sh` (or add a new sibling) on `PostToolUse Edit|Write` matchers. After Python file edits, suggest `/test-domain run {domain}`. Output is an advisory reminder, not a block — since #271 delivered as model-visible `hookSpecificOutput.additionalContext` JSON on stdout with exit 0 (the original stderr-on-exit-0 emit reached only the user transcript, never the model; recorded as an ADR 050 D3 drift candidate).
 **Codex adapter**: **cannot rely on `PostToolUse Bash`** (Codex review R7). Instead, extend `.codex/hooks/stop-sync-reminder.py` to compute `git status --porcelain` and produce the verification reminder when source files changed without a verify-class command being run. Run a small in-session log file under `.codex/state/` (gitignored) to track verify invocations within a session.
 
 **Acceptance**:

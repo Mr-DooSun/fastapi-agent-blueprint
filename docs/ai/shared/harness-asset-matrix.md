@@ -594,7 +594,7 @@ Eighteen hook scripts (6 Claude shell + 4 Claude Python implementations + 8 Code
 - **Current role**: PostToolUse on Edit / Write; runs `ruff format` + `ruff check --fix` on `.py` files.
 - **Why it exists**: Format consistency without manual invocation.
 - **Bucket**: Keep.
-- **Notes**: Phase 3 (#122) verification-first hook (`.claude/hooks/verify-first.sh`) lives in the *same* `PostToolUse Edit|Write` matcher block as a sibling, not a separate matcher. SoC: this hook mutates files (ruff), the verify-first hook is informational stderr only.
+- **Notes**: Phase 3 (#122) verification-first hook (`.claude/hooks/verify-first.sh`) lives in the *same* `PostToolUse Edit|Write` matcher block as a sibling, not a separate matcher. SoC: this hook mutates files (ruff), the verify-first hook is advisory only — since #271 it emits model-visible `hookSpecificOutput.additionalContext` JSON on stdout (exit 0), never blocking.
 
 ### `.claude/hooks/stop-sync-reminder.sh`
 
@@ -655,7 +655,7 @@ Eighteen hook scripts (6 Claude shell + 4 Claude Python implementations + 8 Code
 - **Current role**: Phase 5 (#124) thin shim — the verify-first decision body now lives in `.agents/shared/governor/verify.py`. The shim imports `REMINDER_TEXT`, `is_python_source`, `extract_file_path`, and the marker reader, then exposes `read_latest_token_marker` (READ_ONLY lifecycle wrapper) and `should_remind` for the existing test surface.
 - **Why it exists**: Reminds the user that the Default Coding Flow `verify` step is missing for the changed Python file. Read-only on Phase 2 markers (IC-11 — verify-first reads with `MarkerLifecycle.READ_ONLY`; Phase 4 #123 owns lifecycle).
 - **Bucket**: Overlay.
-- **Notes**: `REMINDER_TEXT` is now a single shared constant — string-equality is intrinsic, not asserted. Phase 5 invariant: no top-level `sys.exit` (R0-A.1). Fail-open on every error path (HC-3.6 / HC-5.5).
+- **Notes**: `REMINDER_TEXT` is now a single shared constant — string-equality is intrinsic, not asserted. Phase 5 invariant: no top-level `sys.exit` (R0-A.1). Fail-open on every error path (HC-3.6 / HC-5.5). Emit channel (#271, ADR 050 D3 drift-candidate remediation): `hookSpecificOutput.additionalContext` JSON on stdout with exit 0 — the model-visible non-blocking PostToolUse channel; plain stderr on exit 0 reached only the user transcript, so the pre-#271 reminder never influenced the agent. Codex side is unaffected by design: its reminder is delivered by the Stop hook's `systemMessage`, which targets the user after the turn has ended.
 
 ### `.codex/hooks/pre-tool-security.py`
 
