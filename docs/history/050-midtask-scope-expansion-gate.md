@@ -58,6 +58,8 @@ Only **plan-waiver tokens** suppress the gate (cross-review R1.1 narrowed this f
 
 Codex has no `PostToolUse`. The parity adapter (Stop-time advisory evaluating changed implementation files against the ledger stage) is specified in `migration-strategy.md` and deferred to a follow-up issue rather than widening this PR. Codex retains the canonical rule (prompt-time routing) meanwhile.
 
+**Update (#269):** shipped. The Stop-time adapter now lives in `.codex/hooks/stop-sync-reminder.py` (`stage_gate_segment`, advisory #6): it bridges the changed-file set to the shared single-file `should_stage_gate` and reuses this policy unchanged (adapter-only). See `migration-strategy.md` § Post-v1 — Mid-Task Stage-Gate Adapters.
+
 ### D8 — Direction & Non-goals lives in `project-dna.md` §0
 
 No new Tier-A document and no public `ROADMAP.md` for now: the governance surface is already large, and §0 ("Project Scale and Design Philosophy") is the existing home for exactly this kind of judgment reference. `plan-feature` Phase 1's repo-specific-fit axis links to it. A public roadmap remains a future option once direction content stabilises.
