@@ -395,7 +395,8 @@ Quality Gate review contract, `/plan-feature` Approach Options stage,
 - ADR documentation (001-013)
 - CONTRIBUTING guide and issue templates
 
-[Unreleased]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.8.3...HEAD
+[Unreleased]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.8.4...HEAD
+[0.8.4]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.8.0...v0.8.1
