@@ -63,7 +63,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: uv sync --group dev --extra admin --extra aws
+        run: uv sync --group dev --extra admin --extra aws --extra pydantic-ai-duckduckgo
 
       - name: Run tests
         env:
