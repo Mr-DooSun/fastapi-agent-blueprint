@@ -9,7 +9,7 @@ from src._core.infrastructure.persistence.rdb.database import Base
 class ChatMessageModel(Base):
     """SQLAlchemy model representing a chat message log."""
 
-    __tablename__ = "chatbot_message"
+    __tablename__ = "web_search_chatbot_message"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     prompt: Mapped[str] = mapped_column(String(1000), nullable=False)
