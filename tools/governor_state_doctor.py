@@ -496,6 +496,17 @@ def _assert_system_message_stdout(stdout: str, *, allow_empty: bool = False) -> 
         raise ValueError("stdout JSON missing systemMessage string")
 
 
+def _assert_additional_context_contains(stdout: str, expected: str) -> None:
+    """Gemini / Antigravity SessionStart injects context via JSON
+    ``hookSpecificOutput.additionalContext`` (stdout is parsed as JSON on
+    exit 0 — plain text is rejected)."""
+    data = _load_single_json_stream(stdout)
+    output = data.get("hookSpecificOutput", {}) if isinstance(data, dict) else {}
+    context = output.get("additionalContext", "")
+    if not isinstance(context, str) or expected not in context:
+        raise ValueError(f"additionalContext missing expected text: {expected}")
+
+
 def _assert_pre_tool_deny(stdout: str) -> None:
     data = _load_single_json_stream(stdout)
     output = data.get("hookSpecificOutput", {}) if isinstance(data, dict) else {}
@@ -569,7 +580,7 @@ def check_hook_command_canaries(root: Path = PROJECT_ROOT) -> CheckResult:
         "AfterAgent": "",
     }
     antigravity_validators = {
-        "SessionStart": lambda proc: _assert_plaintext_contains(
+        "SessionStart": lambda proc: _assert_additional_context_contains(
             proc.stdout, "Antigravity repo harness active"
         ),
         "BeforeAgent": lambda proc: _assert_user_prompt_token(proc.stderr),
@@ -578,7 +589,9 @@ def check_hook_command_canaries(root: Path = PROJECT_ROOT) -> CheckResult:
             _assert_plaintext_contains(proc.stderr, "Destructive git rollback"),
         ),
         "AfterTool": lambda proc: _assert_stdout_empty_or_json(proc.stdout),
-        "AfterAgent": lambda proc: None,
+        "AfterAgent": lambda proc: _assert_system_message_stdout(
+            proc.stdout, allow_empty=True
+        ),
     }
 
     issues: list[str] = []

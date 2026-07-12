@@ -134,3 +134,14 @@ def test_antigravity_pre_tool_hook_blocks_shared_shell_safety(
 
     assert result.returncode == 2
     assert "Destructive git rollback" in result.stderr
+
+
+def test_antigravity_session_start_emits_json_context(tmp_path: Path) -> None:
+    """SessionStart stdout must be valid JSON on exit 0 (Gemini CLI parses it as
+    JSON and rejects plain text); the banner rides in additionalContext."""
+    result = _run_hook(".antigravity/hooks/session-start.py", {}, tmp_path)
+
+    assert result.returncode == 0
+    payload = json.loads(result.stdout)
+    context = payload["hookSpecificOutput"]["additionalContext"]
+    assert "Antigravity repo harness active" in context

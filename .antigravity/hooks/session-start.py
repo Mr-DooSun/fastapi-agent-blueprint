@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import json
 
 from _shared import SHARED_PKG
 
@@ -26,4 +27,7 @@ with contextlib.suppress(Exception):
     if summary:
         parts.append(summary)
 
-print("\n\n".join(parts))
+# Gemini CLI / Antigravity parse a hook's stdout as JSON on exit 0 and reject
+# plain text. Surface the SessionStart banner + resumed work-ledger summary via
+# the JSON `additionalContext` field so it is injected into session context.
+print(json.dumps({"hookSpecificOutput": {"additionalContext": "\n\n".join(parts)}}))

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import json
 import sys
 from pathlib import Path
 
@@ -187,8 +188,12 @@ def main() -> int:
         with contextlib.suppress(Exception):
             completion_gate.cleanup_stale_verify_logs(completion_gate.STATE_DIR)
 
+    # Gemini CLI / Antigravity parse a hook's stdout as JSON on exit 0 and
+    # reject plain text. Surface the merged AfterAgent advisory bundle (sync /
+    # verify-first / completion-gate / workflow / stage-gate) via the JSON
+    # `systemMessage` field so it is shown alongside the response.
     if segments:
-        print("\n\n".join(segments))
+        print(json.dumps({"systemMessage": "\n\n".join(segments)}))
     return 0
 
 
