@@ -50,6 +50,7 @@ async def test_chatbot_real_agent_flow(test_db) -> None:
     duckduckgo_search_tool -- is auto-invoked. Stays fully offline.
     """
     pytest.importorskip("pydantic_ai")
+    pytest.importorskip("pydantic_ai.common_tools.duckduckgo")
     from pydantic_ai.models.test import TestModel
 
     repository = ChatbotRepository(database=test_db)
@@ -81,6 +82,7 @@ async def test_chatbot_invokes_search_tool(test_db, monkeypatch) -> None:
     forces a tool call on turn 1, then a structured final result on turn 2.
     """
     pytest.importorskip("pydantic_ai")
+    pytest.importorskip("pydantic_ai.common_tools.duckduckgo")
     from pydantic_ai.messages import ModelMessage, ModelResponse, ToolCallPart
     from pydantic_ai.models.function import AgentInfo, FunctionModel
     from pydantic_ai.tools import Tool
