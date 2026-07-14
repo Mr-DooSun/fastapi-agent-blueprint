@@ -574,7 +574,15 @@ def check_hook_command_canaries(root: Path = PROJECT_ROOT) -> CheckResult:
                 "tool_input": {
                     "command": "pytest tests/unit/agents_shared/test_antigravity_harness.py -q"
                 },
-                "result": {"exit_code": 0},
+                # Real Gemini AfterTool contract: tool_response = {llmContent,
+                # returnDisplay, optional data/error}. A SUCCESSFUL foreground
+                # shell emits neither an "Exit Code:" line nor a `data` object
+                # (the code is appended only on non-zero exit), so a realistic
+                # success payload is just an "Output:" body.
+                "tool_response": {
+                    "llmContent": "Output: 1 passed in 0.10s",
+                    "returnDisplay": "1 passed",
+                },
             }
         ),
         "AfterAgent": "",
@@ -654,6 +662,17 @@ def check_hook_command_canaries(root: Path = PROJECT_ROOT) -> CheckResult:
                 "stdout_bytes": len(proc.stdout.encode("utf-8")),
                 "stderr_bytes": len(proc.stderr.encode("utf-8")),
             }
+            # Assert the process exit code per event (mirrors the Codex loop):
+            # BeforeTool must block (exit 2); every other event must succeed
+            # (exit 0). Without this a hook that dies with a nonzero code but
+            # prints plausible output would still pass its content validator.
+            expected_rc = 2 if event_name == "BeforeTool" else 0
+            if proc.returncode != expected_rc:
+                issues.append(
+                    f"{key}: exit {proc.returncode} (expected {expected_rc}); "
+                    f"stderr={proc.stderr[:200]!r}"
+                )
+                continue
             try:
                 antigravity_validators[event_name](proc)
             except (json.JSONDecodeError, ValueError, KeyError) as exc:

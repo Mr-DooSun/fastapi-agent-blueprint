@@ -33,19 +33,23 @@ except Exception:  # noqa: BLE001
 
 try:
     from governor.stage_gate import (  # noqa: E402
+        PLAN_EXECUTE_REMINDER,
         STAGE_GATE_REMINDER,
         default_ledger_path,
         is_implementation_source,
         mark_fired,
+        should_plan_execute_gate,
         should_stage_gate,
     )
 
     _STAGE_GATE_OK = True
 except Exception:  # noqa: BLE001
+    PLAN_EXECUTE_REMINDER = ""
     STAGE_GATE_REMINDER = ""
     default_ledger_path = None  # type: ignore[assignment]
     is_implementation_source = None  # type: ignore[assignment]
     mark_fired = None  # type: ignore[assignment]
+    should_plan_execute_gate = None  # type: ignore[assignment]
     should_stage_gate = None  # type: ignore[assignment]
     _STAGE_GATE_OK = False
 
@@ -77,6 +81,36 @@ def stage_gate_segment(
     if not should_stage_gate(payload, state_dir, resolved_ledger, repo_root):
         return None
     return _resolve_locale_string("STAGE_GATE_REMINDER") or STAGE_GATE_REMINDER
+
+
+def plan_execute_segment(
+    changed: list[str],
+    sid: str,
+    *,
+    state_dir: Path = STATE_DIR,
+    ledger_path: Path | None = None,
+    repo_root: Path = REPO_ROOT,
+) -> str | None:
+    """Plan->execute boundary advisory (ADR 054 D8), keyed to the ``planned``
+    stage via the shared ``should_plan_execute_gate``. Antigravity's AfterAgent
+    is the parity surface for Claude's PreToolUse hard block — advisory-only,
+    reusing the shared single-file policy unchanged. The ``mark_fired`` claim is
+    the caller's job (see ``main``) so it dedupes with ``stage_gate_segment``."""
+    if not _STAGE_GATE_OK:
+        return None
+    impl = next(
+        (path for path in changed if is_implementation_source(path, repo_root)),
+        None,
+    )
+    if impl is None:
+        return None
+    payload = {"tool_input": {"file_path": impl}, "session_id": sid}
+    resolved_ledger = (
+        ledger_path if ledger_path is not None else default_ledger_path(STATE_ROOT)
+    )
+    if not should_plan_execute_gate(payload, state_dir, resolved_ledger, repo_root):
+        return None
+    return _resolve_locale_string("PLAN_EXECUTE_REMINDER") or PLAN_EXECUTE_REMINDER
 
 
 def build_segments(changed: list[str] | None = None) -> list[str]:
@@ -176,7 +210,9 @@ def main() -> int:
         import verify_first  # noqa: PLC0415
 
         sid = verify_first.session_id()
-        segment = stage_gate_segment(changed, sid)
+        # Stage-gate (mid-task, ADR 050) OR plan->execute boundary (ADR 054)
+        # fire at most once per session via the shared exclusive-create marker.
+        segment = stage_gate_segment(changed, sid) or plan_execute_segment(changed, sid)
         if segment is not None and mark_fired(STATE_DIR, sid) is not None:
             segments.append(segment)
 

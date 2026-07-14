@@ -317,7 +317,7 @@ When two locations could plausibly host the same fact, the table above resolves 
 
 The Target Operating Model is **Mostly Local with Philosophy Overlay**.
 
-- "Mostly Local" because the bucket distribution is ~75% Keep / ~24% Overlay / 0% Replace / ~1% Drop (87 active assets; matrix is canonical). The substantive content of the harness remains local.
+- "Mostly Local" because the bucket distribution is ~75% Keep / ~24% Overlay / 0% Replace / ~1% Drop (88 active assets; matrix is canonical). The substantive content of the harness remains local.
 - "Philosophy Overlay" because the *governance* layer — Default Flow, mandatory subset, exception vocabulary, completion-gate idea — is borrowed from the superpowers philosophy and grafted on top.
 
 This is not a balanced 50/50 hybrid. It is 80%-local-with-a-process-shell. That ratio is the answer to issue #117's Key Design Question 7 ("How should Claude and Codex stay aligned without duplicating too much harness logic?"), now extended to Antigravity: the tools share the philosophy overlay; the substantive content is the same per-tool because they read identical shared documents.

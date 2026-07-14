@@ -25,6 +25,23 @@ except Exception:  # noqa: BLE001
         return
 
 
+# Delegate changed-file discovery to the shared governor policy so Antigravity
+# inherits the same "uncommitted + untracked, with 2h recent-commit fallback"
+# behaviour as Codex — otherwise a clean (fully committed) worktree returns []
+# and silences every AfterAgent advisory. Per-tool git plumbing stays local
+# (boundary), but the *policy* of what counts as changed is shared.
+try:
+    from governor.completion_gate import (  # noqa: E402
+        changed_files_via_git as _shared_changed_files,
+    )
+
+    _CHANGED_FILES_OK = True
+except Exception as exc:  # noqa: BLE001 — fail-open import
+    debug_log("antigravity shared changed-files import failed", exc)
+    _shared_changed_files = None  # type: ignore[assignment]
+    _CHANGED_FILES_OK = False
+
+
 def load_payload() -> dict[str, Any]:
     raw = sys.stdin.read()
     if not raw.strip():
@@ -48,6 +65,13 @@ def run_command(args: list[str]) -> subprocess.CompletedProcess[str]:
 
 
 def changed_files() -> list[str]:
+    if _CHANGED_FILES_OK and _shared_changed_files is not None:
+        try:
+            return _shared_changed_files()
+        except Exception as exc:  # noqa: BLE001 — execution fail-open
+            debug_log("antigravity shared changed-files execution failed", exc)
+    # Fallback when the shared module is unavailable or raises: uncommitted +
+    # untracked only (no recent-commit fallback). sorted() for stable ordering.
     tracked = run_command(["git", "diff", "--name-only", "HEAD"])
     untracked = run_command(["git", "ls-files", "--others", "--exclude-standard"])
     return sorted(
@@ -93,9 +117,13 @@ def extract_python_paths(command: str) -> list[Path]:
     matches = re.findall(r"([A-Za-z0-9_./-]+\.py)\b", command)
     paths: list[Path] = []
     for match in matches:
+        # Resolve BOTH branches (relative AND absolute) before the confinement
+        # check. ``Path.relative_to`` is purely lexical and does not collapse
+        # ``..``, so an absolute path like ``<repo>/../outside.py`` would pass
+        # the check unresolved and let ruff mutate a file outside the workspace.
         candidate = (
-            (REPO_ROOT / match).resolve() if not match.startswith("/") else Path(match)
-        )
+            Path(match) if match.startswith("/") else REPO_ROOT / match
+        ).resolve()
         try:
             candidate.relative_to(REPO_ROOT)
         except ValueError:
