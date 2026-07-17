@@ -130,3 +130,41 @@ def test_chat_memory_request_validation() -> None:
     # session_id too long
     with pytest.raises(ValidationError):
         ChatMemoryRequest(session_id="a" * 129, prompt="Hello")
+
+
+def test_confidence_bounds() -> None:
+    """confidence must be within [0.0, 1.0] on both the agent output and the turn DTO.
+
+    The bound on ``ChatReply`` (the PydanticAI agent output schema) rejects an
+    out-of-range model confidence at output-validation time -- before the service
+    persists the two turn rows (no orphan rows, no duplicates on client retry).
+    ``ConversationTurnDTO`` carries the same bound as defense-in-depth. See #294.
+    """
+    from datetime import datetime
+
+    from pydantic import ValidationError
+
+    from examples.chatbot_with_memory.domain.dtos.chatbot_memory_dto import ChatReply
+
+    # ChatReply (agent output) -- boundaries accepted, out-of-range rejected
+    assert ChatReply(reply="ok", confidence=0.0).confidence == 0.0
+    assert ChatReply(reply="ok", confidence=1.0).confidence == 1.0
+    with pytest.raises(ValidationError):
+        ChatReply(reply="ok", confidence=1.2)
+    with pytest.raises(ValidationError):
+        ChatReply(reply="ok", confidence=-0.1)
+
+    # ConversationTurnDTO carrier -- same bound
+    def _turn(confidence: float) -> ConversationTurnDTO:
+        return ConversationTurnDTO(
+            session_id="s",
+            user_message="hi",
+            assistant_reply="yo",
+            confidence=confidence,
+            tokens_used=0,
+            created_at=datetime(2026, 1, 1),
+        )
+
+    assert _turn(1.0).confidence == 1.0
+    with pytest.raises(ValidationError):
+        _turn(1.2)

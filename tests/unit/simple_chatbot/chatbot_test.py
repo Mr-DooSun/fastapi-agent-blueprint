@@ -86,3 +86,23 @@ def test_chatbot_request_validation() -> None:
     # 3. Prompt > 1000 chars should fail (max_length=1000)
     with pytest.raises(ValidationError):
         ChatRequest(prompt="a" * 1001)
+
+
+def test_chat_reply_confidence_bounds() -> None:
+    """ChatReply.confidence must be within [0.0, 1.0].
+
+    The bound lives on the PydanticAI agent output schema, so an out-of-range
+    model confidence is rejected at output-validation time -- before the service
+    persists the turn (no orphan row, no duplicate on client retry). See #294.
+    """
+    from pydantic import ValidationError
+
+    # Boundary values are accepted
+    assert ChatReply(reply="ok", confidence=0.0).confidence == 0.0
+    assert ChatReply(reply="ok", confidence=1.0).confidence == 1.0
+
+    # Out-of-range values are rejected
+    with pytest.raises(ValidationError):
+        ChatReply(reply="ok", confidence=1.2)
+    with pytest.raises(ValidationError):
+        ChatReply(reply="ok", confidence=-0.1)
