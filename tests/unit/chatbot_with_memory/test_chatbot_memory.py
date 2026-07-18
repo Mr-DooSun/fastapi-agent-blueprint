@@ -165,6 +165,45 @@ def test_confidence_bounds() -> None:
             created_at=datetime(2026, 1, 1),
         )
 
+    assert _turn(0.0).confidence == 0.0
     assert _turn(1.0).confidence == 1.0
     with pytest.raises(ValidationError):
         _turn(1.2)
+    with pytest.raises(ValidationError):
+        _turn(-0.1)
+
+
+@pytest.mark.anyio
+async def test_out_of_range_confidence_fails_before_persistence(test_db) -> None:
+    """An out-of-range model confidence fails inside the agent run -- before any DB write.
+
+    Pins the #294 fix end-to-end through the real adapter and service:
+    FunctionModel forces confidence=1.2, the agent's output validation rejects
+    it (retries exhaust into UnexpectedModelBehavior), and the service never
+    reaches its two inserts -- neither the user nor the assistant row is
+    persisted, so a client retry cannot duplicate the turn.
+    """
+    pytest.importorskip("pydantic_ai")
+    from pydantic_ai import UnexpectedModelBehavior
+    from pydantic_ai.messages import ModelMessage, ModelResponse, ToolCallPart
+    from pydantic_ai.models.function import AgentInfo, FunctionModel
+
+    def agent_function(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        return ModelResponse(
+            parts=[
+                ToolCallPart(
+                    tool_name="final_result",
+                    args={"reply": "ok", "confidence": 1.2},
+                )
+            ]
+        )
+
+    repository = ChatbotMemoryRepository(database=test_db)
+    chatbot = PydanticAIChatbotMemory(llm_model=FunctionModel(agent_function))
+    service = ChatMemoryService(chatbot=chatbot, repository=repository)
+
+    with pytest.raises(UnexpectedModelBehavior):
+        await service.reply(session_id="session-out-of-range", prompt="Hello AI")
+
+    # Neither the user nor the assistant row was persisted
+    assert await service.get_history(session_id="session-out-of-range") == []

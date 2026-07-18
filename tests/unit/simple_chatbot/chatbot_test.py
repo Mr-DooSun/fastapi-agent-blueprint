@@ -106,3 +106,48 @@ def test_chat_reply_confidence_bounds() -> None:
         ChatReply(reply="ok", confidence=1.2)
     with pytest.raises(ValidationError):
         ChatReply(reply="ok", confidence=-0.1)
+
+
+@pytest.mark.anyio
+async def test_out_of_range_confidence_fails_before_persistence(
+    test_db, monkeypatch
+) -> None:
+    """An out-of-range model confidence fails inside the agent run -- before any DB write.
+
+    Pins the #294 fix end-to-end through the real adapter and service:
+    FunctionModel forces confidence=1.2, the agent's output validation rejects
+    it (retries exhaust into UnexpectedModelBehavior), and the service never
+    reaches its insert -- no orphan row, no duplicate on client retry.
+    """
+    pytest.importorskip("pydantic_ai")
+    from pydantic_ai import UnexpectedModelBehavior
+    from pydantic_ai.messages import ModelMessage, ModelResponse, ToolCallPart
+    from pydantic_ai.models.function import AgentInfo, FunctionModel
+
+    def agent_function(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        return ModelResponse(
+            parts=[
+                ToolCallPart(
+                    tool_name="final_result",
+                    args={"reply": "ok", "confidence": 1.2},
+                )
+            ]
+        )
+
+    repository = ChatbotRepository(database=test_db)
+    insert_calls: list[object] = []
+    original_insert = repository.insert_data
+
+    async def counting_insert(dto):  # noqa: ANN001, ANN202
+        insert_calls.append(dto)
+        return await original_insert(dto)
+
+    monkeypatch.setattr(repository, "insert_data", counting_insert)
+
+    chatbot = PydanticAIChatbot(llm_model=FunctionModel(agent_function))
+    service = ChatService(chatbot=chatbot, repository=repository)
+
+    with pytest.raises(UnexpectedModelBehavior):
+        await service.reply("Hello AI")
+
+    assert insert_calls == []
