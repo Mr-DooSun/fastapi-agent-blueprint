@@ -1,6 +1,6 @@
 # Harness Asset Inventory Matrix
 
-> Last synced: 2026-07-10 (#65: added the Antigravity 2.0 adapter — `.gemini/settings.json` + `.antigravity/{plugin,gemini-extension,mcp_config,permissions}.json` + `.antigravity/rules/project-harness.md` + 8 `.antigravity/hooks/*.py` shims; counts 74 → 88 — the prior "73" undercounted Tier 1 by one, see counting note). Prior: 2026-07-09 (#281 / ADR 054: added `.claude/hooks/pre-tool-stage-block.{sh}` + `pre_tool_stage_block.py` Tier 3 rows for the plan→execute hard block; also rowed the previously-omitted `.claude/hooks/session-start-context.sh`; counts 70 → 73). Prior: 2026-07-03 (#268 / ADR 050: added `.claude/hooks/stage-gate.{sh}` + `post_tool_stage_gate.py` Tier 3 rows, `governor/stage_gate.py` module, counts 68 → 70). Prior: 2026-06-29 (#257: added native `execute-plan` Tier 2 row + counts)
+> Last synced: 2026-07-18 (#292: refreshed the `review-pr` Tier 2 detail row — Current role updated from the pre-ADR-053 "architecture quality-gate" wording to the full Review Protocol contract incl. the ADR 055 `Summary Finding Ledger`; Notes corrected to record the Phase 4 completion-gate Stop hook as shipped (#123 / PR #128); no count change). Prior: 2026-07-10 (#65: added the Antigravity 2.0 adapter — `.gemini/settings.json` + `.antigravity/{plugin,gemini-extension,mcp_config,permissions}.json` + `.antigravity/rules/project-harness.md` + 8 `.antigravity/hooks/*.py` shims; counts 74 → 88 — the prior "73" undercounted Tier 1 by one, see counting note). Prior: 2026-07-09 (#281 / ADR 054: added `.claude/hooks/pre-tool-stage-block.{sh}` + `pre_tool_stage_block.py` Tier 3 rows for the plan→execute hard block; also rowed the previously-omitted `.claude/hooks/session-start-context.sh`; counts 70 → 73). Prior: 2026-07-03 (#268 / ADR 050: added `.claude/hooks/stage-gate.{sh}` + `post_tool_stage_gate.py` Tier 3 rows, `governor/stage_gate.py` module, counts 68 → 70). Prior: 2026-06-29 (#257: added native `execute-plan` Tier 2 row + counts)
 > Source of truth: this is a **living inventory**. Update when assets are added, renamed, or removed. `/sync-guidelines` validates that this file matches the actual filesystem.
 > Sibling docs: [ADR 045](../../history/045-hybrid-harness-target-architecture.md) · [target-operating-model.md](target-operating-model.md) · [migration-strategy.md](migration-strategy.md)
 
@@ -554,13 +554,13 @@ Bucket guideline:
 
 ### `review-pr` (Overlay)
 
-- **Current role**: PR architecture quality-gate review with drift-candidate detection.
-- **Why it exists**: Standardise PR-time architecture audits.
+- **Current role**: PR-scoped completion-gate review applying the full Review Protocol (`CORR` / `REG` / `STAB` / `CONTRACT` / `ARCH` / `SEC` / `GOV`) with an intent `Verdict`, drift-candidate detection, and deterministic GitHub posting — including the ADR 055 `Summary Finding Ledger` for summary-routed findings.
+- **Why it exists**: Standardise PR-time quality-gate reviews as the PR-scoped entry point of the shared Review Protocol (ADR 053).
 - **Replacement feasibility**: Partial. Activity becomes part of the `completion gate` step.
 - **Bucket: Overlay**.
 - **Final location**: unchanged.
 - **Phase 1 edit**: Default Flow Position = `completion gate`. Recursion guard.
-- **Notes**: Phase 4 Stop hook will auto-suggest invocation once a commit-time gate is wired.
+- **Notes**: The Phase 4 completion-gate Stop hook shipped in #123 / PR #128 (advisory reminder). ADR 055 adds the `Summary Finding Ledger` contract for out-of-diff findings.
 
 ### `fix-bug` (Overlay)
 
@@ -901,3 +901,4 @@ The following self-checks must pass before this matrix is treated as authoritati
 - 2026-07-03 — #268 (ADR 050): added `.claude/hooks/stage-gate.sh` + `.claude/hooks/post_tool_stage_gate.py` to Tier 3 (mid-task stage-gate advisory, third `PostToolUse Edit|Write` sibling, both Overlay); added `stage_gate.py` to the `.agents/shared/governor/` package (Tier 1 package row unchanged — counted as one asset) and `PLAN_WAIVER_TOKENS` to `tokens.py`; locale key `STAGE_GATE_REMINDER` (EN+KO). Codex counterpart deferred to #269. Total 68 → 70 (Tier 3 18 → 20; Overlay 14 → 16). Bucket-share ~76% Keep / ~23% Overlay.
 - 2026-07-04 — #269 (ADR 050): shipped the Codex stage-gate adapter as a Stop-time advisory folded into `.codex/hooks/stop-sync-reminder.py` (`stage_gate_segment`, sixth responsibility, evaluated before Phase 2 marker consumption) — no new hook file (Codex fires one Stop event), reuses the shared `governor.stage_gate` policy unchanged (adapter-only). Flipped the Tier 3 header + `stage-gate.sh` Notes deferred→shipped and the stop-sync-reminder.py role from five to six responsibilities. No asset count change (Total 70 → 70).
 - 2026-07-10 — #65 Antigravity 2.0 adapter: added `.gemini/settings.json`, `.antigravity/{plugin.json,gemini-extension.json,mcp_config.json,permissions.json}`, `.antigravity/rules/project-harness.md`, and 8 `.antigravity/hooks/*.py` shims. The adapter maps Gemini / Antigravity events to the shared governor policy without duplicating rules. Total 74 → 88 (Keep 55 → 66; Overlay 18 → 21; Tier 0 9 → 14; Tier 3 23 → 31; Tier 4 6 → 7). The prior total was recorded as 73/Keep 54, undercounting Tier 1 by one Keep row (the tier holds 22 rows: 18 Keep / 3 Overlay / 1 Drop); corrected to a 74/Keep 55 base here. Merged on top of #281 / ADR 054.
+- 2026-07-18 — #292 (ADR 055): refreshed the `review-pr` Tier 2 detail row — Current role updated from the pre-ADR-053 "PR architecture quality-gate review" wording to the full Review Protocol contract (all seven dimensions, intent `Verdict`, deterministic GitHub posting, ADR 055 `Summary Finding Ledger`); Notes corrected to record the Phase 4 completion-gate Stop hook as shipped (#123 / PR #128) instead of future work. Drift caught by the PR #296 cross-review (round 3). No asset count change (Total 88 → 88).
