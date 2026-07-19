@@ -171,7 +171,17 @@ class AdminCrudUser(HttpUser):
                     "and temp-password admins cannot use the token API)"
                 )
                 raise StopUser()
-            self._access_token = response.json()["data"]["accessToken"]
+            data = response.json()["data"]
+            self._access_token = data["accessToken"]
+            self._refresh_token = data["refreshToken"]
+
+    def on_stop(self) -> None:
+        # Mirror CustomerAuthUser: revoke the admin refresh token so opt-in
+        # runs don't leave live admin sessions behind (on_stop also runs when
+        # on_start failed, hence the guard).
+        refresh_token = getattr(self, "_refresh_token", None)
+        if refresh_token:
+            self.client.post("/v1/admin/logout", json={"refreshToken": refresh_token})
 
     @task(2)
     def list_users(self) -> None:
