@@ -1,16 +1,21 @@
-from src._core.infrastructure.http.base_http_gateway import BaseHttpGateway
 from src._core.infrastructure.http.http_client import HttpClient
 
 
-class DiscordNotificationAdapter(BaseHttpGateway):
+class DiscordNotificationAdapter:
     """Sends error alerts to a Discord webhook.
 
-    ``webhook_url`` is the full per-channel webhook URL, so it is used
-    directly as ``base_url`` and every send posts to the empty endpoint.
+    Posts directly via ``HttpClient`` instead of ``BaseHttpGateway._post``:
+    a successful Discord webhook response is ``204 No Content`` by default
+    (empty body), so parsing it as JSON would raise on every successful send.
     """
 
     def __init__(self, http_client: HttpClient, webhook_url: str) -> None:
-        super().__init__(http_client=http_client, base_url=webhook_url)
+        self._http_client = http_client
+        self._webhook_url = webhook_url
 
     async def send(self, message: str) -> None:
-        await self._post("", json={"content": message})
+        async with self._http_client.session() as session:
+            async with session.post(
+                self._webhook_url, json={"content": message}
+            ) as response:
+                response.raise_for_status()
