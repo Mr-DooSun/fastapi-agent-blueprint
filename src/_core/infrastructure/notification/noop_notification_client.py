@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import logging
+import structlog
 
-logger = logging.getLogger(__name__)
+_logger = structlog.stdlib.get_logger(__name__)
 
 
 class NoopNotificationClient:
@@ -14,10 +14,11 @@ class NoopNotificationClient:
     """
 
     def __init__(self) -> None:
-        logger.warning(
-            "Error notification client disabled — set NOTIFICATION_PROVIDER + "
-            "SLACK_WEBHOOK_URL/DISCORD_WEBHOOK_URL to enable Slack/Discord alerts."
+        _logger.warning(
+            "notification_client_disabled",
+            hint="Set NOTIFICATION_PROVIDER + SLACK_WEBHOOK_URL/DISCORD_WEBHOOK_URL "
+            "to enable Slack/Discord alerts.",
         )
 
     async def send(self, message: str) -> None:
-        logger.info("notification_suppressed message=%r", message)
+        _logger.info("notification_suppressed", message=message)
