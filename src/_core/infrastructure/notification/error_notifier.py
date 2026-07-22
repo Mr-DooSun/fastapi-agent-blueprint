@@ -55,7 +55,12 @@ class ErrorNotifier:
     async def _safe_send(self, error_code: str, message: str) -> None:
         try:
             await self._client.send(message)
-        except Exception:
+        except Exception as exc:
+            # exc_info would embed the webhook URL (a credential) via
+            # aiohttp's ClientResponseError message — log the failure
+            # class only.
             _logger.warning(
-                "error_notification_send_failed", error_code=error_code, exc_info=True
+                "error_notification_send_failed",
+                error_code=error_code,
+                exc_type=type(exc).__name__,
             )
