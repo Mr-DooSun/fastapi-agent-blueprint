@@ -26,12 +26,13 @@ def _dispatch_error_notification(
     """
     try:
         error_notifier = request.app.state.container.core_container().error_notifier()
-    except AttributeError:
-        return
-    try:
         error_notifier.maybe_dispatch(
             status_code=status_code, error_code=error_code, message=message
         )
+    except AttributeError:
+        # No app/container wired (e.g. handler invoked directly in a unit
+        # test) — nothing to notify through, not a real error.
+        return
     except Exception:
         _logger.warning("error_notifier_dispatch_failed", exc_info=True)
 
