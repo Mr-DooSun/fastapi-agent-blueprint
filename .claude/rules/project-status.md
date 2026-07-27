@@ -26,7 +26,6 @@
 - Server-route RBAC for non-user `/v1/*` routes (admin-realm `require_admin` gates `/v1/user` reads + CUD via #199, re-pointed to the admin token realm in #218; admin-realm gating for other domains' `/v1/*` routes is still a follow-up)
 - External admin IdP / SSO / MFA / SCIM and a physically separate admin database (documented extension point in ADR 049 / project-dna §17 IC-218-7, not implemented)
 - Notification channel routing by severity — critical → #alerts, warnings → #monitoring (#286, follow-up split from #17)
-- Error notifications for NiceGUI admin exceptions — resolved as an explicit **non-goal** in #310, not a gap: the operator already sees a toast or `/admin/error`, so `handle_uncaught_admin_exception` stays log-only. Recorded in AGENTS.md § Optional Infrastructure Toggles; revisit only with evidence that unattended admin failures are being missed
 - File Upload (UploadFile)
 - Rate Limiting (slowapi)
 - WebSocket
