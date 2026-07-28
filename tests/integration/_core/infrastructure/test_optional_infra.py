@@ -50,6 +50,9 @@ def clean_optional_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "notification_provider",
         "slack_webhook_url",
         "discord_webhook_url",
+        "notification_warning_threshold",
+        "notification_critical_webhook_url",
+        "notification_warning_webhook_url",
     ):
         monkeypatch.setattr(settings, field, None)
     monkeypatch.setattr(settings, "broker_type", None)
@@ -83,6 +86,21 @@ class TestCoreContainerMinimalBoot:
 
         container = CoreContainer()
         assert isinstance(container.error_notifier(), ErrorNotifier)
+
+    def test_notification_router_returns_router_instance(
+        self, clean_optional_env: None
+    ):
+        """#286: the router is always wired (even fully unmapped), and its
+        disabled-tier clients are the same Noop fallback as #17."""
+        from src._core.infrastructure.notification.notification_router import (
+            NotificationRouter,
+        )
+
+        container = CoreContainer()
+        router = container.notification_router()
+        assert isinstance(router, NotificationRouter)
+        assert router.warning_threshold is None
+        assert isinstance(router.resolve(500), NoopNotificationClient)
 
     def test_llm_model_returns_stub_when_disabled(self, clean_optional_env: None):
         """Disabled branch returns a PydanticAI ``TestModel`` when the
