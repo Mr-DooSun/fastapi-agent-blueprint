@@ -228,10 +228,10 @@ class TestNotificationRouterIntegration:
         assert critical.sent == []
         assert warning.sent == []
 
-    async def test_cooldown_is_shared_across_tiers_per_error_code(self):
-        """The cooldown key is error_code, not the resolved client — a
-        repeat of the same error_code within the window is suppressed even
-        if it would now resolve to a different tier."""
+    async def test_cooldown_is_scoped_per_tier(self):
+        """The cooldown key is scoped by severity tier, not the bare
+        error_code — a warning-tier 4xx must not mute a critical-tier 5xx
+        sharing the same error_code (#313 round-2 HIGH finding)."""
         critical = FakeNotificationClient()
         warning = FakeNotificationClient()
         router = NotificationRouter(
@@ -252,4 +252,29 @@ class TestNotificationRouterIntegration:
         await _drain(notifier)
 
         assert warning.sent == ["first"]
-        assert critical.sent == []
+        assert critical.sent == ["second"]
+
+    async def test_cooldown_still_suppresses_within_same_tier(self):
+        """Within a single tier, a repeat error_code inside the cooldown
+        window is still suppressed — the tier scoping only separates
+        different tiers, it doesn't disable the cooldown."""
+        critical = FakeNotificationClient()
+        warning = FakeNotificationClient()
+        router = NotificationRouter(
+            critical_client=critical,
+            warning_client=warning,
+            severity_threshold=500,
+            warning_threshold=400,
+        )
+        notifier = ErrorNotifier(
+            notification_client=critical,
+            severity_threshold=500,
+            cooldown_seconds=60,
+            notification_router=router,
+        )
+
+        notifier.maybe_dispatch(status_code=500, error_code="SAME", message="first")
+        notifier.maybe_dispatch(status_code=503, error_code="SAME", message="second")
+        await _drain(notifier)
+
+        assert critical.sent == ["first"]

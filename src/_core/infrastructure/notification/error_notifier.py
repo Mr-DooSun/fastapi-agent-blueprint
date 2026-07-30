@@ -58,12 +58,30 @@ class ErrorNotifier:
     def _should_notify(self, status_code: int, error_code: str) -> bool:
         if status_code < self._effective_min_threshold():
             return False
+        key = self._cooldown_key(status_code, error_code)
         now = time.monotonic()
-        last_notified = self._last_notified_at.get(error_code)
+        last_notified = self._last_notified_at.get(key)
         if last_notified is not None and (now - last_notified) < self._cooldown_seconds:
             return False
-        self._last_notified_at[error_code] = now
+        self._last_notified_at[key] = now
         return True
+
+    def _cooldown_key(self, status_code: int, error_code: str) -> str:
+        """Cooldown key, scoped by severity tier when routing is active (#286).
+
+        Without a router the key is the bare ``error_code``, unchanged from
+        #17. With one, a warning-tier 4xx and a critical-tier 5xx sharing an
+        ``error_code`` must not share a quiet window — otherwise the 4xx
+        silently mutes the incident alert. Mirrors #310's
+        ``{task_name}:{error_code}`` scoping on the worker path.
+
+        The band test matches ``NotificationRouter.resolve`` exactly, so the
+        key and the delivered channel can never disagree.
+        """
+        if self._router is None:
+            return error_code
+        tier = "critical" if status_code >= self._severity_threshold else "warning"
+        return f"{tier}:{error_code}"
 
     def _effective_min_threshold(self) -> int:
         """The lowest status code that can qualify for notification.
