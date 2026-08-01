@@ -75,7 +75,7 @@ HTTP path:
 
 | | Behaviour |
 |---|---|
-| **Severity** | Synthesised. A `BaseCustomException` keeps its own `status_code`; anything else counts as **500**. So the same alerting floor applies. Without routing, raising `NOTIFICATION_SEVERITY_THRESHOLD` above 500 silences ordinary task failures too; with routing enabled the floor is `min(severity, warning)`, so a synthetic 500 still alerts — into the warning tier — whenever it clears `NOTIFICATION_WARNING_THRESHOLD` |
+| **Severity** | Synthesised. A `BaseCustomException` keeps its own `status_code`; anything else counts as **500**. So the same alerting floor applies. Without routing, raising `NOTIFICATION_SEVERITY_THRESHOLD` above 500 silences ordinary task failures too. With routing the floor is `min(severity, warning)` and the tier depends on both boundaries: a synthetic 500 is **critical** while `NOTIFICATION_SEVERITY_THRESHOLD <= 500`, and lands in the **warning** tier when the severity threshold is raised above 500 but `NOTIFICATION_WARNING_THRESHOLD` is still at or below it |
 | **Cooldown key** | `{task_name}:{error_code}`, not the bare `error_code` used on the HTTP path. Without the task prefix one repeatedly-failing task would suppress every other task's alert for the whole window. With [channel routing](#severity-based-channel-routing) enabled the two scopings compose, giving `{tier}:{task_name}:{error_code}` |
 | **Timing** | One alert per incident, on the **terminal** failure. Permanent errors (`BaseCustomException`, `ValueError`, `TypeError`, Pydantic `ValidationError`) are never retried and alert immediately; retryable ones alert only after the final attempt fails |
 
@@ -329,16 +329,19 @@ Mitigations that need no code change:
 - **Keep the default threshold (`500`).** Curated domain exceptions cluster in
   4xx; the un-redacted risk is concentrated in unhandled 500s, and lowering the
   threshold adds volume without adding signal.
-- **Channel routing does not widen the payload class.** Opening a warning band
-  with `NOTIFICATION_WARNING_THRESHOLD` admits only curated
+- **Give the warning channel the same treatment as the critical one.** Opening a
+  warning band with `NOTIFICATION_WARNING_THRESHOLD` normally admits only curated
   `BaseCustomException` text — `__str__` renders `status_code`, `error_code` and
-  `message`, and deliberately omits `details`. The one un-redacted HTTP send site
-  (`generic_exception_handler`) hard-codes a 500, so it can never land in the
-  warning tier — and the worker's un-redacted path is scored a synthetic 500
-  too, so it cannot either. What routing *does* change is volume and audience: the warning
-  channel is a second destination receiving production data, so give it the same
-  restriction, environment scoping, and retention/access review as the critical
-  one.
+  `message`, and deliberately omits `details`. Both un-redacted paths
+  (`generic_exception_handler`, and the worker's synthetic status for a
+  non-`BaseCustomException`) are scored **500**, so on the default
+  `NOTIFICATION_SEVERITY_THRESHOLD=500` they resolve *critical* and never reach
+  the warning channel. **That stops being true if you raise the severity
+  threshold above 500** — with `severity=600, warning=400`, a 500 falls into the
+  warning band and the un-redacted text goes there. Either keep the severity
+  threshold at or below 500, or treat the warning channel as receiving the same
+  data class as the critical one: same restriction, environment scoping, and
+  retention/access review.
 - **Restrict the channel.** A private channel with need-to-know membership, not a
   broad `#engineering`.
 - **Scope by environment.** Enable it in stg first and see what real payloads look
