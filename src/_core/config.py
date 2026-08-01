@@ -415,7 +415,10 @@ class Settings(BaseSettings):
         description=(
             "Webhook target for critical-tier (>= notification_severity_"
             "threshold) alerts. Falls back to the single-target webhook "
-            "(SLACK_WEBHOOK_URL / DISCORD_WEBHOOK_URL) when unset."
+            "(SLACK_WEBHOOK_URL / DISCORD_WEBHOOK_URL) when unset. "
+            "Requires notification_warning_threshold - that setting is what "
+            "wires the router, so this URL alone would be ignored and is "
+            "rejected at boot instead (#315)."
         ),
     )
     notification_warning_webhook_url: str | None = Field(
@@ -424,8 +427,9 @@ class Settings(BaseSettings):
         description=(
             "Webhook target for warning-tier (>= notification_warning_"
             "threshold, < notification_severity_threshold) alerts. Falls "
-            "back to the single-target webhook when unset. Only takes "
-            "effect when notification_warning_threshold is set."
+            "back to the single-target webhook when unset. Requires "
+            "notification_warning_threshold - rejected at boot without it "
+            "(#315)."
         ),
     )
 
@@ -830,6 +834,20 @@ class Settings(BaseSettings):
                 "NOTIFICATION_WARNING_WEBHOOK_URL require NOTIFICATION_PROVIDER "
                 "to be set (they select a channel within that provider, not a "
                 "transport of their own)"
+            )
+
+        if (
+            self.notification_critical_webhook_url
+            or self.notification_warning_webhook_url
+        ) and self.notification_warning_threshold is None:
+            errors.append(
+                "[Notification/Routing] NOTIFICATION_CRITICAL_WEBHOOK_URL / "
+                "NOTIFICATION_WARNING_WEBHOOK_URL require "
+                "NOTIFICATION_WARNING_THRESHOLD to be set — it is the switch "
+                "that wires the router. Without it no router exists and every "
+                "alert goes to the single SLACK_WEBHOOK_URL / "
+                "DISCORD_WEBHOOK_URL target, silently ignoring both per-tier "
+                "URLs"
             )
 
         if self.otel_enabled and not self.otel_exporter_otlp_endpoint:
