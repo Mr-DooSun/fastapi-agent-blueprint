@@ -11,8 +11,11 @@ the curated `"500 [DB_INTERNAL_ERROR]: Internal database error"`). The only
 surviving record was `RequestLogMiddleware`'s `http_request` line, which carries
 status and duration but no exception identity.
 
-12 of the 14 `5xx` raise sites under `src/` do not log before raising. The two
-that do — `dynamodb_client` and `vectors/s3/client` — are the house pattern.
+Most `5xx` raise sites under `src/` do not log before raising. The audit counted
+15 of 17; a narrower AST sweep run while fixing this counted 12 of 14. The exact
+figure depends on how the sweep decides a `raise` is a 5xx, so treat it as "most
+of them". Either way the two that *do* log — `dynamodb_client` and
+`vectors/s3/client` — are the house pattern this change aligns with.
 """
 
 from __future__ import annotations
