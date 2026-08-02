@@ -897,13 +897,14 @@ class TestNotificationConfig:
         env = {
             "ENV": "local",
             "NOTIFICATION_PROVIDER": "discord",
-            "DISCORD_WEBHOOK_URL": "https://discord.com/api/webhooks/1/token",
+            "DISCORD_WEBHOOK_URL": "https://discord.com/api/webhooks/<id>/<token>",
             **_REQUIRED_VARS,
         }
         with patch.dict(os.environ, env, clear=True):
             s = _create_settings()
             assert (
-                s.notification_webhook_url == "https://discord.com/api/webhooks/1/token"
+                s.notification_webhook_url
+                == "https://discord.com/api/webhooks/<id>/<token>"
             )
 
 

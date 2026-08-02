@@ -176,3 +176,42 @@ class TestThePlaceholdersInTheRepoStayClean:
             assert "..." in url or "<" in url, (
                 f"{url!r} looks like a real webhook, not a placeholder"
             )
+
+
+class TestTheTwoEnforcementPointsUseOneVersion:
+    """The pre-commit hook scans the staged diff; the CI job scans the whole tree.
+    They are separate invocations, so the pinned version can silently diverge —
+    at which point local and CI enforce different rulesets.
+
+    Context worth keeping: `pre-commit run --all-files` does NOT scan the tree.
+    The hook is `gitleaks git --pre-commit --staged` with `pass_filenames: false`,
+    so on a clean checkout it reports `0 commits scanned. scanned ~0 bytes`. That
+    is why the CI job runs `gitleaks dir` separately, and why a green
+    `--all-files` must not be read as "the tree is clean".
+    """
+
+    def test_ci_pins_the_same_version_as_pre_commit(self):
+        pre_commit = (REPO_ROOT / ".pre-commit-config.yaml").read_text(encoding="utf-8")
+        ci = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(
+            encoding="utf-8"
+        )
+
+        hook_rev = re.search(r"gitleaks/gitleaks\s*\n\s*rev:\s*v([\d.]+)", pre_commit)
+        assert hook_rev, "could not find the gitleaks rev in .pre-commit-config.yaml"
+
+        ci_version = re.search(r'GITLEAKS_VERSION:\s*"([\d.]+)"', ci)
+        assert ci_version, "could not find GITLEAKS_VERSION in ci.yml"
+
+        assert hook_rev.group(1) == ci_version.group(1), (
+            f"pre-commit pins v{hook_rev.group(1)} but CI pins "
+            f"v{ci_version.group(1)} - local and CI would enforce different rulesets"
+        )
+
+    def test_ci_scans_the_directory_not_the_staged_diff(self):
+        ci = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(
+            encoding="utf-8"
+        )
+        assert "gitleaks dir" in ci, (
+            "the CI job no longer runs a full-tree scan; `pre-commit run --all-files` "
+            "alone scans nothing, so the secret gate would be local-only again"
+        )

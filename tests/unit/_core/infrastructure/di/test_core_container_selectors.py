@@ -120,7 +120,7 @@ class TestNotificationSelector:
         monkeypatch.setattr(
             settings,
             "discord_webhook_url",
-            "https://discord.com/api/webhooks/1/token",
+            "https://discord.com/api/webhooks/<id>/<token>",
         )
         assert _notification_selector() == "enabled"
 
