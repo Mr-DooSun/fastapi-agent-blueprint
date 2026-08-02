@@ -124,7 +124,7 @@ class TestProviderExceptionsStillMap:
 
     @pytest.mark.parametrize(
         "module",
-        ["openai", "anthropic", "botocore.errorfactory", "pydantic_ai.exceptions"],
+        ["openai", "anthropic", "pydantic_ai.exceptions"],
     )
     def test_every_supported_provider_module_is_recognised(self, module):
         mapped = try_map_llm_error(
@@ -138,9 +138,11 @@ class TestProviderExceptionsStillMap:
         """Bedrock errors are generated at runtime by botocore, so they carry
         `__module__ == 'botocore.errorfactory'` and `ClientError` in their MRO.
 
-        This is the case that decided the fix's shape: an earlier probe read the
-        *metaclass* module and reported `builtins`, which would have made module
-        gating look unusable for the one provider that matters most here.
+        Two probes shaped this test. An earlier one read the *metaclass* module
+        and reported `builtins`, which made module gating look unusable here. A
+        cross-review then showed module gating is not merely awkward but wrong:
+        S3's dynamic exceptions land in the same `botocore.errorfactory`, so the
+        gate keys on `operation_name` instead — see the class below.
         """
         botocore = pytest.importorskip("botocore")
         from botocore.session import get_session
@@ -167,3 +169,58 @@ class TestUnrecognisedProviderErrorFallsThrough:
         """A provider error the mapper cannot classify must return None so the
         caller produces a logged, alerted 500 — not a guessed 4xx."""
         assert try_map_llm_error(_provider_exc("APIError", "internal error")) is None
+
+
+class TestBotocoreIsGatedOnTheOperationNotTheModule:
+    """A cross-review caught that `botocore` as a module prefix readmits the very
+    bug this gate exists to stop. Every AWS client raises
+    `botocore.exceptions.ClientError`, and the dynamic subclasses for S3 and
+    Bedrock are generated into the *same* `botocore.errorfactory` module — so
+    neither module test separates them. Verified:
+
+        s3.exceptions.NoSuchKey.__module__                 == 'botocore.errorfactory'
+        bedrock.exceptions.ThrottlingException.__module__  == 'botocore.errorfactory'
+
+    `operation_name` does separate them, and `ClientError.__init__` sets it on the
+    dynamically generated subclasses too.
+    """
+
+    @staticmethod
+    def _client_error(code: str, message: str, operation: str):
+        from botocore.exceptions import ClientError
+
+        return ClientError({"Error": {"Code": code, "Message": message}}, operation)
+
+    @pytest.mark.parametrize(
+        "code,message,operation",
+        [
+            ("AccessDenied", "unauthorized request to bucket", "GetObject"),
+            ("AccessDenied", "unauthorized", "PutObject"),
+            ("ThrottlingException", "Rate exceeded", "Query"),
+            ("ThrottlingException", "throttling, slow down", "PutItem"),
+            ("ValidationException", "model artifacts not found", "ListBuckets"),
+        ],
+        ids=["s3-get", "s3-put", "dynamo-query", "dynamo-put", "s3-list"],
+    )
+    def test_non_bedrock_aws_error_is_not_an_llm_error(self, code, message, operation):
+        exc = self._client_error(code, message, operation)
+        assert try_map_llm_error(exc) is None, (
+            f"a {operation} failure was classified as an LLM error — the same "
+            "misclassification this gate exists to stop, reopened for AWS"
+        )
+
+    @pytest.mark.parametrize(
+        "operation",
+        ["InvokeModel", "InvokeModelWithResponseStream", "Converse", "ConverseStream"],
+    )
+    def test_bedrock_model_operation_still_maps(self, operation):
+        exc = self._client_error("ThrottlingException", "Rate exceeded", operation)
+        assert isinstance(try_map_llm_error(exc), LLMRateLimitException)
+
+    def test_botocore_module_without_an_operation_name_is_not_mapped(self):
+        """A non-`ClientError` botocore exception has no `operation_name`, so it
+        must not slip through the botocore branch."""
+        exc = _provider_exc(
+            "EndpointConnectionError", "rate limit", module="botocore.exceptions"
+        )
+        assert try_map_llm_error(exc) is None

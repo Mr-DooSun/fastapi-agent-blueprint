@@ -61,12 +61,27 @@ _NOT_FOUND_NAMES = frozenset(
 _PROVIDER_MODULE_PREFIXES: tuple[str, ...] = (
     "openai",
     "anthropic",
-    "botocore",  # Bedrock — see _is_provider_exception
-    "boto3",
     "pydantic_ai",
     "google.api_core",
     "google.genai",
     "google.generativeai",
+)
+
+# Bedrock cannot be matched by module: botocore is shared by *every* AWS client,
+# so `botocore.*` would readmit exactly the misclassification this gate exists to
+# stop — a real S3 `GetObject` failure whose message contains "unauthorized"
+# became a 401 `LLM_AUTH_FAILED`, and a DynamoDB `Query` throttle became a 429.
+# `botocore.errorfactory` does not separate them either: `s3.exceptions.NoSuchKey`
+# and `bedrock-runtime`'s `ThrottlingException` are both generated into that same
+# module. What *does* separate them is the operation, which every `ClientError`
+# carries (dynamically generated subclasses included).
+_BEDROCK_MODEL_OPERATIONS = frozenset(
+    {
+        "InvokeModel",
+        "InvokeModelWithResponseStream",
+        "Converse",
+        "ConverseStream",
+    }
 )
 
 
@@ -81,13 +96,17 @@ def _is_provider_exception(exc: Exception) -> bool:
     they also skipped the exception log and the error notification — so the
     misclassification left no trace anywhere.
 
-    Bedrock is the case that shapes this. Its exceptions are generated at
-    runtime by botocore, so they are not importable and cannot be matched by
-    identity — but they do carry ``__module__ == "botocore.errorfactory"`` and
-    ``botocore.exceptions.ClientError`` in their MRO. Module prefix alone is
-    enough; the MRO is not consulted, which keeps this free of a botocore import.
+    Bedrock is the case that shapes this, and it is why the botocore branch is
+    keyed on the operation rather than the module. See
+    ``_BEDROCK_MODEL_OPERATIONS`` — a module test cannot tell a Bedrock
+    ``InvokeModel`` failure from an S3 or DynamoDB one.
     """
     module = type(exc).__module__ or ""
+    if module == "botocore" or module.startswith("botocore."):
+        # Only a model-invocation call is an LLM error. `operation_name` is set
+        # by `ClientError.__init__`, so it is present on the dynamic subclasses
+        # too; anything without it is not a `ClientError` and not ours.
+        return getattr(exc, "operation_name", None) in _BEDROCK_MODEL_OPERATIONS
     return any(
         module == prefix or module.startswith(f"{prefix}.")
         for prefix in _PROVIDER_MODULE_PREFIXES
