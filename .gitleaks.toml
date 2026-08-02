@@ -25,11 +25,26 @@ useDefault = true
 [[rules]]
 id = "discord-webhook-url"
 description = "Discord webhook URL (bearer credential — possession authorizes posting)"
+# Anchored on host + path + the id/token pair, NOT on the scheme.
+#
+# The leaked credential is the `{id}/{token}` pair; the scheme is decoration. A
+# first version of this rule required a literal `https://` and was case
+# sensitive, which a self-check showed missed three realistic shapes:
+#
+#     http://discord.com/api/webhooks/<id>/<token>     -> missed
+#     https://DISCORD.COM/api/webhooks/<id>/<token>    -> missed
+#     discord.com/api/webhooks/<id>/<token>            -> missed
+#
+# The last is the one that matters: a value pasted into an env file or a comment
+# without its scheme is still a complete, usable credential.
+#
 # Covers ptb./canary. hosts, the legacy discordapp.com domain, and the optional
-# /api/v10/ version segment. The id is always digits and the token is
-# URL-safe base64, so `\d+/[\w-]+` is specific enough not to need an entropy
-# floor — and specific enough that the repo's `webhooks/...` and
-# `webhooks/<id>/<token>` placeholders cannot match it, which is why this rule
-# carries no allowlist.
-regex = '''https://(?:ptb\.|canary\.)?discord(?:app)?\.com/api/(?:v\d+/)?webhooks/\d+/[\w-]+'''
+# /api/v10/ version segment. Discord's `/slack` and `/github` execution suffixes
+# and a `?wait=true` query need no special handling — the pattern is unanchored
+# at the end, so it matches the credential inside them.
+#
+# `\d+/[\w-]+` is specific enough to need no entropy floor, and specific enough
+# that this repo's `webhooks/...` and `webhooks/<id>/<token>` placeholders cannot
+# match — which is why this rule carries no allowlist.
+regex = '''(?i)(?:https?://)?(?:ptb\.|canary\.)?discord(?:app)?\.com/api/(?:v\d+/)?webhooks/\d+/[\w-]+'''
 tags = ["webhook", "discord", "credential"]

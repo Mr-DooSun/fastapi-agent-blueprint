@@ -3,14 +3,23 @@
 gitleaks is the repo's committed-secret gate: `.pre-commit-config.yaml` pins
 `v8.30.1` with no arguments, and CI runs `pre-commit run --all-files`. Before this
 config existed the shipped default ruleset applied, which caught **Slack**
-webhooks under any variable name but had **no** Discord webhook rule. Verified by
-executing the pinned binary against a staged fixture holding four Discord webhook
-shapes plus one Slack control:
+webhooks under any variable name but had **no** Discord webhook rule.
 
-    RuleID: slack-webhook-url    Line: 5      <- the control fired
-    (nothing for lines 1-4)                   <- all four Discord shapes passed
+Verified by executing the pinned binary against a staged fixture of eight Discord
+webhook shapes, one Slack control, and two placeholders. Before:
 
-After adding this config, all five fire.
+    slack-webhook-url    line 9        <- the control fired
+    (nothing for 1-8)                 <- every Discord shape passed
+
+After:
+
+    discord-webhook-url  lines 1-8     <- including no-scheme, http://, UPPERCASE
+    slack-webhook-url    line 9        <- defaults still loaded
+    (nothing for 10-11)               <- placeholders still clean
+
+Note when re-running that by hand: gitleaks reads `.gitleaks.toml` from the
+**git index**, so an unstaged edit to the config is silently ignored and the run
+appears to prove the old pattern. That cost one confusing round here.
 
 The failure mode this file guards against is subtle and silent: a
 `.gitleaks.toml` **without** `[extend] useDefault = true` *replaces* the built-in
@@ -78,22 +87,44 @@ class TestTheDiscordRuleMatchesRealWebhooks:
     TOKEN = "fake-webhook-token-" + "0" * 24
 
     @pytest.mark.parametrize(
-        "host,api",
+        "scheme,host,api,suffix",
         [
-            ("discord.com", "api"),
-            ("ptb.discord.com", "api"),
-            ("canary.discord.com", "api"),
-            ("discordapp.com", "api"),
-            ("discord.com", "api/v10"),
-            ("discord.com", "api/v9"),
+            # Hosts and API versions Discord actually serves.
+            ("https://", "discord.com", "api", ""),
+            ("https://", "ptb.discord.com", "api", ""),
+            ("https://", "canary.discord.com", "api", ""),
+            ("https://", "discordapp.com", "api", ""),
+            ("https://", "discord.com", "api/v10", ""),
+            ("https://", "discord.com", "api/v9", ""),
+            # The three shapes a self-check found the first version of this rule
+            # missing. The leaked credential is the id/token pair; the scheme is
+            # decoration, and a value pasted without one is still usable.
+            ("", "discord.com", "api", ""),
+            ("http://", "discord.com", "api", ""),
+            ("https://", "DISCORD.COM", "api", ""),
+            ("HTTPS://", "Discord.Com", "api", ""),
+            # Discord's execution suffixes and a common query parameter. These
+            # need no special handling — the pattern is unanchored at the end, so
+            # it matches the credential inside them.
+            ("https://", "discord.com", "api", "/slack"),
+            ("https://", "discord.com", "api", "/github"),
+            ("https://", "discord.com", "api", "?wait=true"),
         ],
     )
-    def test_every_shipped_host_and_version_shape_matches(
-        self, discord_rule, host, api
+    def test_every_real_webhook_shape_matches(
+        self, discord_rule, scheme, host, api, suffix
     ):
-        url = f"https://{host}/{api}/webhooks/{self.ID}/{self.TOKEN}"
+        url = f"{scheme}{host}/{api}/webhooks/{self.ID}/{self.TOKEN}{suffix}"
         assert re.search(discord_rule["regex"], url), (
-            f"a real Discord webhook at {host}/{api} would not be blocked"
+            f"a real Discord webhook at {url!r} would not be blocked"
+        )
+
+    def test_the_rule_is_case_insensitive_by_construction(self, discord_rule):
+        """Pinned separately because the `(?i)` flag is easy to drop when editing
+        the pattern, and losing it silently reopens the uppercase-host hole."""
+        assert discord_rule["regex"].startswith("(?i)"), (
+            "the case-insensitive flag was removed; https://DISCORD.COM/... would "
+            "no longer be blocked"
         )
 
     def test_it_matches_regardless_of_the_variable_name(self, discord_rule):
