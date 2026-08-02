@@ -54,12 +54,16 @@ def _storage_failure(operation: str, exc: ClientError) -> BaseCustomException:
     ``vectors/s3/client.py``, which are the house pattern for this.
     """
     code = _error_code(exc)
-    response = getattr(exc, "response", None) or {}
+    # The provider message is deliberately NOT a structlog kwarg — see the note
+    # in dynamodb_client.py. An S3 `Error.Message` is the worst case of the
+    # family: besides the IAM principal ARN and account id it names the object
+    # key, which for a user-uploaded file is often itself personal data. The
+    # `from e` chain still carries the text for `exc_info` rendering.
     _logger.error(
         "storage_operation_failed",
         operation=operation,
         error_code=code,
-        error_message=response.get("Error", {}).get("Message", str(exc)),
+        provider_exception_type=type(exc).__name__,
     )
     return BaseCustomException(
         status_code=500,

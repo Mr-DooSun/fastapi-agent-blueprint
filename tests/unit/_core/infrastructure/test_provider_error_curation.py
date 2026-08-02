@@ -189,3 +189,71 @@ class TestTimeoutStillMapsTo504:
             "aiohttp timeout classes subclass ClientError too, so ClientError "
             "first makes ExternalServiceTimeoutException unreachable"
         )
+
+
+class TestProviderMessageStaysOutOfStructlogKwargs:
+    """`security-checklist.md:194` — "structlog kwargs / bind do not carry
+    sensitive fields".
+
+    A cross-review of the first version of this change proposed suppressing the
+    provider text from logs entirely, via `from None`. That conflicts with the
+    other half of #323: `custom_exception_handler` now logs a 5xx with
+    `exc_info`, and the whole point is that the wrapped cause has nowhere else to
+    live. So the split is deliberate — the **kwargs** stay clean, and the
+    exception chain keeps the text for the traceback.
+
+    These tests assert exactly that, and no more. An absolute "the ARN is not in
+    the log output" assertion would be false, because the chained
+    `__cause__` renders it.
+    """
+
+    def _kwargs_only(self, logs: list[dict]) -> str:
+        """Rendered structured fields, excluding the exception chain."""
+        return repr(
+            [
+                {k: v for k, v in rec.items() if k not in {"exc_info", "exception"}}
+                for rec in logs
+            ]
+        )
+
+    async def test_storage_failure_kwargs_carry_no_arn_key_or_account(self):
+        from structlog.testing import capture_logs
+
+        from src._core.infrastructure.storage.object_storage import ObjectStorage
+
+        class _FailingClient:
+            def client(self):
+                raise _access_denied()
+
+        storage = ObjectStorage(storage_client=_FailingClient(), bucket_name=BUCKET)
+        with capture_logs() as logs:
+            with pytest.raises(BaseCustomException):
+                await storage.upload_file(b"x", KEY, "text/plain")
+
+        rendered = self._kwargs_only(logs)
+        assert logs, "the storage failure produced no log record at all"
+        for secret, label in (
+            (ARN, "IAM ARN"),
+            (ACCOUNT, "account id"),
+            (KEY, "object key"),
+        ):
+            assert secret not in rendered, (
+                f"the {label} is a structlog kwarg: {rendered}"
+            )
+        assert "AccessDenied" in rendered, "the error code must still be logged"
+        assert "ClientError" in rendered, (
+            "the provider exception type must still be logged"
+        )
+
+    def test_the_exception_chain_still_carries_the_cause(self):
+        """The other half of the contract — deliberately asserting the text IS
+        reachable, so a future change cannot quietly drop the cause that F1
+        exists to surface."""
+        from src._core.infrastructure.storage.object_storage import _storage_failure
+
+        original = _access_denied()
+        try:
+            raise _storage_failure("upload", original) from original
+        except BaseCustomException as exc:
+            assert exc.__cause__ is original
+            assert ARN in str(exc.__cause__)
