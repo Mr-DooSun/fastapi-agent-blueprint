@@ -109,6 +109,10 @@ asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 testpaths = ["tests"]
 pythonpath = [".agents/shared"]
+markers = [
+    "slow: spawns a subprocess per test — container wiring probes that cannot\n           run in-process (see tests/support/container_env.py)",
+    "dynamodb: requires a dynamodb-local instance on DYNAMODB_ENDPOINT_URL",
+]
 
 # === Ruff Configuration ===
 [tool.ruff]
