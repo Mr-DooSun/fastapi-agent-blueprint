@@ -1,0 +1,35 @@
+# gitleaks configuration (#320)
+#
+# Purpose: close the Discord webhook gap in the shipped default ruleset.
+#
+# `slack-webhook-url` matches the whole URL with no variable-name anchor, so a
+# real Slack webhook is blocked under any variable name. Discord has no
+# equivalent: `discord-api-token` (hex-64), `discord-client-id` (18 digits) and
+# `discord-client-secret` (32 alphanumerics) are all GenerateSemiGenericRegex
+# shapes, and in a webhook URL the text after `discord` is `.com/api/webhooks/`
+# — `/` falls outside both the keyword-tail and separator character classes. So
+# a committed Discord webhook had zero automated coverage, with only the manual
+# grep in docs/ai/shared/security-checklist.md §13 standing in its way.
+#
+# A webhook URL is a bearer credential: possession alone authorizes posting to
+# the channel, and there is no separate identifier to revoke against — leaking
+# one means rotating the webhook itself.
+
+# REQUIRED. Without this, a .gitleaks.toml *replaces* the built-in ruleset
+# instead of extending it, silently dropping `slack-webhook-url` and every other
+# default rule. That failure mode is why this is not a one-line change; the
+# regression test in tests/unit/tools/test_gitleaks_config.py pins it.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "discord-webhook-url"
+description = "Discord webhook URL (bearer credential — possession authorizes posting)"
+# Covers ptb./canary. hosts, the legacy discordapp.com domain, and the optional
+# /api/v10/ version segment. The id is always digits and the token is
+# URL-safe base64, so `\d+/[\w-]+` is specific enough not to need an entropy
+# floor — and specific enough that the repo's `webhooks/...` and
+# `webhooks/<id>/<token>` placeholders cannot match it, which is why this rule
+# carries no allowlist.
+regex = '''https://(?:ptb\.|canary\.)?discord(?:app)?\.com/api/(?:v\d+/)?webhooks/\d+/[\w-]+'''
+tags = ["webhook", "discord", "credential"]
