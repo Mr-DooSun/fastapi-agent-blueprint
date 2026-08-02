@@ -111,7 +111,7 @@ testpaths = ["tests"]
 pythonpath = [".agents/shared"]
 markers = [
     "slow: spawns a subprocess per test — container wiring probes that cannot\n           run in-process (see tests/support/container_env.py)",
-    "dynamodb: requires a dynamodb-local instance on DYNAMODB_ENDPOINT_URL",
+    "dynamodb: requires dynamodb-local at http://localhost:8000 (see make test-dynamo)",
 ]
 
 # === Ruff Configuration ===

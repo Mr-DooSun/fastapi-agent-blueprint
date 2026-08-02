@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import pytest
 
-from tests.support.container_env import boot_fails, resolve_in_env
+from tests.support.container_env import REPO_ROOT, boot_fails, resolve_in_env
 
 pytestmark = pytest.mark.slow
 
@@ -213,3 +213,39 @@ class TestTheHarnessItself:
         assert out["t"] == "NoopNotificationClient", (
             "the parent process env leaked into the probe"
         )
+
+    def test_probe_runs_where_no_dotenv_can_be_found(self):
+        """Scrubbing the environment is only half the isolation.
+
+        `Settings` sets ``env_file=".env"`` (`config.py:66`), and
+        pydantic-settings resolves that **relative to the working directory**.
+        An earlier revision ran the probe with ``cwd=REPO_ROOT``, so a
+        developer's untracked `.env` reached a probe called with `{}` — verified
+        at the time: an empty-env probe returned `DiscordNotificationAdapter`
+        with the URL from that file instead of the Noop client. The suite passed
+        only because CI checkouts have no `.env`, which is the worst kind of
+        green.
+
+        Asserting on the working directory rather than planting a real `.env`
+        keeps the check honest without a test that can litter the repo root if
+        it dies. Found by the cross-tool review of PR #338, not by this file.
+        """
+        out = resolve_in_env(
+            {},
+            """
+import os, pathlib
+cwd = pathlib.Path(os.getcwd())
+result = {
+    "cwd": str(cwd),
+    "has_dotenv": (cwd / ".env").exists(),
+    "is_repo_root": (cwd / "pyproject.toml").exists(),
+    "client": type(container.notification_client()).__name__,
+}
+""",
+        )
+        assert not out["has_dotenv"], f"probe cwd contains a .env: {out['cwd']}"
+        assert not out["is_repo_root"], (
+            f"probe ran in the repo root ({out['cwd']}) — a developer's .env "
+            "would be read by Settings and silently change the result"
+        )
+        assert out["client"] == "NoopNotificationClient"
