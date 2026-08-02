@@ -139,15 +139,24 @@ class TestAuditRepositoryResolvesTheDatabaseLazily:
     instance into module state via `configure_audit_repository`, so an override
     applied *after* bootstrap was invisible to every audit write and query."""
 
-    def test_a_plain_database_still_works(self):
-        """The worker cleanup task and the existing unit tests pass a resolved
-        `Database`. Accepting a provider must not break that."""
+    def test_a_plain_database_still_works(self, app):
+        """The worker cleanup task and the five existing unit-test call sites all
+        pass a resolved `Database`. Accepting a provider must not break that."""
         from src._core.infrastructure.admin.audit.repository import (
             AdminAuditLogRepository,
         )
 
-        sentinel = object()
-        assert AdminAuditLogRepository(sentinel)._database is sentinel  # type: ignore[arg-type]
+        core = app.state.container.core_container()
+        database = Database(
+            database_engine="sqlite",
+            database_user="",
+            database_password="",
+            database_host="",
+            database_port=0,
+            database_name=":memory:",
+            config=core.db_config(),
+        )
+        assert AdminAuditLogRepository(database)._database is database
 
     def test_a_provider_is_resolved_on_every_access(self):
         from src._core.infrastructure.admin.audit.repository import (
@@ -155,12 +164,16 @@ class TestAuditRepositoryResolvesTheDatabaseLazily:
         )
 
         calls: list[int] = []
+        first, second = object(), object()
 
         def provider():
             calls.append(1)
-            return "db"
+            return first if len(calls) == 1 else second
 
         repo = AdminAuditLogRepository(provider)  # type: ignore[arg-type]
-        assert repo._database == "db"
-        assert repo._database == "db"
-        assert len(calls) == 2, "the provider was cached instead of re-resolved"
+        assert repo._database is first
+        assert repo._database is second, (
+            "the provider was cached, so a post-bootstrap override would not be "
+            "picked up — the whole point of taking a provider"
+        )
+        assert len(calls) == 2

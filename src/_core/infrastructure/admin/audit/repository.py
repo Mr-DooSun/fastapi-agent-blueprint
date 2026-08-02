@@ -47,7 +47,11 @@ class AdminAuditLogRepository:
     @property
     def _database(self) -> Database:
         source = self._database_source
-        return source() if callable(source) else source
+        # `isinstance`, not `callable(source)`: duck-typing the discrimination
+        # would silently invoke a `Database` that ever grows a `__call__`.
+        # Instances are not callable today, so both forms behave identically —
+        # this one cannot stop doing so.
+        return source if isinstance(source, Database) else source()
 
     # ── Write ────────────────────────────────────────────────────────────────
 
