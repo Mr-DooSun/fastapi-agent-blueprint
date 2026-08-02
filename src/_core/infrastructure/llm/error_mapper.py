@@ -58,12 +58,51 @@ _NOT_FOUND_NAMES = frozenset(
 )
 
 
+_PROVIDER_MODULE_PREFIXES: tuple[str, ...] = (
+    "openai",
+    "anthropic",
+    "botocore",  # Bedrock — see _is_provider_exception
+    "boto3",
+    "pydantic_ai",
+    "google.api_core",
+    "google.genai",
+    "google.generativeai",
+)
+
+
+def _is_provider_exception(exc: Exception) -> bool:
+    """Did this exception come out of an LLM provider SDK?
+
+    This gate exists because the heuristics below match on message *text*, and
+    ``generic_exception_handler`` hands this function **every** unhandled
+    application exception. Ungated, that mapped ordinary failures to LLM 4xx:
+    ``KeyError("unauthorized")`` became a 401, ``RuntimeError("S3 bucket
+    model-artifacts not found")`` a 404. Both are genuine 5xx, and being 4xx
+    they also skipped the exception log and the error notification — so the
+    misclassification left no trace anywhere.
+
+    Bedrock is the case that shapes this. Its exceptions are generated at
+    runtime by botocore, so they are not importable and cannot be matched by
+    identity — but they do carry ``__module__ == "botocore.errorfactory"`` and
+    ``botocore.exceptions.ClientError`` in their MRO. Module prefix alone is
+    enough; the MRO is not consulted, which keeps this free of a botocore import.
+    """
+    module = type(exc).__module__ or ""
+    return any(
+        module == prefix or module.startswith(f"{prefix}.")
+        for prefix in _PROVIDER_MODULE_PREFIXES
+    )
+
+
 def _classify(exc: Exception) -> LLMException | None:
     """Classify an exception as a known LLM provider error.
 
     Returns a domain LLMException instance, or None if the exception is not
     a recognisable provider error (caller should treat it as a generic 500).
     """
+    if not _is_provider_exception(exc):
+        return None
+
     type_name = type(exc).__name__.lower().replace("_", "")
     error_str = str(exc).lower()
 
