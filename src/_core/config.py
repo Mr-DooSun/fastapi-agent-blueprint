@@ -833,6 +833,50 @@ class Settings(BaseSettings):
                 "discord_webhook_url missing"
             )
 
+        # The mirror of the two checks above, and the likelier operator error:
+        # pasting the webhook and forgetting the provider (#327 F9). The validator
+        # already rejects a provider with no URL on the grounds that the other half
+        # "would otherwise be silently ignored" — that reasoning was never applied
+        # upward, so three combinations booted with the alert path fully inert.
+        # Measured in a valid prod env before this change, all three ACCEPTED:
+        #   SLACK_WEBHOOK_URL alone            -> NoopNotificationClient
+        #   NOTIFICATION_WARNING_THRESHOLD     -> live NotificationRouter into Noop
+        #   severity / cooldown tuned          -> NoopNotificationClient
+        # Unconditional rather than strict-env-only, matching the checks above,
+        # which reject in local too.
+        if not notification_provider:
+            if self.slack_webhook_url or self.discord_webhook_url:
+                errors.append(
+                    "[Notification] SLACK_WEBHOOK_URL / DISCORD_WEBHOOK_URL are "
+                    "set but NOTIFICATION_PROVIDER is not, so no client is built "
+                    "and the URL is silently ignored. Set "
+                    "NOTIFICATION_PROVIDER=slack|discord, or remove the URL"
+                )
+
+            if self.notification_warning_threshold is not None:
+                errors.append(
+                    "[Notification/Routing] NOTIFICATION_WARNING_THRESHOLD is set "
+                    "but NOTIFICATION_PROVIDER is not. The threshold is the switch "
+                    "that wires the router, so a live NotificationRouter is built "
+                    "and every tier resolves to the disabled no-op client. Set "
+                    "NOTIFICATION_PROVIDER, or remove the threshold"
+                )
+
+            tuned = sorted(
+                name.upper()
+                for name in (
+                    "notification_severity_threshold",
+                    "notification_cooldown_seconds",
+                )
+                if name in self.model_fields_set
+            )
+            if tuned:
+                errors.append(
+                    f"[Notification] {' / '.join(tuned)} tuned but "
+                    "NOTIFICATION_PROVIDER is not set, so nothing consumes them. "
+                    "Set NOTIFICATION_PROVIDER, or leave these at their defaults"
+                )
+
         if (
             self.notification_warning_threshold is not None
             and self.notification_warning_threshold

@@ -908,6 +908,102 @@ class TestNotificationConfig:
             )
 
 
+class TestNotificationSettingsWithoutAProvider:
+    """#327 F9: config that only makes sense with alerting on must not boot without it.
+
+    The validator already rejects `NOTIFICATION_PROVIDER=slack` with no
+    `SLACK_WEBHOOK_URL`, on the stated grounds that the missing half would
+    otherwise be "silently ignored". That reasoning was never applied upward, so
+    three combinations booted with the alert path fully inert. Measured in a valid
+    prod env before this change, all three ACCEPTED:
+
+        SLACK_WEBHOOK_URL alone         -> NoopNotificationClient
+        NOTIFICATION_WARNING_THRESHOLD  -> live NotificationRouter into a Noop
+        severity / cooldown tuned       -> NoopNotificationClient
+
+    The second is the sharpest: the same validator block rejects a structurally
+    identical downstream inconsistency with the words "silently ignored" while
+    itself constructing a router object that can never deliver.
+
+    Unconditional, not strict-env-only — verified that the existing
+    provider-without-URL check rejects in `local` too, so a one-sided gate here
+    would be a new asymmetry.
+    """
+
+    def test_a_webhook_url_without_a_provider_is_rejected(self):
+        """The mirror of `test_slack_without_webhook_url_rejected`, and the likelier
+        operator error: paste the webhook, forget the provider."""
+        env = {
+            "ENV": "local",
+            "SLACK_WEBHOOK_URL": "https://hooks.slack.com/services/T/B/X",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match="silently ignored"):
+                _create_settings()
+
+    def test_a_discord_url_without_a_provider_is_rejected(self):
+        env = {
+            "ENV": "local",
+            "DISCORD_WEBHOOK_URL": "https://discord.com/api/webhooks/<id>/<token>",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match="silently ignored"):
+                _create_settings()
+
+    def test_the_warning_threshold_without_a_provider_is_rejected(self):
+        """The threshold is the switch that wires the router, so setting it alone
+        builds a live NotificationRouter whose every tier resolves to the disabled
+        no-op client."""
+        env = {
+            "ENV": "local",
+            "NOTIFICATION_WARNING_THRESHOLD": "400",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match="NOTIFICATION_WARNING_THRESHOLD"):
+                _create_settings()
+
+    @pytest.mark.parametrize(
+        "key,value",
+        [
+            ("NOTIFICATION_SEVERITY_THRESHOLD", "502"),
+            ("NOTIFICATION_COOLDOWN_SECONDS", "900"),
+        ],
+    )
+    def test_tuning_without_a_provider_is_rejected(self, key, value):
+        """Detected via `model_fields_set`, so setting a value that happens to equal
+        the default still counts as tuning — the point is that nothing consumes it."""
+        env = {"ENV": "local", key: value, **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match="nothing consumes them"):
+                _create_settings()
+
+    def test_no_notification_config_at_all_still_boots(self):
+        """The control. Alerting is optional infrastructure (ADR 042) and must stay
+        optional — this must not become "you have to configure notifications"."""
+        env = {"ENV": "local", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            settings = _create_settings()
+            assert settings.notification_provider is None
+
+    def test_a_complete_configuration_still_boots(self):
+        """The other control: everything set together must remain valid."""
+        env = {
+            "ENV": "local",
+            "NOTIFICATION_PROVIDER": "slack",
+            "SLACK_WEBHOOK_URL": "https://hooks.slack.com/services/T/B/X",
+            "NOTIFICATION_WARNING_THRESHOLD": "400",
+            "NOTIFICATION_SEVERITY_THRESHOLD": "500",
+            "NOTIFICATION_COOLDOWN_SECONDS": "900",
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            settings = _create_settings()
+            assert settings.notification_warning_threshold == 400
+
+
 class TestNotificationRoutingConfig:
     """#286: severity-based channel routing on top of TestNotificationConfig."""
 
