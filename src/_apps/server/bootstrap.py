@@ -25,6 +25,9 @@ from src._core.exceptions.exception_handlers import (
 # the quickstart create_all call — importing here is the durable hook.
 from src._core.infrastructure.admin.audit import models as _audit_models  # noqa: F401
 from src._core.infrastructure.discovery import discover_domains
+from src._core.infrastructure.http.body_size_middleware import (
+    BodySizeLimitMiddleware,
+)
 from src._core.infrastructure.logging.configure import configure_logging
 from src._core.infrastructure.logging.request_log_middleware import (
     RequestLogMiddleware,
@@ -72,8 +75,26 @@ def _install_middleware(app: FastAPI) -> None:
     # CorrelationIdMiddleware must see the raw request first (so it can read /
     # generate X-Request-ID before the log middleware tries to bind it), so it
     # is added AFTER RequestLogMiddleware.
-    # Order after registration: Request → CorrelationId → RequestLog → CORS → TrustedHost → App
+    # Order after registration:
+    #   Request → CorrelationId → RequestLog → CORS → BodySizeLimit → TrustedHost → App
+    #
+    # BodySizeLimitMiddleware sits INSIDE CorrelationId/RequestLog and CORS, and
+    # every one of those placements is deliberate:
+    #   - inside CorrelationId + RequestLog, so a 413 still carries X-Request-ID
+    #     and still produces an access-log line. Outermost it would be invisible.
+    #   - inside CORS, so the 413 carries the CORS headers a browser needs in
+    #     order to read it at all.
+    #   - outside the app, so an over-long body is never handed to route parsing.
+    # The cost of being inside CORS is that a CORS preflight never reaches it —
+    # CORSMiddleware answers those itself. Measured and accepted: a preflight body
+    # is never delivered to the application, so bounding it would buy nothing at
+    # this layer and would cost the 413 its CORS headers. See the module docstring
+    # for the full scope of the guarantee, which is about bytes reaching route
+    # parsing rather than bytes reaching the process.
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
+    app.add_middleware(
+        BodySizeLimitMiddleware, max_bytes=settings.max_request_body_bytes
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allow_origins,
