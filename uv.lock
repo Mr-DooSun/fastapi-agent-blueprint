@@ -1054,6 +1054,9 @@ pydantic-ai-google = [
 rabbitmq = [
     { name = "taskiq-aio-pika" },
 ]
+server-gunicorn = [
+    { name = "gunicorn" },
+]
 sqs = [
     { name = "taskiq-aws" },
 ]
@@ -1086,6 +1089,7 @@ requires-dist = [
     { name = "email-validator", specifier = ">=2.0.0" },
     { name = "fastapi", specifier = ">=0.115.12" },
     { name = "greenlet", specifier = ">=3.2.0" },
+    { name = "gunicorn", marker = "extra == 'server-gunicorn'", specifier = ">=23.0.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "nicegui", marker = "extra == 'admin'", specifier = ">=3.5.0" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0.0" },
@@ -1113,7 +1117,7 @@ requires-dist = [
     { name = "types-aiobotocore-s3", marker = "extra == 'aws'", specifier = ">=2.25.0" },
     { name = "uvicorn", specifier = ">=0.34.1" },
 ]
-provides-extras = ["admin", "aws", "sqs", "rabbitmq", "openai", "pydantic-ai", "pydantic-ai-anthropic", "pydantic-ai-google", "pydantic-ai-duckduckgo", "otel"]
+provides-extras = ["admin", "server-gunicorn", "aws", "sqs", "rabbitmq", "openai", "pydantic-ai", "pydantic-ai-anthropic", "pydantic-ai-google", "pydantic-ai-duckduckgo", "otel"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1523,6 +1527,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/f5/68/67f4947ed55d2e69f2cc199ab9fd85e0a0034d813bbeef84df6d2ba4d4b7/grpcio-1.80.0-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:31b9ac4ad1aa28ffee5503821fafd09e4da0a261ce1c1281c6c8da0423c83b6e", size = 7828477, upload-time = "2026-03-30T08:48:32.054Z" },
     { url = "https://files.pythonhosted.org/packages/44/b6/8d4096691b2e385e8271911a0de4f35f0a6c7d05aff7098e296c3de86939/grpcio-1.80.0-cp314-cp314-win32.whl", hash = "sha256:367ce30ba67d05e0592470428f0ec1c31714cab9ef19b8f2e37be1f4c7d32fae", size = 4218563, upload-time = "2026-03-30T08:48:34.538Z" },
     { url = "https://files.pythonhosted.org/packages/e5/8c/bbe6baf2557262834f2070cf668515fa308b2d38a4bbf771f8f7872a7036/grpcio-1.80.0-cp314-cp314-win_amd64.whl", hash = "sha256:3b01e1f5464c583d2f567b2e46ff0d516ef979978f72091fd81f5ab7fa6e2e7f", size = 5019457, upload-time = "2026-03-30T08:48:37.308Z" },
+]
+
+[[package]]
+name = "gunicorn"
+version = "26.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6d/b7/a4a3f632f823e432ce6bc65f62961b7980c898c77f075a2f7118cb3846fe/gunicorn-26.0.0.tar.gz", hash = "sha256:ca9346f85e3a4aeeb64d491045c16b9a35647abd37ea15efe53080eb8b090baf", size = 727286, upload-time = "2026-05-05T06:38:25.529Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e6/40/9c2384fc2be4ad25dd4a49decd5ad9ea5a3639814c11bd40ab77cb9f0a14/gunicorn-26.0.0-py3-none-any.whl", hash = "sha256:40233d26a5f0d1872916188c276e21641155111c2853f0c2cd55260aec0d24fc", size = 212009, upload-time = "2026-05-05T06:38:23.007Z" },
 ]
 
 [[package]]
