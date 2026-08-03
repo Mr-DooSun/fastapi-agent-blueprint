@@ -282,317 +282,74 @@ class TestTheExceptionGuardIsNarrow:
         )
 
 
-class TestItNeverEmitsASecondResponseStart:
-    """A streaming endpoint may start responding while it is still reading.
+class TestEnforcementStopsOnceTheAppHasCommittedAResponse:
+    """The design that replaced three failed attempts at acting mid-response.
 
-    At that point the status is no longer ours to set: emitting a 413
-    `http.response.start` would be the *second* one, which ASGI servers refuse
-    ("Unexpected message" on uvicorn). The middleware stops feeding the body and
-    logs instead. Asserted at the raw ASGI level because an HTTP client cannot
-    show how many start messages were produced.
+    An app may begin responding while still reading — legal ASGI. Three earlier
+    versions each tried to *do* something when the limit tripped after that point,
+    and each was wrong:
+
+      1. Drop the app's frames  -> response never terminates (headers, no body).
+      2. Forward them           -> no termination guarantee at all.
+      3. Synthesize an empty terminal frame -> corrupts any response that declared
+         a `content-length`. h11: "Too little data for declared Content-Length".
+
+    Four of this module's six review findings came out of that subtree, including
+    all three rounds where fixing one hole opened another. It is now deleted: once
+    `http.response.start` is on the wire the middleware logs and stops enforcing.
+
+    The reasoning, not just the retreat: the threat this middleware exists to stop
+    is FastAPI parsing a body before auth can reject it. Once the app has produced
+    a response it has already got what it needed from the body, so the threat is
+    past by definition. And no shipped route can reach this path — there is no
+    `StreamingResponse`, `FileResponse` or `request.stream()` anywhere in `src/` or
+    `examples/`, verified by grep.
+
+    The trade, stated rather than hidden: a streaming proxy endpoint would be
+    unbounded after it commits. That endpoint does not exist here, and an ingress
+    limit covers it if it ever does.
     """
 
     @staticmethod
-    async def _app_that_responds_then_reads(scope, receive, send):
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [(b"content-type", b"text/plain")],
-            }
-        )
-        while True:
-            message = await receive()
-            if message["type"] == "http.disconnect" or not message.get(
-                "more_body", False
-            ):
-                break
-        await send({"type": "http.response.body", "body": b"done", "more_body": False})
-
-    def test_only_one_start_is_sent(self):
-        import anyio
-
-        middleware = BodySizeLimitMiddleware(
-            self._app_that_responds_then_reads, max_bytes=LIMIT
-        )
-        sent: list[dict] = []
-        chunks = [b"x" * 600] * 5
-
-        async def receive():
-            if chunks:
-                return {
-                    "type": "http.request",
-                    "body": chunks.pop(0),
-                    "more_body": bool(chunks),
-                }
-            return {"type": "http.request", "body": b"", "more_body": False}
-
-        async def send(message):
-            sent.append(message)
-
-        anyio.run(middleware, _raw_scope(), receive, send)
-
-        starts = [m for m in sent if m["type"] == "http.response.start"]
-        assert len(starts) == 1, (
-            f"emitted {len(starts)} http.response.start messages; an ASGI server "
-            "rejects the second and the request fails instead of being rejected"
-        )
-        assert starts[0]["status"] == 200, (
-            "the status was overwritten after the response had already begun"
-        )
-
-        # The half a start-count-only assertion misses, and a review caught:
-        # suppressing every app message after rejection also suppressed the frames
-        # that TERMINATE the response already committed, leaving the client with
-        # headers and an open connection.
-        #
-        # The response IS terminated — but by this middleware, not by forwarding
-        # the app's frames. A second review round showed why forwarding is not a
-        # termination guarantee: an app that ignores `http.disconnect` and keeps
-        # emitting `more_body=True` would hold the connection open indefinitely.
-        # So exactly one empty terminal frame goes out and the app's own body
-        # (`b"done"`) never does.
-        bodies = [m for m in sent if m["type"] == "http.response.body"]
-        assert len(bodies) == 1, (
-            f"sent {len(bodies)} body frames; the response must be closed with "
-            "exactly one, not by forwarding however many the app decides to send"
-        )
-        assert bodies[0].get("more_body", False) is False, (
-            "the terminal frame did not terminate — the client is left holding "
-            "200 headers and an open connection"
-        )
-        assert bodies[0]["body"] == b"", (
-            "the app's post-rejection body was forwarded; only an empty terminal "
-            "frame should close a response cut short by the limit"
-        )
-
-
-class TestAnUnderstatedContentLengthIsStillCaught:
-    def test_a_header_that_lies_does_not_bypass_the_counter(self):
-        """The header check is an optimisation, not the control. A caller who
-        declares 10 bytes and sends 1800 must still be rejected."""
-        import anyio
-
-        stack = _build_app().build_middleware_stack()
-        sent: list[dict] = []
-        chunks = [b"x" * 900, b"x" * 900]
-
-        async def receive():
-            if chunks:
-                return {
-                    "type": "http.request",
-                    "body": chunks.pop(0),
-                    "more_body": bool(chunks),
-                }
-            return {"type": "http.request", "body": b"", "more_body": False}
-
-        async def send(message):
-            sent.append(message)
-
-        anyio.run(
-            stack, _raw_scope(headers=[(b"content-length", b"10")]), receive, send
-        )
-
-        start = next(m for m in sent if m["type"] == "http.response.start")
-        assert start["status"] == 413
-
-
-class TestCumulativeCountingAcrossMessages:
-    """Multi-message accumulation with NO Content-Length at all.
-
-    Driven at the raw ASGI level because `TestClient` coalesces a generator into
-    one message, so no client-level test can produce these boundaries. Each
-    individual message here is under the limit; only the running total exceeds it,
-    which is the case a per-message check would miss.
-    """
-
-    @staticmethod
-    def _run(
-        chunk_sizes: list[int], *, max_bytes: int = LIMIT
-    ) -> tuple[list[dict], int]:
-        """Returns the sent messages and how many body frames were consumed.
-
-        The consumed count matters: asserting only the status lets an
-        implementation that drains the entire body and *then* rejects pass a test
-        named "cut off at the limit". A review caught exactly that.
-        """
-        import anyio
-
-        async def echo(request: Request) -> JSONResponse:
-            return JSONResponse({"read": len(await request.body())})
-
-        app = Starlette(routes=[Route("/echo", echo, methods=["POST"])])
-        app.add_middleware(BodySizeLimitMiddleware, max_bytes=max_bytes)
-
-        sizes = list(chunk_sizes)
-        sent: list[dict] = []
-        consumed = 0
-
-        async def receive():
-            nonlocal consumed
-            if sizes:
-                size = sizes.pop(0)
-                consumed += 1
-                return {
-                    "type": "http.request",
-                    "body": b"x" * size,
-                    "more_body": bool(sizes),
-                }
-            return {"type": "http.request", "body": b"", "more_body": False}
-
-        async def send(message):
-            sent.append(message)
-
-        anyio.run(app.build_middleware_stack(), _raw_scope(), receive, send)
-        return sent, consumed
-
-    def test_each_message_under_the_limit_but_the_total_over_is_rejected(self):
-        sent, _ = self._run([400, 400, 400])
-        start = next(m for m in sent if m["type"] == "http.response.start")
-        assert start["status"] == 413, (
-            "three 400-byte messages against a 1024-byte limit were accepted; the "
-            "counter is per-message rather than cumulative"
-        )
-
-    def test_the_total_staying_under_the_limit_passes(self):
-        sent, _ = self._run([300, 300])
-        start = next(m for m in sent if m["type"] == "http.response.start")
-        assert start["status"] == 200
-
-    def test_the_body_is_cut_off_at_the_limit_not_after_the_last_message(self):
-        """Rejection happens ON the message that crosses the line.
-
-        Asserting the consumed count, not just the status: with 20 frames of 400
-        bytes against a 1024-byte limit, the third frame is the one that crosses,
-        so exactly three must be read. An implementation that drained all 20 and
-        then rejected would satisfy a status-only assertion while defeating the
-        point of streaming enforcement.
-        """
-        sent, consumed = self._run([400] * 20)
-        start = next(m for m in sent if m["type"] == "http.response.start")
-        assert start["status"] == 413
-        assert consumed == 3, (
-            f"read {consumed} of 20 frames before rejecting; the limit is crossed "
-            "on the third, so anything more means the body was drained first"
-        )
-
-
-class TestTheDocumentedBoundariesOfTheGuarantee:
-    """Two gaps a review found. Pinned so they stay deliberate boundaries rather
-    than becoming unnoticed holes — and so a future reader sees they were measured
-    rather than overlooked."""
-
-    def test_a_cors_preflight_is_not_bounded(self):
-        """`CORSMiddleware` sits outside and answers preflights itself, so the
-        body never reaches this middleware. Accepted: nothing reads a preflight
-        body, and moving outside CORS would cost the 413 its CORS headers.
-        """
-        from starlette.middleware.cors import CORSMiddleware
-
-        async def echo(request: Request) -> JSONResponse:
-            return JSONResponse({"read": len(await request.body())})
-
-        app = Starlette(routes=[Route("/e", echo, methods=["POST", "OPTIONS"])])
-        app.add_middleware(BodySizeLimitMiddleware, max_bytes=10)
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=["*"],
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
-        client = TestClient(app)
-
-        preflight = client.request(
-            "OPTIONS",
-            "/e",
-            content=b"x" * 11,
-            headers={
-                "Origin": "http://x.com",
-                "Access-Control-Request-Method": "POST",
-            },
-        )
-        assert preflight.status_code == 200
-
-        # The same oversized body on a real request IS bounded, and so is an
-        # OPTIONS that is not a preflight.
-        assert client.post("/e", content=b"x" * 11).status_code == 413
-        assert client.request("OPTIONS", "/e", content=b"x" * 11).status_code == 413
-
-    def test_an_app_that_never_reads_the_body_is_not_bounded_by_the_counter(self):
-        """The counter runs on `receive()`. An endpoint that ignores the body is
-        bounded only by the header check — and nothing parses those bytes, so
-        there is no allocation to prevent."""
-        import anyio
-
-        async def ignores_body(scope, receive, send):
-            await send({"type": "http.response.start", "status": 200, "headers": []})
-            await send({"type": "http.response.body", "body": b"ok"})
-
-        middleware = BodySizeLimitMiddleware(ignores_body, max_bytes=10)
-        sent: list[dict] = []
-
-        async def receive():
-            return {"type": "http.request", "body": b"x" * 999, "more_body": False}
-
-        async def send(message):
-            sent.append(message)
-
-        anyio.run(middleware, _raw_scope(), receive, send)
-        start = next(m for m in sent if m["type"] == "http.response.start")
-        assert start["status"] == 200, (
-            "this is the documented boundary; if it now returns 413 the module "
-            "docstring's scope section is out of date"
-        )
-
-
-class TestTerminationRespectsADeclaredContentLength:
-    """A fixed-length response cannot be truncated.
-
-    The previous round made the middleware synthesize an empty terminal frame to
-    close a response the app had committed. That is only valid when the response
-    did not declare a length. Against a declared `content-length` it is a protocol
-    error — confirmed directly against h11, the parser uvicorn uses:
-
-        LocalProtocolError: Too little data for declared Content-Length
-
-    So the behaviour now splits on what the app declared. Both halves are asserted
-    here, because the failure mode of getting it wrong is invisible to a test that
-    only counts messages.
-    """
-
-    @staticmethod
-    def _app(*, declare_length: bool, body_frames: int = 3):
+    def _app(*, declare_length: bool, raises_on_disconnect: bool):
         async def app(scope, receive, send):
             headers = [(b"content-type", b"text/plain")]
             if declare_length:
-                headers.append((b"content-length", str(4 * body_frames).encode()))
+                headers.append((b"content-length", b"12"))
             await send(
                 {"type": "http.response.start", "status": 200, "headers": headers}
             )
-            # Read the request while responding — the case this class is about.
             while True:
                 message = await receive()
                 if message["type"] == "http.disconnect":
+                    if raises_on_disconnect:
+                        # What a real Starlette streaming endpoint does:
+                        # `Request.stream()` turns the disconnect into
+                        # ClientDisconnect. Every disconnect-handling app in the
+                        # first five rounds of this file used `break` instead,
+                        # which is precisely why the exception-latch defect
+                        # survived all of them.
+                        from starlette.requests import ClientDisconnect
+
+                        raise ClientDisconnect()
                     break
                 if not message.get("more_body", False):
                     break
-            for index in range(body_frames):
+            for index in range(3):
                 await send(
                     {
                         "type": "http.response.body",
                         "body": b"data",
-                        "more_body": index < body_frames - 1,
+                        "more_body": index < 2,
                     }
                 )
 
         return app
 
-    def _run(self, *, declare_length: bool) -> list[dict]:
+    def _run(self, app) -> tuple[list[dict], str | None]:
         import anyio
 
-        middleware = BodySizeLimitMiddleware(
-            self._app(declare_length=declare_length), max_bytes=LIMIT
-        )
+        middleware = BodySizeLimitMiddleware(app, max_bytes=LIMIT)
         sent: list[dict] = []
         chunks = [b"x" * 600] * 5
 
@@ -608,45 +365,61 @@ class TestTerminationRespectsADeclaredContentLength:
         async def send(message):
             sent.append(message)
 
-        anyio.run(middleware, _raw_scope(), receive, send)
-        return sent
+        escaped: str | None = None
+        try:
+            anyio.run(middleware, _raw_scope(), receive, send)
+        except BaseException as exc:  # noqa: BLE001 - recorded, not handled
+            escaped = type(exc).__name__
+        return sent, escaped
 
-    def test_no_declared_length_is_closed_with_one_empty_frame(self):
-        sent = self._run(declare_length=False)
-        bodies = [m for m in sent if m["type"] == "http.response.body"]
-        assert len(bodies) == 1
-        assert bodies[0]["body"] == b""
-        assert bodies[0].get("more_body", False) is False
+    @pytest.mark.parametrize(
+        "declare_length", [False, True], ids=["no-length", "declared-length"]
+    )
+    @pytest.mark.parametrize(
+        "raises_on_disconnect", [False, True], ids=["breaks", "raises"]
+    )
+    def test_the_app_response_completes_untouched(
+        self, declare_length, raises_on_disconnect
+    ):
+        sent, escaped = self._run(
+            self._app(
+                declare_length=declare_length,
+                raises_on_disconnect=raises_on_disconnect,
+            )
+        )
 
-    def test_a_declared_length_forwards_the_app_frames_instead(self):
-        """The app promised 12 bytes; only its own frames can satisfy that. An
-        empty terminal frame here would make h11 raise."""
-        sent = self._run(declare_length=True)
+        starts = [m for m in sent if m["type"] == "http.response.start"]
+        assert len(starts) == 1, f"{len(starts)} response starts; ASGI allows one"
+        assert starts[0]["status"] == 200, "the app's status was overwritten"
+
         bodies = [m for m in sent if m["type"] == "http.response.body"]
         assert b"".join(m["body"] for m in bodies) == b"data" * 3, (
-            "the declared length was not satisfied; the response is truncated and "
-            "the protocol server will raise"
+            "the app's response was truncated; enforcement should have stopped, "
+            "not interfered with a response already in flight"
         )
         assert bodies[-1].get("more_body", False) is False
-        assert not any(m["body"] == b"" for m in bodies), (
-            "an empty frame was synthesized despite the declared content-length"
+
+        assert escaped is None, (
+            f"{escaped} escaped for a request the middleware chose not to reject. "
+            "Starlette's error middleware would turn that into an ERROR-level "
+            "unhandled_exception AND a false 500 notification dispatch"
         )
 
-    def test_the_resulting_sequence_is_valid_to_h11(self):
-        """The assertion that actually matters: replay both outcomes through h11
-        and require no protocol error. Counting frames cannot catch a length
-        mismatch; h11 can."""
+    def test_the_emitted_sequence_is_valid_to_h11(self):
+        """Counting frames cannot catch a length mismatch; h11 can. Replays both
+        length variants through the parser uvicorn uses."""
         import h11
 
         for declare_length in (False, True):
-            sent = self._run(declare_length=declare_length)
+            sent, _ = self._run(
+                self._app(declare_length=declare_length, raises_on_disconnect=True)
+            )
             conn = h11.Connection(our_role=h11.SERVER)
             conn.receive_data(
                 b"POST / HTTP/1.1\r\nHost: t\r\nContent-Length: 5\r\n\r\nhello"
             )
             conn.next_event()
             conn.next_event()
-
             start = next(m for m in sent if m["type"] == "http.response.start")
             conn.send(
                 h11.Response(
@@ -660,5 +433,22 @@ class TestTerminationRespectsADeclaredContentLength:
                 if message["body"]:
                     conn.send(h11.Data(data=message["body"]))
                 if not message.get("more_body", False):
-                    # Raises LocalProtocolError on a length mismatch.
                     conn.send(h11.EndOfMessage())
+
+    def test_the_decision_is_logged(self):
+        """Silently going unbounded would be the worst version of this. The
+        operator gets a record naming the limit and how much arrived."""
+        from structlog.testing import capture_logs
+
+        with capture_logs() as logs:
+            self._run(self._app(declare_length=False, raises_on_disconnect=False))
+        events = [r.get("event") for r in logs]
+        assert "request_body_too_large_after_response_started" in events, events
+
+
+class TestARealRejectionStillWorks:
+    """The path that matters, kept adjacent so the retreat above cannot quietly
+    widen into "never reject anything"."""
+
+    def test_a_body_over_the_limit_before_any_response_is_still_413(self, client):
+        assert client.post("/echo", content=b"x" * (LIMIT * 4)).status_code == 413
