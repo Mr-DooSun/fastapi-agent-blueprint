@@ -43,6 +43,7 @@ def bootstrap_app(app: FastAPI) -> None:
     _bootstrap_quickstart_schema_if_applicable(container)
     _install_core_routes(app, container)
     _bootstrap_domains(app, container)
+    _install_inline_task_runtime(container)
     _mount_admin_if_available(app)
 
 
@@ -133,6 +134,71 @@ def _bootstrap_domains(app: FastAPI, container) -> None:
             app=app,
             **{f"{name}_container": domain_container},
         )
+
+
+def _install_inline_task_runtime(container) -> None:
+    """Give the inline broker the task runtime the worker process would give it (#324).
+
+    Under ``BROKER_TYPE=inmemory`` — the shipped default, and a value that passes
+    stg/prod validation — ``.kiq()`` executes the task **in this process**. But the
+    middleware stack and the domain task wiring are installed by
+    ``src/_apps/worker/bootstrap.py``, reached only through ``worker/app.py``,
+    which the server never imports. Measured at HEAD in a server process:
+
+        server-process broker : InMemoryBroker
+        middlewares           : []
+        registered tasks      : ['my-project.docs.ingest_document']
+
+    So a task failure produced no retry, no ``task_error`` record, no #310 alert
+    and no correlation-id binding — and the absence of the error-logging
+    middleware is itself what hid the failure.
+
+    Three things here are deliberate and each was measured:
+
+    1. **The provider comes from the server's own core tree.** Passing the worker
+       module's ``container.error_notifier`` would give this process two
+       ``ErrorNotifier`` singletons, hence two ``NoopNotificationClient``s — two
+       ``notification_client_disabled`` lines against the documented per-process
+       invariant — and two independent cooldown dicts, so an HTTP-path alert would
+       not suppress a duplicate task-path alert.
+
+    2. **The server passes its OWN container to the domain wiring**, not a fresh
+       ``create_worker_container(...)``. Building one would raise
+       ``AttributeError: 'DependenciesContainer' object has no attribute
+       '__self__'`` — the server has already overridden those class-level
+       dependency containers.
+
+    3. **Only the inline broker is touched.** With a cross-process broker the
+       tasks run in a real worker that installs its own stack, and installing it
+       here as well would double-register. The ``not middlewares`` guard also
+       keeps a repeated ``bootstrap_app`` call (test reloads) idempotent.
+
+    Not imported at module scope: ``src._apps.worker.broker`` constructs a
+    ``CoreContainer`` at import time, and keeping that inside the function leaves
+    the import graph as it was for anything that does not reach this step.
+    """
+    from taskiq import InMemoryBroker
+
+    from src._apps.worker.bootstrap import (
+        bootstrap_task_domains,
+        install_task_middleware,
+    )
+    from src._apps.worker.broker import broker as task_broker
+
+    if not isinstance(task_broker, InMemoryBroker):
+        return
+
+    core_container = container.core_container()
+    if not task_broker.middlewares:
+        install_task_middleware(
+            task_broker, error_notifier_provider=core_container.error_notifier
+        )
+    bootstrap_task_domains(container)
+    _logger.info(
+        "inline_task_runtime_installed",
+        middlewares=[type(m).__name__ for m in task_broker.middlewares],
+        tasks=sorted(task_broker.get_all_tasks()),
+    )
 
 
 def _maybe_configure_otel(service_name: str) -> None:
