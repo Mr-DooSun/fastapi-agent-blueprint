@@ -25,8 +25,9 @@ against this app:
     64MB (chunked) -> Content-Length present: False
 
 So this middleware also counts bytes as they stream and aborts mid-body. The
-header check is kept because it is free and fails fast, before a single byte of
-an over-long body is accepted.
+header check is kept because it is free and fails fast — before any of the body
+is delivered to the wrapped app, though not before the HTTP server has accepted
+it off the socket, which is not this middleware's to control.
 
 What this does NOT guarantee
 ---------------------------
@@ -73,6 +74,7 @@ class _RejectionState:
     """
 
     __slots__ = (
+        "declared_response_length",
         "received",
         "rejected",
         "rejection_sent",
@@ -88,9 +90,13 @@ class _RejectionState:
         # response we stop the body WITHOUT sending our own 413. Only a
         # response we actually sent licenses swallowing the app's exception.
         self.rejection_sent = False
-        # Whether a terminal (``more_body=False``) frame has gone out. Used to
-        # close a response we did not start but had to cut short.
+        # Whether a terminal (``more_body=False``) frame has gone out — ours or
+        # the app's. Used to avoid double-terminating.
         self.response_completed = False
+        # Set when the app's own `http.response.start` declared a
+        # `content-length`. A fixed-length response cannot be truncated: see
+        # `_close_committed_response`.
+        self.declared_response_length = False
 
 
 class BodySizeLimitMiddleware:
@@ -184,22 +190,7 @@ class BodySizeLimitMiddleware:
                         limit_bytes=self.max_bytes,
                         received_bytes=state.received,
                     )
-                    # Close the response the app committed, rather than relying on
-                    # the app to close it. Forwarding its frames until it decides
-                    # to stop is not a termination guarantee: an app that ignores
-                    # `http.disconnect` and keeps emitting `more_body=True` would
-                    # hold the connection open indefinitely. That app is violating
-                    # the ASGI contract, but a size limit should not depend on the
-                    # app behaving to be able to end the request.
-                    if not state.response_completed:
-                        await send(
-                            {
-                                "type": "http.response.body",
-                                "body": b"",
-                                "more_body": False,
-                            }
-                        )
-                        state.response_completed = True
+                    await self._close_committed_response(send, state)
                     return {"type": "http.disconnect"}
                 await self._reject(
                     scope, send, declared=None, received=state.received, state=state
@@ -212,14 +203,26 @@ class BodySizeLimitMiddleware:
     def _guarded_send(self, send: Send, state: _RejectionState) -> Send:
         async def guarded_send(message: Message) -> None:
             if state.rejected:
-                # Nothing more goes out. Either we sent the 413, or we terminated
-                # the response the app had already committed — in both cases the
-                # response is complete and anything the app produces from a
-                # truncated body (a 422, a 500, more body frames) would be either a
-                # second response or an unbounded tail.
+                if state.response_started and not state.response_completed:
+                    # We could not terminate this response ourselves — it declared
+                    # a `content-length`, so an empty terminal frame would be a
+                    # protocol error. The app's own frames are the only thing that
+                    # can satisfy the length it promised, so they keep flowing.
+                    if message["type"] == "http.response.body":
+                        if not message.get("more_body", False):
+                            state.response_completed = True
+                        await send(message)
+                    return
+                # Either we sent the 413, or we terminated the response the app had
+                # committed. Anything further — a 422, a 500, more body frames —
+                # would be a second response or an unbounded tail.
                 return
             if message["type"] == "http.response.start":
                 state.response_started = True
+                state.declared_response_length = any(
+                    key.lower() == b"content-length"
+                    for key, _ in message.get("headers") or ()
+                )
             elif message["type"] == "http.response.body" and not message.get(
                 "more_body", False
             ):
@@ -227,6 +230,41 @@ class BodySizeLimitMiddleware:
             await send(message)
 
         return guarded_send
+
+    async def _close_committed_response(
+        self, send: Send, state: _RejectionState
+    ) -> None:
+        """End a response the app had already started, when that is safe to do.
+
+        Three options exist once the app's ``http.response.start`` is on the wire
+        and the limit then trips, and only one is correct per case:
+
+        - **Drop the app's frames.** The response never terminates; the client
+          holds headers and an open connection.
+        - **Forward them.** No termination guarantee — an app ignoring
+          ``http.disconnect`` and emitting ``more_body=True`` holds the connection
+          open. Such an app violates the ASGI contract, but that is not a defence.
+        - **Synthesize an empty terminal frame.** Only valid when the response did
+          not declare a length. Against a declared ``content-length`` it is a
+          protocol error, confirmed directly against h11::
+
+              LocalProtocolError: Too little data for declared Content-Length
+
+        So the choice is made on what the app declared. With no ``content-length``
+        the response is chunked or connection-delimited and an empty terminal frame
+        ends it cleanly. With one, only the app's own frames can satisfy the length
+        it promised, so they are forwarded and termination depends on the app
+        honouring ``http.disconnect`` — which is exactly what the ASGI spec
+        requires of it.
+
+        A middleware cannot do better than this from behind an already-sent
+        response start. Deciding earlier would mean withholding the start until the
+        body is known to fit, which would break streaming responses outright.
+        """
+        if state.response_completed or state.declared_response_length:
+            return
+        await send({"type": "http.response.body", "body": b"", "more_body": False})
+        state.response_completed = True
 
     async def _reject(
         self,
@@ -269,3 +307,5 @@ class BodySizeLimitMiddleware:
         )
         await send({"type": "http.response.body", "body": body, "more_body": False})
         state.rejection_sent = True
+        # Keep `response_completed` honest: a terminal frame HAS gone out.
+        state.response_completed = True

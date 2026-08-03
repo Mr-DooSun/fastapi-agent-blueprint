@@ -543,3 +543,122 @@ class TestTheDocumentedBoundariesOfTheGuarantee:
             "this is the documented boundary; if it now returns 413 the module "
             "docstring's scope section is out of date"
         )
+
+
+class TestTerminationRespectsADeclaredContentLength:
+    """A fixed-length response cannot be truncated.
+
+    The previous round made the middleware synthesize an empty terminal frame to
+    close a response the app had committed. That is only valid when the response
+    did not declare a length. Against a declared `content-length` it is a protocol
+    error — confirmed directly against h11, the parser uvicorn uses:
+
+        LocalProtocolError: Too little data for declared Content-Length
+
+    So the behaviour now splits on what the app declared. Both halves are asserted
+    here, because the failure mode of getting it wrong is invisible to a test that
+    only counts messages.
+    """
+
+    @staticmethod
+    def _app(*, declare_length: bool, body_frames: int = 3):
+        async def app(scope, receive, send):
+            headers = [(b"content-type", b"text/plain")]
+            if declare_length:
+                headers.append((b"content-length", str(4 * body_frames).encode()))
+            await send(
+                {"type": "http.response.start", "status": 200, "headers": headers}
+            )
+            # Read the request while responding — the case this class is about.
+            while True:
+                message = await receive()
+                if message["type"] == "http.disconnect":
+                    break
+                if not message.get("more_body", False):
+                    break
+            for index in range(body_frames):
+                await send(
+                    {
+                        "type": "http.response.body",
+                        "body": b"data",
+                        "more_body": index < body_frames - 1,
+                    }
+                )
+
+        return app
+
+    def _run(self, *, declare_length: bool) -> list[dict]:
+        import anyio
+
+        middleware = BodySizeLimitMiddleware(
+            self._app(declare_length=declare_length), max_bytes=LIMIT
+        )
+        sent: list[dict] = []
+        chunks = [b"x" * 600] * 5
+
+        async def receive():
+            if chunks:
+                return {
+                    "type": "http.request",
+                    "body": chunks.pop(0),
+                    "more_body": bool(chunks),
+                }
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        async def send(message):
+            sent.append(message)
+
+        anyio.run(middleware, _raw_scope(), receive, send)
+        return sent
+
+    def test_no_declared_length_is_closed_with_one_empty_frame(self):
+        sent = self._run(declare_length=False)
+        bodies = [m for m in sent if m["type"] == "http.response.body"]
+        assert len(bodies) == 1
+        assert bodies[0]["body"] == b""
+        assert bodies[0].get("more_body", False) is False
+
+    def test_a_declared_length_forwards_the_app_frames_instead(self):
+        """The app promised 12 bytes; only its own frames can satisfy that. An
+        empty terminal frame here would make h11 raise."""
+        sent = self._run(declare_length=True)
+        bodies = [m for m in sent if m["type"] == "http.response.body"]
+        assert b"".join(m["body"] for m in bodies) == b"data" * 3, (
+            "the declared length was not satisfied; the response is truncated and "
+            "the protocol server will raise"
+        )
+        assert bodies[-1].get("more_body", False) is False
+        assert not any(m["body"] == b"" for m in bodies), (
+            "an empty frame was synthesized despite the declared content-length"
+        )
+
+    def test_the_resulting_sequence_is_valid_to_h11(self):
+        """The assertion that actually matters: replay both outcomes through h11
+        and require no protocol error. Counting frames cannot catch a length
+        mismatch; h11 can."""
+        import h11
+
+        for declare_length in (False, True):
+            sent = self._run(declare_length=declare_length)
+            conn = h11.Connection(our_role=h11.SERVER)
+            conn.receive_data(
+                b"POST / HTTP/1.1\r\nHost: t\r\nContent-Length: 5\r\n\r\nhello"
+            )
+            conn.next_event()
+            conn.next_event()
+
+            start = next(m for m in sent if m["type"] == "http.response.start")
+            conn.send(
+                h11.Response(
+                    status_code=start["status"],
+                    headers=[(k, v) for k, v in start["headers"]],
+                )
+            )
+            for message in sent:
+                if message["type"] != "http.response.body":
+                    continue
+                if message["body"]:
+                    conn.send(h11.Data(data=message["body"]))
+                if not message.get("more_body", False):
+                    # Raises LocalProtocolError on a length mismatch.
+                    conn.send(h11.EndOfMessage())
