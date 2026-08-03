@@ -505,6 +505,16 @@ class Settings(BaseSettings):
         default=["*"],
         validation_alias="ALLOW_ORIGINS",
     )
+    # Upper bound on a request body, enforced by BodySizeLimitMiddleware before
+    # the app reads it (#322). 10 MB is deliberately generous: the RAG document
+    # endpoint accepts long content, and a limit that rejects realistic JSON
+    # would be turned off rather than tuned. Set to 0 to disable enforcement —
+    # appropriate only when a reverse proxy already bounds it.
+    max_request_body_bytes: int = Field(
+        default=10 * 1024 * 1024,
+        ge=0,
+        validation_alias="MAX_REQUEST_BODY_BYTES",
+    )
 
     # ----------------------------------------------------------------
     # Logging (structlog)

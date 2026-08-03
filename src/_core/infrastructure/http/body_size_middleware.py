@@ -1,0 +1,188 @@
+"""Reject oversized request bodies before the app parses them (#322).
+
+Nothing bounded request bodies. FastAPI reads and JSON-parses the whole body
+before validation — or even authentication — can reject it, so an unauthenticated
+caller could make the process allocate and parse an arbitrarily large document.
+Measured against `POST /v1/user`, which requires an admin token:
+
+    1MB  -> 401 in 0.05s
+    16MB -> 401 in 0.07s
+    64MB -> 401 in 0.28s      <- the body was read before the 401
+
+The collection bounds from the same issue cap how much *work* a valid body can
+trigger (`Field(max_length=100)` on the batch endpoints). This caps how much
+*body* the process will hold at all.
+
+Two enforcement points, and the second is the one that matters
+--------------------------------------------------------------
+A `Content-Length` check alone is not a control: HTTP/1.1 chunked transfer
+encoding sends no `Content-Length`, and a caller who omits it skips a
+header-only check entirely. Verified that httpx builds exactly such a request
+against this app:
+
+    64MB (chunked) -> Content-Length present: False
+
+So this middleware also counts bytes as they stream and aborts mid-body. The
+header check is kept because it is free and fails fast, before a single byte of
+an over-long body is accepted.
+"""
+
+from __future__ import annotations
+
+import structlog
+from starlette.datastructures import Headers
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+_logger = structlog.stdlib.get_logger(__name__)
+
+_HTTP_REQUEST_ENTITY_TOO_LARGE = 413
+
+# Methods that carry no body worth measuring. GET with a body is legal but
+# meaningless here, and skipping them keeps the hot path free of a wrapper.
+_BODYLESS_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "DELETE", "TRACE"})
+
+
+class _RejectionState:
+    """Shared between the wrapped ``receive`` and ``send`` for one request.
+
+    A plain object rather than a dict so the two closures cannot disagree about
+    key names, and so `rejected` reads as the latch it is.
+    """
+
+    __slots__ = ("received", "rejected")
+
+    def __init__(self) -> None:
+        self.received = 0
+        self.rejected = False
+
+
+class BodySizeLimitMiddleware:
+    """Pure-ASGI middleware bounding the request body.
+
+    Deliberately not a ``BaseHTTPMiddleware`` subclass: that base buffers the
+    whole request into a ``Request`` object to hand a body to the endpoint, which
+    is the exact allocation this exists to prevent. Working at the ASGI level lets
+    the byte counter run against the raw ``receive`` stream and stop it partway.
+    """
+
+    def __init__(self, app: ASGIApp, *, max_bytes: int) -> None:
+        self.app = app
+        self.max_bytes = max_bytes
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or self.max_bytes <= 0:
+            await self.app(scope, receive, send)
+            return
+
+        if scope.get("method", "").upper() in _BODYLESS_METHODS:
+            await self.app(scope, receive, send)
+            return
+
+        declared = self._declared_length(scope)
+        if declared is not None and declared > self.max_bytes:
+            await self._reject(scope, send, declared=declared, received=None)
+            return
+
+        # Both sides are wrapped. Rejecting mid-stream means responding from the
+        # receive side while the app still intends to respond, and an ASGI server
+        # rejects the second `http.response.start` — httpx's transport fails on
+        # `assert not response_started`, and uvicorn raises "Unexpected message".
+        # Guarding `send` is what actually makes "the app's response is
+        # discarded" true; an earlier version only claimed it and crashed.
+        state = _RejectionState()
+        try:
+            await self.app(
+                scope,
+                self._counting_receive(scope, send, receive, state),
+                self._guarded_send(send, state),
+            )
+        except Exception:
+            # Only after we have already responded. Cutting the body off makes the
+            # app unwind — Starlette turns our `http.disconnect` into
+            # `ClientDisconnect` inside `await request.body()` — and that
+            # exception has nowhere useful to go: the 413 is on the wire, so
+            # letting it propagate would surface as a server error for a request
+            # that was correctly rejected. If we have NOT rejected, the exception
+            # is a real one and must keep propagating.
+            if not state.rejected:
+                raise
+
+    def _declared_length(self, scope: Scope) -> int | None:
+        raw = Headers(scope=scope).get("content-length")
+        if raw is None:
+            return None
+        try:
+            return int(raw)
+        except ValueError:
+            # A malformed Content-Length is not ours to adjudicate; the protocol
+            # layer or the app will reject it. Fall through to byte counting so a
+            # bogus header cannot be used to skip the limit.
+            return None
+
+    def _counting_receive(
+        self, scope: Scope, send: Send, receive: Receive, state: _RejectionState
+    ) -> Receive:
+        async def counting_receive() -> Message:
+            if state.rejected:
+                # The app is still reading. Keep telling it the client is gone so
+                # it unwinds instead of blocking on a stream we stopped serving.
+                return {"type": "http.disconnect"}
+
+            message = await receive()
+            if message["type"] != "http.request":
+                return message
+
+            state.received += len(message.get("body", b""))
+            if state.received > self.max_bytes:
+                state.rejected = True
+                await self._reject(scope, send, declared=None, received=state.received)
+                return {"type": "http.disconnect"}
+            return message
+
+        return counting_receive
+
+    def _guarded_send(self, send: Send, state: _RejectionState) -> Send:
+        async def guarded_send(message: Message) -> None:
+            if state.rejected:
+                # The 413 is already on the wire. Whatever the app produces from a
+                # truncated body — a 422, a 500 — must not be sent as a second
+                # response.
+                return
+            await send(message)
+
+        return guarded_send
+
+    async def _reject(
+        self, scope: Scope, send: Send, *, declared: int | None, received: int | None
+    ) -> None:
+        _logger.warning(
+            "request_body_too_large",
+            http_method=scope.get("method"),
+            http_path=scope.get("path"),
+            limit_bytes=self.max_bytes,
+            declared_bytes=declared,
+            received_bytes=received,
+        )
+        # Hand-rolled rather than a JSONResponse: this runs outside the exception
+        # handlers, and the payload deliberately mirrors ``ErrorResponse`` so a
+        # client parses a 413 the same way it parses every other error. The limit
+        # is included because it is configuration, not internal detail.
+        body = (
+            b'{"success":false,'
+            b'"message":"Request body exceeds the maximum of '
+            + str(self.max_bytes).encode()
+            + b' bytes",'
+            b'"errorCode":"REQUEST_BODY_TOO_LARGE",'
+            b'"errorDetails":null}'
+        )
+        await send(
+            {
+                "type": "http.response.start",
+                "status": _HTTP_REQUEST_ENTITY_TOO_LARGE,
+                "headers": [
+                    (b"content-type", b"application/json"),
+                    (b"content-length", str(len(body)).encode()),
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": body, "more_body": False})
