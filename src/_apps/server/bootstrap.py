@@ -170,8 +170,15 @@ def _install_inline_task_runtime(container) -> None:
 
     3. **Only the inline broker is touched.** With a cross-process broker the
        tasks run in a real worker that installs its own stack, and installing it
-       here as well would double-register. The ``not middlewares`` guard also
-       keeps a repeated ``bootstrap_app`` call (test reloads) idempotent.
+       here as well would double-register.
+
+    A repeated ``bootstrap_app`` call is handled by ``install_task_middleware``
+    itself, which rebinds the notifier's provider rather than appending a second
+    stack. This used to be a ``not task_broker.middlewares`` guard here, which was
+    wrong in a way the comment claimed it was right: it skipped installation but
+    left the notifier holding the *first* container's ``error_notifier`` provider,
+    so a second bootstrap re-wired the domain tasks to the new container while
+    alert cooldowns kept keying off the discarded one.
 
     Not imported at module scope: ``src._apps.worker.broker`` constructs a
     ``CoreContainer`` at import time, and keeping that inside the function leaves
@@ -184,16 +191,27 @@ def _install_inline_task_runtime(container) -> None:
         install_task_middleware,
     )
     from src._apps.worker.broker import broker as task_broker
+    from src._apps.worker.tasks import audit_cleanup_task as _audit_cleanup
 
     if not isinstance(task_broker, InMemoryBroker):
         return
 
     core_container = container.core_container()
-    if not task_broker.middlewares:
-        install_task_middleware(
-            task_broker, error_notifier_provider=core_container.error_notifier
-        )
+    install_task_middleware(
+        task_broker, error_notifier_provider=core_container.error_notifier
+    )
     bootstrap_task_domains(container)
+    # `bootstrap_task_domains` covers `src/{domain}/` tasks only. The audit
+    # cleanup task lives under `_apps/worker/tasks/` and is wired by the worker
+    # bootstrap, which this process never calls — so without this line it ran with
+    # an unresolved `Provide[CoreContainer.database]` marker even though it *is*
+    # registered on this broker and therefore dispatchable from here. Probed after
+    # a server boot: `param database default_is_Provide=True`.
+    #
+    # Wiring against the server's core container is what makes the task use this
+    # process's database. Placed after the domain containers exist, per the
+    # ordering constraint `wire()` imposes (see worker/bootstrap.py).
+    core_container.wire(modules=[_audit_cleanup])
     _logger.info(
         "inline_task_runtime_installed",
         middlewares=[type(m).__name__ for m in task_broker.middlewares],

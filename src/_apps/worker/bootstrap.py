@@ -98,7 +98,29 @@ def install_task_middleware(app: AsyncBroker, *, error_notifier_provider) -> Non
 
     The retry middleware is constructed once and shared: the notifier reads its
     retry defaults so the two cannot disagree about what "final attempt" means.
+    (It reads only *immutable* config off that instance — per-attempt state lives
+    in ``message.labels`` — so sharing is a config-drift guard, not a
+    state-sharing requirement.)
+
+    **Idempotent.** Called twice on one broker it rebinds the existing notifier's
+    provider instead of appending a second stack. The server calls this on the
+    module-level broker, and a process that bootstraps twice (test reloads, an
+    ASGI reloader) would otherwise end up with eight middlewares — and, worse,
+    with a notifier still holding the *first* container's ``error_notifier``
+    provider, so alert cooldowns would key off a discarded container.
     """
+    existing = next(
+        (
+            m
+            for m in app.middlewares
+            if isinstance(m, TaskFailureNotificationMiddleware)
+        ),
+        None,
+    )
+    if existing is not None:
+        existing._error_notifier_provider = error_notifier_provider
+        return
+
     retry_middleware = PermanentAwareSmartRetryMiddleware()
     app.add_middlewares(
         StructlogContextMiddleware(),

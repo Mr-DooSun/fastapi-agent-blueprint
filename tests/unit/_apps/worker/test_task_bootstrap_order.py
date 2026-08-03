@@ -177,17 +177,41 @@ class TestInstallTaskMiddlewareIsReusable:
             "TaskFailureNotificationMiddleware"
         )
 
-    def test_installing_twice_is_what_the_server_guard_prevents(self):
-        """`install_task_middleware` itself is not idempotent — it appends. The
-        server checks `not broker.middlewares` before calling it; this pins the
-        reason that check exists."""
-        from src._apps.worker.bootstrap import install_task_middleware
+    def test_installing_twice_rebinds_rather_than_appending(self):
+        """Idempotent, and it rebinds the notifier's provider.
 
+        The first version of this test asserted the opposite — that a second call
+        appends — because the server guarded with `not broker.middlewares`. A
+        post-merge review showed that guard was wrong in the way its own comment
+        claimed it was right: it skipped installation but left the notifier
+        holding the *first* container's `error_notifier`, so a second bootstrap
+        re-wired the domain tasks to the new container while alert cooldowns kept
+        keying off the discarded one. The guard is gone; the installer is
+        idempotent instead.
+        """
+        from src._apps.worker.bootstrap import install_task_middleware
+        from src._core.infrastructure.notification.taskiq_middleware import (
+            TaskFailureNotificationMiddleware,
+        )
+
+        first_provider, second_provider = object(), object()
         broker = InMemoryBroker()
-        install_task_middleware(broker, error_notifier_provider=object())
-        first = len(broker.middlewares)
-        install_task_middleware(broker, error_notifier_provider=object())
-        assert len(broker.middlewares) == first * 2, (
-            "install_task_middleware became idempotent — the server's "
-            "`not middlewares` guard may now be dead code worth removing"
+
+        install_task_middleware(broker, error_notifier_provider=first_provider)
+        count = len(broker.middlewares)
+
+        install_task_middleware(broker, error_notifier_provider=second_provider)
+        assert len(broker.middlewares) == count, (
+            "a second install appended a duplicate stack; the server calls this "
+            "unconditionally, so a repeated bootstrap would double every hook"
+        )
+
+        notifier = next(
+            m
+            for m in broker.middlewares
+            if isinstance(m, TaskFailureNotificationMiddleware)
+        )
+        assert notifier._error_notifier_provider is second_provider, (
+            "the notifier kept the first container's provider, so alert cooldowns "
+            "would key off a discarded container"
         )
