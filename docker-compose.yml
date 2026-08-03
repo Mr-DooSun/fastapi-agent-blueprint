@@ -26,24 +26,15 @@ x-app: &app
     dockerfile: _docker/docker.Dockerfile
   image: fastapi-agent-blueprint:0.9.0
   env_file:
+    # Order is the whole point. Entries later in this list override earlier
+    # ones, so `_env/prod.env` genuinely wins over the reference defaults. An
+    # inline `environment:` block would override BOTH and make the overlay
+    # unreachable — ENV would stay `local`, stg/prod boot validation would never
+    # run, and the wildcard hosts and placeholder credentials could not be
+    # replaced. Verified with `docker compose config`.
+    - _docker/compose.defaults.env
     - path: _env/prod.env
       required: false
-  environment:
-    ENV: local
-    TASK_NAME_PREFIX: fastapi-agent-blueprint
-    ADMIN_STORAGE_SECRET: compose-reference-stack-only
-    ADMIN_BOOTSTRAP_ENABLED: "false"
-    DATABASE_ENGINE: postgresql
-    DATABASE_HOST: postgres
-    DATABASE_PORT: "5432"
-    DATABASE_USER: postgres
-    DATABASE_PASSWORD: postgres
-    DATABASE_NAME: postgres
-    BROKER_TYPE: rabbitmq
-    RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
-    VECTOR_STORE_TYPE: inmemory
-    ALLOWED_HOSTS: '["*"]'
-    ALLOW_ORIGINS: '["*"]'
   restart: unless-stopped
 
 services:
