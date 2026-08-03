@@ -85,6 +85,10 @@ def _install_middleware(app: FastAPI) -> None:
     #   - inside CORS, so the 413 carries the CORS headers a browser needs in
     #     order to read it at all.
     #   - outside the app, so an over-long body is never handed to route parsing.
+    # The cost of being inside CORS is that a CORS preflight never reaches it —
+    # CORSMiddleware answers those itself. Measured and accepted: nothing reads a
+    # preflight body, so bounding it would buy nothing and cost the 413 its CORS
+    # headers. See the module docstring for the full scope of the guarantee.
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
     app.add_middleware(
         BodySizeLimitMiddleware, max_bytes=settings.max_request_body_bytes

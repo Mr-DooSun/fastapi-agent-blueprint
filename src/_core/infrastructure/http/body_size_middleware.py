@@ -25,6 +25,28 @@ against this app:
 So this middleware also counts bytes as they stream and aborts mid-body. The
 header check is kept because it is free and fails fast, before a single byte of
 an over-long body is accepted.
+
+What this does NOT guarantee
+---------------------------
+Two gaps, both measured, both deliberate. Neither re-introduces the parse-cost
+problem above — in both the body is never read by anything — but a claim of
+"every request is bounded" would be false, so:
+
+- **The byte counter only runs when the app calls ``receive()``.** An endpoint
+  that returns without reading the body is not bounded by it (the header check
+  still applies). Nothing parses those bytes, so there is no allocation to
+  prevent; they are simply discarded by the protocol server.
+- **A CORS preflight never reaches this middleware.** ``CORSMiddleware`` sits
+  outside it and answers ``OPTIONS`` + ``Access-Control-Request-Method`` itself.
+  Measured against the shipped order: preflight with an 11-byte body against a
+  10-byte limit returns 200, while a non-preflight ``OPTIONS`` returns 413. The
+  placement is still the right trade: moving this middleware outside CORS would
+  bound preflight bodies nobody reads, at the cost of the 413 losing the CORS
+  headers a browser needs in order to read it.
+
+If a deployment needs "no request over N bytes reaches the process at all", that
+belongs at the ingress proxy. This middleware bounds what the *application* will
+hold and parse.
 """
 
 from __future__ import annotations
@@ -45,12 +67,16 @@ class _RejectionState:
     key names, and so `rejected` reads as the latch it is.
     """
 
-    __slots__ = ("received", "rejected", "response_started")
+    __slots__ = ("received", "rejected", "rejection_sent", "response_started")
 
     def __init__(self) -> None:
         self.received = 0
         self.rejected = False
         self.response_started = False
+        # Distinct from `rejected`: when the app had already committed a
+        # response we stop the body WITHOUT sending our own 413. Only a
+        # response we actually sent licenses swallowing the app's exception.
+        self.rejection_sent = False
 
 
 class BodySizeLimitMiddleware:
@@ -71,9 +97,12 @@ class BodySizeLimitMiddleware:
             await self.app(scope, receive, send)
             return
 
+        state = _RejectionState()
         declared = self._declared_length(scope)
         if declared is not None and declared > self.max_bytes:
-            await self._reject(scope, send, declared=declared, received=None)
+            await self._reject(
+                scope, send, declared=declared, received=None, state=state
+            )
             return
 
         # Both sides are wrapped. Rejecting mid-stream means responding from the
@@ -82,7 +111,6 @@ class BodySizeLimitMiddleware:
         # `assert not response_started`, and uvicorn raises "Unexpected message".
         # Guarding `send` is what actually makes "the app's response is
         # discarded" true; an earlier version only claimed it and crashed.
-        state = _RejectionState()
         try:
             await self.app(
                 scope,
@@ -97,7 +125,7 @@ class BodySizeLimitMiddleware:
             # letting it propagate would surface as a server error for a request
             # that was correctly rejected. If we have NOT rejected, the exception
             # is a real one and must keep propagating.
-            if not state.rejected:
+            if not state.rejection_sent:
                 raise
 
     def _declared_length(self, scope: Scope) -> int | None:
@@ -143,7 +171,9 @@ class BodySizeLimitMiddleware:
                         received_bytes=state.received,
                     )
                     return {"type": "http.disconnect"}
-                await self._reject(scope, send, declared=None, received=state.received)
+                await self._reject(
+                    scope, send, declared=None, received=state.received, state=state
+                )
                 return {"type": "http.disconnect"}
             return message
 
@@ -152,9 +182,18 @@ class BodySizeLimitMiddleware:
     def _guarded_send(self, send: Send, state: _RejectionState) -> Send:
         async def guarded_send(message: Message) -> None:
             if state.rejected:
-                # The 413 is already on the wire. Whatever the app produces from a
-                # truncated body — a 422, a 500 — must not be sent as a second
-                # response.
+                if state.response_started and message["type"] == "http.response.body":
+                    # The app committed a response before we cut the body off, so
+                    # its status is already on the wire and ours never went out.
+                    # Its body frames must still flow or the client is left with
+                    # headers and no body — a hung connection, which is a worse
+                    # outcome than the oversized body. Only `http.response.start`
+                    # is suppressed here, and only because a second one is an ASGI
+                    # protocol violation.
+                    await send(message)
+                    return
+                # We sent the 413. Whatever the app produces from a truncated
+                # body — a 422, a 500 — must not become a second response.
                 return
             if message["type"] == "http.response.start":
                 state.response_started = True
@@ -163,7 +202,13 @@ class BodySizeLimitMiddleware:
         return guarded_send
 
     async def _reject(
-        self, scope: Scope, send: Send, *, declared: int | None, received: int | None
+        self,
+        scope: Scope,
+        send: Send,
+        *,
+        declared: int | None,
+        received: int | None,
+        state: _RejectionState,
     ) -> None:
         _logger.warning(
             "request_body_too_large",
@@ -196,3 +241,4 @@ class BodySizeLimitMiddleware:
             }
         )
         await send({"type": "http.response.body", "body": body, "more_body": False})
+        state.rejection_sent = True
