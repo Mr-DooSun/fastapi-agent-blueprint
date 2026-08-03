@@ -200,3 +200,69 @@ class TestTheCombinationsThatMustNotBoot:
         error = boot_fails(env)
         assert error is not None, "the combination booted; #315 has regressed"
         assert "NOTIFICATION_WARNING_THRESHOLD" in error or "Routing" in error
+
+
+class TestOneAdapterPerDistinctChannel:
+    """The provider-graph half of #327.
+
+    Both tier targets fall back to the single provider webhook, and the per-tier
+    Selectors used to be two-way enabled/disabled — so a tier with no override
+    still built its own adapter against the same URL. Probed before the change,
+    with routing on and no overrides: `distinct adapter objects: 3`.
+
+    That footprint produced both defects found in round 1 of PR #313 — three
+    `NoopNotificationClient` instances instead of one, and an injected client the
+    router short-circuits. The symptoms were patched then; this asserts the shape
+    is gone, so the instance count is now exactly the number of distinct channels.
+    """
+
+    _IDENTITY_BODY = """
+        names = (
+            "notification_client",
+            "notification_critical_client",
+            "notification_warning_client",
+        )
+        objs = {name: getattr(container, name)() for name in names}
+        result = {
+            "distinct": len({id(o) for o in objs.values()}),
+            "urls": {
+                name: (getattr(o, "_webhook_url", None) or "").rsplit("/", 1)[-1] or None
+                for name, o in objs.items()
+            },
+        }
+    """
+
+    @pytest.mark.parametrize(
+        "env,expected_adapters,expected_urls",
+        [
+            (ENABLED_NO_ROUTING, 1, ("BASE", "BASE", "BASE")),
+            (ROUTING_SHARED_TARGET, 1, ("BASE", "BASE", "BASE")),
+            (ROUTING_CRITICAL_ONLY, 2, ("BASE", "CRIT", "BASE")),
+            (ROUTING_WARNING_ONLY, 2, ("BASE", "BASE", "WARN")),
+            (ROUTING_BOTH_TARGETS, 3, ("BASE", "CRIT", "WARN")),
+        ],
+        ids=["no-routing", "shared", "critical-only", "warning-only", "both"],
+    )
+    def test_the_instance_count_equals_the_channel_count(
+        self, env, expected_adapters, expected_urls
+    ):
+        out = resolve_in_env(env, self._IDENTITY_BODY)
+        base, critical, warning = expected_urls
+
+        # URLs first: collapsing instances must not change where anything is sent.
+        assert out["urls"]["notification_client"] == base
+        assert out["urls"]["notification_critical_client"] == critical
+        assert out["urls"]["notification_warning_client"] == warning
+
+        assert out["distinct"] == expected_adapters, (
+            f"{out['distinct']} adapter instances for {expected_adapters} distinct "
+            f"channel(s): {out['urls']}"
+        )
+
+    def test_the_disabled_path_shares_one_noop(self):
+        """Already true, and load-bearing: `NoopNotificationClient` logs its warning
+        from `__init__`, so a separate instance per tier means the
+        `notification_client_disabled` line appears once per tier instead of once
+        per process."""
+        out = resolve_in_env(DISABLED, self._IDENTITY_BODY)
+        assert out["distinct"] == 1
