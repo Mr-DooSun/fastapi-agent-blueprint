@@ -58,9 +58,25 @@ The old image did `COPY _env/${ENV}.env /app/.env` with `ARG ENV=prod`. Only
 not build; adding the file to make it build wrote credentials into a layer that
 `docker history` prints. Configuration now comes from the process environment.
 
-`docker-compose.yml` reads `_env/prod.env` as an **optional** overlay
-(`required: false`), so the file's absence is not an error and its presence
-overrides the inline defaults.
+Compose supplies it through two `env_file` entries:
+
+```yaml
+env_file:
+  - _docker/compose.defaults.env      # committed reference defaults
+  - path: _env/prod.env               # your overlay
+    required: false
+```
+
+Entries later in the list win, and a missing optional file is a clean no-op —
+so the absence of `_env/prod.env` is not an error and its presence really does
+override the defaults.
+
+The defaults deliberately live in a committed env file rather than a compose
+`environment:` block. `environment:` takes precedence over **every**
+`env_file:` entry, so an inline block would silently pin `ENV=local`, keep
+stg/prod boot validation switched off, and make the wildcard hosts and
+placeholder credentials impossible to replace. Confirm either way with
+`docker compose config`.
 
 ### Build arguments
 
@@ -92,6 +108,26 @@ Revision identifiers must stay **32 characters or shorter**.
 fails on PostgreSQL and MySQL while passing silently on SQLite. Three shipped
 revisions were over the limit and were renamed in #332;
 `tests/unit/tools/test_migration_revision_ids.py` now enforces it.
+
+### Upgrading a database created before #332
+
+Because SQLite does not enforce VARCHAR length, a v0.9.0 install that ran
+migrations on SQLite can be holding one of the old long ids — as can any
+database whose operator widened the column by hand. PostgreSQL and MySQL cannot:
+they rejected those values, which is the bug #332 fixed. An affected database
+meets this on the next upgrade:
+
+```
+Can't locate revision identified by '0009_admin_identity_realm_separation'
+```
+
+Run the rewrite once before `alembic upgrade`. It only ever replaces the three
+known ids, is a no-op on a current or fresh database, and is idempotent:
+
+```bash
+uv run python tools/migrate_legacy_revision_ids.py --env local --dry-run
+uv run python tools/migrate_legacy_revision_ids.py --env local
+```
 
 ## Before a real deployment
 
