@@ -12,11 +12,11 @@ Instead, please email the maintainers directly. We will respond within 48 hours 
 
 | Version  | Supported |
 |----------|-----------|
-| 0.7.x    | Yes       |
-| < 0.7.0  | No        |
+| 0.9.x    | Yes       |
+| < 0.9.0  | No        |
 
 Pre-1.0: only the latest minor line receives security fixes. Upgrade to the
-newest `0.7.x` patch to pick them up.
+newest `0.9.x` patch to pick them up.
 
 ## Disclosure Policy
 
