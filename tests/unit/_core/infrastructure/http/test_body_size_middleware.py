@@ -342,18 +342,28 @@ class TestItNeverEmitsASecondResponseStart:
         )
 
         # The half a start-count-only assertion misses, and a review caught:
-        # suppressing the app's messages after rejection also suppressed the
-        # frames that TERMINATE the response it had already committed, leaving the
-        # client with headers and no body. An incomplete response is a worse
-        # outcome than the oversized body.
+        # suppressing every app message after rejection also suppressed the frames
+        # that TERMINATE the response already committed, leaving the client with
+        # headers and an open connection.
+        #
+        # The response IS terminated — but by this middleware, not by forwarding
+        # the app's frames. A second review round showed why forwarding is not a
+        # termination guarantee: an app that ignores `http.disconnect` and keeps
+        # emitting `more_body=True` would hold the connection open indefinitely.
+        # So exactly one empty terminal frame goes out and the app's own body
+        # (`b"done"`) never does.
         bodies = [m for m in sent if m["type"] == "http.response.body"]
-        assert bodies, (
-            "the committed response was never terminated — the client is left "
-            "holding 200 headers and an open connection"
+        assert len(bodies) == 1, (
+            f"sent {len(bodies)} body frames; the response must be closed with "
+            "exactly one, not by forwarding however many the app decides to send"
         )
-        assert bodies[-1].get("more_body", False) is False
-        assert b"done" in b"".join(m.get("body", b"") for m in bodies), (
-            "the app's body frames were dropped after the limit tripped"
+        assert bodies[0].get("more_body", False) is False, (
+            "the terminal frame did not terminate — the client is left holding "
+            "200 headers and an open connection"
+        )
+        assert bodies[0]["body"] == b"", (
+            "the app's post-rejection body was forwarded; only an empty terminal "
+            "frame should close a response cut short by the limit"
         )
 
 
@@ -397,7 +407,15 @@ class TestCumulativeCountingAcrossMessages:
     """
 
     @staticmethod
-    def _run(chunk_sizes: list[int], *, max_bytes: int = LIMIT) -> list[dict]:
+    def _run(
+        chunk_sizes: list[int], *, max_bytes: int = LIMIT
+    ) -> tuple[list[dict], int]:
+        """Returns the sent messages and how many body frames were consumed.
+
+        The consumed count matters: asserting only the status lets an
+        implementation that drains the entire body and *then* rejects pass a test
+        named "cut off at the limit". A review caught exactly that.
+        """
         import anyio
 
         async def echo(request: Request) -> JSONResponse:
@@ -408,10 +426,13 @@ class TestCumulativeCountingAcrossMessages:
 
         sizes = list(chunk_sizes)
         sent: list[dict] = []
+        consumed = 0
 
         async def receive():
+            nonlocal consumed
             if sizes:
                 size = sizes.pop(0)
+                consumed += 1
                 return {
                     "type": "http.request",
                     "body": b"x" * size,
@@ -423,10 +444,10 @@ class TestCumulativeCountingAcrossMessages:
             sent.append(message)
 
         anyio.run(app.build_middleware_stack(), _raw_scope(), receive, send)
-        return sent
+        return sent, consumed
 
     def test_each_message_under_the_limit_but_the_total_over_is_rejected(self):
-        sent = self._run([400, 400, 400])
+        sent, _ = self._run([400, 400, 400])
         start = next(m for m in sent if m["type"] == "http.response.start")
         assert start["status"] == 413, (
             "three 400-byte messages against a 1024-byte limit were accepted; the "
@@ -434,17 +455,26 @@ class TestCumulativeCountingAcrossMessages:
         )
 
     def test_the_total_staying_under_the_limit_passes(self):
-        sent = self._run([300, 300])
+        sent, _ = self._run([300, 300])
         start = next(m for m in sent if m["type"] == "http.response.start")
         assert start["status"] == 200
 
     def test_the_body_is_cut_off_at_the_limit_not_after_the_last_message(self):
-        """Rejection happens on the message that crosses the line, so the process
-        never holds the whole oversized body — the point of streaming enforcement
-        rather than a post-hoc size check."""
-        sent = self._run([400] * 20)
+        """Rejection happens ON the message that crosses the line.
+
+        Asserting the consumed count, not just the status: with 20 frames of 400
+        bytes against a 1024-byte limit, the third frame is the one that crosses,
+        so exactly three must be read. An implementation that drained all 20 and
+        then rejected would satisfy a status-only assertion while defeating the
+        point of streaming enforcement.
+        """
+        sent, consumed = self._run([400] * 20)
         start = next(m for m in sent if m["type"] == "http.response.start")
         assert start["status"] == 413
+        assert consumed == 3, (
+            f"read {consumed} of 20 frames before rejecting; the limit is crossed "
+            "on the third, so anything more means the body was drained first"
+        )
 
 
 class TestTheDocumentedBoundariesOfTheGuarantee:

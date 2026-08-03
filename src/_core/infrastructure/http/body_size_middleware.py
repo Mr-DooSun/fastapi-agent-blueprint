@@ -10,8 +10,10 @@ Measured against `POST /v1/user`, which requires an admin token:
     64MB -> 401 in 0.28s      <- the body was read before the 401
 
 The collection bounds from the same issue cap how much *work* a valid body can
-trigger (`Field(max_length=100)` on the batch endpoints). This caps how much
-*body* the process will hold at all.
+trigger (`Field(max_length=100)` on the batch endpoints). This caps the
+cumulative request bytes delivered past this middleware to route parsing, for
+an app that consumes the ASGI receive stream. It is not a bound on what the
+HTTP server buffers before this middleware is invoked.
 
 Two enforcement points, and the second is the one that matters
 --------------------------------------------------------------
@@ -28,14 +30,16 @@ an over-long body is accepted.
 
 What this does NOT guarantee
 ---------------------------
-Two gaps, both measured, both deliberate. Neither re-introduces the parse-cost
-problem above — in both the body is never read by anything — but a claim of
-"every request is bounded" would be false, so:
+Two gaps, both measured, both deliberate. Neither delivers the body to route
+parsing, so neither re-introduces the parse-cost problem above — but they do
+not bound buffering the HTTP server may already have done, and a claim of
+"every request is bounded" would be false. So:
 
 - **The byte counter only runs when the app calls ``receive()``.** An endpoint
   that returns without reading the body is not bounded by it (the header check
-  still applies). Nothing parses those bytes, so there is no allocation to
-  prevent; they are simply discarded by the protocol server.
+  still applies). This middleware never calls ``receive()`` on that path, so
+  the bytes are never delivered to the application — what the protocol server
+  does with them is outside this middleware's control.
 - **A CORS preflight never reaches this middleware.** ``CORSMiddleware`` sits
   outside it and answers ``OPTIONS`` + ``Access-Control-Request-Method`` itself.
   Measured against the shipped order: preflight with an 11-byte body against a
@@ -45,8 +49,9 @@ problem above — in both the body is never read by anything — but a claim of
   headers a browser needs in order to read it.
 
 If a deployment needs "no request over N bytes reaches the process at all", that
-belongs at the ingress proxy. This middleware bounds what the *application* will
-hold and parse.
+belongs at the ingress proxy. This middleware does not bound ingress or
+protocol-server buffering, nor an individual ASGI frame already materialised
+before it observes it.
 """
 
 from __future__ import annotations
@@ -67,7 +72,13 @@ class _RejectionState:
     key names, and so `rejected` reads as the latch it is.
     """
 
-    __slots__ = ("received", "rejected", "rejection_sent", "response_started")
+    __slots__ = (
+        "received",
+        "rejected",
+        "rejection_sent",
+        "response_completed",
+        "response_started",
+    )
 
     def __init__(self) -> None:
         self.received = 0
@@ -77,6 +88,9 @@ class _RejectionState:
         # response we stop the body WITHOUT sending our own 413. Only a
         # response we actually sent licenses swallowing the app's exception.
         self.rejection_sent = False
+        # Whether a terminal (``more_body=False``) frame has gone out. Used to
+        # close a response we did not start but had to cut short.
+        self.response_completed = False
 
 
 class BodySizeLimitMiddleware:
@@ -170,6 +184,22 @@ class BodySizeLimitMiddleware:
                         limit_bytes=self.max_bytes,
                         received_bytes=state.received,
                     )
+                    # Close the response the app committed, rather than relying on
+                    # the app to close it. Forwarding its frames until it decides
+                    # to stop is not a termination guarantee: an app that ignores
+                    # `http.disconnect` and keeps emitting `more_body=True` would
+                    # hold the connection open indefinitely. That app is violating
+                    # the ASGI contract, but a size limit should not depend on the
+                    # app behaving to be able to end the request.
+                    if not state.response_completed:
+                        await send(
+                            {
+                                "type": "http.response.body",
+                                "body": b"",
+                                "more_body": False,
+                            }
+                        )
+                        state.response_completed = True
                     return {"type": "http.disconnect"}
                 await self._reject(
                     scope, send, declared=None, received=state.received, state=state
@@ -182,21 +212,18 @@ class BodySizeLimitMiddleware:
     def _guarded_send(self, send: Send, state: _RejectionState) -> Send:
         async def guarded_send(message: Message) -> None:
             if state.rejected:
-                if state.response_started and message["type"] == "http.response.body":
-                    # The app committed a response before we cut the body off, so
-                    # its status is already on the wire and ours never went out.
-                    # Its body frames must still flow or the client is left with
-                    # headers and no body — a hung connection, which is a worse
-                    # outcome than the oversized body. Only `http.response.start`
-                    # is suppressed here, and only because a second one is an ASGI
-                    # protocol violation.
-                    await send(message)
-                    return
-                # We sent the 413. Whatever the app produces from a truncated
-                # body — a 422, a 500 — must not become a second response.
+                # Nothing more goes out. Either we sent the 413, or we terminated
+                # the response the app had already committed — in both cases the
+                # response is complete and anything the app produces from a
+                # truncated body (a 422, a 500, more body frames) would be either a
+                # second response or an unbounded tail.
                 return
             if message["type"] == "http.response.start":
                 state.response_started = True
+            elif message["type"] == "http.response.body" and not message.get(
+                "more_body", False
+            ):
+                state.response_completed = True
             await send(message)
 
         return guarded_send
