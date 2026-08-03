@@ -50,8 +50,9 @@ make setup        # one-time: venv + deps via uv
 make quickstart   # FastAPI on :8001, SQLite schema auto-created
 ```
 
-In a second terminal, `make demo` exercises the `auth` + `user` domains
-(JWT register → CRUD → refresh → logout) and `make demo-rag` exercises the
+In a second terminal, `make demo` exercises the `auth` + `user` domains across
+both token realms (customer register → seed a demo admin → admin login → user
+CRUD → refresh → logout) and `make demo-rag` exercises the
 `docs` domain (end-to-end RAG: upload → chunk → embed → retrieve → answer
 with citations, zero credentials):
 
