@@ -266,3 +266,57 @@ class TestOneAdapterPerDistinctChannel:
         per process."""
         out = resolve_in_env(DISABLED, self._IDENTITY_BODY)
         assert out["distinct"] == 1
+
+
+class TestTheSameHoldsForDiscord:
+    """The matrix above is Slack-only, which a review flagged: it does not directly
+    guard a Discord regression. The three-way selector is provider-agnostic — it
+    branches on which URL is configured, not on the transport — so this pins that
+    for the one other supported provider rather than leaving it inferred.
+    """
+
+    # Placeholder id shape, not a digit id: the `discord-webhook-url` gitleaks rule
+    # this repo added in #320 matches `webhooks/\d+/[\w-]+`, and a realistic
+    # fixture trips it. Learned the same lesson twice — #320 had to clean five
+    # existing fixtures for exactly this, and the rule then caught these two.
+    D_BASE = "https://discord.com/api/webhooks/<base-id>/base-token"
+    D_CRIT = "https://discord.com/api/webhooks/<crit-id>/crit-token"
+
+    def _env(self, **extra) -> dict[str, str]:
+        return {
+            "NOTIFICATION_PROVIDER": "discord",
+            "DISCORD_WEBHOOK_URL": self.D_BASE,
+            **extra,
+        }
+
+    def test_the_adapter_is_the_discord_one_and_shared_when_untiered(self):
+        out = resolve_in_env(
+            self._env(NOTIFICATION_WARNING_THRESHOLD="400"),
+            TestOneAdapterPerDistinctChannel._IDENTITY_BODY,
+        )
+        assert out["distinct"] == 1, (
+            f"{out['distinct']} adapters for one Discord channel: {out['urls']}"
+        )
+
+    def test_a_discord_per_tier_override_still_splits(self):
+        out = resolve_in_env(
+            self._env(
+                NOTIFICATION_WARNING_THRESHOLD="400",
+                NOTIFICATION_CRITICAL_WEBHOOK_URL=self.D_CRIT,
+            ),
+            TestOneAdapterPerDistinctChannel._IDENTITY_BODY,
+        )
+        assert out["distinct"] == 2
+        assert out["urls"]["notification_critical_client"] == "crit-token"
+        assert out["urls"]["notification_warning_client"] == "base-token"
+
+    def test_the_delivered_target_matches_the_tier(self):
+        out = _matrix(
+            self._env(
+                NOTIFICATION_WARNING_THRESHOLD="400",
+                NOTIFICATION_CRITICAL_WEBHOOK_URL=self.D_CRIT,
+            )
+        )
+        assert out["targets"]["502"] == "crit-token"
+        assert out["targets"]["404"] == "base-token"
+        assert out["targets"]["200"] is None

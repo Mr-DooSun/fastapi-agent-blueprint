@@ -972,13 +972,24 @@ class TestNotificationSettingsWithoutAProvider:
             ("NOTIFICATION_COOLDOWN_SECONDS", "900"),
         ],
     )
-    def test_tuning_without_a_provider_is_rejected(self, key, value):
-        """Detected via `model_fields_set`, so setting a value that happens to equal
-        the default still counts as tuning — the point is that nothing consumes it."""
+    def test_tuning_without_a_provider_is_ACCEPTED(self, key, value):
+        """The third case #327 F9 listed, deliberately NOT rejected.
+
+        I first rejected it on the grounds that nothing consumes these without a
+        provider. A review showed that premise is false, and a probe confirmed it:
+        `ErrorNotifier` is built regardless of provider, and both settings are live
+        on the disabled path where they gate the `notification_suppressed` log.
+
+            severity=500 -> 404:0 500:1      severity=400 -> 404:1 500:1
+            cooldown=60, 500 x3 -> 1 log     cooldown=0 -> 3 logs
+
+        So keeping delivery off while tuning the volume of that log is a legitimate
+        configuration. Rejecting it would have been a regression, not a guard.
+        """
         env = {"ENV": "local", key: value, **_REQUIRED_VARS}
         with patch.dict(os.environ, env, clear=True):
-            with pytest.raises(ValidationError, match="nothing consumes them"):
-                _create_settings()
+            settings = _create_settings()
+            assert settings.notification_provider is None
 
     def test_no_notification_config_at_all_still_boots(self):
         """The control. Alerting is optional infrastructure (ADR 042) and must stay

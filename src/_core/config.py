@@ -862,20 +862,18 @@ class Settings(BaseSettings):
                     "NOTIFICATION_PROVIDER, or remove the threshold"
                 )
 
-            tuned = sorted(
-                name.upper()
-                for name in (
-                    "notification_severity_threshold",
-                    "notification_cooldown_seconds",
-                )
-                if name in self.model_fields_set
-            )
-            if tuned:
-                errors.append(
-                    f"[Notification] {' / '.join(tuned)} tuned but "
-                    "NOTIFICATION_PROVIDER is not set, so nothing consumes them. "
-                    "Set NOTIFICATION_PROVIDER, or leave these at their defaults"
-                )
+            # NOT rejected here, though #327 F9 listed it: NOTIFICATION_SEVERITY_
+            # THRESHOLD and NOTIFICATION_COOLDOWN_SECONDS with no provider. A review
+            # showed the premise ("nothing consumes them") is false — `ErrorNotifier`
+            # is built regardless of provider and both settings are live on the
+            # disabled path, gating the `notification_suppressed` log. Measured with
+            # a NoopNotificationClient:
+            #   severity=500 -> 404:0 500:1     severity=400 -> 404:1 500:1
+            #   cooldown=60, 500 x3 -> 1 log    cooldown=0 -> 3 logs
+            # So a deployment that keeps delivery off but tunes the volume of that
+            # log is a legitimate configuration, and rejecting it would be a
+            # regression. The two checks above stay because a webhook URL and the
+            # routing switch have no effect at all without a provider.
 
         if (
             self.notification_warning_threshold is not None
