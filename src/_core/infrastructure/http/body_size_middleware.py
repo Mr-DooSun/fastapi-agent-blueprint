@@ -37,10 +37,6 @@ _logger = structlog.stdlib.get_logger(__name__)
 
 _HTTP_REQUEST_ENTITY_TOO_LARGE = 413
 
-# Methods that carry no body worth measuring. GET with a body is legal but
-# meaningless here, and skipping them keeps the hot path free of a wrapper.
-_BODYLESS_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "DELETE", "TRACE"})
-
 
 class _RejectionState:
     """Shared between the wrapped ``receive`` and ``send`` for one request.
@@ -49,11 +45,12 @@ class _RejectionState:
     key names, and so `rejected` reads as the latch it is.
     """
 
-    __slots__ = ("received", "rejected")
+    __slots__ = ("received", "rejected", "response_started")
 
     def __init__(self) -> None:
         self.received = 0
         self.rejected = False
+        self.response_started = False
 
 
 class BodySizeLimitMiddleware:
@@ -71,10 +68,6 @@ class BodySizeLimitMiddleware:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http" or self.max_bytes <= 0:
-            await self.app(scope, receive, send)
-            return
-
-        if scope.get("method", "").upper() in _BODYLESS_METHODS:
             await self.app(scope, receive, send)
             return
 
@@ -135,6 +128,21 @@ class BodySizeLimitMiddleware:
             state.received += len(message.get("body", b""))
             if state.received > self.max_bytes:
                 state.rejected = True
+                if state.response_started:
+                    # A streaming endpoint can start responding while it is still
+                    # reading. Its `http.response.start` is already on the wire, so
+                    # emitting a 413 start here would be a *second* one, which ASGI
+                    # servers refuse ("Unexpected message" on uvicorn). The status
+                    # is no longer ours to set; all we can still do is stop feeding
+                    # the body and let the response it already began finish.
+                    _logger.warning(
+                        "request_body_too_large_after_response_started",
+                        http_method=scope.get("method"),
+                        http_path=scope.get("path"),
+                        limit_bytes=self.max_bytes,
+                        received_bytes=state.received,
+                    )
+                    return {"type": "http.disconnect"}
                 await self._reject(scope, send, declared=None, received=state.received)
                 return {"type": "http.disconnect"}
             return message
@@ -148,6 +156,8 @@ class BodySizeLimitMiddleware:
                 # truncated body — a 422, a 500 — must not be sent as a second
                 # response.
                 return
+            if message["type"] == "http.response.start":
+                state.response_started = True
             await send(message)
 
         return guarded_send

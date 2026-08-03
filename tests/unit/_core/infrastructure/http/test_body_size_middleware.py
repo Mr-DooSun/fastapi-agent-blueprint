@@ -54,6 +54,25 @@ def _build_app(*, max_bytes: int = LIMIT) -> Starlette:
     return app
 
 
+def _raw_scope(
+    *, headers: list | None = None, method: str = "POST", path: str = "/echo"
+) -> dict:
+    return {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": method,
+        "path": path,
+        "raw_path": path.encode(),
+        "query_string": b"",
+        "root_path": "",
+        "scheme": "http",
+        "headers": headers or [],
+        "client": ("127.0.0.1", 1234),
+        "server": ("testserver", 80),
+    }
+
+
 @pytest.fixture
 def client() -> TestClient:
     return TestClient(_build_app())
@@ -154,10 +173,28 @@ class TestWhatIsDeliberatelyNotChecked:
             "hatch for deployments where a reverse proxy already bounds bodies"
         )
 
-    def test_bodyless_methods_skip_the_wrapper(self, client):
-        """GET may legally carry a body but never meaningfully does here, and
-        skipping those methods keeps the hot path free of two closures."""
+    def test_a_get_without_a_body_is_unaffected(self, client):
         assert client.get("/echo").status_code == 200
+
+    @pytest.mark.parametrize("method", ["POST", "PUT", "DELETE"])
+    def test_every_body_carrying_method_is_bounded(self, method):
+        """No method is exempt.
+
+        An earlier version skipped GET/HEAD/OPTIONS/DELETE/TRACE as "bodyless" to
+        keep two closures off the hot path. DELETE and OPTIONS may legally carry a
+        body, and a probe confirmed the hole: `DELETE` with an 8 KB body returned
+        200 and the handler read all 8192 bytes. The optimisation is gone; the
+        wrapper costs two closures per request.
+        """
+
+        async def echo(request: Request) -> JSONResponse:
+            return JSONResponse({"read": len(await request.body())})
+
+        app = Starlette(routes=[Route("/m", echo, methods=[method])])
+        app.add_middleware(BodySizeLimitMiddleware, max_bytes=LIMIT)
+
+        resp = TestClient(app).request(method, "/m", content=b"x" * (LIMIT * 8))
+        assert resp.status_code == 413
 
     def test_a_malformed_content_length_falls_back_to_counting(self):
         """A bogus header must not be usable to skip the limit. Sent at the raw
@@ -233,3 +270,93 @@ class TestTheExceptionGuardIsNarrow:
             "a genuine handler error was masked; the exception guard is only "
             "meant to apply once a 413 has already been sent"
         )
+
+
+class TestItNeverEmitsASecondResponseStart:
+    """A streaming endpoint may start responding while it is still reading.
+
+    At that point the status is no longer ours to set: emitting a 413
+    `http.response.start` would be the *second* one, which ASGI servers refuse
+    ("Unexpected message" on uvicorn). The middleware stops feeding the body and
+    logs instead. Asserted at the raw ASGI level because an HTTP client cannot
+    show how many start messages were produced.
+    """
+
+    @staticmethod
+    async def _app_that_responds_then_reads(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [(b"content-type", b"text/plain")],
+            }
+        )
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect" or not message.get(
+                "more_body", False
+            ):
+                break
+        await send({"type": "http.response.body", "body": b"done", "more_body": False})
+
+    def test_only_one_start_is_sent(self):
+        import anyio
+
+        middleware = BodySizeLimitMiddleware(
+            self._app_that_responds_then_reads, max_bytes=LIMIT
+        )
+        sent: list[dict] = []
+        chunks = [b"x" * 600] * 5
+
+        async def receive():
+            if chunks:
+                return {
+                    "type": "http.request",
+                    "body": chunks.pop(0),
+                    "more_body": bool(chunks),
+                }
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        async def send(message):
+            sent.append(message)
+
+        anyio.run(middleware, _raw_scope(), receive, send)
+
+        starts = [m for m in sent if m["type"] == "http.response.start"]
+        assert len(starts) == 1, (
+            f"emitted {len(starts)} http.response.start messages; an ASGI server "
+            "rejects the second and the request fails instead of being rejected"
+        )
+        assert starts[0]["status"] == 200, (
+            "the status was overwritten after the response had already begun"
+        )
+
+
+class TestAnUnderstatedContentLengthIsStillCaught:
+    def test_a_header_that_lies_does_not_bypass_the_counter(self):
+        """The header check is an optimisation, not the control. A caller who
+        declares 10 bytes and sends 1800 must still be rejected."""
+        import anyio
+
+        stack = _build_app().build_middleware_stack()
+        sent: list[dict] = []
+        chunks = [b"x" * 900, b"x" * 900]
+
+        async def receive():
+            if chunks:
+                return {
+                    "type": "http.request",
+                    "body": chunks.pop(0),
+                    "more_body": bool(chunks),
+                }
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        async def send(message):
+            sent.append(message)
+
+        anyio.run(
+            stack, _raw_scope(headers=[(b"content-length", b"10")]), receive, send
+        )
+
+        start = next(m for m in sent if m["type"] == "http.response.start")
+        assert start["status"] == 413
