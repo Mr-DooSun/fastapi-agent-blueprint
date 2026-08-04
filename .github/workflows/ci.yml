@@ -36,7 +36,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --frozen --group dev
 
       - name: Ruff check
         run: uv run ruff check src/
@@ -45,12 +45,42 @@ jobs:
         run: uv run ruff format --check src/
 
   test:
+    # The matrix is the point of #333: this job exported DATABASE_ENGINE:
+    # postgresql but never set TEST_DB_ENGINE — the variable
+    # tests/conftest.py::test_db actually reads — so every run was SQLite and
+    # PostgreSQL, the production default, had never been exercised. The first
+    # run of the postgres leg found a foreign key the SQLite leg cannot see
+    # (#348).
+    #
+    # MySQL is deliberately absent: whether it joins is coupled to the open
+    # cluster D decision in #325.
+    name: test (${{ matrix.engine }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [sqlite, postgresql]
     services:
       dynamodb-local:
         image: amazon/dynamodb-local:latest
         ports:
           - 8000:8000
+      # Always started. GitHub Actions does not support conditional service
+      # containers, and an idle postgres costs a few seconds against the
+      # clarity of one service block per engine.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -63,8 +93,8 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: uv sync --group dev --extra admin --extra aws
-        
+        run: uv sync --frozen --group dev --extra admin --extra aws
+
       - name: Run tests
         env:
           ENV: local
@@ -79,6 +109,14 @@ jobs:
           AWS_SQS_ACCESS_KEY: test
           AWS_SQS_SECRET_KEY: test
           AWS_SQS_URL: http://localhost:4566
+          # This is the switch conftest reads. DATABASE_ENGINE above configures
+          # the app under test; TEST_DB_ENGINE configures the fixture database.
+          TEST_DB_ENGINE: ${{ matrix.engine }}
+          TEST_DB_USER: postgres
+          TEST_DB_PASSWORD: postgres
+          TEST_DB_HOST: 127.0.0.1
+          TEST_DB_PORT: "5432"
+          TEST_DB_NAME: postgres
         run: uv run pytest tests/ -v --tb=short
 
   # Minimal-install boot regression: confirm the app boots and serves /api/health
@@ -99,7 +137,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install core-only dependencies
-        run: uv sync --group dev
+        run: uv sync --frozen --group dev
 
       - name: Run no-extras boot regression tests
         env:
@@ -115,6 +153,40 @@ jobs:
           BROKER_TYPE: inmemory
         run: uv run pytest tests/integration/_core/test_minimal_install.py -v --tb=short
 
+  # #333: pyright and pip-audit were declared dev dependencies with zero
+  # invocation sites, and the mypy pre-commit hook is `stages: [manual]` so the
+  # architecture job's `pre-commit run --all-files` skipped it. Nothing in CI
+  # type-checked anything, and no dependency CVE scan ran at all.
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --frozen --group dev
+
+      # Scope comes from [tool.pyright] in pyproject.toml: an allow-list of the
+      # packages that are clean today, not all of src/ (58 errors). Blocking on
+      # purpose — an advisory type check is what the manual-stage mypy hook
+      # already was, and it caught nothing for two releases.
+      - name: Pyright
+        run: uv run pyright
+
+      # Advisory. A newly published CVE would otherwise turn a green PR red with
+      # no change to the code, and §0 keeps hard-blocking automation a non-goal.
+      # The report still lands in the job log.
+      - name: Dependency CVE scan (advisory)
+        continue-on-error: true
+        run: uv run pip-audit --progress-spinner off
+
   architecture:
     runs-on: ubuntu-latest
     steps:
@@ -129,7 +201,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --frozen --group dev
 
       - name: Install pre-commit
         run: uv run pre-commit install
