@@ -56,7 +56,11 @@ def audit_recorder(monkeypatch):
 
 async def _insert_row(repo, **overrides) -> None:
     base = {
-        "admin_user_id": 1,
+        # None, not a customer id. project-dna §17 IC-218-1: "No admin row
+        # may exist in `user`" — and admin_audit_log.admin_user_id still FKs
+        # to user.id (#348), so there is no honest non-null value to write
+        # here. The column is nullable and nothing below asserts on it.
+        "admin_user_id": None,
         "admin_username": "alice",
         "action": AdminAction.LOGIN,
         "domain": "auth",
@@ -175,7 +179,7 @@ async def test_delete_older_than_only_removes_old(test_db):
     # Backdate one row directly to ensure something is older than cutoff.
     async with test_db.session() as session:
         old = AdminAuditLog(
-            admin_user_id=2,
+            admin_user_id=None,  # see _insert_row — #348
             admin_username="old_p2",
             action=AdminAction.LOGIN.value,
             domain="auth",
