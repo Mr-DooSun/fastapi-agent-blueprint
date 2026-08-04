@@ -36,7 +36,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: uv sync --frozen --group dev
+        run: uv sync --locked --group dev
 
       - name: Ruff check
         run: uv run ruff check src/
@@ -54,7 +54,7 @@ jobs:
     #
     # MySQL is deliberately absent: whether it joins is coupled to the open
     # cluster D decision in #325.
-    name: test (${{ matrix.engine }})
+    name: test (fixture db ${{ matrix.engine }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -93,7 +93,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: uv sync --frozen --group dev --extra admin --extra aws
+        run: uv sync --locked --group dev --extra admin --extra aws
 
       - name: Run tests
         env:
@@ -109,8 +109,11 @@ jobs:
           AWS_SQS_ACCESS_KEY: test
           AWS_SQS_SECRET_KEY: test
           AWS_SQS_URL: http://localhost:4566
-          # This is the switch conftest reads. DATABASE_ENGINE above configures
-          # the app under test; TEST_DB_ENGINE configures the fixture database.
+          # This is the switch conftest reads, and the only thing the matrix
+          # varies. DATABASE_ENGINE above stays postgresql on both legs: it
+          # configures the application object under test, which the e2e fixtures
+          # then re-point at test_db anyway. The job name says "fixture db" for
+          # exactly this reason — the sqlite leg is not an all-SQLite run.
           TEST_DB_ENGINE: ${{ matrix.engine }}
           TEST_DB_USER: postgres
           TEST_DB_PASSWORD: postgres
@@ -137,7 +140,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install core-only dependencies
-        run: uv sync --frozen --group dev
+        run: uv sync --locked --group dev
 
       - name: Run no-extras boot regression tests
         env:
@@ -171,7 +174,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: uv sync --frozen --group dev
+        run: uv sync --locked --group dev
 
       # Scope comes from [tool.pyright] in pyproject.toml: an allow-list of the
       # packages that are clean today, not all of src/ (58 errors). Blocking on
@@ -182,10 +185,34 @@ jobs:
 
       # Advisory. A newly published CVE would otherwise turn a green PR red with
       # no change to the code, and §0 keeps hard-blocking automation a non-goal.
-      # The report still lands in the job log.
+      #
+      # Installs the shipped extras first: auditing a core-only environment
+      # would silently exclude nicegui, aioboto3 and the taskiq brokers, which
+      # are production dependencies for anyone who enables them. The result goes
+      # to the job summary rather than only the log, so an advisory step is
+      # something a reviewer sees instead of something they have to go find.
+      # Current backlog and the case for making this blocking later: #349.
+      - name: Install auditable extras
+        run: uv sync --locked --group dev --extra admin --extra aws --extra sqs --extra rabbitmq
+
       - name: Dependency CVE scan (advisory)
         continue-on-error: true
-        run: uv run pip-audit --progress-spinner off
+        run: |
+          set +e
+          uv run pip-audit --progress-spinner off > audit.txt 2>&1
+          code=$?
+          {
+            echo "## Dependency CVE scan (advisory)"
+            echo
+            if [ "$code" -eq 0 ]; then
+              echo "No known advisories."
+            else
+              echo '```'
+              cat audit.txt
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat audit.txt
 
   architecture:
     runs-on: ubuntu-latest
@@ -201,7 +228,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: uv sync --frozen --group dev
+        run: uv sync --locked --group dev
 
       - name: Install pre-commit
         run: uv run pre-commit install
