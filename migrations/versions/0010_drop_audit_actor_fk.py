@@ -53,27 +53,36 @@ _COMMENT = (
 )
 
 
-def _table_without_actor_fk() -> sa.Table:
-    """The table as it exists at 0009, minus the actor foreign key.
+def _audit_table(*, with_actor_fk: bool) -> sa.Table:
+    """The 0009 table shape, with or without the actor foreign key.
 
-    SQLite cannot drop a constraint, and ``batch_alter_table`` rebuilds from the
-    **reflected** schema — not from the ORM model — so a bare ``alter_column``
-    carries the old ``FOREIGN KEY`` straight into the new table. Alembic needs an
-    explicit ``copy_from`` describing the intended shape.
+    SQLite cannot drop or add a constraint in place, and ``batch_alter_table``
+    rebuilds from the **reflected** schema — not from the ORM model — so a bare
+    ``alter_column`` carries the old ``FOREIGN KEY`` straight into the new table.
+    ``copy_from`` has to describe the intended shape.
+
+    Everything the rebuild must preserve has to be declared here, indexes
+    included. Omitting them silently drops all four: verified by running the
+    revision against SQLite, where ``sqlite_master`` went from four ``idx_audit_*``
+    rows to zero. They back the repository's time-ordered list and its
+    actor/action/domain filters.
 
     Declared inline rather than imported from ``AdminAuditLog``: a revision must
     describe the schema at *this* point in history, and the model will keep
-    moving. Mirrors the 0009 DDL exactly, minus the FK, with ``comment`` applied.
+    moving.
 
-    Dropping it on SQLite matters even though SQLite does not enforce foreign
-    keys by default: leaving it in the DDL means enabling
+    Dropping the FK on SQLite matters even though SQLite does not enforce foreign
+    keys by default — leaving it in the DDL means enabling
     ``PRAGMA foreign_keys=ON`` would resurrect the defect this revision removes.
     """
-    return sa.Table(
-        _TABLE,
-        sa.MetaData(),
+    columns: list[sa.SchemaItem] = [
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column(_COLUMN, sa.Integer(), nullable=True, comment=_COMMENT),
+        sa.Column(
+            _COLUMN,
+            sa.Integer(),
+            nullable=True,
+            comment=None if with_actor_fk else _COMMENT,
+        ),
         sa.Column("admin_username", sa.String(255), nullable=False),
         sa.Column("action", sa.String(50), nullable=False),
         sa.Column("domain", sa.String(100), nullable=False),
@@ -91,7 +100,16 @@ def _table_without_actor_fk() -> sa.Table:
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("id"),
-    )
+        sa.Index("idx_audit_created_at", "created_at"),
+        sa.Index("idx_audit_user_created", "admin_username", "created_at"),
+        sa.Index("idx_audit_action_created", "action", "created_at"),
+        sa.Index("idx_audit_domain_created", "domain", "created_at"),
+    ]
+    if with_actor_fk:
+        columns.append(
+            sa.ForeignKeyConstraint([_COLUMN], ["user.id"], ondelete="SET NULL")
+        )
+    return sa.Table(_TABLE, sa.MetaData(), *columns)
 
 
 def _actor_fk_name(bind) -> str | None:
@@ -109,7 +127,7 @@ def upgrade() -> None:
         # copy_from is required — see _table_without_actor_fk. Without it the
         # rebuild reflects the old FOREIGN KEY back into the new table.
         with op.batch_alter_table(
-            _TABLE, copy_from=_table_without_actor_fk()
+            _TABLE, copy_from=_audit_table(with_actor_fk=False)
         ) as batch_op:
             batch_op.alter_column(_COLUMN, existing_type=sa.Integer(), comment=_COMMENT)
         return
@@ -125,7 +143,12 @@ def downgrade() -> None:
     bind = op.get_bind()
 
     if bind.dialect.name == "sqlite":
-        with op.batch_alter_table(_TABLE) as batch_op:
+        # Rebuild *with* the constraint. Only removing the comment would leave
+        # the downgrade asymmetric with the other engines and, worse, silently
+        # non-reversible: the foreign key this revision removed would stay gone.
+        with op.batch_alter_table(
+            _TABLE, copy_from=_audit_table(with_actor_fk=True)
+        ) as batch_op:
             batch_op.alter_column(_COLUMN, existing_type=sa.Integer(), comment=None)
         return
 
