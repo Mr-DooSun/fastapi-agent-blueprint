@@ -1,30 +1,28 @@
-"""Keep the production audit-actor defect visible in the suite (#348).
+"""The production audit-actor path, asserted on every engine (#348, ADR 057).
 
-Every other DB-touching test in this package writes `admin_user_id=None`,
-because `project-dna.md` §17 IC-218-1 says "No admin row may exist in `user`"
-and `admin_audit_log.admin_user_id` still carries `ForeignKey("user.id")`. There
-is no honest non-null value to write until #348 decides where that FK should
-point.
+This file began as an `xfail(strict=True)` probe. `admin_audit_log.admin_user_id`
+carried `ForeignKey("user.id", ondelete="SET NULL")` while the value written at
+runtime is an `admin_identity.id`, so on PostgreSQL every authenticated admin
+action failed the constraint and `AdminAuditLogger` swallowed it — the trail
+recorded rejected logins (which pass NULL) and nothing else.
 
-Writing NULL everywhere would make the package pass on both engines and leave
-nothing in the suite that knows the production path is broken. This file is that
-something.
+ADR 057 dropped the constraint rather than repointing it: migration 0009 copied
+admins across preserving ids and advanced only `admin_identity`'s sequence, so
+the id spaces overlap and a constraint against either table can be satisfied by
+the *wrong* row — certifying that a customer performed an admin action.
 
-At runtime the actor id is an `admin_identity.id`
-(`AdminAuthUseCase._admin_session_for` sets `user_id=admin.id`, and
-`AdminAuditLogger` reads it back from the session), so on PostgreSQL the insert
-below is exactly what production attempts — and it fails the constraint. The
-production logger swallows that exception (`# noqa: BLE001 - swallowed by
-design`), which is why the breakage is invisible outside a test like this one.
+The xfail is gone; these are now positive assertions. Integrity moved from the
+DDL to here, which only works if the tests are the real thing: the actor is a
+genuine `admin_identity` row, the write goes through the production repository,
+and the stored id is read back and resolved through the `admin_identity`
+repository the way `project-dna` §17 IC-218-1 requires ("Cross-realm reads go
+only through the owning domain's repository/protocol").
 
-`strict=True` is the point: when #348 lands, this XPASSes, CI fails, and whoever
-fixed it is told to come back here and turn it into a real assertion instead of
-leaving a stale marker behind.
+The read-side reconciliation is deliberately a *read*: unlike a foreign key it
+cannot reject — and therefore cannot lose — an audit event.
 """
 
 from __future__ import annotations
-
-import os
 
 import pytest
 import pytest_asyncio
@@ -34,22 +32,17 @@ from src._core.infrastructure.admin.audit import (
     AdminAction,
     AdminAuditLogRepository,
     AuditLogDTO,
+    AuditLogFilter,
     AuditResult,
 )
 from src._core.infrastructure.admin.audit.models.audit_log_model import AdminAuditLog
 from src.admin_identity.infrastructure.database.models.admin_identity_model import (
     AdminIdentityModel,
 )
-from src.user.infrastructure.database.models.user_model import UserModel
-
-_ON_POSTGRESQL = os.environ.get("TEST_DB_ENGINE", "sqlite").lower() == "postgresql"
-
-_pytestmark_reason = (
-    "admin_audit_log.admin_user_id FKs to user.id while runtime writes an "
-    "admin_identity.id (#348). SQLite does not enforce foreign keys, so this "
-    "only fails on the engine production uses."
+from src.admin_identity.infrastructure.repositories.admin_identity_repository import (
+    AdminIdentityRepository,
 )
-
+from src.user.infrastructure.database.models.user_model import UserModel
 
 # An explicit, deliberately out-of-range id. With an autoincrement id this test
 # is order-dependent and unusable: `tests/conftest.py::test_db` is session-scoped
@@ -97,7 +90,6 @@ async def admin_identity_row(test_db):
         return admin.id
 
 
-@pytest.mark.xfail(_ON_POSTGRESQL, reason=_pytestmark_reason, strict=True)
 @pytest.mark.asyncio
 async def test_audit_write_accepts_an_admin_identity_actor(test_db, admin_identity_row):
     repo = AdminAuditLogRepository(test_db)
@@ -127,3 +119,65 @@ async def test_audit_write_accepts_an_admin_identity_actor(test_db, admin_identi
 
     assert len(stored) == 1
     assert stored[0].admin_user_id == admin_identity_row
+
+
+@pytest.mark.asyncio
+async def test_stored_actor_resolves_through_the_admin_identity_repository(
+    test_db, admin_identity_row
+):
+    """The reconciliation that replaces the dropped foreign key.
+
+    A FK asserted "this id exists in some table" at write time, and paid for it
+    by being able to reject — and, given the swallow, silently lose — the event.
+    This asserts the stronger property on the read side instead: the id stored
+    in an audit row resolves to a real admin *in the owning context's own
+    repository*, which is the access path §17 IC-218-1 mandates.
+    """
+    repo = AdminAuditLogRepository(test_db)
+    await repo.insert(
+        AuditLogDTO(
+            admin_user_id=admin_identity_row,
+            admin_username="audit-fk-probe",
+            action=AdminAction.ACCOUNT_CREATE,
+            domain="admin_identity",
+            result=AuditResult.SUCCESS,
+        )
+    )
+
+    rows, _ = await repo.list_filtered(AuditLogFilter(username_like="audit-fk-probe"))
+    actor_ids = {r.admin_user_id for r in rows if r.admin_user_id is not None}
+    assert actor_ids, "the audit row stored no actor id to reconcile"
+
+    admin_repository = AdminIdentityRepository(test_db)
+    for actor_id in actor_ids:
+        # select_data_by_id raises 404 rather than returning None, so an
+        # unresolvable actor fails this test loudly instead of via a None check.
+        assert await admin_repository.exists_by_id(actor_id), (
+            f"audit row references admin_identity id {actor_id}, which does not "
+            "resolve through the admin_identity repository"
+        )
+        resolved = await admin_repository.select_data_by_id(actor_id)
+        assert resolved.username == "audit-fk-probe"
+
+
+@pytest.mark.asyncio
+async def test_actor_id_is_not_a_customer_id(test_db, admin_identity_row):
+    """The misattribution the dropped FK could have certified.
+
+    Migration 0009 copied admins into admin_identity preserving ids and advanced
+    only that table's sequence, so the id spaces overlap. A constraint against
+    `user.id` can therefore be *satisfied* by a customer who happens to occupy
+    the same id — recording that a customer performed an admin action. Assert
+    the column is read as an admin-realm id and nothing else.
+    """
+    async with test_db.session() as session:
+        customer_at_same_id = (
+            await session.execute(
+                select(UserModel.id).where(UserModel.id == admin_identity_row)
+            )
+        ).scalar_one_or_none()
+
+    assert customer_at_same_id is None, (
+        "a user row shares this id, so any FK to user.id would be satisfied by "
+        "the wrong realm — see ADR 057"
+    )
