@@ -173,8 +173,13 @@ jobs:
         with:
           python-version: "3.12"
 
+      # The extras are not optional here. [tool.pyright] include covers
+      # src/user, which contains an admin page importing nicegui; a core-only
+      # install makes pyright report reportMissingImports rather than type-check
+      # it. The same environment is what pip-audit needs to see the optional
+      # production dependencies, so install it once.
       - name: Install dependencies
-        run: uv sync --locked --group dev
+        run: uv sync --locked --group dev --extra admin --extra aws --extra sqs --extra rabbitmq
 
       # Scope comes from [tool.pyright] in pyproject.toml: an allow-list of the
       # packages that are clean today, not all of src/ (58 errors). Blocking on
@@ -192,9 +197,6 @@ jobs:
       # to the job summary rather than only the log, so an advisory step is
       # something a reviewer sees instead of something they have to go find.
       # Current backlog and the case for making this blocking later: #349.
-      - name: Install auditable extras
-        run: uv sync --locked --group dev --extra admin --extra aws --extra sqs --extra rabbitmq
-
       - name: Dependency CVE scan (advisory)
         continue-on-error: true
         run: |
