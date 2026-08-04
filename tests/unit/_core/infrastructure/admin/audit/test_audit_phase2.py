@@ -180,7 +180,15 @@ async def test_delete_older_than_only_removes_old(test_db):
             action=AdminAction.LOGIN.value,
             domain="auth",
             result=AuditResult.SUCCESS.value,
-            created_at=datetime.now(UTC) - timedelta(days=400),
+            # Naive UTC, matching the column. AdminAuditLog.created_at is
+            # tz-naive by design and the repository normalises through
+            # _to_naive_utc before writing; this test bypasses the repository,
+            # so it has to honour the same contract. An aware value reaches
+            # asyncpg as `can't subtract offset-naive and offset-aware
+            # datetimes` — SQLite stores it as a string and never complains.
+            created_at=AdminAuditLogRepository._to_naive_utc(
+                datetime.now(UTC) - timedelta(days=400)
+            ),
         )
         session.add(old)
         await session.commit()
