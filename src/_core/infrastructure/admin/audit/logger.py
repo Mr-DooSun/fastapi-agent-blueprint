@@ -204,8 +204,15 @@ class AuditLogger:
                 error_code=event,
                 message=f"admin audit write failed ({error_type})",
             )
-        except Exception:  # noqa: BLE001 - see docstring
-            _logger.warning("audit_write_failure_notify_failed", exc_info=True)
+        except Exception as exc:  # noqa: BLE001 - see docstring
+            # exc_type only, no exc_info. The notifier is duck-typed and may be
+            # any provider a deployment wires in; its exceptions can carry the
+            # webhook URL or other configuration. ErrorNotifier._safe_send takes
+            # the same precaution for the same reason (security-checklist §13).
+            _logger.warning(
+                "audit_write_failure_notify_failed",
+                error_type=type(exc).__name__,
+            )
 
 
 def _safe_session_get(key: str):
