@@ -4,15 +4,19 @@ from abc import ABC
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
+import structlog
 from pydantic import BaseModel
 from sqlalchemy import String, func, or_, select
 from sqlalchemy.orm import InstrumentedAttribute
 
 from src._core.exceptions.base_exception import BaseCustomException
 from src._core.infrastructure.persistence.rdb.database import Base, Database
+from src._core.infrastructure.persistence.rdb.exceptions import DatabaseException
 
 if TYPE_CHECKING:
     from src._core.domain.value_objects.query_filter import QueryFilter
+
+_logger = structlog.stdlib.get_logger(__name__)
 
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
 
@@ -46,6 +50,16 @@ class BaseRepository(Generic[ReturnDTO], ABC):
             session.add_all(datas)
             await session.flush()
             await session.commit()
+            # Explicit refresh, matching insert_data. On dialects that support
+            # RETURNING, eager_defaults="auto" already fetched server_default
+            # columns during the INSERT and this is nearly free. Where
+            # insert_returning is False (MySQL/MariaDB today), the columns are
+            # unloaded, and the synchronous attribute access inside
+            # model_validate would trigger a lazy refresh with no greenlet —
+            # MissingGreenlet, which Database.session() turns into a 500 for
+            # rows that are already committed. ADR 058 D1.
+            for data in datas:
+                await session.refresh(data)
             return [
                 self.return_entity.model_validate(data, from_attributes=True)
                 for data in datas
@@ -54,13 +68,12 @@ class BaseRepository(Generic[ReturnDTO], ABC):
     async def select_datas(self, page: int, page_size: int) -> list[ReturnDTO]:
         async with self.database.session() as session:
             result = await session.execute(
-                select(self.model).offset((page - 1) * page_size).limit(page_size)
+                select(self.model)
+                .order_by(*self._stable_order())
+                .offset((page - 1) * page_size)
+                .limit(page_size)
             )
             datas = result.scalars().all()
-
-            # Load relationships only when needed
-            if hasattr(self.model, "related_entities"):
-                await session.refresh(datas, ["related_entities"])
 
             return [
                 self.return_entity.model_validate(data, from_attributes=True)
@@ -153,32 +166,34 @@ class BaseRepository(Generic[ReturnDTO], ABC):
             query = select(self.model)
             count_query = select(func.count()).select_from(self.model)
 
+            sorted_explicitly = False
             if query_filter:
                 # Apply search filter
                 if query_filter.search_query and query_filter.search_fields:
-                    conditions = []
-                    for field_name in query_filter.search_fields:
-                        col = getattr(self.model, field_name, None)
-                        if isinstance(col, InstrumentedAttribute) and isinstance(
-                            col.type, String
-                        ):
-                            conditions.append(
-                                col.ilike(f"%{query_filter.search_query}%")
-                            )
-                    if conditions:
-                        query = query.where(or_(*conditions))
-                        count_query = count_query.where(or_(*conditions))
+                    conditions = self._search_conditions(
+                        query_filter.search_fields, query_filter.search_query
+                    )
+                    query = query.where(or_(*conditions))
+                    count_query = count_query.where(or_(*conditions))
 
-                # Apply sorting
-                if query_filter.sort_field and hasattr(
-                    self.model, query_filter.sort_field
-                ):
-                    column = getattr(self.model, query_filter.sort_field)
+                # Apply sorting. _column_for_field is the single resolver — the
+                # sort path used to do bare hasattr/getattr and then call
+                # .desc() on whatever came back, which for a method or a class
+                # attribute produced an opaque 500 (ADR 058 D4).
+                if query_filter.sort_field:
+                    column = self._column_for_field(query_filter.sort_field)
                     query = query.order_by(
                         column.asc()
                         if query_filter.sort_order == "asc"
                         else column.desc()
                     )
+                    sorted_explicitly = True
+
+            if not sorted_explicitly:
+                # Same reason as select_datas: an unordered offset page can
+                # repeat or skip rows. Applied only when the caller did not
+                # sort, so an explicit sort still wins (ADR 058 D2).
+                query = query.order_by(*self._stable_order())
 
             result = await session.execute(
                 query.offset((page - 1) * page_size).limit(page_size)
@@ -187,10 +202,6 @@ class BaseRepository(Generic[ReturnDTO], ABC):
 
             count_result = await session.execute(count_query)
             total_count = count_result.scalar_one()
-
-            # Load relationships only when needed
-            if hasattr(self.model, "related_entities"):
-                await session.refresh(datas, ["related_entities"])
 
             return [
                 self.return_entity.model_validate(data, from_attributes=True)
@@ -236,10 +247,78 @@ class BaseRepository(Generic[ReturnDTO], ABC):
             result = await session.execute(select(func.count()).select_from(self.model))
             return result.scalar_one()
 
+    def _stable_order(self) -> tuple[InstrumentedAttribute, ...]:
+        """A deterministic tiebreaker for offset pagination (ADR 058 D2).
+
+        Offset paging over an unordered result set can repeat or skip rows,
+        because the engine is free to return a different order per query. The
+        flagship list endpoint passed `query_filter=None`, so it did exactly
+        that; `ai_usage_repository` had hand-fixed it locally, which is evidence
+        the contract was missing rather than the code.
+
+        The primary key is the tiebreaker: always present, always unique, and
+        already indexed. Descending so a default page is newest-first, matching
+        what the domains that fixed this themselves chose. Order is API-visible —
+        see the CHANGELOG entry.
+        """
+        return (self._id_column().desc(),)
+
+    def _search_conditions(self, fields: list[str], term: str) -> list:
+        """Build ILIKE conditions, rejecting fields that cannot carry one.
+
+        Fails closed. Previously every non-`String` field was dropped silently
+        and, if none survived, no WHERE clause was added at all — so a search
+        returned the **entire table** with `total_items` set to the full count.
+        A search that cannot be honoured is an error, not an unfiltered list
+        (ADR 058 D3).
+
+        A field that is usable is still used even when a sibling is not: dropping
+        the unusable half is what failed open, but rejecting a request where some
+        field works would be over-correction.
+        """
+        conditions = []
+        unusable = []
+        for field_name in fields:
+            column = getattr(self.model, field_name, None)
+            if not isinstance(column, InstrumentedAttribute):
+                unusable.append(field_name)
+                continue
+            if not isinstance(column.type, String):
+                unusable.append(field_name)
+                continue
+            conditions.append(column.ilike(f"%{term}%"))
+        if not conditions:
+            raise DatabaseException(
+                status_code=400,
+                message=(
+                    f"No searchable text field among {sorted(fields)}; "
+                    "search requires at least one String column"
+                ),
+                error_code="DB_SEARCH_FIELD_UNUSABLE",
+            )
+        if unusable:
+            _logger.info(
+                "search_fields_skipped",
+                skipped=sorted(unusable),
+                used=len(conditions),
+            )
+        return conditions
+
     def _column_for_field(self, field: str) -> InstrumentedAttribute:
+        """The single field resolver (ADR 058 D4).
+
+        A curated 400 rather than ``ValueError``: the field name arrives from a
+        query string, and the generic handler turns a bare ValueError into
+        INTERNAL_SERVER_ERROR — a 500 plus an operator page for a malformed
+        request.
+        """
         column = getattr(self.model, field, None)
         if not isinstance(column, InstrumentedAttribute):
-            raise ValueError(f"Unknown model field: {field}")
+            raise DatabaseException(
+                status_code=400,
+                message=f"Unknown model field: {field}",
+                error_code="DB_UNKNOWN_FIELD",
+            )
         return column
 
     def _id_column(self) -> InstrumentedAttribute:
