@@ -165,6 +165,58 @@ class TestDeterministicPagination:
         usernames = [r.username for r in rows if r.username.startswith("srt")]
         assert usernames == sorted(usernames, reverse=True)
 
+    @pytest.mark.asyncio
+    async def test_ties_under_an_explicit_sort_are_still_deterministic(
+        self, repository
+    ) -> None:
+        """The case the first fix missed.
+
+        `sorted_explicitly` skipped the tiebreaker entirely, so sorting by a
+        non-unique column put tie order back in the engine's hands — and offset
+        paging over ties can still repeat or skip rows. "Explicit sort wins"
+        means it is the *primary* key, not the only one.
+
+        `full_name` is identical across these rows, so every row is a tie.
+        """
+        await repository.insert_datas(
+            [
+                make_create_user_request(
+                    username=f"tie{i:02d}",
+                    email=f"tie{i:02d}@example.com",
+                    full_name="Same Name",
+                )
+                for i in range(8)
+            ]
+        )
+        query_filter = QueryFilter(sort_field="full_name", sort_order="asc")
+
+        first, _ = await repository.select_datas_with_count(
+            page=1, page_size=4, query_filter=query_filter
+        )
+        second, _ = await repository.select_datas_with_count(
+            page=2, page_size=4, query_filter=query_filter
+        )
+
+        ids = [d.id for d in first] + [d.id for d in second]
+        assert len(ids) == len(set(ids)), "a tied row appeared on two pages"
+
+    @pytest.mark.asyncio
+    async def test_sorting_by_the_primary_key_is_not_ordered_twice(
+        self, repository
+    ) -> None:
+        # The tiebreaker is the PK descending; adding it beside an explicit
+        # ascending PK sort would order the same column both ways.
+        await repository.insert_datas([_request(f"pk{i}") for i in range(3)])
+
+        rows, _ = await repository.select_datas_with_count(
+            page=1,
+            page_size=10,
+            query_filter=QueryFilter(sort_field="id", sort_order="asc"),
+        )
+
+        ids = [r.id for r in rows]
+        assert ids == sorted(ids)
+
 
 class TestSearchFailsClosed:
     @pytest.mark.asyncio

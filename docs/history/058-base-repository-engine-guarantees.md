@@ -78,15 +78,34 @@ correct behaviour by default under A and a runtime error under D.
 
 ## Decision
 
-**D1 — Bulk and singular insert return the same thing.** `insert_datas` refreshes
-each instance after commit, exactly as `insert_data` does. On RETURNING dialects
-this is nearly free; on the others it is the difference between a DTO and a 500.
+**D1 — Bulk and singular insert return the same thing.** `insert_datas` loads
+server-side defaults with **one** `populate_existing` SELECT over the flushed ids,
+**before** commit, and builds the DTOs before commit too.
 
-**D2 — Offset pagination is deterministically ordered.** `select_datas` and the
-no-sort branch of `select_datas_with_count` append the primary key descending as a
-tiebreaker. An explicit `QueryFilter.sort_field` still wins. **This is
-API-visible** — the default order of every unsorted list endpoint changes from
-engine-dependent to newest-first, recorded in the CHANGELOG.
+Two shapes were rejected during review. A per-instance `session.refresh()` loop is
+`INSERT × N + SELECT × N` — on the public batch endpoint (100 items) that is 100
+sequential round-trips, and `refresh()` issues a SELECT even on dialects that
+support RETURNING, so it is not "nearly free" anywhere. Doing it *after* commit is
+worse than slow: a refresh that fails then returns a 500 for rows already written,
+which is precisely the failure this decision exists to remove. Building the DTOs
+before commit closes that window; the reload is chunked so a batch large enough to
+exceed a driver's bind-parameter limit fails on the insert rather than on the
+reload.
+
+**D2 — Offset pagination is deterministically ordered, always.** The primary key
+descending is appended as a tiebreaker to *every* paged query, including one that
+carries an explicit `QueryFilter.sort_field`.
+
+"An explicit sort wins" means the caller's column is the **primary** sort key, not
+the only one. The first version of this fix skipped the tiebreaker whenever a sort
+was supplied, which put tie order back in the engine's hands — so paging over a
+non-unique column (`created_at`, `status`, `full_name`) could still repeat or skip
+rows, the exact defect being removed. The tiebreaker is omitted only when the
+caller already sorted by the primary key, so the same column is never ordered in
+both directions.
+
+**This is API-visible** — the default order of every unsorted list endpoint changes
+from engine-dependent to newest-first, recorded in the CHANGELOG.
 
 **D3 — Search fails closed.** A search naming no usable text column raises a
 curated 400 (`DB_SEARCH_FIELD_UNUSABLE`) instead of adding no WHERE clause and

@@ -18,6 +18,10 @@ if TYPE_CHECKING:
 
 _logger = structlog.stdlib.get_logger(__name__)
 
+# Bind-parameter ceiling for the defaults reload. Well under every driver's
+# limit; the public batch endpoint caps at 100 anyway.
+_DEFAULTS_REFRESH_CHUNK = 500
+
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
 
 
@@ -49,21 +53,28 @@ class BaseRepository(Generic[ReturnDTO], ABC):
             ]
             session.add_all(datas)
             await session.flush()
-            await session.commit()
-            # Explicit refresh, matching insert_data. On dialects that support
-            # RETURNING, eager_defaults="auto" already fetched server_default
-            # columns during the INSERT and this is nearly free. Where
-            # insert_returning is False (MySQL/MariaDB today), the columns are
-            # unloaded, and the synchronous attribute access inside
-            # model_validate would trigger a lazy refresh with no greenlet —
-            # MissingGreenlet, which Database.session() turns into a 500 for
-            # rows that are already committed. ADR 058 D1.
-            for data in datas:
-                await session.refresh(data)
-            return [
+
+            # Load server-side defaults with ONE query, before commit.
+            #
+            # Where insert_returning is False (MySQL/MariaDB today) the
+            # server_default columns are unloaded after flush, and the
+            # synchronous access inside model_validate would trigger a lazy
+            # refresh with no greenlet — MissingGreenlet, which
+            # Database.session() turns into a 500. ADR 058 D1.
+            #
+            # Two shapes were rejected. A per-instance session.refresh() loop is
+            # INSERT x N + SELECT x N: on the public batch endpoint (100 items)
+            # that is 100 sequential round-trips. Doing it *after* commit is
+            # worse than slow — a refresh that fails then returns a 500 for rows
+            # already written, which is the exact failure this fix exists to
+            # remove. Building the DTOs before commit closes that window.
+            await self._populate_defaults(session, datas)
+            results = [
                 self.return_entity.model_validate(data, from_attributes=True)
                 for data in datas
             ]
+            await session.commit()
+            return results
 
     async def select_datas(self, page: int, page_size: int) -> list[ReturnDTO]:
         async with self.database.session() as session:
@@ -182,11 +193,21 @@ class BaseRepository(Generic[ReturnDTO], ABC):
                 # attribute produced an opaque 500 (ADR 058 D4).
                 if query_filter.sort_field:
                     column = self._column_for_field(query_filter.sort_field)
-                    query = query.order_by(
+                    ordering = [
                         column.asc()
                         if query_filter.sort_order == "asc"
                         else column.desc()
-                    )
+                    ]
+                    # The explicit column is the *primary* key, not the only
+                    # one. Dropping the tiebreaker entirely put tie order back
+                    # in the engine's hands, so sorting by a non-unique column
+                    # (created_at, status) could still repeat or skip rows
+                    # across pages — the defect this was meant to remove.
+                    # Skipped when the caller already sorted by the PK, so the
+                    # same column is not ordered twice in opposite directions.
+                    if column is not self._id_column():
+                        ordering.extend(self._stable_order())
+                    query = query.order_by(*ordering)
                     sorted_explicitly = True
 
             if not sorted_explicitly:
@@ -246,6 +267,25 @@ class BaseRepository(Generic[ReturnDTO], ABC):
         async with self.database.session() as session:
             result = await session.execute(select(func.count()).select_from(self.model))
             return result.scalar_one()
+
+    async def _populate_defaults(self, session, datas: list) -> None:
+        """Load server-side defaults for freshly flushed instances.
+
+        One ``populate_existing`` SELECT over the flushed ids rather than a
+        refresh per instance. Chunked because a batch large enough to exceed the
+        driver's bind-parameter limit would otherwise fail on the query rather
+        than on the insert.
+        """
+        if not datas:
+            return
+        ids = [data.id for data in datas]
+        id_column = self._id_column()
+        for start in range(0, len(ids), _DEFAULTS_REFRESH_CHUNK):
+            await session.execute(
+                select(self.model)
+                .where(id_column.in_(ids[start : start + _DEFAULTS_REFRESH_CHUNK]))
+                .execution_options(populate_existing=True)
+            )
 
     def _stable_order(self) -> tuple[InstrumentedAttribute, ...]:
         """A deterministic tiebreaker for offset pagination (ADR 058 D2).
