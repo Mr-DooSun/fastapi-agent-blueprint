@@ -7,7 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- **Eleven unreferenced symbols deleted.** None had a caller, and none was an
+  advertised extension point — this repo deliberately ships base classes and
+  stub fallbacks with zero implementers, so a reference count alone is never
+  grounds for deletion here. Gone: `TaskiqManager` (and its `CoreContainer`
+  provider — task code always used `.kiq()` directly), `BaseHttpGateway` +
+  `ExampleApiGateway`, the `src/_core/infrastructure/llm/exceptions.py`
+  re-export facade (the hierarchy stays at
+  `src/_core/exceptions/llm_exceptions.py`), `ClassificationFailedException`
+  (LLM failures are mapped centrally by `try_map_llm_error`), `BrokerType`
+  (a dead duplicate of `KNOWN_BROKER_TYPES`), `ExistsData`, `InternalConfig`
+  and its `INTERNAL_CONFIG`, `S3VectorNotFoundException`,
+  `AdminPermissionDeniedException` (the admin page guard navigates rather than
+  raising), and three uncalled `ensure_*` wrappers in
+  `_core/domain/validation.py` — the `collect_*` functions they wrapped are
+  alive and unchanged. **If you imported any of these, they are gone**; the two
+  candidates that looked dead but are not, `BUSINESS_CONFLICT` and
+  `build_stub_llm_model`, were kept
+  ([#331](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/331)).
+
 ### Changed
+
+- `_maybe_configure_otel` moved out of both bootstraps into one shared
+  `maybe_configure_otel(settings, service_name)` at
+  `src/_core/infrastructure/observability/otel_bootstrap.py`. The two copies
+  were byte-identical apart from the word "server"/"worker" in a docstring. It
+  deliberately does **not** live in `otel_setup.py`: that module imports
+  `opentelemetry` at module top, so it is the thing being guarded
+  ([#331](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/331)).
 
 - **API-visible: unsorted list endpoints now return newest-first.**
   `BaseRepository.select_datas` and the no-sort branch of
