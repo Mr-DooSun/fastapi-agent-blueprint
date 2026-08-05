@@ -743,7 +743,14 @@ class Settings(BaseSettings):
                 f"{', '.join(missing)} missing"
             )
 
-        if s3vectors_set and s3vectors_set != set(s3vectors_fields):
+        # Skipped when the selector-specific error above already fired: the two
+        # describe the same missing values, and one cause should not produce two
+        # messages for an operator to reconcile.
+        if (
+            vector_store != "s3vectors"
+            and s3vectors_set
+            and s3vectors_set != set(s3vectors_fields)
+        ):
             missing = sorted(set(s3vectors_fields) - s3vectors_set)
             errors.append(
                 f"[S3Vectors] Partial configuration: "
