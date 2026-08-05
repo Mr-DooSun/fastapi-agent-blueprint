@@ -38,6 +38,7 @@ try:
         GOVERNOR_REMINDER_WITH_PR,
         MarkerLifecycle,
         _within_24h,
+        cleanup_stale_verify_logs,  # noqa: E402
         is_governor_changing,
         is_log_only_backfill,
         match_log_entry,
@@ -106,6 +107,21 @@ except Exception:  # noqa: BLE001 — HC-5.5 fail-open
 
     def _resolve_locale_string(key: str) -> str:  # type: ignore[no-redef]
         return ""
+
+
+def _verify_session_id() -> str:
+    """Same resolution as ``verify_log.py`` — see its docstring.
+
+    No payload here: the Stop hook's payload does carry ``session_id``, but
+    ``main`` already swallows payload errors, so the env fallback keeps this
+    path from depending on parse success.
+    """
+    explicit = os.environ.get("CLAUDE_CODE_HOST_SESSION_ID") or os.environ.get(
+        "CLAUDE_SESSION_ID"
+    )
+    if explicit:
+        return explicit
+    return f"{os.getppid()}-{os.getpid()}"
 
 
 def _changed_files() -> list[str]:
@@ -188,6 +204,11 @@ def main() -> int:
             reminder = governor_changing_segment()
         with contextlib.suppress(Exception):
             consume_phase2_markers()
+        with contextlib.suppress(Exception):
+            # Prune other sessions' verify logs (#334). The Stop hook is the
+            # only place that runs once per session, which is why the sibling
+            # harnesses clean up here too. Never touches this session's file.
+            cleanup_stale_verify_logs(STATE_DIR, _verify_session_id())
         if reminder:
             print(reminder)
     except Exception:  # noqa: BLE001 — HC-5.5 fail-open
