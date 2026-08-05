@@ -9,6 +9,9 @@ from pydantic import BaseModel
 
 from src._core.domain.value_objects.vector_query import VectorQuery
 from src._core.domain.value_objects.vector_search_result import VectorSearchResult
+from src._core.infrastructure.vectors.in_memory.exceptions import (
+    VectorFilterUnsupportedException,
+)
 from src._core.infrastructure.vectors.vector_model import VectorModel
 
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
@@ -54,6 +57,10 @@ class BaseInMemoryVectorStore(Generic[ReturnDTO], ABC):
         return len(entities)
 
     async def search(self, query: VectorQuery) -> VectorSearchResult[ReturnDTO]:
+        # Before the scan, so the rejection does not depend on how many records
+        # happen to be stored or on which condition eliminates them first.
+        validate_filters(query.filters)
+
         scored: list[tuple[float, dict[str, Any]]] = []
         for record in self._store.values():
             if query.filters and not _matches_filters(
@@ -83,47 +90,58 @@ class BaseInMemoryVectorStore(Generic[ReturnDTO], ABC):
         return True
 
 
-# The operator subset this store implements, matching the S3 Vectors subset the
-# class docstring promises. Deliberately not extended: making the stand-in more
-# capable than the backend it stands in for is how portable domain code stops
-# being portable.
+# The operator subset this store implements. S3 Vectors itself supports
+# $eq/$ne/$gt/$gte/$lt/$lte/$in/$nin/$exists/$and/$or, and this repo's S3 store
+# passes `query.filters` through to `query_vectors` untouched — so the gap here
+# is an unimplemented subset of the backend, not a deliberate ceiling. Widening
+# it is a fine follow-up; silently ignoring what is missing is not.
 _SUPPORTED_OPERATORS = frozenset({"$eq", "$in", "$ne"})
 
 
-def _matches_filters(metadata: dict[str, Any], filters: dict[str, Any]) -> bool:
-    """Evaluate a `VectorQuery.filters` mapping against one record's metadata.
+def validate_filters(filters: dict[str, Any] | None) -> None:
+    """Reject filter operators this store cannot honour, before any scanning.
 
-    Raises ``NotImplementedError`` for anything outside
-    :data:`_SUPPORTED_OPERATORS` rather than ignoring it (#328 F10). The two
-    silent behaviours this replaces went in opposite directions and the
-    fail-open one is the dangerous half:
+    Called once at :meth:`search` entry rather than per record. Inside the
+    record loop the check is data-dependent and therefore not a guarantee: an
+    empty store never evaluates a filter at all, and an earlier condition that
+    eliminates every record short-circuits before a later unsupported operator
+    is ever seen. ``{"category": "missing", "year": {"$gte": 2020}}`` returned an
+    empty result set instead of raising (#328 F10 follow-up).
 
-    - ``{"year": {"$gte": 2020}}`` fell through every branch and the loop
-      continued to ``return True`` — an unsupported operator silently
-      *discarded*, so a tenant or ACL filter written against the documented
-      ``VectorQuery`` contract returned other tenants' rows.
-    - ``{"$and": [...]}`` is not a dict-valued *field* condition, so it took the
-      bare-equality branch, compared ``metadata.get("$and")`` (None) against a
-      list, and matched nothing at all.
+    Raises :class:`VectorFilterUnsupportedException` (a curated 400), never a
+    bare ``NotImplementedError`` — the filter arrives from a public request body
+    and an untranslated error would surface as a 500.
     """
+    if not filters:
+        return
+    supported = sorted(_SUPPORTED_OPERATORS)
     for field, condition in filters.items():
         if field.startswith("$"):
-            # Compound/top-level operators ($and, $or, $not). Not field names,
-            # so the bare-equality branch below would silently match nothing.
-            raise NotImplementedError(
-                f"In-memory vector store does not support the compound operator "
-                f"'{field}'; supported field operators: "
-                f"{sorted(_SUPPORTED_OPERATORS)}"
-            )
-        value = metadata.get(field)
+            # Compound/top-level operators ($and, $or, $not) are not field
+            # names, so the bare-equality branch would compare None against a
+            # list and silently match nothing.
+            raise VectorFilterUnsupportedException([field], supported)
         if isinstance(condition, dict):
             unsupported = set(condition) - _SUPPORTED_OPERATORS
             if unsupported:
-                raise NotImplementedError(
-                    f"In-memory vector store does not support "
-                    f"{sorted(unsupported)} on field '{field}'; supported: "
-                    f"{sorted(_SUPPORTED_OPERATORS)}"
+                raise VectorFilterUnsupportedException(
+                    sorted(unsupported), supported, field=field
                 )
+
+
+def _matches_filters(metadata: dict[str, Any], filters: dict[str, Any]) -> bool:
+    """Evaluate a validated filter mapping against one record's metadata.
+
+    Assumes :func:`validate_filters` has already run — it handles only the
+    supported subset and does not re-check. The two silent behaviours this
+    replaced went in opposite directions, and the fail-open one was the
+    dangerous half: an unsupported operator was *discarded*, so a tenant or ACL
+    filter written against the documented ``VectorQuery`` contract returned
+    other tenants' rows.
+    """
+    for field, condition in filters.items():
+        value = metadata.get(field)
+        if isinstance(condition, dict):
             if "$eq" in condition and value != condition["$eq"]:
                 return False
             if "$in" in condition and value not in condition["$in"]:
