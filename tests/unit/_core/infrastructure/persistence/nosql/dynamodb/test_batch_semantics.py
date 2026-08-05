@@ -51,6 +51,7 @@ from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model import (
 from src._core.infrastructure.persistence.nosql.dynamodb.exceptions import (
     DynamoDBBatchIncompleteException,
     DynamoDBException,
+    DynamoDBInvalidLimitException,
 )
 
 
@@ -106,6 +107,44 @@ class _RefusingClient:
         return {"Items": []}
 
 
+class _PartialClient:
+    """Refuses a shrinking slice, the way a recovering table does.
+
+    `_RefusingClient` only models all-or-nothing. DynamoDB's actual response is
+    partial: some items land, the rest come back as UnprocessedItems. That
+    difference is where the accumulate-then-raise logic can go wrong, so it
+    needs its own double.
+    """
+
+    def __init__(self, refuse_rounds: int) -> None:
+        self.refuse_rounds = refuse_rounds
+        self.write_calls = 0
+        self.read_calls = 0
+        self.sleeps: list[float] = []
+
+    async def batch_write_item(self, *, RequestItems: dict, **_kw) -> dict:  # noqa: N803
+        self.write_calls += 1
+        if self.write_calls <= self.refuse_rounds:
+            # Hold back the tail, accept the head.
+            table, requests = next(iter(RequestItems.items()))
+            return {"UnprocessedItems": {table: requests[len(requests) // 2 :]}}
+        return {"UnprocessedItems": {}}
+
+    async def batch_get_item(self, *, RequestItems: dict, **_kw) -> dict:  # noqa: N803
+        self.read_calls += 1
+        if self.read_calls <= self.refuse_rounds:
+            table, spec = next(iter(RequestItems.items()))
+            keys = spec["Keys"]
+            return {
+                "Responses": {},
+                "UnprocessedKeys": {table: {"Keys": keys[len(keys) // 2 :]}},
+            }
+        return {"Responses": {}, "UnprocessedKeys": {}}
+
+    async def query(self, **params) -> dict:  # pragma: no cover - unused
+        return {"Items": []}
+
+
 class _FakeDynamoDBClient:
     def __init__(self, inner: _RefusingClient) -> None:
         self._inner = inner
@@ -142,7 +181,7 @@ class TestBatchPutRefusedWrites:
         with pytest.raises(DynamoDBBatchIncompleteException) as exc:
             await repository.batch_put_items(_entities(30), max_retries=2)
 
-        assert exc.value.status_code == 429
+        assert exc.value.status_code == 503
         assert exc.value.error_code == "DYNAMODB_BATCH_INCOMPLETE"
 
     @pytest.mark.asyncio
@@ -152,7 +191,9 @@ class TestBatchPutRefusedWrites:
         with pytest.raises(DynamoDBBatchIncompleteException) as exc:
             await _repository(client).batch_put_items(_entities(5), max_retries=2)
 
-        # The count is what a caller needs to decide what to re-submit.
+        # The count measures the failure; it does not identify the items.
+        # Re-submitting means replaying the batch, not cherry-picking from a
+        # list this exception does not carry.
         assert "5" in exc.value.message
 
     @pytest.mark.asyncio
@@ -204,20 +245,27 @@ class TestBatchGetRefusedKeys:
 
 
 class TestQueryLimitBound:
+    @pytest.mark.parametrize("limit", [0, -1])
     @pytest.mark.asyncio
-    async def test_limit_zero_is_rejected_not_dropped(self) -> None:
-        # DynamoDB requires Limit >= 1, so forwarding 0 is not an option either.
-        with pytest.raises(ValueError, match="limit"):
+    async def test_a_sub_one_limit_is_a_client_error_not_a_500(
+        self, limit: int
+    ) -> None:
+        """DynamoDB requires Limit >= 1, so forwarding it is not an option.
+
+        The status matters as much as the rejection. The first fix raised a bare
+        ``ValueError``, which the generic handler turns into
+        ``INTERNAL_SERVER_ERROR`` — trading a silently dropped bound for a 500
+        and an operator page on a malformed request. `query_items` is reachable
+        from adopter request paths, so it has to be a 4xx.
+        """
+        with pytest.raises(DynamoDBInvalidLimitException) as exc:
             await _repository(_RefusingClient()).query_items(
-                partition_key_value="a", limit=0
+                partition_key_value="a", limit=limit
             )
 
-    @pytest.mark.asyncio
-    async def test_negative_limit_is_rejected(self) -> None:
-        with pytest.raises(ValueError, match="limit"):
-            await _repository(_RefusingClient()).query_items(
-                partition_key_value="a", limit=-1
-            )
+        assert exc.value.status_code == 400
+        assert exc.value.error_code == "DYNAMODB_INVALID_LIMIT"
+        assert isinstance(exc.value, DynamoDBException)
 
     @pytest.mark.asyncio
     async def test_a_positive_limit_is_forwarded(self) -> None:
@@ -264,3 +312,92 @@ class TestCursorGuard:
 
         with pytest.raises(DynamoDBException):
             BaseDynamoRepository._decode_cursor(encoded)
+
+
+class TestRetryBehaviour:
+    """Shapes the first round of tests missed, per cross-review."""
+
+    @pytest.mark.asyncio
+    async def test_a_later_retry_succeeding_does_not_raise(self) -> None:
+        client = _PartialClient(refuse_rounds=1)
+
+        results = await _repository(client).batch_put_items(_entities(4), max_retries=3)
+
+        assert len(results) == 4
+        assert client.write_calls == 2  # refused once, then accepted
+
+    @pytest.mark.asyncio
+    async def test_no_sleep_after_the_final_attempt(self, monkeypatch) -> None:
+        # A wait after the last try is pure added latency before an exception.
+        slept: list[float] = []
+
+        async def _record(delay: float) -> None:
+            slept.append(delay)
+
+        monkeypatch.setattr(
+            "src._core.infrastructure.persistence.nosql.dynamodb"
+            ".base_dynamo_repository.asyncio.sleep",
+            _record,
+        )
+        client = _RefusingClient(refuse_writes=True)
+
+        with pytest.raises(DynamoDBBatchIncompleteException):
+            await _repository(client).batch_put_items(_entities(1), max_retries=3)
+
+        assert client.write_calls == 3
+        assert len(slept) == 2  # between attempts only
+
+    @pytest.mark.asyncio
+    async def test_backoff_grows_and_is_jittered(self, monkeypatch) -> None:
+        slept: list[float] = []
+
+        async def _record(delay: float) -> None:
+            slept.append(delay)
+
+        monkeypatch.setattr(
+            "src._core.infrastructure.persistence.nosql.dynamodb"
+            ".base_dynamo_repository.asyncio.sleep",
+            _record,
+        )
+
+        with pytest.raises(DynamoDBBatchIncompleteException):
+            await _repository(_RefusingClient(refuse_writes=True)).batch_put_items(
+                _entities(1), max_retries=3
+            )
+
+        # Jitter is half-to-full of an exponential ceiling, so the second wait
+        # can never be below the first's floor.
+        assert slept[1] > slept[0] / 2
+
+    @pytest.mark.asyncio
+    async def test_empty_input_calls_nothing(self) -> None:
+        client = _RefusingClient(refuse_writes=True)
+
+        assert await _repository(client).batch_put_items([]) == []
+        assert client.write_calls == 0
+
+    @pytest.mark.asyncio
+    async def test_exactly_one_chunk_at_the_write_boundary(self) -> None:
+        client = _RefusingClient()
+
+        await _repository(client).batch_put_items(_entities(25))
+
+        assert client.write_calls == 1
+
+    @pytest.mark.asyncio
+    async def test_one_over_the_write_boundary_is_two_chunks(self) -> None:
+        client = _RefusingClient()
+
+        await _repository(client).batch_put_items(_entities(26))
+
+        assert client.write_calls == 2
+
+    @pytest.mark.asyncio
+    async def test_exactly_one_chunk_at_the_read_boundary(self) -> None:
+        client = _RefusingClient()
+
+        await _repository(client).batch_get_items(
+            [DynamoKey(partition_key=str(i)) for i in range(100)]
+        )
+
+        assert client.read_calls == 1

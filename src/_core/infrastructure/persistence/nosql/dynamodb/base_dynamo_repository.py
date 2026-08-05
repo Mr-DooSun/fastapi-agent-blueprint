@@ -4,6 +4,7 @@ import asyncio
 import base64
 import binascii
 import json
+import random
 from abc import ABC
 from typing import Any, Generic, TypeVar
 
@@ -23,6 +24,7 @@ from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model import (
 from src._core.infrastructure.persistence.nosql.dynamodb.exceptions import (
     DynamoDBBatchIncompleteException,
     DynamoDBInvalidCursorException,
+    DynamoDBInvalidLimitException,
     DynamoDBNotFoundException,
 )
 
@@ -32,6 +34,48 @@ _logger = structlog.stdlib.get_logger(__name__)
 # throughput throttling, so retrying with no wait at all is the case most likely
 # to fail three times in a row.
 _BATCH_BACKOFF_BASE_S = 0.05
+
+# base64url uses - and _ where standard base64 uses + and /.
+_URLSAFE_TO_STANDARD = str.maketrans("-_", "+/")
+
+# DynamoDB AttributeValue type codes. An ExclusiveStartKey is a mapping of
+# attribute name to a single-entry {type_code: value} dict.
+_ATTRIBUTE_TYPE_CODES = frozenset(
+    {"S", "N", "B", "SS", "NS", "BS", "M", "L", "NULL", "BOOL"}
+)
+
+
+def _batch_backoff_delay(attempt: int) -> float:
+    """Exponential backoff with jitter.
+
+    Jitter matters here specifically: UnprocessedItems arrives under throttling,
+    so several concurrent callers back off at the same moment and would
+    otherwise re-collide in lockstep on every retry.
+    """
+    ceiling = _BATCH_BACKOFF_BASE_S * (2**attempt)
+    # noqa S311: retry jitter, not a security decision.
+    return ceiling * (0.5 + random.random() / 2)  # noqa: S311
+
+
+def _is_dynamodb_key_map(value: object) -> bool:
+    """Shape check for an ExclusiveStartKey, not a full type validation.
+
+    Verifies the wire shape botocore expects — attribute name to a single
+    ``{type_code: value}`` entry, with ``S``/``N`` carrying strings. Deeper
+    per-type checking is botocore's job and would drift from it.
+    """
+    if not isinstance(value, dict) or not value:
+        return False
+    for attribute in value.values():
+        if not isinstance(attribute, dict) or len(attribute) != 1:
+            return False
+        ((type_code, inner),) = attribute.items()
+        if type_code not in _ATTRIBUTE_TYPE_CODES:
+            return False
+        if type_code in {"S", "N"} and not isinstance(inner, str):
+            return False
+    return True
+
 
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
 
@@ -184,10 +228,7 @@ class BaseDynamoRepository(Generic[ReturnDTO], ABC):
         # Limit < 1, so an explicit error beats forwarding an invalid value.
         if limit is not None:
             if limit < 1:
-                raise ValueError(
-                    f"limit must be >= 1 when provided (got {limit}); "
-                    "pass None for an unbounded query"
-                )
+                raise DynamoDBInvalidLimitException(limit)
             params["Limit"] = limit
         if cursor:
             params["ExclusiveStartKey"] = self._decode_cursor(cursor)
@@ -260,7 +301,7 @@ class BaseDynamoRepository(Generic[ReturnDTO], ABC):
                 # which is exactly when immediate un-backed-off retries all fail
                 # together. Skip the wait after the final attempt.
                 if attempt < max_retries - 1:
-                    await asyncio.sleep(_BATCH_BACKOFF_BASE_S * (2**attempt))
+                    await asyncio.sleep(_batch_backoff_delay(attempt))
             else:
                 leftover = len(pending.get(self.table_name, []))
                 _logger.error(
@@ -269,9 +310,7 @@ class BaseDynamoRepository(Generic[ReturnDTO], ABC):
                     unprocessed_count=leftover,
                     max_retries=max_retries,
                 )
-                raise DynamoDBBatchIncompleteException(
-                    "batch_write_item", leftover, self.table_name
-                )
+                raise DynamoDBBatchIncompleteException("batch_write_item", leftover)
 
             results.extend(
                 self.return_entity.model_validate(
@@ -302,7 +341,7 @@ class BaseDynamoRepository(Generic[ReturnDTO], ABC):
                     break
                 pending = unprocessed
                 if attempt < max_retries - 1:
-                    await asyncio.sleep(_BATCH_BACKOFF_BASE_S * (2**attempt))
+                    await asyncio.sleep(_batch_backoff_delay(attempt))
             else:
                 # Raising discards the reads that did succeed in this call. That
                 # is the accepted trade: reads are idempotent and cheap to redo,
@@ -315,9 +354,7 @@ class BaseDynamoRepository(Generic[ReturnDTO], ABC):
                     unprocessed_count=leftover,
                     max_retries=max_retries,
                 )
-                raise DynamoDBBatchIncompleteException(
-                    "batch_get_item", leftover, self.table_name
-                )
+                raise DynamoDBBatchIncompleteException("batch_get_item", leftover)
         return results
 
     # ------------------------------------------------------------------
@@ -374,16 +411,24 @@ class BaseDynamoRepository(Generic[ReturnDTO], ABC):
         already validates; this path had missed it.
         """
         try:
-            decoded = json.loads(base64.urlsafe_b64decode(cursor.encode()))
-        except (
-            binascii.Error,
-            json.JSONDecodeError,
-            UnicodeDecodeError,
-            ValueError,
-        ) as exc:
+            # b64decode(validate=True), not urlsafe_b64decode: the urlsafe
+            # variant takes no validate flag and silently ignores characters
+            # outside the alphabet, so a tampered token like "e30=!!" still
+            # decodes to "{}" and is accepted. Translate the two urlsafe
+            # characters back, then validate.
+            raw = base64.b64decode(
+                cursor.translate(_URLSAFE_TO_STANDARD), validate=True
+            )
+            decoded = json.loads(raw)
+        except (binascii.Error, ValueError) as exc:
+            # json.JSONDecodeError and UnicodeDecodeError both subclass
+            # ValueError; listing them separately would be redundant.
             raise DynamoDBInvalidCursorException() from exc
-        if not isinstance(decoded, dict):
-            # Valid base64 and valid JSON, but not a key mapping — forwarding it
-            # as ExclusiveStartKey would fail inside the AWS call instead.
+        if not _is_dynamodb_key_map(decoded):
+            # Valid base64 and valid JSON is not enough. `{"PK": "x"}` and
+            # `{"PK": {"S": 1}}` used to pass here and fail *inside* the AWS
+            # call as a botocore parameter-validation error, which
+            # DynamoDBClient does not translate — so a malformed token was
+            # still a 500.
             raise DynamoDBInvalidCursorException()
         return decoded
