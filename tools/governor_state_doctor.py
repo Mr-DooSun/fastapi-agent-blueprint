@@ -249,24 +249,37 @@ def check_marker_glob_coverage(root: Path = PROJECT_ROOT) -> CheckResult:
                 "governor/markers.py: exception-token-*.json glob pattern not found"
             )
 
-    # completion_gate.py must define the verify-log glob
-    gate_py = root / ".codex" / "hooks" / "completion_gate.py"
-    if not gate_py.exists():
-        issues.append(".codex/hooks/completion_gate.py not found")
-    else:
-        if "verify-log-*.json" not in gate_py.read_text(encoding="utf-8"):
+    # Every harness must prune verify logs at Stop. Two valid shapes: the glob
+    # inline (.codex, .antigravity) or a call to the shared helper that owns it
+    # (.claude, whose hooks are thin shims over .agents/shared/governor per
+    # ADR 045 Phase 5). Checking only for the literal would fail the shim.
+    #
+    # .claude was absent from this check until #334 — which is exactly why it
+    # produced none of the state this tool reports on.
+    _VERIFY_LOG_GLOB = "verify-log-*.json"
+    _SHARED_CLEANUP = "cleanup_stale_verify_logs"
+
+    for harness in (".codex", ".antigravity", ".claude"):
+        gate_py = root / harness / "hooks" / "completion_gate.py"
+        if not gate_py.exists():
+            issues.append(f"{harness}/hooks/completion_gate.py not found")
+            continue
+        body = gate_py.read_text(encoding="utf-8")
+        if _VERIFY_LOG_GLOB not in body and _SHARED_CLEANUP not in body:
             issues.append(
-                ".codex/hooks/completion_gate.py: verify-log-*.json glob pattern not found"
+                f"{harness}/hooks/completion_gate.py: neither the "
+                f"{_VERIFY_LOG_GLOB} glob nor a {_SHARED_CLEANUP}() call found"
             )
 
-    antigravity_gate_py = root / ".antigravity" / "hooks" / "completion_gate.py"
-    if not antigravity_gate_py.exists():
-        issues.append(".antigravity/hooks/completion_gate.py not found")
-    else:
-        if "verify-log-*.json" not in antigravity_gate_py.read_text(encoding="utf-8"):
-            issues.append(
-                ".antigravity/hooks/completion_gate.py: verify-log-*.json glob pattern not found"
-            )
+    # The shared helper is where .claude's glob actually lives, so its absence
+    # would silently defeat the shim branch above.
+    shared_verify = root / ".agents" / "shared" / "governor" / "verify.py"
+    if not shared_verify.exists():
+        issues.append(".agents/shared/governor/verify.py not found")
+    elif _VERIFY_LOG_GLOB not in shared_verify.read_text(encoding="utf-8"):
+        issues.append(
+            f".agents/shared/governor/verify.py: {_VERIFY_LOG_GLOB} glob not found"
+        )
 
     if issues:
         return CheckResult(
