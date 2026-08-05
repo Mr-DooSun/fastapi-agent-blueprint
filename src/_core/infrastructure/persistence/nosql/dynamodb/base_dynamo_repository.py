@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import base64
+import binascii
 import json
 from abc import ABC
 from typing import Any, Generic, TypeVar
 
+import structlog
 from pydantic import BaseModel
 
 from src._core.domain.value_objects.cursor_page import CursorPage
@@ -18,8 +21,17 @@ from src._core.infrastructure.persistence.nosql.dynamodb.dynamodb_model import (
     _get_serializer,
 )
 from src._core.infrastructure.persistence.nosql.dynamodb.exceptions import (
+    DynamoDBBatchIncompleteException,
+    DynamoDBInvalidCursorException,
     DynamoDBNotFoundException,
 )
+
+_logger = structlog.stdlib.get_logger(__name__)
+
+# Exponential base for batch retries. DynamoDB returns UnprocessedItems under
+# throughput throttling, so retrying with no wait at all is the case most likely
+# to fail three times in a row.
+_BATCH_BACKOFF_BASE_S = 0.05
 
 ReturnDTO = TypeVar("ReturnDTO", bound=BaseModel)
 
@@ -167,7 +179,15 @@ class BaseDynamoRepository(Generic[ReturnDTO], ABC):
             params["IndexName"] = index_name
         if filter_expression:
             params["FilterExpression"] = filter_expression
-        if limit:
+        # `is not None`, not truthiness: limit=0 is falsy, so the bound used to
+        # be dropped and the query returned a full page. DynamoDB rejects
+        # Limit < 1, so an explicit error beats forwarding an invalid value.
+        if limit is not None:
+            if limit < 1:
+                raise ValueError(
+                    f"limit must be >= 1 when provided (got {limit}); "
+                    "pass None for an unbounded query"
+                )
             params["Limit"] = limit
         if cursor:
             params["ExclusiveStartKey"] = self._decode_cursor(cursor)
@@ -229,13 +249,29 @@ class BaseDynamoRepository(Generic[ReturnDTO], ABC):
             requests = [{"PutRequest": {"Item": item.to_dynamodb()}} for item in chunk]
 
             pending: dict[str, list] = {self.table_name: requests}
-            for _ in range(max_retries):
+            for attempt in range(max_retries):
                 async with self.dynamodb_client.client() as client:
                     response = await client.batch_write_item(RequestItems=pending)
                 unprocessed = response.get("UnprocessedItems", {})
                 if not unprocessed or not unprocessed.get(self.table_name):
                     break
                 pending = unprocessed
+                # DynamoDB returns UnprocessedItems under throughput throttling,
+                # which is exactly when immediate un-backed-off retries all fail
+                # together. Skip the wait after the final attempt.
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(_BATCH_BACKOFF_BASE_S * (2**attempt))
+            else:
+                leftover = len(pending.get(self.table_name, []))
+                _logger.error(
+                    "dynamo_batch_write_unprocessed",
+                    table=self.table_name,
+                    unprocessed_count=leftover,
+                    max_retries=max_retries,
+                )
+                raise DynamoDBBatchIncompleteException(
+                    "batch_write_item", leftover, self.table_name
+                )
 
             results.extend(
                 self.return_entity.model_validate(
@@ -256,7 +292,7 @@ class BaseDynamoRepository(Generic[ReturnDTO], ABC):
             pending_keys = [self._serialize_key(k) for k in chunk]
 
             pending: dict[str, dict] = {self.table_name: {"Keys": pending_keys}}
-            for _ in range(max_retries):
+            for attempt in range(max_retries):
                 async with self.dynamodb_client.client() as client:
                     response = await client.batch_get_item(RequestItems=pending)
                 raw_items = response.get("Responses", {}).get(self.table_name, [])
@@ -265,6 +301,23 @@ class BaseDynamoRepository(Generic[ReturnDTO], ABC):
                 if not unprocessed or not unprocessed.get(self.table_name):
                     break
                 pending = unprocessed
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(_BATCH_BACKOFF_BASE_S * (2**attempt))
+            else:
+                # Raising discards the reads that did succeed in this call. That
+                # is the accepted trade: reads are idempotent and cheap to redo,
+                # while a short list is indistinguishable from "those keys do not
+                # exist" and cannot be detected by the caller at all.
+                leftover = len(pending.get(self.table_name, {}).get("Keys", []))
+                _logger.error(
+                    "dynamo_batch_get_unprocessed",
+                    table=self.table_name,
+                    unprocessed_count=leftover,
+                    max_retries=max_retries,
+                )
+                raise DynamoDBBatchIncompleteException(
+                    "batch_get_item", leftover, self.table_name
+                )
         return results
 
     # ------------------------------------------------------------------
@@ -312,4 +365,25 @@ class BaseDynamoRepository(Generic[ReturnDTO], ABC):
 
     @staticmethod
     def _decode_cursor(cursor: str) -> dict[str, Any]:
-        return json.loads(base64.urlsafe_b64decode(cursor.encode()))
+        """Decode a client-supplied pagination token.
+
+        Guarded because the value comes straight from a query string: an
+        unguarded ``binascii.Error`` / ``JSONDecodeError`` / ``UnicodeDecodeError``
+        escaped as a 500, which is the wrong status and — since #17 — pages an
+        operator for a malformed request. The sibling ``_column_for_field``
+        already validates; this path had missed it.
+        """
+        try:
+            decoded = json.loads(base64.urlsafe_b64decode(cursor.encode()))
+        except (
+            binascii.Error,
+            json.JSONDecodeError,
+            UnicodeDecodeError,
+            ValueError,
+        ) as exc:
+            raise DynamoDBInvalidCursorException() from exc
+        if not isinstance(decoded, dict):
+            # Valid base64 and valid JSON, but not a key mapping — forwarding it
+            # as ExclusiveStartKey would fail inside the AWS call instead.
+            raise DynamoDBInvalidCursorException()
+        return decoded
