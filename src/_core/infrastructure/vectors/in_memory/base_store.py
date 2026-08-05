@@ -21,8 +21,12 @@ class BaseInMemoryVectorStore(Generic[ReturnDTO], ABC):
     demos, unit tests, and zero-config local development. Vectors live
     in a plain dict and are lost on process restart.
 
-    Filter semantics support the S3 Vectors ``$eq`` / ``$in`` subset
-    so domain code written against the S3 backend remains portable.
+    Filter semantics support the S3 Vectors ``$eq`` / ``$in`` / ``$ne``
+    subset so domain code written against the S3 backend remains
+    portable. Operators outside that subset — ``$gte``, ``$lt``,
+    ``$and`` and friends — raise ``NotImplementedError`` rather than
+    being ignored; see ``_matches_filters`` for why the previous silent
+    behaviour was unsafe in both directions (#328 F10).
     """
 
     def __init__(
@@ -79,10 +83,47 @@ class BaseInMemoryVectorStore(Generic[ReturnDTO], ABC):
         return True
 
 
+# The operator subset this store implements, matching the S3 Vectors subset the
+# class docstring promises. Deliberately not extended: making the stand-in more
+# capable than the backend it stands in for is how portable domain code stops
+# being portable.
+_SUPPORTED_OPERATORS = frozenset({"$eq", "$in", "$ne"})
+
+
 def _matches_filters(metadata: dict[str, Any], filters: dict[str, Any]) -> bool:
+    """Evaluate a `VectorQuery.filters` mapping against one record's metadata.
+
+    Raises ``NotImplementedError`` for anything outside
+    :data:`_SUPPORTED_OPERATORS` rather than ignoring it (#328 F10). The two
+    silent behaviours this replaces went in opposite directions and the
+    fail-open one is the dangerous half:
+
+    - ``{"year": {"$gte": 2020}}`` fell through every branch and the loop
+      continued to ``return True`` — an unsupported operator silently
+      *discarded*, so a tenant or ACL filter written against the documented
+      ``VectorQuery`` contract returned other tenants' rows.
+    - ``{"$and": [...]}`` is not a dict-valued *field* condition, so it took the
+      bare-equality branch, compared ``metadata.get("$and")`` (None) against a
+      list, and matched nothing at all.
+    """
     for field, condition in filters.items():
+        if field.startswith("$"):
+            # Compound/top-level operators ($and, $or, $not). Not field names,
+            # so the bare-equality branch below would silently match nothing.
+            raise NotImplementedError(
+                f"In-memory vector store does not support the compound operator "
+                f"'{field}'; supported field operators: "
+                f"{sorted(_SUPPORTED_OPERATORS)}"
+            )
         value = metadata.get(field)
         if isinstance(condition, dict):
+            unsupported = set(condition) - _SUPPORTED_OPERATORS
+            if unsupported:
+                raise NotImplementedError(
+                    f"In-memory vector store does not support "
+                    f"{sorted(unsupported)} on field '{field}'; supported: "
+                    f"{sorted(_SUPPORTED_OPERATORS)}"
+                )
             if "$eq" in condition and value != condition["$eq"]:
                 return False
             if "$in" in condition and value not in condition["$in"]:
