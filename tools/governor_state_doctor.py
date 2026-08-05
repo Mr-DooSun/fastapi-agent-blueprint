@@ -216,6 +216,37 @@ def check_stop_hook_schema(root: Path = PROJECT_ROOT) -> CheckResult:
 # ---------------------------------------------------------------------------
 
 
+_VERIFY_LOG_GLOB = "verify-log-*.json"
+_SHARED_CLEANUP = "cleanup_stale_verify_logs"
+
+
+def _calls_shared_cleanup(source: str) -> bool:
+    """True only if the source actually *calls* the shared cleanup helper.
+
+    A substring check is not enough: the shim imports the name, so
+    ``cleanup_stale_verify_logs`` appears in the file even after the call site
+    is deleted — and "the helper exists but never runs" is precisely the #334
+    defect this check is supposed to catch. Parse and look for a call node.
+
+    Falls back to the substring test only when the file does not parse, so a
+    syntax error degrades to the old behaviour rather than a false alarm.
+    """
+    import ast
+
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return _SHARED_CLEANUP in source
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        name = getattr(func, "id", None) or getattr(func, "attr", None)
+        if name == _SHARED_CLEANUP:
+            return True
+    return False
+
+
 def check_marker_glob_coverage(root: Path = PROJECT_ROOT) -> CheckResult:
     issues: list[str] = []
 
@@ -256,20 +287,18 @@ def check_marker_glob_coverage(root: Path = PROJECT_ROOT) -> CheckResult:
     #
     # .claude was absent from this check until #334 — which is exactly why it
     # produced none of the state this tool reports on.
-    _VERIFY_LOG_GLOB = "verify-log-*.json"
-    _SHARED_CLEANUP = "cleanup_stale_verify_logs"
-
     for harness in (".codex", ".antigravity", ".claude"):
         gate_py = root / harness / "hooks" / "completion_gate.py"
         if not gate_py.exists():
             issues.append(f"{harness}/hooks/completion_gate.py not found")
             continue
         body = gate_py.read_text(encoding="utf-8")
-        if _VERIFY_LOG_GLOB not in body and _SHARED_CLEANUP not in body:
-            issues.append(
-                f"{harness}/hooks/completion_gate.py: neither the "
-                f"{_VERIFY_LOG_GLOB} glob nor a {_SHARED_CLEANUP}() call found"
-            )
+        if _VERIFY_LOG_GLOB in body or _calls_shared_cleanup(body):
+            continue
+        issues.append(
+            f"{harness}/hooks/completion_gate.py: neither the "
+            f"{_VERIFY_LOG_GLOB} glob nor a {_SHARED_CLEANUP}() call found"
+        )
 
     # The shared helper is where .claude's glob actually lives, so its absence
     # would silently defeat the shim branch above.

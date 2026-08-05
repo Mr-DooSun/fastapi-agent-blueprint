@@ -273,6 +273,40 @@ def test_marker_glob_coverage_fail_claude_produces_nothing(tmp_path: Path) -> No
     assert ".claude/hooks/completion_gate.py" in result.detail
 
 
+def test_marker_glob_coverage_fail_import_without_call(tmp_path: Path) -> None:
+    """The realistic regression: the helper is imported but never invoked.
+
+    A substring check passes here — the import line contains the name — while
+    the Stop hook prunes nothing. That is the #334 defect wearing a disguise,
+    so the check parses for a call node instead.
+    """
+    _make_minimal_marker_files(tmp_path)
+    claude_gate = tmp_path / ".claude" / "hooks" / "completion_gate.py"
+    claude_gate.write_text(
+        "from governor import cleanup_stale_verify_logs\n\n"
+        "def main() -> int:\n    return 0\n",
+        encoding="utf-8",
+    )
+
+    result = check_marker_glob_coverage(tmp_path)
+
+    assert result.ok is False
+    assert ".claude/hooks/completion_gate.py" in result.detail
+
+
+def test_marker_glob_coverage_pass_on_an_attribute_call(tmp_path: Path) -> None:
+    # `governor.cleanup_stale_verify_logs(...)` is a call too — the check must
+    # not require a bare name.
+    _make_minimal_marker_files(tmp_path)
+    claude_gate = tmp_path / ".claude" / "hooks" / "completion_gate.py"
+    claude_gate.write_text(
+        "import governor\n\ngovernor.cleanup_stale_verify_logs(STATE_DIR, sid)\n",
+        encoding="utf-8",
+    )
+
+    assert check_marker_glob_coverage(tmp_path).ok is True
+
+
 def test_marker_glob_coverage_fail_shared_helper_lost_its_glob(
     tmp_path: Path,
 ) -> None:
