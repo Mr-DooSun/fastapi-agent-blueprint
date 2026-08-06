@@ -27,13 +27,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `python3` is now declared as a hard dependency at the top of both scripts
   rather than failing later as "Could not obtain access token".
 
+- **`make demo-gif`** — regenerates `docs/assets/cast/demo.gif` from
+  `demo.tape`. Re-recording was previously an undocumented two-tool ritual, so
+  nobody repeated it and the GIF went stale for months. The target also enforces
+  a size budget: a bare `vhs` run produces ~1.7MB, over the
+  `check-added-large-files` ceiling, so it palette-re-encodes down to ~900KB and
+  fails loudly rather than silently committing an oversized asset.
+
 ### Changed
 
-- `docs/assets/cast/demo.tape` re-cut for the admin-realm flow (seed demo admin
-  → `POST /v1/admin/login` → user CRUD). The committed `demo.gif` is still the
-  pre-#199 recording — it shows a customer token creating a user, which the API
-  no longer permits — so README does not embed it until it is re-recorded with
-  `vhs docs/assets/cast/demo.tape`.
+- **`demo.gif` re-recorded** for the admin-realm flow (seed demo admin →
+  `POST /v1/admin/login` → user CRUD). The previous recording showed a customer
+  token creating a user via `POST /v1/user` — an outcome the API stopped
+  producing when #199/#218 moved those routes to the admin realm, and one that
+  contradicted `scripts/demo.sh` itself. Register output is now truncated to
+  100 columns: two full JWTs told the reader nothing and roughly doubled the
+  file.
 
 ## [0.10.0] - 2026-08-05
 
