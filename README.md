@@ -91,7 +91,15 @@ Clone → quickstart → CRUD → JWT auth → background worker → RAG query:
 make quickstart && make demo && make demo-rag
 ```
 
-![API demo: health check → register → JWT → CRUD](docs/assets/cast/demo.gif)
+<!-- The recording is withheld until it is re-cut. docs/assets/cast/demo.gif
+     still shows a CUSTOMER token creating a user via POST /v1/user, which
+     #199/#218 moved to the admin JWT realm — scripts/demo.sh now seeds a real
+     admin for that step, so the GIF depicts an outcome the API no longer
+     produces. docs/assets/cast/demo.tape has been updated to the current flow:
+     run `vhs docs/assets/cast/demo.tape`, then restore the line below.
+![API demo: health check → register → JWT → admin realm → CRUD](docs/assets/cast/demo.gif)
+-->
+
 
 Full integration walkthrough (auth · RBAC · worker · admin · RAG · OTEL): [`docs/canonical-demo.md`](docs/canonical-demo.md)
 

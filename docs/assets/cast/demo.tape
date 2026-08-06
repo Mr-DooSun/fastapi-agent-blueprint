@@ -1,5 +1,13 @@
 Output docs/assets/cast/demo.gif
 
+# Regenerate with: vhs docs/assets/cast/demo.tape
+#
+# Keep this tape in step with scripts/demo.sh. It used to show a CUSTOMER token
+# creating a user via POST /v1/user, and kept asserting that success long after
+# #199/#218 moved those routes to the admin JWT realm — the recording outlived
+# the API it depicted. The committed demo.gif is still that stale recording, so
+# README does not embed it right now; re-record and restore the image line.
+
 Set FontSize 13
 Set Width 1400
 Set Height 700
@@ -39,10 +47,28 @@ Type `TOKEN=$(echo $RESP | python3 -c "import json,sys; d=json.load(sys.stdin); 
 Enter
 Sleep 300ms
 
-# ── Create a user (JWT-protected) ────────────────────────────────────────────
+# ── Admin realm — /v1/user* needs an admin token, not the customer one ───────
+# The customer token above is refused by require_admin (#199/#218), and the
+# quickstart bootstrap admin cannot stand in for it either. scripts/demo.sh
+# seeds a real admin the way the NiceGUI setup wizard would; mirror that here.
+Type "uv run python scripts/seed_demo_admin.py --env quickstart --username demoadmin --secret demoadmin123"
+Enter
+Sleep 2s
+
+Type `ADMIN=$(curl -sS -X POST http://127.0.0.1:8001/v1/admin/login \`
+Enter
+Type `  -H 'Content-Type: application/json' \`
+Enter
+Type `  -d '{"username":"demoadmin","password":"demoadmin123"}' \`
+Enter
+Type `  | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['accessToken'])")`
+Enter
+Sleep 800ms
+
+# ── Create a user (admin-realm protected) ────────────────────────────────────
 Type `curl -sS -X POST http://127.0.0.1:8001/v1/user \`
 Enter
-Type `  -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \`
+Type `  -H "Content-Type: application/json" -H "Authorization: Bearer $ADMIN" \`
 Enter
 Type `  -d '{"username":"bob","full_name":"Bob Builder","email":"bob@example.com","password":"secret456"}' \`
 Enter
@@ -53,7 +79,7 @@ Sleep 1500ms
 # ── List users ────────────────────────────────────────────────────────────────
 Type `curl -sS "http://127.0.0.1:8001/v1/users?page=1&pageSize=10" \`
 Enter
-Type `  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool`
+Type `  -H "Authorization: Bearer $ADMIN" | python3 -m json.tool`
 Enter
 Sleep 1500ms
 

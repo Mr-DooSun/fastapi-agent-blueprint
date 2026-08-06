@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **CI `demo-smoke` job** — boots `make quickstart` and runs `make demo` +
+  `make demo-rag` against it on every PR, then re-runs both to cover the
+  warm-database paths (login fallback, demo-admin reseed). v0.10.0 fixed both
+  demo scripts but nothing in CI executed them, so the claim that they work was
+  itself unverified.
+
+### Fixed
+
+- **Demo scripts no longer report success against a broken API.** `make
+  demo-rag` printed a `401` for every `/v1/docs/*` call and still exited `0`;
+  `make demo` did the same from `GET /v1/users` onward. Printing a response was
+  never the same as checking it, and that is why the auth breakage in both
+  scripts stayed invisible for two months. Every call that expects a success
+  envelope now goes through a `check` helper that aborts on the first response
+  whose envelope is not `success: true`, naming the request that failed.
+  `python3` is now declared as a hard dependency at the top of both scripts
+  rather than failing later as "Could not obtain access token".
+
+### Changed
+
+- `docs/assets/cast/demo.tape` re-cut for the admin-realm flow (seed demo admin
+  → `POST /v1/admin/login` → user CRUD). The committed `demo.gif` is still the
+  pre-#199 recording — it shows a customer token creating a user, which the API
+  no longer permits — so README does not embed it until it is re-recorded with
+  `vhs docs/assets/cast/demo.tape`.
+
 ## [0.10.0] - 2026-08-05
 
 Error-notification webhooks land as the first post-v0.9.0 feature, and then a
