@@ -109,6 +109,18 @@ uv sync --extra aws                              # S3/MinIO/DynamoDB/S3Vectors
 uv sync --extra pydantic-ai --extra aws          # Bedrock LLM/Embedding (includes aioboto3)
 ```
 
+## Demo Recording
+```bash
+# Re-record docs/assets/cast/demo.gif from docs/assets/cast/demo.tape.
+# Required whenever scripts/demo.sh changes — the GIF is a build artefact of
+# the tape, and it silently outlived the API it depicted once already.
+# Needs `vhs` (brew install vhs) + `ffmpeg`. Stop any server on :8001 first:
+# the tape boots its own quickstart server and resets ./quickstart.db.
+# Do NOT run bare `vhs` — the raw output is ~1.7MB, over the pre-commit asset
+# ceiling; the target palette-re-encodes it and fails if it misses budget.
+make demo-gif
+```
+
 ## Architecture Diagrams
 ```bash
 # Regenerate SVG exports under docs/assets/architecture/ from the
