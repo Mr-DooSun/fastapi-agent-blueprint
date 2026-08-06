@@ -13,8 +13,17 @@ make setup
 
 # Zero-config quickstart (SQLite + InMemory broker, no external infra)
 make quickstart
-make demo            # in a second terminal — runs curl CRUD walkthrough
+make demo            # in a second terminal — curl CRUD walkthrough
 make demo-rag        # RAG end-to-end (seed 3 docs → list → query, #80)
+# demo.sh cannot reach /v1/user* with a curl-obtained token: those routes are
+# admin-realm (#199/#218), and the ADMIN_BOOTSTRAP_* credential is setup-only.
+# It shells out to `scripts/seed_demo_admin.py` first, which creates a real
+# admin the way the NiceGUI setup wizard would, then POSTs /v1/admin/login.
+# That script refuses to run outside quickstart/local.
+# Both scripts assert every response envelope and exit non-zero on the first
+# response that is not `success: true` — do not convert a `check` call back to
+# a bare `run "curl ... | pretty"`, which is what let them pass while broken.
+# CI job `demo-smoke` boots quickstart and runs both on every PR.
 
 # Local development (PostgreSQL via docker-compose.local.yml)
 make dev
