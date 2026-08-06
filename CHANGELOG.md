@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   demo scripts but nothing in CI executed them, so the claim that they work was
   itself unverified.
 
+- **`make demo-gif`** — regenerates `docs/assets/cast/demo.gif` from
+  `demo.tape`. Re-recording was previously an undocumented two-tool ritual, so
+  nobody repeated it and the GIF went stale for months. The target also enforces
+  a size budget: a bare `vhs` run produces ~1.7MB, over the
+  `check-added-large-files` ceiling, so it palette-re-encodes down to ~900KB and
+  fails loudly rather than silently committing an oversized asset.
+
 ### Fixed
 
 - **Demo scripts no longer report success against a broken API.** `make
@@ -26,13 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   whose envelope is not `success: true`, naming the request that failed.
   `python3` is now declared as a hard dependency at the top of both scripts
   rather than failing later as "Could not obtain access token".
-
-- **`make demo-gif`** — regenerates `docs/assets/cast/demo.gif` from
-  `demo.tape`. Re-recording was previously an undocumented two-tool ritual, so
-  nobody repeated it and the GIF went stale for months. The target also enforces
-  a size budget: a bare `vhs` run produces ~1.7MB, over the
-  `check-added-large-files` ceiling, so it palette-re-encodes down to ~900KB and
-  fails loudly rather than silently committing an oversized asset.
 
 ### Changed
 
