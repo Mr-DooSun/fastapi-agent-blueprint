@@ -183,6 +183,34 @@ def test_dark_chrome_matches_page_and_card_is_the_raised_surface():
     assert f"{AdminVars.SURFACE}: #18181b" in dark_block
 
 
+def test_drawer_text_and_muted_are_distinct_in_both_modes():
+    """`--admin-drawer-text` must not equal `--admin-text-muted` (#365 review).
+
+    `layout.py` mutes inactive nav icons with `.admin-text-muted`, and
+    `.admin-nav-section` colours section headers from the same token. Both read
+    against `--admin-drawer-text`, so if the two tokens hold the same value the
+    mute silently applies to nothing — which is exactly what happened in dark
+    mode on the first pass (both zinc-400), while that same pass removed the
+    `opacity: 0.5` that used to dim section headers. The drawer then had less
+    hierarchy than before the restyle. Equal values are a no-op, not a subtlety.
+    """
+    css = build_admin_css()
+
+    def value_of(block: str, var: str) -> str:
+        line = next(ln for ln in block.splitlines() if ln.strip().startswith(var))
+        return line.split(":", 1)[1].split(";")[0].strip()
+
+    root_block = css[css.index(":root {") : css.index(".body--dark")]
+    dark_block = css[css.index(".body--dark") :]
+    for mode, block in (("light", root_block), ("dark", dark_block)):
+        drawer = value_of(block, AdminVars.DRAWER_TEXT)
+        muted = value_of(block, AdminVars.TEXT_MUTED)
+        assert drawer != muted, (
+            f"{mode}: drawer text and muted are both {drawer} — "
+            "the muted treatment on inactive nav icons/section headers is inert"
+        )
+
+
 def test_zebra_striping_is_off_and_rows_separate_by_border():
     """Striping is pinned to the surface colour, not deleted (#365).
 
@@ -220,14 +248,23 @@ def test_grid_surface_comes_from_the_same_token_as_every_other_panel():
 def test_no_lift_on_hover():
     """State changes are colour/border only — nothing moves (#365).
 
-    The pre-#365 look lifted clickable cards (`translateY(-2px)` plus a large
-    shadow) and squished buttons on press (`scale(0.985)`). Assert on the
-    movement primitives rather than the word "transform", which legitimately
-    appears in `text-transform: uppercase` on the nav section labels.
+    The pre-#365 look lifted clickable cards and squished buttons on press.
+
+    Assert on the *declaration property* rather than substrings. A substring
+    scan is what a first attempt used, and it was wrong twice over: bare
+    "transform" matches the legitimate `text-transform: uppercase` on the nav
+    section labels, and `"scale("` matches `filter: grayscale(...)` — so a
+    future greyed-out state would fail this test claiming movement came back.
+    Matching the property name covers translate/scale/rotate in one check and
+    cannot collide with either.
     """
     css = build_admin_css()
-    for primitive in ("translateY", "translateX", "scale("):
-        assert primitive not in css, f"movement reintroduced: {primitive}"
+    moved = [
+        line.strip()
+        for line in css.splitlines()
+        if line.strip().split(":")[0].strip() == "transform"
+    ]
+    assert not moved, f"movement reintroduced: {moved}"
 
 
 def test_css_defines_helper_class_selectors():
@@ -294,9 +331,14 @@ def test_font_is_a_system_stack_with_no_webfont():
     assert "@font-face" not in css
     assert "Wanted Sans" not in css
     assert "/admin-static" not in css
-    assert "url(" not in css  # no font (or image) fetched from anywhere
     assert "cdn.jsdelivr.net" not in css
     assert "fonts.googleapis.com" not in css
+    # Intentionally wider than fonts: the admin theme fetches *no* external or
+    # embedded resource, so an operator-facing panel makes no third-party
+    # request on load. If a legitimate non-font `url()` is ever needed (an
+    # inline SVG data URI, say), narrow this to `".woff" not in css` rather than
+    # deleting it — but note that widening was the deliberate choice here.
+    assert "url(" not in css
     # The stack itself: a Latin UI font first, then a Hangul fallback for
     # platforms whose UI font has no Hangul coverage (Segoe UI does not).
     assert f"{AdminVars.FONT}: -apple-system" in css

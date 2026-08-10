@@ -124,7 +124,8 @@ class AdminMetrics:
     """Layout metrics (numbers, not colors)."""
 
     # 36px, not 44px: an admin list earns its keep by how many rows fit on one
-    # screen. Consumed by base_admin_page.py and components/data.py.
+    # screen. Consumed by components/data.py (GRID_MIN_COL_WIDTH below is the
+    # one base_admin_page.py reads).
     GRID_ROW_HEIGHT: Final = 36
     GRID_MIN_COL_WIDTH: Final = 120
 
@@ -262,7 +263,13 @@ _DARK_TOKENS: Final = {
     AdminVars.HEADER_BG: "#09090b",  # zinc-950
     AdminVars.HEADER_TEXT: "#fafafa",  # zinc-50
     AdminVars.DRAWER_BG: "#09090b",  # zinc-950
-    AdminVars.DRAWER_TEXT: "#a1a1aa",  # zinc-400
+    # One step brighter than TEXT_MUTED (zinc-400) on purpose. Both were
+    # zinc-400 in #365's first pass, which made the muted treatment on inactive
+    # nav icons and on section headers a no-op in dark mode — and because that
+    # same pass dropped the old `opacity: 0.5` from `.admin-nav-section`, the
+    # dark drawer ended up with *less* hierarchy than before. Pinned by
+    # test_drawer_text_and_muted_are_distinct_in_both_modes.
+    AdminVars.DRAWER_TEXT: "#d4d4d8",  # zinc-300
     AdminVars.NAV_ACTIVE: "#fafafa",  # zinc-50
     AdminVars.NAV_ACTIVE_BG: "#27272a",  # zinc-800
     AdminVars.CHROME_BORDER: "#27272a",  # zinc-800
