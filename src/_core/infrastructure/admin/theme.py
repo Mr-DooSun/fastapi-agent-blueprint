@@ -148,6 +148,10 @@ class AdminClasses:
     SUCCESS_SURFACE: Final = "admin-success-surface"
     GRID: Final = "admin-grid"
     GRID_COMPACT: Final = "admin-grid-compact"
+    # Sets no height — AG Grid owns it via ``domLayout: "autoHeight"``, which
+    # requires the container div to have no height of its own. Paired with
+    # ``c.data_grid(auto_height=True)``; see _HELPER_CSS.
+    GRID_AUTO: Final = "admin-grid-auto"
     CHART: Final = "admin-chart"
     PAGINATION: Final = "admin-pagination"
     EMPTY_STATE: Final = "admin-empty-state"
@@ -373,6 +377,14 @@ body {
   width: 100%;
   height: var(--admin-grid-height-compact);
 }
+/* Deliberately sets no height: `c.data_grid(auto_height=True)` derives one from
+   the row count and sets it inline, so this class must not supply a competing
+   value. (AG Grid's own `domLayout: "autoHeight"` was tried and does not work
+   in the NiceGUI embed — the inner wrapper grows past the outer element and
+   paints over the next section. See components/data.py.) */
+.admin-grid-auto {
+  width: 100%;
+}
 /* AG Grid v33 Theming API: params map to --ag-<kebab-case>. `rowBorder`
    supersedes the legacy --ag-row-border-{color,style,width} trio.
 
@@ -386,7 +398,8 @@ body {
    Striping is pinned to the surface colour rather than deleted so the quartz
    default odd-row tint cannot leak back in; rows separate by border (#365). */
 .admin-grid,
-.admin-grid-compact {
+.admin-grid-compact,
+.admin-grid-auto {
   --ag-background-color: var(--admin-surface);
   --ag-header-background-color: var(--admin-bg);
   --ag-odd-row-background-color: var(--admin-row-alt);
@@ -406,7 +419,10 @@ body {
 .admin-grid .ag-header-cell,
 .admin-grid-compact .ag-cell,
 .admin-grid-compact .ag-row,
-.admin-grid-compact .ag-header-cell {
+.admin-grid-compact .ag-header-cell,
+.admin-grid-auto .ag-cell,
+.admin-grid-auto .ag-row,
+.admin-grid-auto .ag-header-cell {
   visibility: visible !important;
 }
 .admin-chart {

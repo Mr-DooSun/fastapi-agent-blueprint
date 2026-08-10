@@ -105,7 +105,11 @@ def _render_recent_activity(metrics: DashboardMetrics) -> None:
                 {"headerName": "Domain", "field": "domain"},
             ],
             rows,
-            compact=True,
+            # Sized to its rows, not to the viewport: this window is capped at
+            # DEFAULT_RECENT_LIMIT (8), and a fixed-height container left a
+            # ~200px empty box under the last row on the landing page. The cap
+            # is what makes autoHeight safe here (it renders every row).
+            auto_height=True,
         )
 
 
