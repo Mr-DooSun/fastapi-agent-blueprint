@@ -18,6 +18,30 @@ page_configs: list[BaseAdminPage] = []
 
 _UNAVAILABLE = "Unavailable"
 
+# Gate for the infrastructure panel. `require_auth_allowlisted()` authenticates
+# without checking page permissions, so without this every admin — including one
+# holding zero grants — would read the deployment's configuration posture. That
+# matters beyond tidiness: "Error notification: stub" tells the holder of a
+# low-privilege account that failures raise no alert, and "OpenTelemetry:
+# disabled" that there are no traces. Both are directly useful to someone who has
+# compromised such an account.
+#
+# `accounts` is the closest thing to a super-admin marker here — the registry
+# calls it "the account-management gate", i.e. the permission to create admins and
+# grant their permissions. Onboarding is unaffected because the setup wizard
+# grants the first admin every key (see AdminPermissionRegistry).
+#
+# This is a policy choice, not a security law. A deployment that treats every
+# authenticated admin as fully trusted can widen it here; the point is that the
+# decision is now written down and pinned by a test rather than implicit.
+_INFRA_PERMISSION = "accounts"
+
+
+def may_see_infrastructure(permissions: set[str]) -> bool:
+    """Whether this operator may see the infrastructure posture panel."""
+    return _INFRA_PERMISSION in permissions
+
+
 # What an operator can do about each stub, by infra label. Shown only on the
 # onboarding view: once there is data, a stub is a deliberate choice rather than
 # an unfinished setup, and repeating the hint forever would be nagging.
@@ -50,17 +74,20 @@ async def dashboard_page():
     # section below scoped to what this operator may see.
     metrics = await collect_dashboard_metrics(visible_configs)
 
+    show_infra = may_see_infrastructure(permissions)
+
     if metrics.has_any_data:
         c.page_header("Dashboard", subtitle=f"Last {GROWTH_WINDOW_DAYS} days")
         _render_stat_cards(metrics)
         _render_ai_usage(metrics.ai_usage)
         _render_growth(metrics)
-        _render_infrastructure(metrics.infra)
+        if show_infra:
+            _render_infrastructure(metrics.infra)
     else:
         # Every count is 0 on a fresh install, which is what every OSS adopter
         # opens first. Charting zeros there looks broken; naming the next action
         # does not (#368).
-        _render_onboarding(metrics)
+        _render_onboarding(metrics, show_infra=show_infra)
 
 
 # ── Populated view ──
@@ -158,7 +185,7 @@ def _render_infrastructure(infra: list[InfraStatus]) -> None:
 # ── Onboarding view (no data yet) ──
 
 
-def _render_onboarding(metrics: DashboardMetrics) -> None:
+def _render_onboarding(metrics: DashboardMetrics, *, show_infra: bool) -> None:
     c.page_header(
         "Welcome",
         subtitle="No records yet — here is what is wired up and what to do next",
@@ -176,17 +203,21 @@ def _render_onboarding(metrics: DashboardMetrics) -> None:
                 "Create some records",
                 "Run make demo for CRUD, or make demo-rag for the RAG walkthrough.",
             )
-            for row in stubs:
-                hint = _NEXT_STEPS.get(row.label)
-                if hint:
-                    _step("build", f"{row.label} is running a stub", hint)
+            # The stub hints disclose the same posture as the panel below — "LLM
+            # is running a stub" is the panel's LLM row in prose — so they sit
+            # behind the same gate rather than leaking around it.
+            if show_infra:
+                for row in stubs:
+                    hint = _NEXT_STEPS.get(row.label)
+                    if hint:
+                        _step("build", f"{row.label} is running a stub", hint)
 
-    _render_infrastructure(metrics.infra)
-
-    if active and not stubs:
-        ui.label("Every optional component is configured.").classes(
-            "admin-text-muted q-mt-md"
-        )
+    if show_infra:
+        _render_infrastructure(metrics.infra)
+        if active and not stubs:
+            ui.label("Every optional component is configured.").classes(
+                "admin-text-muted q-mt-md"
+            )
 
 
 def _step(icon: str, title: str, detail: str) -> None:

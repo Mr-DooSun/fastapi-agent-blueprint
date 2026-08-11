@@ -265,3 +265,49 @@ class TestOnboardingDecision:
 
         assert metrics.infra, "settings-derived, always populated"
         assert metrics.has_any_data is False
+
+
+class TestInfrastructurePanelGate:
+    """Who may see the deployment's configuration posture (#368 security review).
+
+    `require_auth_allowlisted()` authenticates the dashboard without checking page
+    permissions, so without an explicit gate every admin — including one holding
+    zero grants — would read which components are stubbed. That is not a tidiness
+    concern: "Error notification: stub" tells the holder of a low-privilege
+    account that failures raise no alert.
+
+    The pre-#368 dashboard enforced the equivalent principle for its audit
+    sections, but only in a code comment — which is why removing it broke no rule
+    and failed no test. This test is that missing enforcement.
+    """
+
+    def test_accounts_permission_grants_the_panel(self):
+        from src._apps.admin.pages.dashboard import may_see_infrastructure
+
+        assert may_see_infrastructure({"accounts"}) is True
+
+    def test_zero_permission_admin_is_refused(self):
+        from src._apps.admin.pages.dashboard import may_see_infrastructure
+
+        assert may_see_infrastructure(set()) is False
+
+    def test_domain_permissions_alone_do_not_grant_it(self):
+        """A page grant is not a trust signal about infrastructure."""
+        from src._apps.admin.pages.dashboard import may_see_infrastructure
+
+        assert may_see_infrastructure({"user", "docs", "ai_usage"}) is False
+
+    def test_audit_permission_alone_does_not_grant_it(self):
+        from src._apps.admin.pages.dashboard import may_see_infrastructure
+
+        assert may_see_infrastructure({"audit_log"}) is False
+
+    def test_the_gate_is_a_registry_key(self):
+        """A typo'd key would silently refuse everyone; the registry is the
+        canonical source of valid permission keys."""
+        from src._apps.admin.pages.dashboard import _INFRA_PERMISSION
+        from src._core.infrastructure.admin.permission_registry import (
+            AdminPermissionRegistry,
+        )
+
+        assert AdminPermissionRegistry().is_valid_key(_INFRA_PERMISSION)
