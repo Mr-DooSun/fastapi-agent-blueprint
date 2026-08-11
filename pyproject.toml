@@ -117,6 +117,10 @@ include = [
     "src/admin_identity",
     "src/auth",
     "src/ai_usage",
+    # Step 2a. The rest of _core/infrastructure stays out for now: the aioboto3
+    # client context managers and aiobotocore TypedDicts there are third-party
+    # stub friction, not findings this repo can fix in code.
+    "src/_core/infrastructure/persistence/rdb",
 ]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"

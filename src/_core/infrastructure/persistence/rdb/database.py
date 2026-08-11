@@ -190,7 +190,10 @@ class Database:
 
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[AsyncSession, None]:
-        session = None
+        # Annotated, not bare `= None`: without it the declared type is `None`,
+        # so the `if session:` guards below narrow to `Never` and every
+        # `await session.rollback()` reads as un-awaitable to a type checker.
+        session: AsyncSession | None = None
 
         try:
             session = self.async_session_factory()
