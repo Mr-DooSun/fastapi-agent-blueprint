@@ -136,7 +136,7 @@ Import surface: `from src._core.infrastructure.admin import components as c`.
 | `c.text_field / textarea_field / number_field / select_field` | leaf | Form inputs — always `outlined` |
 | `c.action_dialog(title, *, width=, subtitle=)` | context mgr | Dialog with arbitrary body; yields `(dialog, card)`; opens on exit |
 | `c.confirm_dialog(title, message, *, on_confirm, on_success=, danger=)` | async | Confirm-an-action; see contract below |
-| `c.data_grid(column_defs, row_data, *, compact=, row_click_to=, on_cell_click=, on_row_click=)` | leaf | AG Grid with the admin theme + shared defaults |
+| `c.data_grid(column_defs, row_data, *, compact=, auto_height=, row_click_to=, on_cell_click=, on_row_click=)` | leaf | AG Grid with the admin theme + shared defaults. Height: default = viewport-sized, `compact=True` = shorter, `auto_height=True` = derived from the row count (no empty space under the last row) — only for a **caller-bounded** row count. `auto_height` deliberately avoids AG Grid's `domLayout: "autoHeight"`, which breaks in the NiceGUI embed: the inner wrapper grows past the outer element and paints over the next section |
 | `c.bar_chart(categories, values)` | leaf | ECharts vertical bar; sized by `AdminClasses.CHART` / `--admin-chart-height`, bar fill = `AdminColors.PRIMARY`, top corners rounded |
 | `c.pagination(*, current, total_pages, on_prev, on_next)` | leaf | Prev / page / next row |
 | `c.empty_state(icon=)` | context mgr | Centered empty placeholder; add the message inside |

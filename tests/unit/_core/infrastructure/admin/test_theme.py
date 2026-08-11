@@ -11,6 +11,8 @@ Toss-style look in #365.
 
 from __future__ import annotations
 
+import re
+
 from src._core.infrastructure.admin.theme import (
     EMPTY_DISPLAY,
     AdminClasses,
@@ -227,6 +229,39 @@ def test_zebra_striping_is_off_and_rows_separate_by_border():
     assert f"{AdminVars.ROW_ALT}: #18181b" in dark_block
     assert "--ag-odd-row-background-color: var(--admin-row-alt)" in css
     assert "--ag-row-border: 1px solid var(--admin-border)" in css
+
+
+def test_auto_height_grid_class_declares_no_height():
+    """`.admin-grid-auto` must not set `height` — AG Grid owns it.
+
+    `domLayout: "autoHeight"` requires the container div to carry no height of
+    its own. A `height` here would fight the option and restore the empty box
+    under the last row that the class exists to remove. Also asserts the class
+    still receives the `--ag-*` token mapping and the #234 `ag-delay-render`
+    visibility fix, which a new grid class silently misses otherwise.
+    """
+    css = build_admin_css()
+    start = css.index(f".{AdminClasses.GRID_AUTO} {{")
+    block = css[start : css.index("}", start)]
+    assert "width: 100%" in block
+    assert "height" not in block
+
+    # The --ag-* token mapping must list the new class. Strip comments before
+    # parsing rules: the explanatory comment above that rule contains a literal
+    # `--ag-row-border-{color,style,width}`, and a naive scan for the nearest
+    # preceding `{` lands inside it.
+    stripped = re.sub(r"/\*.*?\*/", "", css, flags=re.DOTALL)
+    token_selectors = next(
+        sel
+        for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", stripped)
+        if "--ag-background-color" in body
+    )
+    assert AdminClasses.GRID_AUTO in token_selectors
+    assert AdminClasses.GRID in token_selectors
+    assert AdminClasses.GRID_COMPACT in token_selectors
+
+    # #234: without this the new class inherits the stuck-`ag-delay-render` bug.
+    assert f".{AdminClasses.GRID_AUTO} .ag-cell" in css
 
 
 def test_grid_surface_comes_from_the_same_token_as_every_other_panel():
