@@ -58,6 +58,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from 1439px to 1094px
   ([#368](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/368))
 
+- **The admin login screen's failure message was a toast.** `ui.notify` fades, so a
+  few seconds after a rejected attempt the screen showed no reason for it and the
+  operator was left re-reading a form that looked fine. It now writes into a
+  persistent slot above the fields, cleared at the start of the next attempt.
+  `Enter` also did nothing in the username field — only the password field was
+  wired — which mattered once autofocus moved to username. All three rejection
+  causes still collapse to one message on purpose, so the form cannot be used to
+  probe which admin usernames exist. The identity block is recomposed from three
+  stacked elements (a 3rem icon, the brand name, a letterspaced `ADMIN`) into one
+  row plus `Administrator sign-in`, and the card's contents are left-aligned
+  ([#368](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/368))
+
 - **The new infrastructure panel was visible to any authenticated admin.**
   `require_auth_allowlisted()` authenticates the dashboard without checking page
   permissions, so an admin holding zero grants could read the deployment's
