@@ -309,10 +309,12 @@ class BaseRepository(Generic[ReturnDTO], ABC):
         precedent (ADR 058 D3) rather than returning an empty list that reads
         like "no data".
 
-        ``since`` must match the column's tz-awareness — the models differ
-        (``user.created_at`` is naive ``DateTime``, ``ai_usage.occurred_at`` is
-        ``DateTime(timezone=True)``), and coercing here would be guessing at the
-        caller's intent.
+        ``since`` must match the column's tz-awareness. Every timestamp column
+        in-tree today is naive ``DateTime`` (``user.created_at``,
+        ``ai_usage.occurred_at``), so a naive ``since`` is what callers pass; a
+        fork that switches a column to ``DateTime(timezone=True)`` has to pass an
+        aware one. No coercion happens here because guessing which the caller
+        meant is worse than the comparison failing.
         """
         column = getattr(self.model, column_name, None)
         if not isinstance(column, InstrumentedAttribute) or not isinstance(
