@@ -589,10 +589,10 @@ class {Name}Container(containers.DeclarativeContainer):
 ### CI Type Check and Dependency Audit (#333)
 
 - **pyright — blocking, and the only type checker.** `[tool.pyright] include` covers `src`,
-  `tools`, `scripts`, `examples`, `.agents` and the three root runners: a new file under any
-  of them is checked from the moment it is written. It began (#333) as an allow-list of the packages
-  that passed, widened package by package through #381, and reached 0 errors across `src`
-  from a starting 91. Two lessons from that run are worth keeping. First, an allow-list is
+  `tools`, `scripts`, `examples`, `.agents`, the three harness hook directories and the three
+  root runners — 684 files at 0 errors: a new file under any of them is checked from the
+  moment it is written. It began (#333) as an allow-list of the packages that passed, widened
+  package by package through #381, and reached 0 errors across `src` from a starting 91. Two lessons from that run are worth keeping. First, an allow-list is
   itself a drift generator — this bullet still named five packages after four PRs had
   added six more, and nobody noticed, because a stale allow-list fails nothing. Second,
   about half the findings were real defects (possibly-unbound locals, a wrong return type,
