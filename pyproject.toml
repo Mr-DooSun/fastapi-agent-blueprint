@@ -71,8 +71,10 @@ server-gunicorn = ["gunicorn>=23.0.0"]
 aws = [
     "aioboto3>=15.4.0",
     "boto3>=1.39.12",
+    "types-aioboto3>=15.4.0",
     "types-aiobotocore-dynamodb>=2.25.0",
     "types-aiobotocore-s3>=2.25.0",
+    "types-aiobotocore-s3vectors>=3.5.0",
 ]
 sqs = ["taskiq-aws>=0.4.0"]
 rabbitmq = ["taskiq-aio-pika>=0.4.0"]
@@ -92,44 +94,35 @@ otel = [
 # `stages: [manual]`, so `pre-commit run --all-files` skipped it and the CI
 # `architecture` job type-checked nothing at all.
 #
-# `include` is an allow-list of what is clean today rather than all of `src/`,
-# which reports 58 errors. Measured per package at the time of writing:
+# `include` was an allow-list of clean packages while the tree was being cleaned
+# up (#381 steps 1-3). It now covers all of `src`, which is the stronger contract:
+# a new file is checked from the moment it is written instead of waiting for
+# someone to add its package here. Getting there took the measurements below.
 #
-#   src/_core/domain       0     src/user              0
-#   src/_core/application  0     src/auth              2
-#   src/_core/exceptions   0     src/admin_identity    2
-#   src/_core/common       0     src/ai_usage          5
-#   src/_core (all)       34     src (all)            58
+# The count went 91 -> 0. Roughly half was repo code with real defects behind it
+# (possibly-unbound locals, a wrong return type, `hasattr` used where it cannot
+# narrow, an unguarded optional key in an S3 listing). The other half was AWS
+# typing that nobody had wired up: `types-aioboto3` gives `Session.client()` its
+# per-service overloads, without which every `async with ... .client()` resolved
+# to an untypeable placeholder, and `types-aiobotocore-s3vectors` types the four
+# s3vectors calls that had never been checked at all -- `S3VectorClient.client()`
+# used to yield the generic `AioBaseClient`, whose `__getattr__` always raises, so
+# `await client.put_vectors(...)` read as "NoReturn is not awaitable".
 #
-# The remainder is SQLAlchemy attribute-assignment and Protocol-shape noise
-# concentrated in infrastructure/ and interface/admin/. Widen this list as
-# packages are cleaned; never widen it by relaxing the rules below.
+# Nine suppressions remain, all in the two bootstrap modules and each with its
+# cause written at the call site: dependency-injector's dynamic provider
+# attributes, module-attribute injection, and Starlette's `add_exception_handler`
+# handler signature. They are line- and rule-scoped, so everything else in those
+# files is still checked.
+#
+# `reportUnnecessaryTypeIgnoreComment` would keep those suppressions from rotting
+# and is the natural next ratchet, but it is not enabled here: it reports 3
+# errors today, and 2 are mypy-only `# type: ignore` comments that pyright does
+# not need. Removing those belongs with retiring the mypy hook (#375), not here.
+#
+# Never widen coverage by relaxing the rules below.
 [tool.pyright]
-include = [
-    "src/_core/domain",
-    "src/_core/application",
-    "src/_core/exceptions",
-    "src/_core/common",
-    "src/user",
-    # Added by #381 step 1 — each entered this list only after reaching 0 errors.
-    # The allow-list is the ratchet: once a package is in, new errors there fail
-    # CI. Widen it per package rather than maintaining a baseline file.
-    "src/admin_identity",
-    "src/auth",
-    "src/ai_usage",
-    # Step 2a. The rest of _core/infrastructure stays out for now: the aioboto3
-    # client context managers and aiobotocore TypedDicts there are third-party
-    # stub friction, not findings this repo can fix in code.
-    "src/_core/infrastructure/persistence/rdb",
-    # Step 3. Every admin page. `_apps/admin/bootstrap.py` and
-    # `_apps/server/bootstrap.py` stay out: their findings are
-    # dependency-injector `Provider[Any]` dynamic attributes, module-attribute
-    # injection, and Starlette's `add_exception_handler` signature — framework
-    # contracts, not code this repo can annotate its way out of.
-    "src/_apps/admin/pages",
-    # The admin shell itself — inherited by every domain admin page.
-    "src/_core/infrastructure/admin",
-]
+include = ["src"]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
 
