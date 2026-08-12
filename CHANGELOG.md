@@ -39,6 +39,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#396](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/396),
   [#398](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/398))
 
+- **Harness hook tests load by path, not by basename.** Eight hook filenames exist
+  in more than one harness copy, so `import verify_first` named three files and
+  `sys.modules` picked one. Nothing was resolving the wrong copy — the issue was
+  filed on a misreading — but the tests' correctness came from an unstated
+  `sys.modules.pop` + `sys.path[0]` pair, so it is now a rule with an AST guard, and
+  the rule is recorded in `test-patterns.md` § Harness Hook Tests. Test-only; the
+  hook files are unchanged, and the fail-open contract's assertions are untouched
+  ([#401](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/401))
+
 - **`tests/support/fake_repository.py`** declares the 13-member
   `BaseRepositoryProtocol` surface once, every member raising until overridden, so a
   partial double satisfies the annotation it is passed to and the next protocol
