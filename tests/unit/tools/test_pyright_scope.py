@@ -1,23 +1,24 @@
 """Guard the pyright gate against silently shrinking.
 
-`[tool.pyright] include` is now `["src"]` — the whole tree, 0 errors. It got there
-as an allow-list of clean packages (#333, widened through #381), and that list
-turned out to be a drift generator in its own right: `project-dna.md` still named
-five packages after four PRs had added six more, and nothing failed, because a
-stale allow-list fails nothing.
+pyright is the only type checker (#375) and the scope it checks is
+`[tool.pyright] include`. Every failure mode of that arrangement is silent, which
+is the whole reason this file exists:
 
-Whole-tree coverage removes that particular trap but adds two of its own, both
-silent:
+- **Narrowing.** Replace an include path with a subset and pyright checks less,
+  exits 0, and the gate shrinks with CI still green. It does not warn.
+- **A dot-directory that is never analysed.** pyright's default `exclude` contains
+  `**/.*`, so naming `.agents` in `include` without overriding `exclude` skips it
+  entirely. Measured before this was fixed: `.claude/hooks` reported `0 errors`
+  while analysing **0 of its 7 files**. "0 errors" and "nothing checked" print
+  identically.
+- **Suppression creep.** `# pyright: ignore` is the other way to hold a tree at 0
+  errors without fixing anything. 21 exist, in 10 files, each with its cause
+  written at the call site. That is defensible *because* it is pinned; unpinned,
+  it is a trend.
 
-- **Narrowing.** Someone hits a wall of errors in one package and replaces `src`
-  with a subset. pyright does not error on a smaller scope — it just checks less,
-  exits 0, and the gate shrinks with CI still green.
-- **Suppression creep.** `# pyright: ignore` is the other way to keep the tree at
-  0 errors without fixing anything. Nine exist today, all in two bootstrap
-  modules, all for framework contracts this repo cannot annotate its way out of.
-  That is a defensible number *because* it is pinned; unpinned, it is a trend.
-
-These tests fail loudly in both cases.
+The third one is the same illusion the retired mypy hook sustained for two
+releases: it aborted on a duplicate module name, inspected nothing, and reported
+one error — which nobody read as "no coverage".
 """
 
 from __future__ import annotations
@@ -32,19 +33,28 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 _PYPROJECT = _REPO_ROOT / "pyproject.toml"
 _SRC = _REPO_ROOT / "src"
 
-# Where suppressions are allowed, and how many. Each is a framework contract with
-# its cause written at the call site: dependency-injector's dynamic provider
-# attributes and module-attribute injection (admin), Starlette's
-# `add_exception_handler` handler signature (server), and a deliberately widened
-# `on_send` parameter that taskiq's own base middleware does not declare.
+# Every suppression in the checked scope, by file and count. Each is a framework
+# contract with its reason at the call site: dependency-injector's dynamic
+# provider attributes (admin bootstrap, the demo-admin seeder), module-attribute
+# injection, Starlette's `add_exception_handler` handler signature, a deliberately
+# widened `on_send` parameter taskiq's base middleware does not declare, and the
+# two `examples/blog` cross-domain imports that only resolve after the example is
+# copied into `src/`.
 #
-# Adding an entry here is allowed — silently adding one to a file that is not
-# listed is what this pins. If a genuine third-party limitation needs a new
-# suppression, add the file and say why in the same commit.
+# Adding an entry is allowed. Adding a suppression to a file that is *not* listed
+# is what this pins — if it is a genuine third-party limitation, add the file and
+# say why in the same commit; if it is not, fix the finding.
 _ALLOWED_SUPPRESSIONS = {
-    "_apps/admin/bootstrap.py": 6,
-    "_apps/server/bootstrap.py": 3,
-    "_core/infrastructure/logging/taskiq_middleware.py": 1,
+    "examples/blog/post/domain/services/post_service.py": 1,
+    "examples/blog/post/infrastructure/di/post_container.py": 1,
+    "scripts/seed_demo_admin.py": 3,
+    "src/_apps/admin/bootstrap.py": 6,
+    "src/_apps/server/bootstrap.py": 3,
+    "src/_core/domain/services/rag_pipeline.py": 1,
+    "src/_core/infrastructure/admin/audit/logger.py": 2,
+    "src/_core/infrastructure/admin/auth.py": 1,
+    "src/_core/infrastructure/admin/error_handler.py": 2,
+    "src/_core/infrastructure/logging/taskiq_middleware.py": 1,
 }
 
 # Matches a real directive, not a mention of one in prose. Pyright itself is this
@@ -72,6 +82,17 @@ def _src_packages() -> list[str]:
     )
 
 
+def _checked_files() -> list[Path]:
+    files: list[Path] = []
+    for path in _include_paths():
+        resolved = _REPO_ROOT / path
+        if resolved.is_file():
+            files.append(resolved)
+        else:
+            files.extend(sorted(resolved.rglob("*.py")))
+    return files
+
+
 def test_pyright_is_configured() -> None:
     config = _pyright_config()
 
@@ -79,24 +100,53 @@ def test_pyright_is_configured() -> None:
     assert config["pythonVersion"] == "3.12"
 
 
+def test_unnecessary_suppressions_are_an_error() -> None:
+    """Otherwise a suppression outlives the limitation it was added for."""
+    assert _pyright_config().get("reportUnnecessaryTypeIgnoreComment") == "error"
+
+
 @pytest.mark.parametrize("path", _include_paths())
 def test_every_include_path_exists(path: str) -> None:
     resolved = _REPO_ROOT / path
 
-    assert resolved.is_dir(), (
+    assert resolved.exists(), (
         f"[tool.pyright] include lists {path!r}, which no longer exists. "
         "pyright does not error on a missing include — it just checks less, "
         "so the CI type gate would shrink without anything going red."
+    )
+    if resolved.is_dir():
+        assert any(resolved.rglob("*.py")), f"{path!r} contains no Python to check"
+
+
+def test_dot_directory_includes_require_an_explicit_exclude() -> None:
+    """The trap: a dot-path in `include` is skipped unless `exclude` is overridden.
+
+    pyright's default `exclude` is `["**/node_modules", "**/__pycache__", "**/.*"]`
+    and specifying any `exclude` replaces it. So `.agents` is only really checked
+    because `exclude` is set and omits `**/.*`. Without this test the config could
+    lose its `exclude` line and the dot-path coverage would vanish in silence —
+    same error count, fewer files.
+    """
+    config = _pyright_config()
+    dotted = [p for p in _include_paths() if p.startswith(".")]
+    if not dotted:
+        pytest.skip("no dot-directory include paths to protect")
+
+    assert "exclude" in config, (
+        f"include names {dotted}, but `exclude` is unset — pyright's default "
+        "`**/.*` then skips those paths while still reporting 0 errors"
+    )
+    assert "**/.*" not in config["exclude"], (
+        f"`exclude` contains `**/.*`, which cancels the {dotted} include paths"
     )
 
 
 @pytest.mark.parametrize("package", _src_packages())
 def test_every_src_package_is_covered(package: str) -> None:
-    """Narrowing `["src"]` to a subset has to fail here.
+    """Narrowing `src` to a subset has to fail here.
 
-    Asserted per package rather than as `include == ["src"]` so that splitting the
-    list for an unrelated reason (a second root, an explicit exclude) stays legal
-    as long as nothing under `src/` falls out of scope.
+    Asserted per package rather than as `include == [...]` so that adding roots
+    stays legal — only losing coverage fails.
     """
     covered = [
         path
@@ -106,23 +156,40 @@ def test_every_src_package_is_covered(package: str) -> None:
 
     assert covered, (
         f"src/{package} is not covered by [tool.pyright] include "
-        f"{_include_paths()!r}. The type gate reached 0 errors across all of "
-        "src/; excluding a package to get past its errors gives that up "
+        f"{_include_paths()!r}. The type gate reached 0 errors across the whole "
+        "scope; excluding a package to get past its errors gives that up "
         "silently, because pyright exits 0 on a narrower scope."
+    )
+
+
+@pytest.mark.parametrize(
+    "path", ["tools", "scripts", "examples", ".agents", "run_scheduler_local.py"]
+)
+def test_the_scope_mypy_nominally_covered_stays_covered(path: str) -> None:
+    """Retiring mypy (#375) must not quietly reduce what is checked.
+
+    The retired hook nominally covered everything except `migrations/`, `tests/`
+    and the root `run_*.py` files — nominally, because it aborted before reading
+    any of it. `run_scheduler_local.py` is in this list because including it is
+    what found that `make scheduler` never ran the scheduler.
+    """
+    assert path in _include_paths(), (
+        f"{path!r} left [tool.pyright] include. pyright is the only type checker "
+        "since #375, so dropping a path here means nothing checks it at all."
     )
 
 
 def test_suppressions_stay_where_they_are_accounted_for() -> None:
     found: dict[str, int] = {}
-    for path in sorted(_SRC.rglob("*.py")):
+    for path in _checked_files():
         count = len(_SUPPRESSION.findall(path.read_text(encoding="utf-8")))
         if count:
-            found[str(path.relative_to(_SRC))] = count
+            found[str(path.relative_to(_REPO_ROOT))] = count
 
     assert found == _ALLOWED_SUPPRESSIONS, (
-        f"pyright suppressions in src/ changed: expected {_ALLOWED_SUPPRESSIONS}, "
-        f"found {found}. A suppression is the other way to keep the tree at 0 "
-        "errors without fixing anything, so each one is accounted for by file and "
-        "count. If the new one is a genuine framework limitation, add it here with "
-        "its reason; if it is not, fix the finding instead."
+        f"pyright suppressions changed: expected {_ALLOWED_SUPPRESSIONS}, found "
+        f"{found}. A suppression is the other way to keep the tree at 0 errors "
+        "without fixing anything, so each one is accounted for by file and count. "
+        "If the new one is a genuine framework limitation, add it here with its "
+        "reason; if it is not, fix the finding instead."
     )

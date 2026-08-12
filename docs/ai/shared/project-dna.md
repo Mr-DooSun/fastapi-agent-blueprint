@@ -577,15 +577,20 @@ class {Name}Container(containers.DeclarativeContainer):
 
 ### Pre-commit (Manual Stage)
 
-- mypy (--ignore-missing-imports, --check-untyped-defs). `stages: [manual]`, so
-  `pre-commit run --all-files` — including the CI `architecture` job — does **not** run it.
-  Until #333 that meant nothing in CI type-checked anything; the blocking check now lives in
-  the `typecheck` job below rather than here.
+- Empty since #375. It held one hook, mypy, which was retired rather than repaired: two
+  harness copies of `completion_gate.py` map to one top-level module name, so mypy aborted
+  during resolution — `errors prevented further checking` — and inspected no source under
+  `src/` at all. Because `stages: [manual]` meant nothing ever ran it, one error and zero
+  findings read as coverage for two releases. Even repaired it would have been shallow: its
+  `additional_dependencies` were `types-requests` and `pydantic` only, so under
+  `--ignore-missing-imports` every fastapi / sqlalchemy / nicegui type resolved to `Any`.
+  pyright is now the single type-check authority (below).
 
 ### CI Type Check and Dependency Audit (#333)
 
-- **pyright — blocking, whole-tree.** `[tool.pyright] include` is `["src"]`: a new file is
-  checked from the moment it is written. It began (#333) as an allow-list of the packages
+- **pyright — blocking, and the only type checker.** `[tool.pyright] include` covers `src`,
+  `tools`, `scripts`, `examples`, `.agents` and the three root runners: a new file under any
+  of them is checked from the moment it is written. It began (#333) as an allow-list of the packages
   that passed, widened package by package through #381, and reached 0 errors across `src`
   from a starting 91. Two lessons from that run are worth keeping. First, an allow-list is
   itself a drift generator — this bullet still named five packages after four PRs had
@@ -598,7 +603,16 @@ class {Name}Container(containers.DeclarativeContainer):
   `tests/unit/tools/test_pyright_scope.py` fails if the include list stops covering a
   package under `src/` — pyright checks less rather than erroring — and pins where
   suppression comments are allowed to live, so `# pyright: ignore` cannot become the way
-  the tree stays green.
+  the tree stays green. `reportUnnecessaryTypeIgnoreComment` is on, so a suppression that
+  stops being needed is itself an error; enabling it is what retiring mypy bought, since
+  two of the three it flagged were mypy-only comments pyright never needed.
+- **The scope trap worth knowing (#375).** pyright's default `exclude` contains `**/.*`, so
+  a dot-directory named in `include` is skipped in silence. Measured: `.claude/hooks`
+  reported `0 errors` while analysing **0 of its 7 files**. `exclude` is therefore set
+  explicitly, and the scope test pins that pairing — "0 errors" and "nothing checked" print
+  identically, which is the same illusion the mypy hook sustained. Still out of scope by
+  decision: `tests/` (152 errors) and the three harness hook directories (91, mostly
+  unresolved imports needing `extraPaths`).
 - **pip-audit — advisory** (`continue-on-error`), writing to the job summary. A newly
   published CVE would otherwise redden a PR that changed nothing, which the §0
   advisory-first direction rules out. It installs the shipped extras before scanning so

@@ -66,7 +66,7 @@ class AdminErrorHandler:
     def _safe_message(exc: Exception) -> tuple[str, _NotifyType]:
         """Return ``(message, notify_type)``; never leak ``str(exc)`` to the UI."""
         if _is_user_safe(exc):
-            return exc.message, "warning"  # type: ignore[attr-defined]
+            return exc.message, "warning"  # pyright: ignore[reportAttributeAccessIssue]
         return _GENERIC_MESSAGE, "negative"
 
     @staticmethod
@@ -133,7 +133,7 @@ def admin_error_boundary(context: str = "", critical: bool = False) -> Callable[
                 await AdminErrorHandler.handle(exc, context=context, critical=critical)
                 return None
 
-        return wrapper  # type: ignore[return-value]
+        return wrapper  # pyright: ignore[reportReturnType]
 
     return decorator
 

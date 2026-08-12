@@ -94,8 +94,14 @@ make test-dynamo
 
 ## Lint / Format
 ```bash
-# pre-commit (ruff + mypy)
+# pre-commit (ruff check --fix + ruff format + the local policy hooks)
 pre-commit run --all-files
+
+# Type check — pyright is the single authority, blocking in CI. This is exactly
+# what the `typecheck` job runs; scope is [tool.pyright] include in pyproject.toml.
+# There is no mypy hook: the manual-stage one was retired in #375 because it
+# aborted on a duplicate module name and inspected no source at all.
+uv run pyright
 ```
 
 ## DB Migrations
