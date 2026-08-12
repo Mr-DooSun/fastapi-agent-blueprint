@@ -16,7 +16,7 @@ is the whole reason this file exists:
   first. Two of those findings were doubles that had silently stopped matching the
   protocols they impersonate, which is the coverage this buys.
 - **Suppression creep.** `# pyright: ignore` is the other way to hold a tree at 0
-  errors without fixing anything. 52 exist, in 27 files, each with its cause
+  errors without fixing anything. 48 exist, in 26 files, each with its cause
   written at the call site. That is defensible *because* it is pinned; unpinned,
   it is a trend. #387 is the counter-example worth remembering: the three harness
   hook directories carried **88** `# type: ignore` comments, every one of them
@@ -74,10 +74,9 @@ _ALLOWED_SUPPRESSIONS = {
     "tests/unit/_core/infrastructure/vectors/s3/test_base_store.py": 1,
     "tests/unit/_core/test_dead_code_stays_deleted.py": 1,
     "tests/unit/agents_shared/test_antigravity_hardening.py": 1,
-    "tests/unit/agents_shared/test_fail_open.py": 5,
+    "tests/unit/agents_shared/test_fail_open.py": 2,
     "tests/unit/agents_shared/test_harness_hook_surface.py": 1,
     "tests/unit/agents_shared/test_locale.py": 1,
-    "tests/unit/agents_shared/test_shared_delegation.py": 1,
     "tests/unit/blog/domain/test_post_service.py": 5,
 }
 

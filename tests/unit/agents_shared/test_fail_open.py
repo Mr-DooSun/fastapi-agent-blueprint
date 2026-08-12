@@ -42,6 +42,27 @@ CODEX_HOOKS = [
 ]
 
 
+def _load_claude_hook(stem: str):
+    """Load a Claude hook by path, under a harness-qualified alias.
+
+    `verify_first` and `completion_gate` exist in all three harness directories,
+    so `import verify_first` names three files and `sys.modules` picks one. The
+    tier-2 tests below used to guard against that with `sys.modules.pop(...)`
+    plus a `sys.path` insert, which does work — measured — but only while every
+    future test remembers both halves. Loading by path removes the bare key from
+    the question entirely, and it is what tier 3 and the Codex tests in this same
+    file already do.
+    """
+    path = REPO_ROOT / ".claude" / "hooks" / f"{stem}.py"
+    alias = f"claude_{stem}"
+    spec = importlib.util.spec_from_file_location(alias, str(path))
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[alias] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 # ---------------------------------------------------------------------------
 # Tier 1 — top-level shared import failure (PYTHONPATH scrambled)
 # ---------------------------------------------------------------------------
@@ -113,7 +134,7 @@ def test_tier2_function_call_import_error_returns_safe_default(
 
     sys.path.insert(0, str(REPO_ROOT / ".claude" / "hooks"))
     try:
-        import user_prompt_submit as ups  # noqa: PLC0415  # pyright: ignore[reportMissingImports]
+        ups = _load_claude_hook("user_prompt_submit")
 
         def boom(*_args, **_kwargs):
             raise ImportError("simulated shared failure")
@@ -129,9 +150,7 @@ def test_tier2_function_call_import_error_returns_safe_default(
         assert ups.main() == 0
     finally:
         sys.path.pop(0)
-        for mod in list(sys.modules):
-            if mod == "user_prompt_submit":
-                del sys.modules[mod]
+        sys.modules.pop("claude_user_prompt_submit", None)
 
 
 # ---------------------------------------------------------------------------
@@ -145,9 +164,8 @@ def test_tier2_verify_first_read_latest_token_marker_safe_default(
     the shared reader raises rather than propagating to the Stop hook."""
 
     sys.path.insert(0, str(REPO_ROOT / ".claude" / "hooks"))
-    sys.modules.pop("verify_first", None)
     try:
-        import verify_first as vf  # noqa: PLC0415  # pyright: ignore[reportMissingImports]
+        vf = _load_claude_hook("verify_first")
 
         def boom(*_args, **_kwargs):
             raise ImportError("simulated shared reader failure")
@@ -167,7 +185,7 @@ def test_tier2_verify_first_read_latest_token_marker_safe_default(
         assert isinstance(result, bool)
     finally:
         sys.path.pop(0)
-        sys.modules.pop("verify_first", None)
+        sys.modules.pop("claude_verify_first", None)
 
 
 def test_tier2_completion_gate_entry_points_safe_default(monkeypatch, tmp_path) -> None:
@@ -176,9 +194,8 @@ def test_tier2_completion_gate_entry_points_safe_default(monkeypatch, tmp_path) 
     silent rather than propagating to the Stop hook."""
 
     sys.path.insert(0, str(REPO_ROOT / ".claude" / "hooks"))
-    sys.modules.pop("completion_gate", None)
     try:
-        import completion_gate as cg  # noqa: PLC0415  # pyright: ignore[reportMissingImports]
+        cg = _load_claude_hook("completion_gate")
 
         # Force the degraded path; both entry points must short-circuit.
         monkeypatch.setattr(cg, "_SHARED_OK", False)
@@ -187,7 +204,7 @@ def test_tier2_completion_gate_entry_points_safe_default(monkeypatch, tmp_path) 
         cg.consume_phase2_markers(tmp_path)
     finally:
         sys.path.pop(0)
-        sys.modules.pop("completion_gate", None)
+        sys.modules.pop("claude_completion_gate", None)
 
 
 # ---------------------------------------------------------------------------

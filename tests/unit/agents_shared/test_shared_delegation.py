@@ -13,6 +13,7 @@ in all paths (HC-5.5 execution fail-open).
 # config pretending one directory is the answer.
 from __future__ import annotations
 
+import importlib.util
 import sys
 from pathlib import Path
 from unittest.mock import patch
@@ -22,7 +23,26 @@ _HOOKS = REPO_ROOT / ".codex" / "hooks"
 if str(_HOOKS) not in sys.path:
     sys.path.insert(0, str(_HOOKS))
 
-import _shared as shared_module  # pyright: ignore[reportMissingImports]
+
+def _load_codex_shared():
+    """Load the Codex `_shared` by path, under a harness-qualified alias.
+
+    `_shared.py` exists in `.codex/hooks` and `.antigravity/hooks`, so a bare
+    `import _shared` names two files and `sys.modules` picks one. Nothing was
+    getting the wrong copy — this module is imported at collection time, before
+    anything else registers that key — but the correctness depended on that
+    ordering rather than on anything stated. Loading by path does not.
+    """
+    path = _HOOKS / "_shared.py"
+    spec = importlib.util.spec_from_file_location("codex_shared", str(path))
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["codex_shared"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+shared_module = _load_codex_shared()
 
 # ---------------------------------------------------------------------------
 # Delegation path (_GATE_OK=True)
