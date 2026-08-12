@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **The type check covers the whole repository.** `[tool.pyright] include` gained
+  `tests`, taking the gate to **944 files at 0 errors**. `tests/` started at 155
+  findings and produced six production ones, so the premise that test code is not
+  worth checking did not survive contact: a `cast` that existed only because `list`
+  is invariant, three functions asking for a class where they use one member, and
+  two test doubles that had silently stopped matching the protocols they impersonate
+  ([#394](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/394)–[#399](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/399))
+
+### Changed
+
+- **BREAKING (subclasses and test doubles) — `insert_datas` and `batch_put_items`
+  take `Sequence[BaseModel]`.** `BaseRepositoryProtocol`, `BaseRepository`,
+  `BaseDynamoRepository` and the one domain override moved together;
+  `BaseS3VectorStore.upsert` already had it. `list` is invariant, so the old
+  signature forced `BaseService.create_datas` to launder its argument through
+  `cast(list[BaseModel], entities)` — widening deleted that cast rather than moving
+  it. **For forks:** every caller keeps working, but an implementation or test double
+  that still declares `list[BaseModel]` is now *narrower* than the protocol and no
+  longer satisfies it. Widen it to `Sequence[BaseModel]`
+  ([#394](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/394))
+
+- **Three admin functions take consumer-local protocols instead of concrete
+  classes.** `AuditLogger` needed one repository method, the bootstrap seed one app
+  method, `button_loading` one element member, and `AdminAuthProvider` two use-case
+  methods. Naming the class over-stated the requirement and made each seam
+  untestable — `ui.button` is nominal, so no double could satisfy it. Runtime
+  behaviour is unchanged; a fork passing the real objects is unaffected
+  ([#396](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/396),
+  [#398](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/398))
+
+- **`tests/support/fake_repository.py`** declares the 13-member
+  `BaseRepositoryProtocol` surface once, every member raising until overridden, so a
+  partial double satisfies the annotation it is passed to and the next protocol
+  change breaks one file instead of drifting silently through N doubles
+  ([#395](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/395))
+
 ## [0.11.0] - 2026-08-13
 
 ### Added

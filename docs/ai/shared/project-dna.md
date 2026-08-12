@@ -270,6 +270,36 @@ def __init__(
 ) -> None:
 ```
 
+### Two signature conventions (#394, #396, #399)
+
+**A parameter that is only read takes `Sequence`, not `list`.** `list` is invariant,
+so `list[MyDTO]` is not a `list[BaseModel]` — a caller holding its own DTOs cannot
+pass them. `BaseService.create_datas` paid that toll as
+`cast(list[BaseModel], entities)` until #394 widened the three repository-layer
+signatures; the cast then deleted itself rather than moving. The same rule caught
+`list[EventDict]` against `list[Mapping[str, Any]]` on the last error of that arc.
+`Sequence` is also the accurate type when the body only iterates — it is not merely
+the permissive one.
+
+**A consumer that uses one or two members of a collaborator declares a local
+`Protocol`,** underscore-prefixed, next to the code that consumes it, with the
+reason in its docstring. Five exist: `_UsageSummaryService` (ai_usage page),
+`_AuditLogSink`, `_SupportsEventHandler`, `_SupportsProps`, `_AdminAuthOperations`.
+Naming the class instead over-states the requirement and makes the seam untestable —
+`ui.button` is nominal, so no double can satisfy it however faithful.
+
+Two limits, both learned by getting them wrong:
+
+- **The protocol must not exclude the real implementation.** A `_SupportsProps`
+  declaring `props` as a method excluded every real `Button`, because NiceGUI's
+  `props` is a *property* returning a callable wrapper. A protocol that rejects the
+  production object is worse than the concrete annotation it replaced.
+- **Keep the concrete annotation where it is what type-checks a provider API.**
+  `ObjectStorage`, `BaseS3VectorStore` and the notification adapters reach through
+  `client()` / `session` to typed boto and aiohttp objects; a protocol loose enough
+  to admit a test double would give that checking up. There, the double is accepted
+  at the substitution site instead.
+
 ## §4. Base CRUD Methods
 
 ### BaseRepositoryProtocol Methods
@@ -277,7 +307,7 @@ def __init__(
 | Method | Signature |
 |--------|---------|
 | insert_data | `async (entity: BaseModel) -> ReturnDTO` |
-| insert_datas | `async (entities: list[BaseModel]) -> list[ReturnDTO]` |
+| insert_datas | `async (entities: Sequence[BaseModel]) -> list[ReturnDTO]` |
 | select_datas | `async (page: int, page_size: int) -> list[ReturnDTO]` |
 | select_data_by_id | `async (data_id: int) -> ReturnDTO` |
 | select_datas_by_ids | `async (data_ids: list[int]) -> list[ReturnDTO]` |
