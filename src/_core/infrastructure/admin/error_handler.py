@@ -19,6 +19,11 @@ Design rules:
 
 from __future__ import annotations
 
+from typing import Literal
+
+# `ui.notify(type=...)` takes a Quasar notification kind, not any string.
+_NotifyType = Literal["positive", "negative", "warning", "info", "ongoing"]
+
 import functools
 from collections.abc import Awaitable, Callable
 from typing import TypeVar
@@ -58,7 +63,7 @@ class AdminErrorHandler:
     """Shared admin error surface: sanitized notify + structured log + escalate."""
 
     @staticmethod
-    def _safe_message(exc: Exception) -> tuple[str, str]:
+    def _safe_message(exc: Exception) -> tuple[str, _NotifyType]:
         """Return ``(message, notify_type)``; never leak ``str(exc)`` to the UI."""
         if _is_user_safe(exc):
             return exc.message, "warning"  # type: ignore[attr-defined]
