@@ -610,9 +610,10 @@ class {Name}Container(containers.DeclarativeContainer):
   a dot-directory named in `include` is skipped in silence. Measured: `.claude/hooks`
   reported `0 errors` while analysing **0 of its 7 files**. `exclude` is therefore set
   explicitly, and the scope test pins that pairing — "0 errors" and "nothing checked" print
-  identically, which is the same illusion the mypy hook sustained. Still out of scope by
-  decision: `tests/` (152 errors) and the three harness hook directories (91, mostly
-  unresolved imports needing `extraPaths`).
+  identically, which is the same illusion the mypy hook sustained. The three harness hook
+  directories joined in #387 — `extraPaths = [".agents/shared"]` resolved 70 of their 177
+  findings outright, 88 were `# type: ignore` comments orphaned by retiring mypy, and 19
+  were real. `tests/` (152 errors) stays out by decision, as its own piece of work.
 - **pip-audit — advisory** (`continue-on-error`), writing to the job summary. A newly
   published CVE would otherwise redden a PR that changed nothing, which the §0
   advisory-first direction rules out. It installs the shipped extras before scanning so
