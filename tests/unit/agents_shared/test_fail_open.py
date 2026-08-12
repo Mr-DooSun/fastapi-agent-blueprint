@@ -11,6 +11,12 @@ Three tiers:
        subclass) is not caught by suppress(Exception).
 """
 
+# The harness hook modules below are imported by *basename* after a `sys.path`
+# insertion a few lines up, and the same basenames exist in `.claude/hooks`,
+# `.codex/hooks` and `.antigravity/hooks`. No static path can resolve them
+# unambiguously — which is the same collision that made the retired mypy hook
+# abort (#375) — so each import carries a scoped suppression rather than the
+# config pretending one directory is the answer.
 from __future__ import annotations
 
 import contextlib
@@ -107,7 +113,7 @@ def test_tier2_function_call_import_error_returns_safe_default(
 
     sys.path.insert(0, str(REPO_ROOT / ".claude" / "hooks"))
     try:
-        import user_prompt_submit as ups  # noqa: PLC0415
+        import user_prompt_submit as ups  # noqa: PLC0415  # pyright: ignore[reportMissingImports]
 
         def boom(*_args, **_kwargs):
             raise ImportError("simulated shared failure")
@@ -141,7 +147,7 @@ def test_tier2_verify_first_read_latest_token_marker_safe_default(
     sys.path.insert(0, str(REPO_ROOT / ".claude" / "hooks"))
     sys.modules.pop("verify_first", None)
     try:
-        import verify_first as vf  # noqa: PLC0415
+        import verify_first as vf  # noqa: PLC0415  # pyright: ignore[reportMissingImports]
 
         def boom(*_args, **_kwargs):
             raise ImportError("simulated shared reader failure")
@@ -172,7 +178,7 @@ def test_tier2_completion_gate_entry_points_safe_default(monkeypatch, tmp_path) 
     sys.path.insert(0, str(REPO_ROOT / ".claude" / "hooks"))
     sys.modules.pop("completion_gate", None)
     try:
-        import completion_gate as cg  # noqa: PLC0415
+        import completion_gate as cg  # noqa: PLC0415  # pyright: ignore[reportMissingImports]
 
         # Force the degraded path; both entry points must short-circuit.
         monkeypatch.setattr(cg, "_SHARED_OK", False)
@@ -196,6 +202,7 @@ def test_codex_write_marker_oserror_still_returns_zero() -> None:
     codex_hook = REPO_ROOT / ".codex" / "hooks" / "user-prompt-submit.py"
     spec = importlib.util.spec_from_file_location("codex_ups_a1", str(codex_hook))
     mod = importlib.util.module_from_spec(spec)
+    assert spec is not None and spec.loader is not None
     spec.loader.exec_module(mod)
     try:
 
@@ -223,6 +230,7 @@ def test_codex_write_marker_oserror_does_not_silence_stderr_payload() -> None:
     codex_hook = REPO_ROOT / ".codex" / "hooks" / "user-prompt-submit.py"
     spec = importlib.util.spec_from_file_location("codex_ups_a1s", str(codex_hook))
     mod = importlib.util.module_from_spec(spec)
+    assert spec is not None and spec.loader is not None
     spec.loader.exec_module(mod)
     try:
 
