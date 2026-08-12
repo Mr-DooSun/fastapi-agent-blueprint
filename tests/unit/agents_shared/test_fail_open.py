@@ -201,15 +201,15 @@ def test_codex_write_marker_oserror_still_returns_zero() -> None:
 
     codex_hook = REPO_ROOT / ".codex" / "hooks" / "user-prompt-submit.py"
     spec = importlib.util.spec_from_file_location("codex_ups_a1", str(codex_hook))
-    mod = importlib.util.module_from_spec(spec)
     assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     try:
 
         def _boom(payload: dict) -> None:
             raise OSError("disk full simulated A-1")
 
-        mod.write_marker = _boom
+        mod.write_marker = _boom  # pyright: ignore[reportAttributeAccessIssue]
         orig_stdin = sys.stdin
         sys.stdin = io.StringIO('{"prompt": "[trivial] A-1 regression"}')
         try:
@@ -229,15 +229,15 @@ def test_codex_write_marker_oserror_does_not_silence_stderr_payload() -> None:
 
     codex_hook = REPO_ROOT / ".codex" / "hooks" / "user-prompt-submit.py"
     spec = importlib.util.spec_from_file_location("codex_ups_a1s", str(codex_hook))
-    mod = importlib.util.module_from_spec(spec)
     assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     try:
 
         def _boom(payload: dict) -> None:
             raise OSError("disk full simulated A-1 stderr")
 
-        mod.write_marker = _boom
+        mod.write_marker = _boom  # pyright: ignore[reportAttributeAccessIssue]
         captured = io.StringIO()
         orig_stdin, orig_stderr = sys.stdin, sys.stderr
         sys.stdin = io.StringIO('{"prompt": "[trivial] A-1 stderr check"}')

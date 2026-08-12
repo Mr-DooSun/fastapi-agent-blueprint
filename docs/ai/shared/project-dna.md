@@ -589,8 +589,8 @@ class {Name}Container(containers.DeclarativeContainer):
 ### CI Type Check and Dependency Audit (#333)
 
 - **pyright — blocking, and the only type checker.** `[tool.pyright] include` covers `src`,
-  `tools`, `scripts`, `examples`, `.agents`, the three harness hook directories and the three
-  root runners — 684 files at 0 errors: a new file under any of them is checked from the
+  `tests`, `tools`, `scripts`, `examples`, `.agents`, the three harness hook directories and
+  the three root runners — the whole repository at 0 errors: a new file under any of them is checked from the
   moment it is written. It began (#333) as an allow-list of the packages that passed, widened
   package by package through #381, and reached 0 errors across `src` from a starting 91. Two lessons from that run are worth keeping. First, an allow-list is
   itself a drift generator — this bullet still named five packages after four PRs had
@@ -613,7 +613,13 @@ class {Name}Container(containers.DeclarativeContainer):
   identically, which is the same illusion the mypy hook sustained. The three harness hook
   directories joined in #387 — `extraPaths = [".agents/shared"]` resolved 70 of their 177
   findings outright, 88 were `# type: ignore` comments orphaned by retiring mypy, and 19
-  were real. `tests/` (152 errors) stays out by decision, as its own piece of work.
+  were real. `tests/` joined last (#394-#399), from 155 findings to zero — and not one of
+  them was test noise: a `cast` in `BaseService.create_datas` that existed only because
+  `list` is invariant, three functions asking for a class where they use one method, and
+  **two doubles that had silently stopped matching the protocols they impersonate** — one
+  missing `count_datas_by_day` since #368, one still naming a parameter `user_id` that the
+  admin realm renamed in #218. Nothing had caught either, because a double that no longer
+  matches its interface still runs.
 - **pip-audit — advisory** (`continue-on-error`), writing to the job summary. A newly
   published CVE would otherwise redden a PR that changed nothing, which the §0
   advisory-first direction rules out. It installs the shipped extras before scanning so
