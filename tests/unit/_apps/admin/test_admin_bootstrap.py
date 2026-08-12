@@ -11,8 +11,10 @@ class FakeFastAPI:
     def __init__(self) -> None:
         self.handlers = {}
 
-    def add_event_handler(self, event_type: str, handler) -> None:
-        self.handlers[event_type] = handler
+    # `func`, not `handler`: protocol conformance compares parameter *names*
+    # for anything not positional-only, and Starlette calls it `func`.
+    def add_event_handler(self, event_type: str, func) -> None:
+        self.handlers[event_type] = func
 
 
 class FakeAdminIdentityService:

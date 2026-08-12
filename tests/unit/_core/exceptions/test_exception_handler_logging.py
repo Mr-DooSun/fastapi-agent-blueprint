@@ -20,6 +20,9 @@ of them". Either way the two that *do* log — `dynamodb_client` and
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
+from typing import Any
+
 import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
@@ -58,7 +61,7 @@ def _app() -> FastAPI:
     return app
 
 
-def _exception_records(logs: list[dict]) -> list[dict]:
+def _exception_records(logs: Sequence[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
     """Records that carry exception identity — the thing an operator greps for."""
     return [
         r
