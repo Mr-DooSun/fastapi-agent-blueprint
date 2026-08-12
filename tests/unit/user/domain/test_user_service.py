@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 import pytest
@@ -27,7 +27,7 @@ class MockUserRepository:
         self._next_id += 1
         return dto
 
-    async def insert_datas(self, entities: list[BaseModel]) -> list[UserDTO]:
+    async def insert_datas(self, entities: Sequence[BaseModel]) -> list[UserDTO]:
         return [await self.insert_data(e) for e in entities]
 
     async def select_datas(self, page: int, page_size: int) -> list[UserDTO]:

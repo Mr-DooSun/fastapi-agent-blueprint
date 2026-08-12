@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 import pytest
@@ -113,7 +113,9 @@ class FakeAdminRepository:
             and getattr(dto, field) in value_set
         }
 
-    async def insert_datas(self, entities: list[BaseModel]) -> list[AdminIdentityDTO]:
+    async def insert_datas(
+        self, entities: Sequence[BaseModel]
+    ) -> list[AdminIdentityDTO]:
         return [await self.insert_data(e) for e in entities]
 
     async def count_datas(self) -> int:
