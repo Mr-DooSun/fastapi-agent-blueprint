@@ -113,12 +113,17 @@ otel = [
 # and "nothing checked" print the same way, which is the exact failure that let
 # the mypy hook look like coverage for two releases.
 #
+# The three harness hook directories joined in #387. 177 errors became 0, and the
+# split was not what it looked like: 70 were unresolved imports that `extraPaths`
+# fixed outright, 88 were `# type: ignore` comments left orphaned by retiring
+# mypy, and the 19 that remained were real — a fallback stub whose signature did
+# not match what it stands in for, one name the fail-open `except` branch forgot
+# to give a sentinel, and 17 call sites guarded by an `_OK` flag that nothing
+# links to the `None` sentinels it sets.
+#
 # Deliberately still out of scope:
 #   tests/                152 errors. mypy excluded it too; widening it is its own
 #                         piece of work, not a side effect of retiring mypy.
-#   .claude/hooks/ and    91 errors, 70 of them unresolved imports because the
-#   the other two         hooks reach `.agents/shared/` through sys.path edits that
-#   harness copies        need `extraPaths`. Tracked separately.
 #
 # Never widen coverage by relaxing the rules below.
 [tool.pyright]
@@ -130,6 +135,12 @@ include = [
     # The shared governor package every harness hook imports. Clean already; it
     # had no type checker looking at it because it lives in a dot-directory.
     ".agents",
+    # The three harness hook copies (#387). They are runtime scripts, not shipped
+    # code, but the failure they risk is a hook degrading into a no-op — which is
+    # precisely what the retired mypy stage demonstrated.
+    ".claude/hooks",
+    ".antigravity/hooks",
+    ".codex/hooks",
     # mypy excluded `run_.*\.py$`. Including them found that `make scheduler` had
     # never run the scheduler: `run_scheduler` is a coroutine function and the call
     # dropped it. Pinned by tests/unit/test_local_runners.py.
@@ -138,6 +149,13 @@ include = [
     "run_scheduler_local.py",
 ]
 exclude = ["**/node_modules", "**/__pycache__", "**/.venv"]
+# The hooks reach the shared governor package by inserting `.agents/shared` on
+# `sys.path` at import time, so `harness_debug` / `governor.*` are top-level names
+# that no static resolver can find on its own. This is what turned 70 of #387's
+# findings into zero — and it also revealed two orphaned ignores in
+# `tools/check_governor_footer.py`, a file already in the gate whose imports had
+# been silently unresolved.
+extraPaths = [".agents/shared"]
 # Suppressions cannot rot: an ignore comment that stops being needed is an error.
 # Enabling this is what retiring mypy bought — it reported 3 errors while the hook
 # existed, and 2 were mypy-only `# type: ignore` comments pyright does not need.

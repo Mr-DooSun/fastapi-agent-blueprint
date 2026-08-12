@@ -14,7 +14,10 @@ is the whole reason this file exists:
 - **Suppression creep.** `# pyright: ignore` is the other way to hold a tree at 0
   errors without fixing anything. 21 exist, in 10 files, each with its cause
   written at the call site. That is defensible *because* it is pinned; unpinned,
-  it is a trend.
+  it is a trend. #387 is the counter-example worth remembering: the three harness
+  hook directories carried **88** `# type: ignore` comments, every one of them
+  unnecessary, because they were written for a checker that had not run in two
+  releases. None of them was replaced by a suppression.
 
 The third one is the same illusion the retired mypy hook sustained for two
 releases: it aborted on a duplicate module name, inspected nothing, and reported
@@ -118,6 +121,22 @@ def test_every_include_path_exists(path: str) -> None:
         assert any(resolved.rglob("*.py")), f"{path!r} contains no Python to check"
 
 
+def test_the_shared_governor_package_is_on_the_resolution_path() -> None:
+    """`extraPaths` is what makes the harness hooks checkable at all (#387).
+
+    The hooks insert `.agents/shared` on `sys.path` at import time, so
+    `harness_debug` and `governor.*` are top-level names no static resolver finds
+    on its own. Dropping this line does surface as 70 unresolved-import errors
+    rather than silence — but the tempting way to quiet those is to relax
+    `reportMissingImports`, which would also blind the gate to a genuinely missing
+    module. This says which of the two is the fix.
+    """
+    assert ".agents/shared" in _pyright_config().get("extraPaths", []), (
+        "the harness hooks and tools/check_governor_footer.py resolve their shared "
+        "imports through this path; without it 70 imports go unresolved"
+    )
+
+
 def test_dot_directory_includes_require_an_explicit_exclude() -> None:
     """The trap: a dot-path in `include` is skipped unless `exclude` is overridden.
 
@@ -163,7 +182,17 @@ def test_every_src_package_is_covered(package: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "path", ["tools", "scripts", "examples", ".agents", "run_scheduler_local.py"]
+    "path",
+    [
+        "tools",
+        "scripts",
+        "examples",
+        ".agents",
+        "run_scheduler_local.py",
+        ".claude/hooks",
+        ".antigravity/hooks",
+        ".codex/hooks",
+    ],
 )
 def test_the_scope_mypy_nominally_covered_stays_covered(path: str) -> None:
     """Retiring mypy (#375) must not quietly reduce what is checked.
