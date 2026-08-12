@@ -127,6 +127,8 @@ include = [
     # injection, and Starlette's `add_exception_handler` signature — framework
     # contracts, not code this repo can annotate its way out of.
     "src/_apps/admin/pages",
+    # The admin shell itself — inherited by every domain admin page.
+    "src/_core/infrastructure/admin",
 ]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
