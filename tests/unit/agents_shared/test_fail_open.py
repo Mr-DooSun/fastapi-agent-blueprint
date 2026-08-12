@@ -11,12 +11,11 @@ Three tiers:
        subclass) is not caught by suppress(Exception).
 """
 
-# The harness hook modules below are imported by *basename* after a `sys.path`
-# insertion a few lines up, and the same basenames exist in `.claude/hooks`,
-# `.codex/hooks` and `.antigravity/hooks`. No static path can resolve them
-# unambiguously — which is the same collision that made the retired mypy hook
-# abort (#375) — so each import carries a scoped suppression rather than the
-# config pretending one directory is the answer.
+# The harness hook modules here are loaded *by path* under harness-qualified
+# aliases, because the same basenames exist in `.claude/hooks`, `.codex/hooks` and
+# `.antigravity/hooks` — `import verify_first` names three files and `sys.modules`
+# picks one (#401). The suppressions this comment used to explain are gone with the
+# bare imports that needed them.
 from __future__ import annotations
 
 import contextlib

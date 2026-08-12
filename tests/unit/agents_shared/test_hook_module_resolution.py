@@ -2,15 +2,19 @@
 
 Eight hook basenames exist in more than one harness directory — `verify_first.py`
 and `completion_gate.py` in all three — so `import verify_first` after a
-`sys.path.insert` is ambiguous, and `sys.modules` decides it. Measured before this
-guard existed: after a full `tests/unit/agents_shared` run,
+`sys.path.insert` is ambiguous, and `sys.modules` decides it. The suite leaves
+those keys pointing at the Codex copies:
 
     verify_first     -> .codex/hooks/verify_first.py
     completion_gate  -> .codex/hooks/completion_gate.py
 
-while `test_fail_open.py` had inserted `.claude/hooks` and imported both by name.
-Its tier-2 tests were asserting the Codex fail-open behaviour under Claude names;
-the two copies of `verify_first.py` differ by 228 lines.
+**No test was getting the wrong copy.** #401 was filed claiming they were, on a
+misreading — the end state of `sys.modules` is not what an earlier test received —
+and the tier-2 tests in `test_fail_open.py` had guarded themselves with a
+`sys.modules.pop` plus `sys.path[0]`. What was missing is that nothing said so and
+nothing enforced it: the next test to import a colliding basename without both
+halves gets whichever copy is cached, and would pass while exercising another
+harness. The two copies of `verify_first.py` differ by 228 lines.
 
 **The pollution is not the tests' fault and cannot be fixed by renaming.** The hook
 files import their own siblings by bare name — `.codex/hooks/completion_gate.py`
@@ -33,6 +37,7 @@ import ast
 import importlib.util
 import sys
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
@@ -52,6 +57,27 @@ def _colliding_basenames() -> set[str]:
         for path in directory.glob("*.py"):
             seen[path.stem] = seen.get(path.stem, 0) + 1
     return {stem for stem, count in seen.items() if count > 1}
+
+
+def _real_loader():
+    """`test_fail_open._load_claude_hook`, loaded by path.
+
+    By path rather than `from test_fail_open import ...` so this guard does not
+    depend on the directory being an importable package, and so the module it pulls
+    in cannot be shadowed by anything already in `sys.modules`.
+    """
+    target = _TESTS_DIR / "test_fail_open.py"
+    spec = importlib.util.spec_from_file_location("fail_open_under_guard", str(target))
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["fail_open_under_guard"] = module
+    spec.loader.exec_module(module)
+    loader = getattr(module, "_load_claude_hook", None)
+    assert loader is not None, (
+        "test_fail_open._load_claude_hook is gone — if the loading helper was "
+        "renamed, point this guard at the new one; do not delete the check"
+    )
+    return loader
 
 
 def test_more_than_one_harness_copy_exists() -> None:
@@ -106,12 +132,17 @@ def test_claude_hooks_load_from_the_claude_directory(stem: str) -> None:
     Loading by path under a harness-qualified alias must yield a module whose
     `__file__` is the Claude copy, no matter what a previously-run test left in
     `sys.modules` under the bare name. Asserted on `__file__` because that is the
-    thing that was wrong: the tests passed while exercising the other copy.
+    thing a wrong resolution would silently change, and the reason a passing test
+        is not evidence of which copy ran.
     """
     path = _REPO_ROOT / ".claude" / "hooks" / f"{stem}.py"
     assert path.is_file(), f"{path} is missing"
 
     # Poison the bare key first — this is the state a real suite run produces.
+    # Saved and restored, not just popped: dropping a key another test cached would
+    # let this guard mask the very misresolution it exists to catch. Same discipline
+    # as `test_locale.py::_load_codex_completion_gate`.
+    saved = sys.modules.get(stem)
     codex_copy = _REPO_ROOT / ".codex" / "hooks" / f"{stem}.py"
     if codex_copy.is_file():
         poisoned = importlib.util.spec_from_file_location(stem, str(codex_copy))
@@ -119,11 +150,11 @@ def test_claude_hooks_load_from_the_claude_directory(stem: str) -> None:
         sys.modules[stem] = importlib.util.module_from_spec(poisoned)
 
     try:
-        spec = importlib.util.spec_from_file_location(f"claude_{stem}", str(path))
-        assert spec is not None and spec.loader is not None
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[f"claude_{stem}"] = module
-        spec.loader.exec_module(module)
+        # The *real* loader, not a copy of it. Reproducing the correct logic here
+        # would let `_load_claude_hook` regress to a dynamic `import_module(stem)` —
+        # invisible to the AST rule above, since it is not an import statement —
+        # while this test kept passing on its own private implementation.
+        module = _real_loader()(stem)
 
         assert module.__file__ is not None
         assert Path(module.__file__).parent == path.parent, (
@@ -131,5 +162,8 @@ def test_claude_hooks_load_from_the_claude_directory(stem: str) -> None:
             "is supposed to be immune to whatever occupies the bare name"
         )
     finally:
-        sys.modules.pop(stem, None)
+        if isinstance(saved, ModuleType):
+            sys.modules[stem] = saved
+        else:
+            sys.modules.pop(stem, None)
         sys.modules.pop(f"claude_{stem}", None)
