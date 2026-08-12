@@ -122,16 +122,25 @@ def _render_ai_usage(usage: AiUsageMetrics) -> None:
                 "admin-text-muted"
             )
             return
+        # The three counters are set together by the facade — all int, or all
+        # None when the read failed. Narrowing them here enforces that at the
+        # boundary rather than assuming it: `or 0` would collapse "no data" into
+        # "zero", which is exactly the distinction the facade keeps.
+        calls, failures, tokens = usage.calls, usage.failures, usage.total_tokens
+        if failures is None or tokens is None:
+            ui.label("Agent usage unavailable").classes("admin-text-muted")
+            return
+
         with ui.row().classes("q-gutter-md"):
-            c.stat_card("Calls", usage.calls, icon="smart_toy")
-            c.stat_card("Failures", usage.failures, icon="error")
+            c.stat_card("Calls", calls, icon="smart_toy")
+            c.stat_card("Failures", failures, icon="error")
             rate = usage.failure_rate
             c.stat_card(
                 "Failure rate",
                 f"{rate:.1%}" if rate is not None else "—",
                 icon="percent",
             )
-            c.stat_card("Tokens", usage.total_tokens, icon="toll")
+            c.stat_card("Tokens", tokens, icon="toll")
 
 
 def _render_growth(metrics: DashboardMetrics) -> None:
