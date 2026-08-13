@@ -12,9 +12,10 @@ from src.user.domain.exceptions.user_exceptions import UserAlreadyExistsExceptio
 from src.user.domain.services.user_service import UserService
 from src.user.interface.server.schemas.user_schema import UpdateUserRequest
 from tests.factories.user_factory import make_create_user_request, make_user_dto
+from tests.support.fake_repository import FakeRepositoryBase
 
 
-class MockUserRepository:
+class MockUserRepository(FakeRepositoryBase[UserDTO]):
     """Protocol-based Mock — no need to inherit UserRepository"""
 
     def __init__(self):

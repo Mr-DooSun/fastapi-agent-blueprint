@@ -25,11 +25,12 @@ from src.admin_identity.domain.services.admin_identity_service import (
     AdminIdentityService,
 )
 from tests.factories.admin_identity_factory import make_admin_identity_dto
+from tests.support.fake_repository import FakeRepositoryBase
 
 # ── Fakes ──────────────────────────────────────────────────────────────────
 
 
-class FakeAdminRepository:
+class FakeAdminRepository(FakeRepositoryBase[AdminIdentityDTO]):
     """In-memory repo satisfying AdminIdentityService + AdminAccountUseCase."""
 
     def __init__(self, admins: list[AdminIdentityDTO] | None = None) -> None:
