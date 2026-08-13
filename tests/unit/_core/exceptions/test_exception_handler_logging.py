@@ -38,8 +38,11 @@ from src._core.exceptions.exception_handlers import (
 
 def _app() -> FastAPI:
     app = FastAPI()
-    app.add_exception_handler(BaseCustomException, custom_exception_handler)
-    app.add_exception_handler(HTTPException, http_exception_handler)
+    # Starlette types `handler` as taking `Exception`; the narrow annotations are
+    # the record of which exception each handler serves. Same suppression the
+    # production registration carries.
+    app.add_exception_handler(BaseCustomException, custom_exception_handler)  # pyright: ignore[reportArgumentType]
+    app.add_exception_handler(HTTPException, http_exception_handler)  # pyright: ignore[reportArgumentType]
     app.add_exception_handler(Exception, generic_exception_handler)
 
     @app.get("/custom/{status}")
