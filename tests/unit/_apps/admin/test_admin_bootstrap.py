@@ -55,6 +55,7 @@ async def test_install_bootstrap_admin_seed_registers_startup_handler(monkeypatc
     admin_bootstrap._install_bootstrap_admin_seed(app, container)
     await app.handlers["startup"]()
 
+    assert service.entity is not None
     assert service.entity.username == "admin"
     assert service.entity.password == "secret"
 

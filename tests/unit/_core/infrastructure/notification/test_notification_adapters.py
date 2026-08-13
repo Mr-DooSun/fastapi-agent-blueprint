@@ -70,6 +70,7 @@ class TestSlackNotificationAdapter:
         assert http_client.fake_session.post_calls == [
             {"url": webhook_url, "json": {"text": "boom"}}
         ]
+        assert http_client.fake_session.last_response is not None
         http_client.fake_session.last_response.raise_for_status.assert_called_once()
         http_client.fake_session.last_response.json.assert_not_called()
 
@@ -87,5 +88,6 @@ class TestDiscordNotificationAdapter:
         assert http_client.fake_session.post_calls == [
             {"url": webhook_url, "json": {"content": "boom"}}
         ]
+        assert http_client.fake_session.last_response is not None
         http_client.fake_session.last_response.raise_for_status.assert_called_once()
         http_client.fake_session.last_response.json.assert_not_called()

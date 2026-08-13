@@ -5,6 +5,12 @@ when available, falls back to inline logic when not, and is exception-safe
 in all paths (HC-5.5 execution fail-open).
 """
 
+# The harness hook modules below are imported by *basename* after a `sys.path`
+# insertion a few lines up, and the same basenames exist in `.claude/hooks`,
+# `.codex/hooks` and `.antigravity/hooks`. No static path can resolve them
+# unambiguously — which is the same collision that made the retired mypy hook
+# abort (#375) — so each import carries a scoped suppression rather than the
+# config pretending one directory is the answer.
 from __future__ import annotations
 
 import sys
@@ -16,7 +22,7 @@ _HOOKS = REPO_ROOT / ".codex" / "hooks"
 if str(_HOOKS) not in sys.path:
     sys.path.insert(0, str(_HOOKS))
 
-import _shared as shared_module
+import _shared as shared_module  # pyright: ignore[reportMissingImports]
 
 # ---------------------------------------------------------------------------
 # Delegation path (_GATE_OK=True)
