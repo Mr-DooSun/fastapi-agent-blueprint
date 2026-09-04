@@ -32,10 +32,10 @@ behaviour bug, because a regression test is required (see `target-operating-mode
 Recursion guard: do **not** invoke `/fix-bug` recursively. Do not invoke `/plan-feature` for the
 *bug's own* framing or planning — `/fix-bug`'s Phase 1+2 already cover those steps.
 
-That guard is **not** an exemption from [ADR 050](../../history/050-midtask-scope-expansion-gate.md).
+That guard is **not** an exemption from [ADR 050](../../../history/050-midtask-scope-expansion-gate.md).
 If the trace shows the fix requires a capability the repository does not have — a new pattern, a
 new infra surface, a new domain — that is new implementation-class work: **stop, report the gap,
-and route to `/plan-feature`** ([`AGENTS.md`](../../../AGENTS.md#mid-task-scope-expansion-adr-050)
+and route to `/plan-feature`** ([`AGENTS.md`](../../../../AGENTS.md#mid-task-scope-expansion-adr-050)
 § Mid-Task Scope Expansion). Scope expansion is not recursion.
 
 ## Scope Boundary — authorities this skill does not own
@@ -45,13 +45,17 @@ redefine them:
 
 | Concern | Owner | This skill |
 |---|---|---|
-| Review dimensions, finding basis, `Verdict` (`PASS`/`FAIL`/`CANNOT CERTIFY`/`N/A`) | [`review-protocol.md`](../review-protocol.md) §2–§4 / [ADR 053](../../history/053-shared-review-protocol.md) — consumed by the three **review** skills only | emits **`Outcome`**, never `Verdict`; is not a fourth protocol consumer |
+| Review dimensions, finding basis, `Verdict` (`PASS`/`FAIL`/`CANNOT CERTIFY`/`N/A`) | [`review-protocol.md`](../review-protocol.md) §1–§4 / [ADR 053](../../../history/053-shared-review-protocol.md) — consumed by the three **review** skills only | emits **`Outcome`**, never `Verdict`; is not a fourth protocol consumer |
 | `workflow.stage` transitions | `/plan-feature` → `/execute-plan` + `.agents/shared/work_ledger.py` | writes `update_goal_scope_plan(...)` only; never sets `stage` |
 | Commit type vocabulary | `.pre-commit-config.yaml` (`conventional-pre-commit`) + [`project-dna.md`](../project-dna.md) §7 | recommends `fix:`; cites those two, not `AGENTS.md` |
 | Test file layout, factories, patterns | [`test-files.md`](../test-files.md) / [`test-patterns.md`](../test-patterns.md) / `/test-domain` | decides *which* tests are owed, never their shape |
 | Conversion patterns, router patterns | [`project-dna.md`](../project-dna.md) §6 / §9 | referenced during Trace |
 
-The `Bug Fix Report` does **not** replace `self-review` or `/review-pr`. It is the input they read.
+The `Bug Fix Report` does **not** replace `self-review` or `/review-pr` — it is the evidence a
+reviewer reads, not a review. Its `Drift Candidates` / `Sync Required` fields deliberately match
+the shape [`sync-guidelines.md`](sync-guidelines.md) consumes, and that skill lists `/fix-bug` as a
+producer; the review skills' own contract ([`review-protocol.md`](../review-protocol.md) §3) does
+not reference this report, so do not expect them to consume it automatically.
 
 ## Small-Bug Lane
 
@@ -78,11 +82,17 @@ The delta from the full lane is explicit — the lane is not "the same thing, fa
 | `approach options` | conditional | **not applicable** — single layer is an eligibility condition |
 | Verify gates | focused tests + `pyright` + `pre-commit` + the risk-based sweep (`check-core`, `test-pg`, …) | focused tests + `pyright` + `pre-commit` only; **no sweep** |
 | `/review-architecture` / `/security-review` | routed when applicable | **skipped** — no layer interaction, not security-relevant, both by eligibility |
-| Bug Fix Report | all fields | `Scope`, `Root Cause`, `Fix`, `Verification`, `Outcome` — the rest are `N/A` |
+| Bug Fix Report | all fields | `Lane: small-bug` plus `Scope`, `Root Cause`, `Fix`, `Verification`, `Outcome` — the rest are `N/A` |
 | self-review + `/review-pr` | required | required — **unchanged** |
 
 What the lane drops is breadth. What it never drops is the existence gate, red → green evidence,
 and the report.
+
+**The lane must be declared, not merely taken.** A `Lane: small-bug` line in the report, with the
+eligibility conditions it met, is what separates a lane run from a full-lane run that simply wrote
+one matrix row and stopped — those two are otherwise byte-identical in the output. Every other
+reduced path in this repository carries a visible marker (an exception token needs a prompt-line
+token *and* a commit-message rationale); the lane is not an exception to that.
 
 ## Phase 1: Reproduce
 
@@ -103,7 +113,7 @@ exist, because the end state of `sys.modules` was read as what an earlier test h
 
    | Field | Example |
    |---|---|
-   | exact command | `pytest tests/integration/user/ -k refresh_token -x` |
+   | exact command | `pytest tests/integration/auth/ -k refresh_token -x` |
    | expected vs actual | expected 200 + body; actual `IntegrityError` |
    | environment + config | `TEST_DB_ENGINE=postgresql`; `admin` extra installed; `BROKER_TYPE=inmemory` |
    | prerequisite state | database already holds the schema; one existing row |
@@ -184,10 +194,12 @@ enumerating what the *recorded root cause reaches* is finite and checkable.
 
 Record one row per candidate:
 
+Worked example — the real #374 matrix, so every cell is a citation you can check:
+
 | candidate | reachability evidence | disposition | evidence |
 |---|---|---|---|
-| `UserService.get_datas` empty-list branch | `src/user/domain/user_service.py:88` calls the same helper | test added | `tests/unit/user/...::test_get_datas_empty` |
-| PostgreSQL dialect | `KNOWN_ENGINES` includes it; `func.date` returns `date` there and `str` on SQLite | already covered | the `postgres` leg of the CI `test` matrix runs it |
+| `Base.metadata` completeness under any test selection | `tests/conftest.py:32` calls `load_models()`; without it the metadata holds only what the selected tests happened to import | test added | `tests/unit/_core/infrastructure/persistence/rdb/test_metadata_completeness.py`, run by both legs of the CI `test` matrix |
+| PostgreSQL dialect | `KNOWN_ENGINES` (`src/_core/config.py:9`) includes it, and `func.date` returns `date` there but `str` on SQLite | already covered | `tests/unit/_core/infrastructure/persistence/rdb/test_base_repository_contract.py` — its `repository` fixture takes `test_db` (line 69), and the `postgresql` leg of the CI `test` matrix runs it |
 | MySQL dialect | `KNOWN_ENGINES` accepts it, so a fork can select it | **deferred** | no MySQL runs in CI — an accepted limit (ADR 058; `ci.yml`: "MySQL is deliberately absent") |
 | `.antigravity` hook copy | grep shows the basename exists there too | not reached | that copy does not import the affected symbol |
 
@@ -209,7 +221,7 @@ covered — the mistake this table used to model — closes a candidate that not
 1. other branches of the same function (empty, `None`, zero, boundary, error path);
 2. other implementations of the same `Protocol` or base class;
 3. configuration Selectors that resolve to a *different* implementation
-   (`providers.Selector` per [ADR 042](../../history/042-optional-infrastructure-di-pattern.md) —
+   (`providers.Selector` per [ADR 042](../../../history/042-optional-infrastructure-di-pattern.md) —
    the stub branch is a real candidate);
 4. **registration / collection sets** — anything that must be *complete* for the operation to be
    correct: model registries (`Base.metadata`), `__all__` exports, Selector maps, hook registries,
@@ -235,7 +247,7 @@ If the matrix shows the fix could land at more than one layer, `approach options
 ## Phase 3: Fix
 
 1. **Fix at the earliest boundary that owns the broken invariant**, per
-   [`AGENTS.md`](../../../AGENTS.md#responsibility-matrix) § Responsibility Matrix — "each concern
+   [`AGENTS.md`](../../../../AGENTS.md#responsibility-matrix) § Responsibility Matrix — "each concern
    has exactly one home". This is an *ownership* rule, not a "push it down to domain" rule:
    provider SDK calls, SDK exception translation (`error_mapper.py`), DI wiring and bootstrap
    orchestration are owned by **infrastructure**, and moving such a fix into a domain service
@@ -245,7 +257,7 @@ If the matrix shows the fix could land at more than one layer, `approach options
    patch.
 3. Follow existing patterns — do not introduce new ones (Conversion Patterns:
    [`project-dna.md`](../project-dna.md) §6, Router: §9).
-4. Confirm compliance with [`AGENTS.md`](../../../AGENTS.md) Absolute Prohibitions.
+4. Confirm compliance with [`AGENTS.md`](../../../../AGENTS.md) Absolute Prohibitions.
 5. **Answer the prevention question**: why did the existing tests not catch this? The answer is
    either a test that is now owed, or a recorded rationale for why the gap is acceptable. This is
    the highest-leverage output of the whole workflow — a bug class that stays invisible recurs.
@@ -282,10 +294,13 @@ If the matrix shows the fix could land at more than one layer, `approach options
 ## Output: Bug Fix Report
 
 Always emitted, including on the two Phase 1 exits (where most fields are short or `N/A`).
-Guards F / G / H / I in [`AGENTS.md`](../../../AGENTS.md#reasoning-level-consistency-guards) apply
+Guards F / G / H / I in [`AGENTS.md`](../../../../AGENTS.md#reasoning-level-consistency-guards) apply
 to this report as to any other reasoning step.
 
 ```text
+Lane
+- full | small-bug (+ the eligibility conditions met)
+
 Scope
 - <bug, issue #, affected domain/layer, and what was excluded>
 
@@ -359,4 +374,4 @@ vocabulary is owned by `.pre-commit-config.yaml` (`conventional-pre-commit`) and
 only a test that pins an already-correct behaviour.
 
 If an exception token was used on the prompt, the commit message must carry a one-line rationale
-([`AGENTS.md`](../../../AGENTS.md#exception-tokens)).
+([`AGENTS.md`](../../../../AGENTS.md#exception-tokens)).

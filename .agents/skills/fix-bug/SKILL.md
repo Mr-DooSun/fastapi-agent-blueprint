@@ -64,6 +64,6 @@ fields, the matrix search procedure and termination condition, and the report te
 
 Small bugs use the documented Small-Bug Lane in the shared procedure rather than an exception
 token. It keeps all four phases, the existence gate, red/green, one focused test (the Phase 1 reproduction test kept as the regression test),
-pyright + pre-commit, self-review and `$review-pr`; it drops the multi-row matrix, the
+pyright + pre-commit, self-review and `$review-pr`, and it must be **declared** as `Lane: small-bug` in the report; it drops the multi-row matrix, the
 unit-test-at-cause layer, the risk-based gate sweep, the architecture/security review routing, and
 most report fields. The shared body carries the full delta table.
