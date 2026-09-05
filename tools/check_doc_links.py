@@ -147,7 +147,13 @@ def _strip_fenced_blocks(text: str) -> str:
 
 def _strip_markdown_noise(text: str) -> str:
     stripped = _strip_fenced_blocks(_strip_frontmatter(text))
+    stripped = _HTML_COMMENT_RE.sub(_blank_match, stripped)
     return _CODE_SPAN_RE.sub(_blank_match, stripped)
+
+
+# A commented-out link is not a link. README.md keeps a regeneration note above
+# its demo GIF; a future one holding a stale path must not block a commit.
+_HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 
 
 # ---------------------------------------------------------------------------
@@ -155,11 +161,17 @@ def _strip_markdown_noise(text: str) -> str:
 # ---------------------------------------------------------------------------
 # The label may contain one level of nested brackets so `[![alt](img)](target)`
 # extracts `target`. A destination is either <bracketed> or a bare run without
-# whitespace or parentheses, optionally followed by a "title".
+# whitespace, allowing one level of balanced parentheses (CommonMark §6.3). Note
+# what the narrower `[^()\s]*` spelling actually does to `[x](docs/a_(b).md)`: the
+# whole match fails, so the link is skipped in silence rather than truncated —
+# a missed broken link, not a false positive.
 _INLINE_LINK_RE = re.compile(
     r"(?<!\\)!?\[(?:[^\[\]]|\[[^\[\]]*\])*\]"
-    r'\(\s*(?P<target><[^<>]*>|[^()\s]*)(?:\s+"[^"]*")?\s*\)'
+    r"\(\s*(?P<target><[^<>]*>|(?:[^()\s]|\([^()\s]*\))*)"
+    r'(?:\s+"[^"]*")?\s*\)'
 )
+# A definition's destination is a single token, so `[Term]: a prose definition`
+# does not match at all. `_looks_like_a_path` covers the one-word residue.
 _REFERENCE_DEF_RE = re.compile(
     r'^[ ]{0,3}\[[^\]]+\]:[ \t]+(?P<target><[^<>]*>|\S+)(?:[ \t]+["(\'].*)?[ \t]*$'
 )
@@ -175,6 +187,13 @@ class Link:
     target: str
     line_number: int
     line_content: str
+
+
+def _looks_like_a_path(target: str) -> bool:
+    """Reference definitions only. `[Term]: glossary` is a legal definition whose
+    destination is a word, not a file; requiring a separator or an extension keeps
+    a glossary line from blocking a commit."""
+    return "/" in target or "." in target or target.startswith("#")
 
 
 def extract_links(text: str) -> list[Link]:
@@ -194,8 +213,11 @@ def extract_links(text: str) -> list[Link]:
                 target = match.group("target").strip()
                 if target.startswith("<") and target.endswith(">"):
                     target = target[1:-1].strip()
-                if target:
-                    links.append(Link(target, index, source_line.rstrip()))
+                if not target:
+                    continue
+                if pattern is _REFERENCE_DEF_RE and not _looks_like_a_path(target):
+                    continue
+                links.append(Link(target, index, source_line.rstrip()))
     return links
 
 
@@ -380,7 +402,8 @@ class DocLinkChecker:
                     )
                 ]
             if (
-                resolved not in self._index.files
+                resolved != "."  # `./` or `../` resolving to the repository root
+                and resolved not in self._index.files
                 and resolved not in self._index.directories
             ):
                 return [

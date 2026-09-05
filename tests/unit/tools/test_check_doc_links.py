@@ -194,6 +194,26 @@ class TestPathResolution:
         assert len(violations) == 1
         assert "docs/history/001.md" in violations[0].reason
 
+    def test_balanced_parentheses_in_a_target_are_extracted(self, tmp_path):
+        """CommonMark §6.3 allows balanced parens in a destination. A destination
+        pattern that stops at the first `(` does not truncate the target — the
+        whole match fails and the link is skipped in silence, so this asserts the
+        broken case is *reported*, which a truncating pattern cannot do."""
+        checker = _checker(
+            tmp_path,
+            {
+                "README.md": (
+                    "[ok](docs/notes_(draft).md) and [dead](docs/gone_(old).md)\n"
+                ),
+                "docs/notes_(draft).md": "# Notes\n",
+            },
+        )
+
+        violations = checker.check_file("README.md")
+
+        assert len(violations) == 1
+        assert "docs/gone_(old).md" in violations[0].reason
+
     def test_percent_encoded_target_is_decoded(self, tmp_path):
         checker = _checker(
             tmp_path,
@@ -386,6 +406,30 @@ class TestNoFalsePositives:
                 "pyproject.toml": "",
             },
         )
+        assert checker.check_file("docs/guide.md") == []
+
+    def test_links_inside_html_comments_are_ignored(self, tmp_path):
+        """README.md keeps a regeneration note above its demo GIF. A commented-out
+        link is not a link, and a stale one must not block a commit."""
+        checker = _checker(
+            tmp_path,
+            {"README.md": "<!-- was [old](docs/gone.md) -->\n\nText.\n"},
+        )
+        assert checker.check_file("README.md") == []
+
+    def test_repository_root_target_resolves(self, tmp_path):
+        """`../` from a subdirectory and `./` from the root both normalise to `.`,
+        which is a real directory but is in no file list."""
+        checker = _checker(
+            tmp_path,
+            {"docs/guide.md": "[root](../) and [here](./)\n", "README.md": "# R\n"},
+        )
+        assert checker.check_file("docs/guide.md") == []
+
+    def test_glossary_style_reference_definition_is_ignored(self, tmp_path):
+        """`[Term]: word` is a legal link definition whose destination is a word,
+        not a path. Only definitions that look like paths are resolved."""
+        checker = _checker(tmp_path, {"docs/guide.md": "[Ledger]: bookkeeping\n"})
         assert checker.check_file("docs/guide.md") == []
 
 
