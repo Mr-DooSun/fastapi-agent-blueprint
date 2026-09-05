@@ -139,7 +139,7 @@ Confirm that the session shows a `context7` MCP startup or tool call before trea
 
 ## Project Structure
 
-See [README.md](README.md#project-structure) for the full project structure.
+See [`docs/reference.md`](docs/reference.md#project-structure) for the full project structure.
 
 Each domain follows a consistent layout:
 
