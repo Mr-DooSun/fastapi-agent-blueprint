@@ -426,6 +426,30 @@ class TestNoFalsePositives:
         )
         assert checker.check_file("docs/guide.md") == []
 
+    def test_a_tracked_file_missing_from_the_working_tree_is_skipped(self, tmp_path):
+        """`git ls-files` lists the index, so an unstaged `rm docs/x.md` leaves a
+        path this hook would otherwise report as unreadable — on every commit, for
+        a git state that is not a link defect."""
+        index = cdl.RepoIndex.from_paths(["docs/guide.md", "docs/gone.md"])
+        checker = cdl.DocLinkChecker(index, repo_root=tmp_path)
+
+        assert checker.check_file("docs/gone.md") == []
+
+    def test_anchor_into_a_file_missing_from_the_working_tree_is_skipped(
+        self, tmp_path
+    ):
+        """Reading no headings is not the same as a file having none: an
+        unreadable target would otherwise fail every anchor pointing into it."""
+        (tmp_path / "docs").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "docs/guide.md").write_text(
+            "[x](gone.md#section)\n", encoding="utf-8"
+        )
+        # `docs/gone.md` is in the index but was never written to disk.
+        index = cdl.RepoIndex.from_paths(["docs/guide.md", "docs/gone.md"])
+        checker = cdl.DocLinkChecker(index, repo_root=tmp_path)
+
+        assert checker.check_file("docs/guide.md") == []
+
     def test_glossary_style_reference_definition_is_ignored(self, tmp_path):
         """`[Term]: word` is a legal link definition whose destination is a word,
         not a path. Only definitions that look like paths are resolved."""

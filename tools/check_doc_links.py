@@ -145,15 +145,15 @@ def _strip_fenced_blocks(text: str) -> str:
     return "\n".join(out)
 
 
+# A commented-out link is not a link. README.md keeps a regeneration note above
+# its demo GIF; a future one holding a stale path must not block a commit.
+_HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
+
+
 def _strip_markdown_noise(text: str) -> str:
     stripped = _strip_fenced_blocks(_strip_frontmatter(text))
     stripped = _HTML_COMMENT_RE.sub(_blank_match, stripped)
     return _CODE_SPAN_RE.sub(_blank_match, stripped)
-
-
-# A commented-out link is not a link. README.md keeps a regeneration note above
-# its demo GIF; a future one holding a stale path must not block a commit.
-_HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 
 
 # ---------------------------------------------------------------------------
@@ -340,24 +340,31 @@ class DocLinkChecker:
     def __init__(self, index: RepoIndex, *, repo_root: Path = REPO_ROOT) -> None:
         self._index = index
         self._repo_root = repo_root
-        self._anchor_cache: dict[str, frozenset[str]] = {}
+        self._anchor_cache: dict[str, frozenset[str] | None] = {}
         self.path_links_checked = 0
         self.fragments_checked = 0
 
-    def _anchors_of(self, rel_path: str) -> frozenset[str]:
-        cached = self._anchor_cache.get(rel_path)
-        if cached is None:
+    def _anchors_of(self, rel_path: str) -> frozenset[str] | None:
+        """`None` means the target could not be read, which is not the same as
+        "has no headings" — a file deleted from the working tree but still in the
+        index would otherwise fail every inbound anchor."""
+        if rel_path not in self._anchor_cache:
             try:
                 text = (self._repo_root / rel_path).read_text(encoding="utf-8")
             except (OSError, UnicodeDecodeError):
-                text = ""
-            cached = heading_anchors(text)
-            self._anchor_cache[rel_path] = cached
-        return cached
+                self._anchor_cache[rel_path] = None
+            else:
+                self._anchor_cache[rel_path] = heading_anchors(text)
+        return self._anchor_cache[rel_path]
 
     def check_file(self, rel_path: str) -> list[Violation]:
         try:
             text = (self._repo_root / rel_path).read_text(encoding="utf-8")
+        except FileNotFoundError:
+            # Tracked but not in the working tree: a git state (an unstaged
+            # deletion), not a link defect. Blocking every commit on it would be
+            # exactly the false positive a blocking hook must not have.
+            return []
         except (OSError, UnicodeDecodeError) as exc:
             return [
                 Violation(rel_path, 0, "", f"unreadable file: {type(exc).__name__}")
@@ -424,8 +431,11 @@ class DocLinkChecker:
         if not target_path.endswith(".md") or target_path not in self._index.files:
             return []
 
+        anchors = self._anchors_of(target_path)
+        if anchors is None:
+            return []
         self.fragments_checked += 1
-        if fragment in self._anchors_of(target_path):
+        if fragment in anchors:
             return []
         where = "this file" if target_path == rel_path else f"`{target_path}`"
         return [
