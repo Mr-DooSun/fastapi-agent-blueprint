@@ -40,10 +40,10 @@ Checks performed:
    definitions ``[label]: path``, and HTML ``<a href="...">`` / ``<img src="...">``.
    A target resolving to a tracked file *or* a tracked directory passes.
 2. **Fragments.** ``file.md#anchor`` and same-file ``#anchor`` are resolved against
-   the target's ATX headings (GitHub slug algorithm) plus any explicit HTML
-   ``id=`` / ``name=`` anchor. This is the check that catches a renamed heading
-   silently orphaning every pointer to it; it found two such orphans on the day it
-   was written.
+   the target's ATX and setext headings (GitHub slug algorithm) plus any explicit
+   HTML ``id=`` / ``name=`` anchor. This is the check that catches a renamed
+   heading silently orphaning every pointer to it; it found two such orphans on
+   the day it was written.
 
 Deliberately out of scope, so that neither is mistaken for coverage:
 
