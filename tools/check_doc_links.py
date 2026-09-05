@@ -175,11 +175,21 @@ _INLINE_LINK_RE = re.compile(
 _REFERENCE_DEF_RE = re.compile(
     r'^[ ]{0,3}\[[^\]]+\]:[ \t]+(?P<target><[^<>]*>|\S+)(?:[ \t]+["(\'].*)?[ \t]*$'
 )
-_HTML_HREF_RE = re.compile(r'<a\b[^>]*?\shref="(?P<target>[^"]*)"', re.IGNORECASE)
-_HTML_SRC_RE = re.compile(r'<img\b[^>]*?\ssrc="(?P<target>[^"]*)"', re.IGNORECASE)
+# Both quote styles: `<a href='x'>` is valid HTML, and accepting only double
+# quotes silently skipped it — the mirror of the anchor-side bug that reported a
+# single-quoted `id='top'` as missing.
+_HTML_HREF_RE = re.compile(
+    r"""<a\b[^>]*?\shref=["'](?P<target>[^"']*)["']""", re.IGNORECASE
+)
+_HTML_SRC_RE = re.compile(
+    r"""<img\b[^>]*?\ssrc=["'](?P<target>[^"']*)["']""", re.IGNORECASE
+)
 
 _SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.\-]*:")
 _LINE_FRAGMENT_RE = re.compile(r"^L\d+(?:-L\d+)?$", re.IGNORECASE)
+# CommonMark §2.4: any ASCII punctuation may be backslash-escaped in a
+# destination, so `docs/notes\(draft\).md` addresses `docs/notes(draft).md`.
+_BACKSLASH_ESCAPE_RE = re.compile(r"\\([!-/:-@\[-`{-~])")
 
 
 @dataclass(frozen=True)
@@ -226,7 +236,15 @@ def extract_links(text: str) -> list[Link]:
 # ---------------------------------------------------------------------------
 
 _ATX_HEADING_RE = re.compile(r"^[ ]{0,3}#{1,6}[ \t]+(?P<text>.*?)[ \t]*#*[ \t]*$")
-_HTML_ANCHOR_RE = re.compile(r'<[a-z][a-z0-9]*\b[^>]*?\s(?:id|name)="([^"]+)"', re.I)
+# A setext underline turns the paragraph line above it into a heading. The repo
+# has none today, but missing them means reporting a live anchor as broken.
+_SETEXT_UNDERLINE_RE = re.compile(r"^[ ]{0,3}(?:=+|-+)[ \t]*$")
+# Lines that cannot be setext heading text: another heading, a list item, a
+# blockquote, a table row, or a horizontal rule's own blank surroundings.
+_NOT_SETEXT_TEXT_RE = re.compile(r"^[ ]{0,3}(?:#|>|\||[-*+=][ \t]|\d+[.)][ \t])")
+_HTML_ANCHOR_RE = re.compile(
+    r"""<[a-z][a-z0-9]*\b[^>]*?\s(?:id|name)=["'](?P<value>[^"']+)["']""", re.I
+)
 _INLINE_IMAGE_OR_LINK_RE = re.compile(r"!?\[(?P<label>[^\]]*)\]\([^)]*\)")
 
 
@@ -246,21 +264,33 @@ def slugify_heading(heading: str) -> str:
 
 
 def heading_anchors(text: str) -> frozenset[str]:
-    """Every fragment `text` offers: slugged ATX headings (with GitHub's ``-1``
-    duplicate suffixes) plus explicit HTML ``id=`` / ``name=`` anchors."""
+    """Every fragment `text` offers: slugged ATX and setext headings (with
+    GitHub's ``-1`` duplicate suffixes) plus explicit HTML ``id=`` / ``name=``
+    anchors. Erring towards *more* anchors is the safe direction — a spurious one
+    only lets a fragment resolve, while a missed one blocks a commit."""
     cleaned = _strip_fenced_blocks(_strip_frontmatter(text))
     anchors: set[str] = set()
     seen: dict[str, int] = {}
-    for line in cleaned.splitlines():
+
+    def record(heading_text: str) -> None:
+        slug = slugify_heading(heading_text)
+        if not slug:
+            return
+        count = seen.get(slug, 0)
+        seen[slug] = count + 1
+        anchors.add(slug if count == 0 else f"{slug}-{count}")
+
+    lines = cleaned.splitlines()
+    for index, line in enumerate(lines):
         match = _ATX_HEADING_RE.match(line)
         if match:
-            slug = slugify_heading(match.group("text"))
-            if slug:
-                count = seen.get(slug, 0)
-                seen[slug] = count + 1
-                anchors.add(slug if count == 0 else f"{slug}-{count}")
+            record(match.group("text"))
+        elif _SETEXT_UNDERLINE_RE.match(line) and index > 0:
+            previous = lines[index - 1]
+            if previous.strip() and not _NOT_SETEXT_TEXT_RE.match(previous):
+                record(previous)
         anchors.update(
-            html_match.group(1) for html_match in _HTML_ANCHOR_RE.finditer(line)
+            html_match.group("value") for html_match in _HTML_ANCHOR_RE.finditer(line)
         )
     return frozenset(anchors)
 
@@ -378,8 +408,15 @@ class DocLinkChecker:
     def _check_link(self, rel_path: str, link: Link) -> list[Violation]:
         if _SCHEME_RE.match(link.target):
             return []
+        if link.target.startswith("//"):
+            # Protocol-relative external URL (`//example.com/x`), not a
+            # repository path — it merely starts with a slash.
+            return []
         raw_path, _, raw_fragment = link.target.partition("#")
-        path_part = unquote(raw_path)
+        # GitHub accepts a query string on a repository link (`file.md?plain=1`);
+        # it addresses the same file.
+        raw_path = raw_path.partition("?")[0]
+        path_part = _BACKSLASH_ESCAPE_RE.sub(r"\1", unquote(raw_path))
         fragment = unquote(raw_fragment)
 
         if path_part:

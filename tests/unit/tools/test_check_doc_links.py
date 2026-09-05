@@ -456,6 +456,73 @@ class TestNoFalsePositives:
         checker = _checker(tmp_path, {"docs/guide.md": "[Ledger]: bookkeeping\n"})
         assert checker.check_file("docs/guide.md") == []
 
+    def test_setext_heading_provides_an_anchor(self, tmp_path):
+        """Cross-review finding. Recognising only ATX headings reports a live
+        anchor as broken; the repository has no setext headings today, so this
+        would have been the first contributor to write one."""
+        checker = _checker(
+            tmp_path,
+            {"README.md": "[jump](#hello-world)\n\nHello World\n===========\n"},
+        )
+        assert checker.check_file("README.md") == []
+
+    def test_horizontal_rule_after_a_blank_line_is_not_a_setext_heading(self, tmp_path):
+        """The other side of that fix: `---` under a *blank* line is a rule, and
+        this repository uses hundreds of them."""
+        checker = _checker(
+            tmp_path, {"README.md": "Some prose.\n\n---\n\n[x](#some-prose)\n"}
+        )
+
+        violations = checker.check_file("README.md")
+
+        assert len(violations) == 1
+        assert "#some-prose" in violations[0].reason
+
+    @pytest.mark.parametrize("quote", ['"', "'"])
+    def test_html_attributes_accept_either_quote_style(self, tmp_path, quote):
+        """Cross-review finding, in both directions: a single-quoted `id='top'`
+        was reported as a missing anchor, and a single-quoted `href='…'` was
+        skipped entirely."""
+        checker = _checker(
+            tmp_path,
+            {
+                "README.md": (
+                    f"<a id={quote}top{quote}></a>\n"
+                    f"[back](#top)\n"
+                    f"<a href={quote}docs/guide.md{quote}>g</a>\n"
+                ),
+                "docs/guide.md": "# G\n",
+            },
+        )
+        assert checker.check_file("README.md") == []
+
+    def test_query_string_addresses_the_same_file(self, tmp_path):
+        """Cross-review finding. GitHub's `?plain=1` renders the source view of
+        the same path; it is not part of the filename."""
+        checker = _checker(
+            tmp_path,
+            {"README.md": "[guide](docs/guide.md?plain=1)\n", "docs/guide.md": "# G\n"},
+        )
+        assert checker.check_file("README.md") == []
+
+    def test_protocol_relative_url_is_not_a_root_absolute_path(self, tmp_path):
+        """Cross-review finding. `//example.com/x` is an external URL that merely
+        starts with a slash; it carries no scheme for `_SCHEME_RE` to catch."""
+        checker = _checker(tmp_path, {"README.md": "[ex](//example.com/docs)\n"})
+        assert checker.check_file("README.md") == []
+
+    def test_backslash_escaped_punctuation_is_unescaped(self, tmp_path):
+        """Cross-review finding. CommonMark §2.4 — the destination addresses
+        `docs/notes(draft).md`, not a filename containing backslashes."""
+        checker = _checker(
+            tmp_path,
+            {
+                "README.md": "[notes](docs/notes\\(draft\\).md)\n",
+                "docs/notes(draft).md": "# N\n",
+            },
+        )
+        assert checker.check_file("README.md") == []
+
 
 class TestRepoIndex:
     def test_from_paths_derives_parent_directories(self):
