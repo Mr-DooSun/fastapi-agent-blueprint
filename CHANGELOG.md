@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Markdown link checker.** `tools/check_doc_links.py` resolves every relative link in every
+  git-tracked `*.md` file against the git index, and every `#anchor` into a Markdown file against
+  its headings (GitHub slug rules, ATX and setext, plus explicit HTML `id=` / `name=` anchors).
+  It runs as the blocking, full-repository `doc-links` pre-commit hook, so a heading renamed in
+  one file is caught against the pointers in files the commit never touched — which is how two
+  anchors orphaned by the #79 README restructure went unnoticed for four months. Thirteen broken
+  links in six files were fixed on the way in. **For forks:** the hook blocks; `SKIP=doc-links` or
+  `--no-verify` are the escape hatches, and external URLs are deliberately not checked
+  ([#408](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/408))
+
 ### Changed
 
 - **`/fix-bug` proves the bug exists before it fixes anything.** The four canonical phases are
