@@ -82,7 +82,7 @@ The delta from the full lane is explicit — the lane is not "the same thing, fa
 | `approach options` | conditional | **not applicable** — single layer is an eligibility condition |
 | Verify gates | focused tests + `pyright` + `pre-commit` + the risk-based sweep (`check-core`, `test-pg`, …) | focused tests + `pyright` + `pre-commit` only; **no sweep** |
 | `/review-architecture` / `/security-review` | routed when applicable | **skipped** — no layer interaction, not security-relevant, both by eligibility |
-| Bug Fix Report | all fields | `Lane: small-bug` plus `Scope`, `Root Cause`, `Fix`, `Verification`, `Outcome` — the rest are `N/A` |
+| Bug Fix Report | all fields | `Lane: small-bug` (+ the conditions met), `Scope`, `Reproduction Evidence`, `Root Cause`, the **one-row** `Cause Impact Matrix` (+ the axes checked and found local), `Fix`, `Verification`, `Outcome`, `Sync Required`; `Reported vs Observed` may collapse into `Scope`; `Drift Candidates` / `Next Actions` are `N/A` when empty |
 | self-review + `/review-pr` | required | required — **unchanged** |
 
 What the lane drops is breadth. What it never drops is the existence gate, red → green evidence,
@@ -201,7 +201,7 @@ Worked example — the real #374 matrix, so every cell is a citation you can che
 | `Base.metadata` completeness under any test selection | `tests/conftest.py:32` calls `load_models()`; without it the metadata holds only what the selected tests happened to import | test added | `tests/unit/_core/infrastructure/persistence/rdb/test_metadata_completeness.py`, run by both legs of the CI `test` matrix |
 | PostgreSQL dialect | `KNOWN_ENGINES` (`src/_core/config.py:9`) includes it, and `func.date` returns `date` there but `str` on SQLite | already covered | `tests/unit/_core/infrastructure/persistence/rdb/test_base_repository_contract.py` — its `repository` fixture takes `test_db` (line 69), and the `postgresql` leg of the CI `test` matrix runs it |
 | MySQL dialect | `KNOWN_ENGINES` accepts it, so a fork can select it | **deferred** | no MySQL runs in CI — an accepted limit (ADR 058; `ci.yml`: "MySQL is deliberately absent") |
-| `.antigravity` hook copy | grep shows the basename exists there too | not reached | that copy does not import the affected symbol |
+| DynamoDB-backed tables | `drop_all` runs over `Base.metadata`, which is SQLAlchemy-only; `DynamoModel` (`src/_core/infrastructure/persistence/nosql/dynamodb/dynamodb_model.py:72`) subclasses pydantic `BaseModel`, never `Base` | not reached | [`architecture-review-checklist.md`](../architecture-review-checklist.md) §9 pins that inheritance, so a table that is never registered in the metadata cannot be reached by a metadata-completeness bug |
 
 `disposition` is one of:
 
