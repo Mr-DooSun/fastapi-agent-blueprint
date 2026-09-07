@@ -205,6 +205,12 @@ make format      # Auto-format
 make pre-commit  # Run all pre-commit hooks
 ```
 
+One hook is worth knowing about before it surprises you: `doc-links` scans **every**
+markdown file in the repository on every commit, not just the ones you changed, and
+fails on a relative link or `#anchor` that does not resolve. It has to work that way —
+renaming a heading breaks the files pointing at it, and your commit does not touch
+those. Run it directly with `uv run python tools/check_doc_links.py`.
+
 ## Architecture guardrails
 
 Shared rules live in [AGENTS.md](AGENTS.md). Pre-commit hooks enforce the critical ones automatically:
