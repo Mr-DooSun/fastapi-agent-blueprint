@@ -107,10 +107,11 @@ _LOCK_POLL_MAX_S = 0.025
 # is how fcntl(F_SETLK) reports a conflict where Python emulates flock with it.
 # Unsupported: the filesystem has no flock for this file, for any caller, so
 # nobody can hold the lock and the update runs unlocked. Anything else — EPERM
-# (a sandbox denying this caller), ENOLCK (lock table full, or a remote lock
-# manager failed), EINVAL — says nothing about other writers: it is dropped.
+# or ENOSYS (a sandbox denying this caller), ENOLCK (lock table full, or a
+# remote lock manager failed), EINVAL — says nothing about other writers: the
+# update is dropped.
 _LOCK_BUSY = frozenset({errno.EAGAIN, errno.EWOULDBLOCK, errno.EACCES})
-_LOCK_UNSUPPORTED = frozenset({errno.ENOTSUP, errno.EOPNOTSUPP, errno.ENOSYS})
+_LOCK_UNSUPPORTED = frozenset({errno.ENOTSUP, errno.EOPNOTSUPP})
 
 # Harness-generated turns reach UserPromptSubmit like typed prompts (#425):
 # Claude Code delivers a finished background task as <task-notification> and a
@@ -294,7 +295,7 @@ def _lock_ledger(ledger_path: Path) -> int | None:
     """
     try:
         import fcntl
-    except ImportError:
+    except ImportError:  # not POSIX: no process here can take this lock either
         return None
     # First use creates the state directory here, before anything is written,
     # so even the very first updates are serialised.

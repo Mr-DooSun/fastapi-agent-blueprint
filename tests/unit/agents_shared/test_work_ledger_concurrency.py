@@ -345,7 +345,9 @@ def _flock_failing_with(code: int, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @needs_flock
-@pytest.mark.parametrize("code", [errno.ENOTSUP, errno.ENOSYS], ids=errno.errorcode.get)
+@pytest.mark.parametrize(
+    "code", sorted({errno.ENOTSUP, errno.EOPNOTSUPP}), ids=errno.errorcode.get
+)
 def test_an_update_runs_unlocked_where_flock_is_unsupported(
     code: int, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -380,7 +382,7 @@ def test_eacces_from_flock_counts_as_a_held_lock(
 @needs_flock
 @pytest.mark.parametrize(
     "code",
-    [errno.EPERM, errno.ENOLCK, errno.EINVAL, errno.EIO],
+    [errno.EPERM, errno.ENOSYS, errno.ENOLCK, errno.EINVAL, errno.EIO],
     ids=errno.errorcode.get,
 )
 def test_a_flock_error_that_proves_nothing_drops_the_update(
@@ -388,8 +390,8 @@ def test_a_flock_error_that_proves_nothing_drops_the_update(
 ) -> None:
     """An error that says nothing about other writers neither writes nor raises.
 
-    EPERM is a sandbox denying *this* caller, and ENOLCK a full lock table or a
-    failed remote lock manager: neither means nobody else holds the lock.
+    EPERM and ENOSYS are a sandbox denying *this* caller, and ENOLCK a full lock
+    table or a failed remote lock manager: none means nobody else holds the lock.
     """
     wl.update_goal_scope_plan(goal="kept")
     _flock_failing_with(code, monkeypatch)
