@@ -199,7 +199,7 @@ the end of a run is not the value an earlier test used.**
 
 A hook does not always run from the tree it works on: Claude Code desktop runs a
 worktree session's hooks from the main checkout (`--project-config-root`), and the
-hooks take the session's tree from the payload's `cwd` via
+hooks that touch session state take the session's tree from the payload's `cwd` via
 `governor.resolve_session_roots` (#425). A test of that resolution has to reproduce
 both trees, and two details decide whether a failing run is safe:
 

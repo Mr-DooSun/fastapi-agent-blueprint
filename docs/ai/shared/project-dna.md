@@ -699,14 +699,18 @@ fails nothing when it goes stale (the #408 lesson for the pre-commit block above
 
 **Which tree a hook acts on (#425).** Claude Code desktop launches a worktree session
 with `--project-config-root` pointing at the main checkout and runs every relative hook
-command from there, so a worktree session executes main's hook copies. Each hook
-therefore takes the session's tree from the payload `cwd` through
-`governor.resolve_session_roots` — accepted only for a working tree of the same
-repository — and never from its own file location. `HARNESS_STATE_ROOT` still outranks
-it for state (#407). A `cwd` the resolver cannot place makes the hook skip
-session-scoped work rather than fall back to its own checkout, which would be the bug
-again. Codex and Antigravity run hooks from the session's own checkout, so only their
-shared-ledger calls go through the resolver.
+command from there, so a worktree session executes main's hook copies. The hooks that
+read or write session state — the ledger, `.claude/state`, the stage gates'
+classification, the Stop hook's git — therefore take the session's tree from the payload
+`cwd` through `governor.resolve_session_roots`, accepted only for a working tree of the
+same repository. They keep their own checkout only when the payload has no `cwd`, or,
+when git cannot answer, when the `cwd` lies inside that checkout and outside any nested
+one. A `cwd` the resolver cannot place makes them skip session-scoped work rather than
+fall back to their own checkout, which would be the bug again. `HARNESS_STATE_ROOT`
+still outranks the session for state (#407). The plugin check, the security check and
+the formatter touch no session state and do not call the resolver. Codex and Antigravity
+run hooks from the session's own checkout, so only their shared-ledger calls go through
+it.
 
 ## §8. Active Features
 
