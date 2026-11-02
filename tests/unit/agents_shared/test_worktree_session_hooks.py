@@ -828,17 +828,71 @@ def test_session_root_cli_always_answers(
     assert result.stdout.strip() == want
 
 
-def test_stop_skips_when_the_resolver_cannot_run(layout: DesktopLayout) -> None:
-    """A payload that nothing could place must not fall back to main's state."""
-    (layout.main / ".agents" / "shared" / "governor" / "session_root_cli.py").unlink()
+def _break_session_root_cli(root: Path) -> None:
+    """Make the resolver CLI unanswerable, as a missing interpreter would."""
+    (root / ".agents" / "shared" / "governor" / "session_root_cli.py").unlink()
+
+
+def test_stop_skips_when_the_resolver_cannot_place_a_worktree(
+    layout: DesktopLayout,
+) -> None:
+    """No answer and a cwd in a nested checkout: skip, say so, touch nothing."""
+    _break_session_root_cli(layout.main)
     _write_token_marker(layout.main / ".claude" / "state", "trivial")
 
     result = _run(layout, _CLAUDE_STOP, {"cwd": str(layout.worktree)})
 
     assert result.returncode == 0, result.stderr
-    assert result.stdout == ""
+    assert "Stop checks skipped" in result.stdout
     assert not layout.ledger(layout.main).exists()
     assert list((layout.main / ".claude" / "state").glob("exception-token-*.json"))
+
+
+@pytest.mark.parametrize("payload_cwd", ["main", "none"])
+def test_stop_without_a_resolver_still_serves_its_own_checkout(
+    layout: DesktopLayout, payload_cwd: str
+) -> None:
+    """No answer must not silence an ordinary session in this checkout: a cwd
+    inside it, or a payload with no cwd, keeps the pre-#425 Stop."""
+    _break_session_root_cli(layout.main)
+    (layout.main / "src" / "_core").mkdir(parents=True)
+    (layout.main / "src" / "_core" / "x.py").write_text("x = 1\n", encoding="utf-8")
+    payload: dict[str, object] = (
+        {"cwd": str(layout.main / "src")} if payload_cwd == "main" else {}
+    )
+
+    result = _run(layout, _CLAUDE_STOP, payload)
+
+    assert result.returncode == 0, result.stderr
+    assert "src/_core/x.py" in result.stdout
+    assert "Stop checks skipped" not in result.stdout
+
+
+@pytest.mark.parametrize("resolver", ["answers", "missing"])
+def test_stop_in_a_downloaded_archive_keeps_working(
+    tmp_path: Path, resolver: str
+) -> None:
+    """A copy with no repository at all — a ZIP download — is its own session's
+    tree, with or without the resolver CLI."""
+    archive = tmp_path / "archive"
+    for rel in _COPIED_DIRS:
+        shutil.copytree(
+            _REPO_ROOT / rel,
+            archive / rel,
+            ignore=shutil.ignore_patterns("__pycache__", "state"),
+        )
+    (archive / "pyproject.toml").write_text(
+        '[project]\nname = "archive"\nversion = "0"\n', encoding="utf-8"
+    )
+    if resolver == "missing":
+        _break_session_root_cli(archive)
+    layout = DesktopLayout(main=archive.resolve(), worktree=archive.resolve())
+
+    result = _run(layout, _CLAUDE_STOP, {"cwd": str(archive)})
+
+    assert result.returncode == 0, result.stderr
+    assert "Stop checks skipped" not in result.stdout
+    assert layout.ledger(archive).exists(), "the Stop ledger refresh did not run"
 
 
 def test_resolver_keeps_state_on_the_override(

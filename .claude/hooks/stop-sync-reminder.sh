@@ -19,9 +19,31 @@ PY_LAUNCHER="${REPO_ROOT}/.agents/shared/harness-python.sh"
 # runs a worktree session's hooks from the main checkout. The Stop payload's
 # `cwd` names the session's tree, and every git call and state write below works
 # there (#425). No payload (a manual run) keeps this checkout, the pre-#425
-# behaviour. With a payload, `none` (no cwd) keeps it too; `rejected` — or no
-# answer at all, which means the resolver never ran — skips the hook rather
-# than report this checkout's changes and state as the session's.
+# behaviour. With a payload, `none` (no cwd) keeps it too and `rejected` skips
+# the hook rather than report this checkout's changes and state as the session's.
+
+# HC-5.5 fallback for when the resolver never answered (no interpreter, a broken
+# import): mirrors governor.paths._inside_this_checkout. True when the payload
+# has no cwd, or its cwd is this checkout or a directory of it outside any
+# nested checkout (a linked worktree has its own .git). A cwd that cannot be
+# read out of the payload counts as outside.
+_cwd_inside_this_checkout() {
+    # A `case`, not `grep -q`: under pipefail an early-exiting reader can SIGPIPE
+    # the writer and turn "has a cwd" into "has none".
+    case "$1" in *'"cwd"'*) ;; *) return 0 ;; esac
+    local cwd dir root
+    cwd=$(printf '%s' "$1" | sed -n 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"\\]*\)".*/\1/p' | sed -n 1p)
+    [ -n "$cwd" ] || return 1
+    dir=$(cd "$cwd" 2>/dev/null && pwd -P) || return 1
+    root=$(cd "$REPO_ROOT" && pwd -P)
+    case "$dir/" in "$root"/*) ;; *) return 1 ;; esac
+    while [ "$dir" != "$root" ]; do
+        [ -e "$dir/.git" ] && return 1
+        dir=$(dirname "$dir")
+    done
+    return 0
+}
+
 INPUT=""
 [ -t 0 ] || INPUT=$(cat)
 SESSION_ROOT=""
@@ -29,8 +51,16 @@ if [ -n "$INPUT" ]; then
     SESSION_ROOT=$(printf '%s' "$INPUT" \
         | PYTHONPATH="${SHARED_DIR}" sh "$PY_LAUNCHER" -m governor.session_root_cli 2>/dev/null) || SESSION_ROOT=""
     case "$SESSION_ROOT" in
-        "" | rejected) exit 0 ;;
+        rejected) exit 0 ;;
         none) SESSION_ROOT="" ;;
+        "")
+            # Plain English on purpose: this branch runs exactly when Python could
+            # not, and the locale resolver below needs Python too.
+            if ! _cwd_inside_this_checkout "$INPUT"; then
+                echo "[stop-hook] The session's working tree could not be resolved; Stop checks skipped (#425)."
+                exit 0
+            fi
+            ;;
     esac
 fi
 GIT_ROOT="${SESSION_ROOT:-$REPO_ROOT}"
