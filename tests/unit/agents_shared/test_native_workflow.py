@@ -237,7 +237,8 @@ def test_claude_session_start_expands_native_workflow_summary(tmp_path) -> None:
 def test_codex_stop_hook_refreshes_work_ledger_before_building_segments() -> None:
     source = CODEX_STOP_HOOK.read_text(encoding="utf-8")
 
-    update_pos = source.index("update_verification_from_git()")
+    # The call site, not the import: since #425 it passes the session roots.
+    update_pos = source.index("update_verification_from_git(")
     # #269 passes the pre-computed changed set: `build_segments(changed)`.
     build_pos = source.index("segments = build_segments(")
 
