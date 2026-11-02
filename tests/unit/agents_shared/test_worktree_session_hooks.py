@@ -28,6 +28,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -262,6 +263,87 @@ def test_stage_gate_advises_on_a_worktree_edit_with_no_plan(
     markers = list((layout.worktree / ".claude" / "state").glob("stage-gate-*.json"))
     assert len(markers) == 1
     assert not (layout.main / ".claude" / "state").exists()
+
+
+# ---------------------------------------------------------------------------
+# .claude/state: the session's markers and logs, read and written in one place
+# ---------------------------------------------------------------------------
+
+
+def _write_token_marker(state_dir: Path, token: str) -> None:
+    state_dir.mkdir(parents=True, exist_ok=True)
+    (state_dir / "exception-token-20260101T000000-425.json").write_text(
+        json.dumps(
+            {
+                "matched": True,
+                "token": token,
+                "rationale_required": True,
+                # Fresh, so the 24h window keeps it.
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+@pytest.mark.parametrize(
+    ("marker_tree", "reminded"), [("worktree", False), ("main", True)]
+)
+def test_verify_first_reads_the_worktrees_token_markers(
+    layout: DesktopLayout, marker_tree: str, reminded: bool
+) -> None:
+    """An [exploration] typed in the worktree session silences the reminder there,
+    and one left in main's state dir does not."""
+    root = layout.worktree if marker_tree == "worktree" else layout.main
+    _write_token_marker(root / ".claude" / "state", "exploration")
+
+    result = _run(
+        layout,
+        ["bash", ".claude/hooks/verify-first.sh"],
+        {
+            **_edit_payload(layout, "src/app/service.py"),
+            "hook_event_name": "PostToolUse",
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert ("[verify-first]" in result.stdout) is reminded
+
+
+def test_verify_log_is_written_where_the_stop_hook_prunes_it(
+    layout: DesktopLayout,
+) -> None:
+    result = _run(
+        layout,
+        ["bash", ".claude/hooks/verify-log.sh"],
+        {
+            "session_id": "wt-session",
+            "cwd": str(layout.worktree),
+            "hook_event_name": "PostToolUse",
+            "tool_name": "Bash",
+            "tool_input": {"command": "uv run pytest tests/unit -q"},
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert list((layout.worktree / ".claude" / "state").glob("verify-log-*.json"))
+    assert not (layout.main / ".claude" / "state").exists()
+
+
+def test_stop_consumes_the_worktrees_token_markers(layout: DesktopLayout) -> None:
+    """IC-11 Option A: Stop consumes the session's markers — in its own tree."""
+    worktree_state = layout.worktree / ".claude" / "state"
+    main_state = layout.main / ".claude" / "state"
+    _write_token_marker(worktree_state, "trivial")
+    _write_token_marker(main_state, "trivial")
+
+    result = _run(layout, _CLAUDE_STOP, {"cwd": str(layout.worktree)})
+
+    assert result.returncode == 0, result.stderr
+    assert not list(worktree_state.glob("exception-token-*.json"))
+    assert list(main_state.glob("exception-token-*.json")), (
+        "the worktree session consumed the main checkout's markers"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -616,6 +698,23 @@ def test_resolver_rejects_cwds_it_cannot_place(
         assert resolver({"cwd": cwd}).rejected, cwd
 
 
+def test_resolver_leaves_a_copy_outside_any_repository_unrerooted(
+    layout: DesktopLayout,
+    resolver,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """No repository behind the running copy: nothing to compare, so the
+    pre-#425 defaults stand rather than every hook going silent."""
+    import governor.paths as paths  # noqa: PLC0415
+
+    loose = tmp_path / "loose-copy"
+    loose.mkdir()
+    monkeypatch.setattr(paths, "REPO_ROOT", loose)
+    roots = resolver({"cwd": str(layout.worktree)})
+    assert (roots.repo_root, roots.state_root, roots.rejected) == (None, None, False)
+
+
 def test_resolver_keeps_state_on_the_override(
     layout: DesktopLayout, resolver, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -623,3 +722,22 @@ def test_resolver_keeps_state_on_the_override(
     roots = resolver({"cwd": str(layout.worktree)})
     assert roots.repo_root == layout.worktree
     assert roots.state_root is None
+
+
+def test_pr_lookup_runs_gh_in_the_given_tree(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """``gh`` reads the branch from its working directory — the session's tree."""
+    import governor.completion_gate as gate  # noqa: PLC0415
+
+    seen: list[object] = []
+
+    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        seen.append(kwargs.get("cwd"))
+        return subprocess.CompletedProcess(["gh"], 0, stdout='{"number": 425}')
+
+    monkeypatch.setattr(gate.subprocess, "run", fake_run)
+
+    assert gate.pr_number_from_branch(tmp_path) == 425
+    assert gate.pr_number_from_branch() == 425
+    assert seen == [tmp_path, None]

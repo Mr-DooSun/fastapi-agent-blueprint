@@ -123,21 +123,24 @@ def resolve_session_roots(payload: object) -> SessionRoots:
     repository as this code (equal ``--git-common-dir``). ``cwd`` follows a
     ``cd``, so without that check a session that wandered into an unrelated or
     sibling checkout would start writing this harness's state there; such a
-    ``cwd`` is *rejected* (see ``SessionRoots``). A payload with no ``cwd``,
-    or a machine with no ``git`` at all, is not re-rooted: there is nothing to
-    place the session with, and the pre-#425 defaults are all that is left.
+    ``cwd`` is *rejected* (see ``SessionRoots``). A payload with no ``cwd``, a
+    machine with no ``git``, or a copy of this harness that is not inside a
+    repository at all is not re-rooted: without a repository there are no
+    worktrees to tell apart, and the pre-#425 defaults are all that is left.
     """
 
     cwd = payload.get("cwd") if isinstance(payload, Mapping) else None
     git = shutil.which("git")
     if not isinstance(cwd, str) or not cwd or git is None:
         return SessionRoots()
+    own = _rev_parse(git, REPO_ROOT, "--git-common-dir")
+    if own is None:
+        return SessionRoots()
     here = Path(cwd)
     if not here.is_absolute() or not here.is_dir():
         return SessionRoots(rejected=True)
     session = _rev_parse(git, here, "--show-toplevel", "--git-common-dir")
-    own = _rev_parse(git, REPO_ROOT, "--git-common-dir")
-    if session is None or own is None:
+    if session is None:
         return SessionRoots(rejected=True)
     if _absolute(here, session[1]) != _absolute(REPO_ROOT, own[0]):
         return SessionRoots(rejected=True)

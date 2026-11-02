@@ -219,6 +219,8 @@ def test_claude_session_start_expands_native_workflow_summary(tmp_path) -> None:
 
     result = subprocess.run(  # noqa: S603
         ["bash", str(CLAUDE_SESSION_START)],
+        # The hook reads its payload (#425); an inherited stdin could block it.
+        stdin=subprocess.DEVNULL,
         cwd=REPO_ROOT,
         env={**__import__("os").environ, "HARNESS_STATE_ROOT": str(tmp_path)},
         capture_output=True,

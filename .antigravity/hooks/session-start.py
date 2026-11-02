@@ -25,7 +25,7 @@ with contextlib.suppress(Exception):
     from work_ledger import build_session_summary  # noqa: PLC0415
 
     # Summarise the ledger of the tree the payload's cwd names (#425).
-    roots = resolve_session_roots(load_payload())
+    roots = resolve_session_roots({} if sys.stdin.isatty() else load_payload())
     summary = (
         None if roots.rejected else build_session_summary(state_root=roots.state_root)
     )

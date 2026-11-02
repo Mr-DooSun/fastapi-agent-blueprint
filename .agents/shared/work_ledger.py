@@ -94,7 +94,9 @@ _HARNESS_ENVELOPE = re.compile(
 
 
 def _is_harness_notification(prompt: str) -> bool:
-    return bool(prompt.strip()) and not _HARNESS_ENVELOPE.sub("", prompt).strip()
+    stripped = prompt.strip()
+    # Cheap exit for every typed prompt: an envelope-only one starts with "<".
+    return stripped.startswith("<") and not _HARNESS_ENVELOPE.sub("", stripped).strip()
 
 
 def _paths(state_root: Path | None) -> tuple[Path, Path]:
