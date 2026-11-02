@@ -78,6 +78,8 @@ Versioning is load-bearing because #185 shipped v1 into real ledgers before #257
 
 **ADR052-G3 (durable-governance)** — Ledger-driven hook behavior is **advisory-first and fail-open**. Promoting any condition to a hard gate requires tests and a demonstrated absence of false positives against exploration / trivial / single-skill work (the ADR 045 D2 bar), and its own decision record.
 
+**ADR052-G4 (durable-governance)** — A ledger write is **atomic** and a ledger update is **serialised**. `write_ledger` writes a temporary file beside the ledger and swaps it in with `os.replace`, so no reader ever sees a partial file — which matters beyond the reader itself, because `read_ledger` turns a partial file into `None` and that reader's next update writes a default ledger back over every field. Every read-modify-write goes through `work_ledger`'s update helpers, which hold an exclusive `flock` on `.agents/state/current-work.json.lock` from the read to the write. An update that cannot get the lock within `_LOCK_TIMEOUT_S` is dropped, not written unlocked, since the holder is still running and one write would undo the other; only where locking is unavailable (no `fcntl`, or a filesystem or sandbox that refuses `flock`) do updates run unlocked. Anything else that must write the live ledger — a test restoring a snapshot, for one — uses the same atomic replace. (Added after PR #428 gave each working tree its own ledger and its review deferred the same-tree race as R7.)
+
 ### Enforcement gaps (explicit disclosure)
 
 - **Mutable state outside git:** no audit trail of ledger transitions, and a stale/corrupt ledger is possible; mitigated only by fail-open + migrate-on-read.
