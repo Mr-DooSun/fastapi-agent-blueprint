@@ -373,7 +373,8 @@ def main() -> int:
     for advisory responsibilities, then executes marker consumption and stale
     verify-log cleanup side effects. Each side effect is wrapped in its own
     suppress block so a partial failure cannot mask the others or the segments
-    output. Stop hook does NOT read stdin (informational fail-open).
+    output. stdin is read only for the payload's ``cwd`` (#425); a missing or
+    unreadable payload keeps every default (informational fail-open).
     """
     # Work-ledger: refresh verification snapshot before composing native
     # workflow advisories so first-stop output is not stale. A cwd this harness
