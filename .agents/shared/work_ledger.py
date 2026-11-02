@@ -45,6 +45,15 @@ Hook integration
 - Stop          : update_verification_from_git() + build_workflow_advisory_segments()
 - Skills        : update_goal_scope_plan() + update_workflow_state()
 
+Which ledger
+------------
+The module-level paths below come from this file's location, which names the
+checkout whose code is *running*. A hook can run one checkout's copy for
+another checkout's session (Claude Code desktop runs a worktree session's hooks
+from the main checkout), so the hook-facing functions take ``state_root`` /
+``repo_root`` from ``governor.resolve_session_roots`` (#425). ``None`` keeps the
+module defaults — skills run from the session's own tree and pass nothing.
+
 Design constraints
 ------------------
 - All public functions are fail-open: I/O errors return None / empty safely.
@@ -57,6 +66,7 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import re
 import subprocess
 from datetime import UTC, datetime, timezone
 from pathlib import Path
@@ -71,6 +81,31 @@ SCHEMA_VERSION = 2
 # Maximum characters of last_prompt stored (avoids bloating the ledger).
 _PROMPT_MAX_CHARS = 1200
 _UNSET = object()
+
+# Harness-generated turns reach UserPromptSubmit like typed prompts (#425):
+# Claude Code delivers a finished background task as <task-notification> and a
+# side-session status update as <system-reminder>. A prompt made of nothing but
+# such blocks is not the operator's, and storing it overwrote the prompt that
+# SessionStart shows as "Last msg". Text outside the blocks keeps the prompt —
+# a child session's first message is a reminder block followed by its task.
+_HARNESS_ENVELOPE = re.compile(
+    r"<(task-notification|system-reminder)>.*?</\1>", re.DOTALL
+)
+
+
+def _is_harness_notification(prompt: str) -> bool:
+    stripped = prompt.strip()
+    # Cheap exit for every typed prompt: an envelope-only one starts with "<".
+    return stripped.startswith("<") and not _HARNESS_ENVELOPE.sub("", stripped).strip()
+
+
+def _paths(state_root: Path | None) -> tuple[Path, Path]:
+    """``(state dir, ledger path)`` under ``state_root``, else the module defaults."""
+
+    if state_root is None:
+        return STATE_DIR, LEDGER_PATH
+    state_dir = state_root / ".agents" / "state"
+    return state_dir, state_dir / "current-work.json"
 
 
 def _now_iso() -> str:
@@ -158,17 +193,19 @@ def _migrate_ledger(data: dict) -> dict | None:
     return ledger
 
 
-def read_ledger() -> dict | None:
+def read_ledger(*, state_root: Path | None = None) -> dict | None:
     """Return the current ledger, or None if absent / unreadable."""
     with contextlib.suppress(Exception):
-        text = LEDGER_PATH.read_text(encoding="utf-8")
+        text = _paths(state_root)[1].read_text(encoding="utf-8")
         data = json.loads(text)
         if isinstance(data, dict):
             return _migrate_ledger(data)
     return None
 
 
-def write_ledger(data: dict, updated_by: str = "system") -> bool:
+def write_ledger(
+    data: dict, updated_by: str = "system", *, state_root: Path | None = None
+) -> bool:
     """Persist the ledger. Returns True on success."""
     with contextlib.suppress(Exception):
         data = _migrate_ledger(data) or data
@@ -176,27 +213,29 @@ def write_ledger(data: dict, updated_by: str = "system") -> bool:
         data.setdefault("meta", {})
         data["meta"]["updated_at"] = _now_iso()
         data["meta"]["updated_by"] = updated_by
-        STATE_DIR.mkdir(parents=True, exist_ok=True)
-        LEDGER_PATH.write_text(
+        state_dir, ledger_path = _paths(state_root)
+        state_dir.mkdir(parents=True, exist_ok=True)
+        ledger_path.write_text(
             json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
         )
         return True
     return False
 
 
-def _changed_py_files() -> list[str]:
+def _changed_py_files(repo_root: Path | None = None) -> list[str]:
     """Collect uncommitted/untracked .py files (fail-open)."""
     with contextlib.suppress(Exception):
+        cwd = repo_root or REPO_ROOT
         tracked = subprocess.run(  # noqa: S603,S607
             ["git", "diff", "--name-only", "HEAD"],
-            cwd=REPO_ROOT,
+            cwd=cwd,
             capture_output=True,
             text=True,
             check=False,
         ).stdout
         untracked = subprocess.run(  # noqa: S603,S607
             ["git", "ls-files", "--others", "--exclude-standard"],
-            cwd=REPO_ROOT,
+            cwd=cwd,
             capture_output=True,
             text=True,
             check=False,
@@ -217,25 +256,34 @@ def _changed_py_files() -> list[str]:
 # ---------------------------------------------------------------------------
 
 
-def update_last_prompt(prompt: str, session_id: str | None = None) -> None:
-    """Store the latest prompt text (truncated). Called from UserPromptSubmit."""
-    ledger = read_ledger() or _default_ledger()
+def update_last_prompt(
+    prompt: str, session_id: str | None = None, *, state_root: Path | None = None
+) -> None:
+    """Store the latest prompt text (truncated). Called from UserPromptSubmit.
+
+    A harness notification is not a prompt: it leaves the ledger untouched.
+    """
+    if _is_harness_notification(prompt):
+        return
+    ledger = read_ledger(state_root=state_root) or _default_ledger()
     ledger["last_prompt"] = prompt[:_PROMPT_MAX_CHARS] if prompt else None
     if session_id:
         ledger.setdefault("meta", {})["session_id"] = session_id
-    write_ledger(ledger, updated_by="hook:user_prompt_submit")
+    write_ledger(ledger, updated_by="hook:user_prompt_submit", state_root=state_root)
 
 
-def update_verification_from_git() -> None:
+def update_verification_from_git(
+    *, repo_root: Path | None = None, state_root: Path | None = None
+) -> None:
     """Refresh changed_py_files from git. Called from Stop hook."""
-    ledger = read_ledger() or _default_ledger()
-    py_files = _changed_py_files()
+    ledger = read_ledger(state_root=state_root) or _default_ledger()
+    py_files = _changed_py_files(repo_root)
     verification = ledger.setdefault("verification", {})
     verification["changed_py_files"] = py_files
     # Promote status to "pending" only when files exist and status was unknown.
     if py_files and verification.get("status") == "unknown":
         verification["status"] = "pending"
-    write_ledger(ledger, updated_by="hook:stop")
+    write_ledger(ledger, updated_by="hook:stop", state_root=state_root)
 
 
 def update_goal_scope_plan(
@@ -292,9 +340,11 @@ def update_workflow_state(
     write_ledger(ledger, updated_by=updated_by)
 
 
-def mark_verified(command: str, passed: bool) -> None:
+def mark_verified(
+    command: str, passed: bool, *, state_root: Path | None = None
+) -> None:
     """Record a verify-command result. Called from verify-aware hooks/skills."""
-    ledger = read_ledger() or _default_ledger()
+    ledger = read_ledger(state_root=state_root) or _default_ledger()
     verification = ledger.setdefault("verification", {})
     verification["status"] = "passed" if passed else "failed"
     verification["last_verified_at"] = _now_iso()
@@ -302,13 +352,14 @@ def mark_verified(command: str, passed: bool) -> None:
     # Clear pending py_files on pass.
     if passed:
         verification["changed_py_files"] = []
-    write_ledger(ledger, updated_by="hook:verify")
+    write_ledger(ledger, updated_by="hook:verify", state_root=state_root)
 
 
 def build_workflow_advisory_segments(
     *,
     changed_files: list[str],
     governor_changing: bool,
+    state_root: Path | None = None,
 ) -> list[str]:
     """Return advisory-only native workflow reminders for Stop hooks.
 
@@ -320,7 +371,7 @@ def build_workflow_advisory_segments(
     with contextlib.suppress(Exception):
         if not changed_files:
             return []
-        ledger = read_ledger() or _default_ledger()
+        ledger = read_ledger(state_root=state_root) or _default_ledger()
         workflow = _normalise_workflow(ledger.get("workflow"))
         verification = ledger.get("verification") or {}
         segments: list[str] = []
@@ -369,13 +420,13 @@ def build_workflow_advisory_segments(
 # ---------------------------------------------------------------------------
 
 
-def build_session_summary() -> str | None:
+def build_session_summary(*, state_root: Path | None = None) -> str | None:
     """Return a one-paragraph context summary for SessionStart injection.
 
     Returns None when no ledger exists or ledger contains no meaningful state
     (all of goal/last_prompt/verification are unset/unknown).
     """
-    ledger = read_ledger()
+    ledger = read_ledger(state_root=state_root)
     if not ledger:
         return None
 

@@ -101,6 +101,8 @@ def test_stop_hook_e2e_marker_cleanup() -> None:
 
         proc = subprocess.run(
             [sys.executable, str(_HOOK)],
+            # The hook reads its payload (#425); an inherited stdin could block it.
+            stdin=subprocess.DEVNULL,
             cwd=str(REPO_ROOT),
             env=env,
             capture_output=True,
