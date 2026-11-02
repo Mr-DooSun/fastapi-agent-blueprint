@@ -21,6 +21,8 @@ import sys
 import time
 from pathlib import Path
 
+from work_ledger import _replace_file
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 _HOOK = REPO_ROOT / ".codex" / "hooks" / "stop-sync-reminder.py"
 _STATE_DIR = REPO_ROOT / ".codex" / "state"
@@ -41,12 +43,17 @@ def _read_live_ledger() -> str | None:
 
 
 def _restore_live_ledger(snapshot: str | None) -> None:
-    """Put the live work ledger back the way this test found it (#407)."""
+    """Put the live work ledger back the way this test found it (#407).
+
+    Through the ledger's own atomic replace (ADR052-G4): ``write_text`` would
+    leave a truncated file for a moment, and a session updating this tree's
+    ledger in that moment would read it as no ledger and write a default one.
+    """
     if snapshot is None:
         _LEDGER_PATH.unlink(missing_ok=True)
         return
     if _read_live_ledger() != snapshot:
-        _LEDGER_PATH.write_text(snapshot, encoding="utf-8")
+        _replace_file(_LEDGER_PATH, snapshot)
 
 
 def test_stop_hook_e2e_marker_cleanup() -> None:
