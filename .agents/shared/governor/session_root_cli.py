@@ -11,8 +11,9 @@ Reads a hook payload (JSON) from stdin and always prints exactly one line:
   fall back to its own checkout (see ``governor.paths.SessionRoots``).
 
 No output at all therefore means the resolver never ran (no interpreter, a
-broken import), which the shell caller must also treat as ``rejected`` when it
-has a payload. Always exits 0 — HC-5.5 fail-open.
+broken import). The shell caller then cannot trust either answer and falls back
+to its own containment check (``_cwd_inside_this_checkout`` in
+``stop-sync-reminder.sh``). Always exits 0 — HC-5.5 fail-open.
 
 Invocation (from .claude/hooks/stop-sync-reminder.sh):
   printf '%s' "$INPUT" \\
