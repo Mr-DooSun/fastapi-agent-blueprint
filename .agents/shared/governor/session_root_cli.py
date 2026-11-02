@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """CLI bridge for governor.paths.resolve_session_roots — bash integration (#425).
 
-Reads a hook payload (JSON) from stdin and prints one line:
+Reads a hook payload (JSON) from stdin and always prints exactly one line:
 
 * the top level of the session's working tree — re-rooted;
-* ``rejected`` — the payload names a ``cwd`` this harness cannot place, so the
-  caller must skip session-scoped work rather than fall back to its own
-  checkout (see ``governor.paths.SessionRoots``);
-* nothing — no ``cwd``: the caller keeps its own checkout (pre-#425 behaviour).
+* ``none`` — the payload has no ``cwd``: the caller keeps its own checkout
+  (the pre-#425 behaviour);
+* ``rejected`` — the payload names a ``cwd`` this harness cannot place, or the
+  payload or resolver failed: the caller skips session-scoped work rather than
+  fall back to its own checkout (see ``governor.paths.SessionRoots``).
 
-Always exits 0 — HC-5.5 fail-open: any exception produces empty output.
+No output at all therefore means the resolver never ran (no interpreter, a
+broken import), which the shell caller must also treat as ``rejected`` when it
+has a payload. Always exits 0 — HC-5.5 fail-open.
 
 Invocation (from .claude/hooks/stop-sync-reminder.sh):
   printf '%s' "$INPUT" \\
@@ -27,12 +30,15 @@ def main() -> None:
         from governor.paths import resolve_session_roots
 
         roots = resolve_session_roots(json.loads(sys.stdin.read() or "{}"))
-        if roots.rejected:
-            print("rejected")
-        elif roots.repo_root is not None:
-            print(roots.repo_root)
-    except Exception:  # noqa: BLE001,S110 — HC-5.5 fail-open: no session root
-        pass
+    except Exception:  # noqa: BLE001 — HC-5.5: a payload we cannot read is not ours
+        print("rejected")
+        return
+    if roots.rejected:
+        print("rejected")
+    elif roots.repo_root is not None:
+        print(roots.repo_root)
+    else:
+        print("none")
 
 
 if __name__ == "__main__":

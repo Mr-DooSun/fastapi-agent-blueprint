@@ -164,12 +164,14 @@ def _run(
     env = {
         key: value
         for key, value in os.environ.items()
-        if key not in ("HARNESS_STATE_ROOT", "AGENT_LOCALE")
+        if key not in ("HARNESS_STATE_ROOT", "AGENT_LOCALE", "CLAUDE_SESSION_ID")
     }
     if state_root is not None:
         env["HARNESS_STATE_ROOT"] = str(state_root)
     # The launcher would otherwise look for main/.venv and then try `uv run`.
     env["HARNESS_PYTHON_VENV"] = sys.executable
+    # The id the verify-log writer and the Stop cleanup share (verify_log.py).
+    env["CLAUDE_CODE_HOST_SESSION_ID"] = "wt-session"
     return subprocess.run(  # noqa: S603
         argv,
         cwd=layout.main,
@@ -583,6 +585,45 @@ def test_state_override_outranks_a_valid_worktree_cwd(
     assert not (layout.main / ".claude" / "state").exists()
 
 
+def test_state_override_also_owns_verify_logs_and_stop_cleanup(
+    layout: DesktopLayout, tmp_path: Path
+) -> None:
+    """The writer and the Stop cleanup agree on the override with a real cwd;
+    main's and the worktree's markers and logs are not theirs to touch."""
+    override = tmp_path / "override"
+    old = time.time() - 3 * 86400
+    for root in (layout.main, layout.worktree, override):
+        state = root / ".claude" / "state"
+        _write_token_marker(state, "trivial")
+        stale = state / "verify-log-another-session.json"
+        stale.write_text("{}\n", encoding="utf-8")
+        os.utime(stale, (old, old))
+    payload: dict[str, object] = {
+        "session_id": "wt-session",
+        "cwd": str(layout.worktree),
+    }
+
+    logged = _run(
+        layout,
+        ["bash", ".claude/hooks/verify-log.sh"],
+        {**payload, "tool_name": "Bash", "tool_input": {"command": "pytest -q"}},
+        state_root=override,
+    )
+    stopped = _run(layout, _CLAUDE_STOP, payload, state_root=override)
+
+    assert logged.returncode == 0, logged.stderr
+    assert stopped.returncode == 0, stopped.stderr
+    override_state = override / ".claude" / "state"
+    assert (override_state / "verify-log-wt-session.json").exists()
+    assert not list(override_state.glob("exception-token-*.json"))
+    assert not (override_state / "verify-log-another-session.json").exists()
+    for root in (layout.main, layout.worktree):
+        state = root / ".claude" / "state"
+        assert list(state.glob("exception-token-*.json")), root
+        assert (state / "verify-log-another-session.json").exists(), root
+        assert not (state / "verify-log-wt-session.json").exists(), root
+
+
 # ---------------------------------------------------------------------------
 # A cwd the harness cannot place: touch nothing rather than main's state
 # ---------------------------------------------------------------------------
@@ -698,21 +739,103 @@ def test_resolver_rejects_cwds_it_cannot_place(
         assert resolver({"cwd": cwd}).rejected, cwd
 
 
-def test_resolver_leaves_a_copy_outside_any_repository_unrerooted(
+def test_resolver_without_a_repository_keeps_only_its_own_tree(
     layout: DesktopLayout,
     resolver,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    """No repository behind the running copy: nothing to compare, so the
-    pre-#425 defaults stand rather than every hook going silent."""
+    """A copy that is not in a repository (a downloaded archive) still serves a
+    session working inside it — every hook going silent would be a regression —
+    but answers for nothing else."""
     import governor.paths as paths  # noqa: PLC0415
 
     loose = tmp_path / "loose-copy"
-    loose.mkdir()
+    (loose / "src").mkdir(parents=True)
     monkeypatch.setattr(paths, "REPO_ROOT", loose)
-    roots = resolver({"cwd": str(layout.worktree)})
-    assert (roots.repo_root, roots.state_root, roots.rejected) == (None, None, False)
+
+    for cwd in (loose, loose / "src"):
+        roots = resolver({"cwd": str(cwd)})
+        assert (roots.repo_root, roots.state_root, roots.rejected) == (
+            None,
+            None,
+            False,
+        )
+    assert resolver({"cwd": str(layout.worktree)}).rejected
+
+
+def test_resolver_without_git_refuses_a_nested_worktree(
+    layout: DesktopLayout, resolver, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No git to ask: the worktree's own ``.git`` file still marks it as a tree
+    main's copy must not answer for — the fallback is not #425 again."""
+    import governor.paths as paths  # noqa: PLC0415
+
+    monkeypatch.setattr(paths.shutil, "which", lambda _name: None)
+
+    assert not resolver({"cwd": str(layout.main / "docs")}).rejected
+    assert resolver({"cwd": str(layout.worktree)}).rejected
+    assert resolver({"cwd": str(layout.worktree / "docs" / "ai")}).rejected
+    assert resolver({"cwd": "/"}).rejected
+
+
+def test_resolver_turns_an_unexpected_error_into_a_rejection(
+    layout: DesktopLayout, resolver, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import governor.paths as paths  # noqa: PLC0415
+
+    def broken(*_args: object) -> list[str] | None:
+        raise UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid start byte")
+
+    monkeypatch.setattr(paths, "_rev_parse", broken)
+    assert resolver({"cwd": str(layout.worktree)}).rejected
+    assert resolver({"cwd": "/bad\x00path"}).rejected
+
+
+@pytest.mark.parametrize(
+    ("stdin", "expected"),
+    [
+        ("", "none"),
+        ("{}", "none"),
+        ('{"cwd": "/"}', "rejected"),
+        ("not json", "rejected"),
+        (None, "<worktree>"),
+    ],
+    ids=["empty", "no-cwd", "foreign", "garbage", "worktree"],
+)
+def test_session_root_cli_always_answers(
+    layout: DesktopLayout, stdin: str | None, expected: str
+) -> None:
+    """The Stop shell treats *no* answer as "the resolver never ran"."""
+    payload = json.dumps({"cwd": str(layout.worktree)}) if stdin is None else stdin
+    result = subprocess.run(  # noqa: S603
+        [sys.executable, "-m", "governor.session_root_cli"],
+        cwd=layout.main,
+        input=payload,
+        env={
+            **{k: v for k, v in os.environ.items() if k != "HARNESS_STATE_ROOT"},
+            "PYTHONPATH": str(layout.main / ".agents" / "shared"),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    want = str(layout.worktree) if expected == "<worktree>" else expected
+    assert result.stdout.strip() == want
+
+
+def test_stop_skips_when_the_resolver_cannot_run(layout: DesktopLayout) -> None:
+    """A payload that nothing could place must not fall back to main's state."""
+    (layout.main / ".agents" / "shared" / "governor" / "session_root_cli.py").unlink()
+    _write_token_marker(layout.main / ".claude" / "state", "trivial")
+
+    result = _run(layout, _CLAUDE_STOP, {"cwd": str(layout.worktree)})
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == ""
+    assert not layout.ledger(layout.main).exists()
+    assert list((layout.main / ".claude" / "state").glob("exception-token-*.json"))
 
 
 def test_resolver_keeps_state_on_the_override(

@@ -109,6 +109,25 @@ def _absolute(base: Path, reported: str) -> Path:
     return (path if path.is_absolute() else base / path).resolve()
 
 
+def _inside_this_checkout(here: Path) -> bool:
+    """``here`` is this checkout, or a directory of it outside any nested one.
+
+    The no-git fallback: a ``.git`` entry between ``here`` and ``REPO_ROOT``
+    marks a nested checkout — a linked worktree under ``.claude/worktrees/``
+    has a ``.git`` file at its root — which is exactly the tree this copy must
+    not answer for.
+    """
+
+    root = REPO_ROOT.resolve()
+    node = here.resolve()
+    depth = len(node.relative_to(root).parts)  # ValueError when outside
+    for _ in range(depth):
+        if (node / ".git").exists():
+            return False
+        node = node.parent
+    return True
+
+
 def resolve_session_roots(payload: object) -> SessionRoots:
     """Re-root a hook onto the working tree named by its payload's ``cwd``.
 
@@ -123,28 +142,35 @@ def resolve_session_roots(payload: object) -> SessionRoots:
     repository as this code (equal ``--git-common-dir``). ``cwd`` follows a
     ``cd``, so without that check a session that wandered into an unrelated or
     sibling checkout would start writing this harness's state there; such a
-    ``cwd`` is *rejected* (see ``SessionRoots``). A payload with no ``cwd``, a
-    machine with no ``git``, or a copy of this harness that is not inside a
-    repository at all is not re-rooted: without a repository there are no
-    worktrees to tell apart, and the pre-#425 defaults are all that is left.
+    ``cwd`` is *rejected* (see ``SessionRoots``).
+
+    Only a payload with no ``cwd`` keeps the caller's defaults unconditionally.
+    When git cannot answer — no ``git``, or this copy is not in a repository (a
+    downloaded archive) — the defaults are kept only if the ``cwd`` is
+    demonstrably inside this checkout; anything else is rejected. Never raises:
+    an unexpected error with a ``cwd`` in hand is a rejection (HC-5.5).
     """
 
     cwd = payload.get("cwd") if isinstance(payload, Mapping) else None
-    git = shutil.which("git")
-    if not isinstance(cwd, str) or not cwd or git is None:
+    if not isinstance(cwd, str) or not cwd:
         return SessionRoots()
-    own = _rev_parse(git, REPO_ROOT, "--git-common-dir")
-    if own is None:
-        return SessionRoots()
-    here = Path(cwd)
-    if not here.is_absolute() or not here.is_dir():
+    try:
+        here = Path(cwd)
+        if not here.is_absolute() or not here.is_dir():
+            return SessionRoots(rejected=True)
+        git = shutil.which("git")
+        own = _rev_parse(git, REPO_ROOT, "--git-common-dir") if git else None
+        if git is None or own is None:
+            inside = _inside_this_checkout(here)
+            return SessionRoots() if inside else SessionRoots(rejected=True)
+        session = _rev_parse(git, here, "--show-toplevel", "--git-common-dir")
+        if session is None:
+            return SessionRoots(rejected=True)
+        if _absolute(here, session[1]) != _absolute(REPO_ROOT, own[0]):
+            return SessionRoots(rejected=True)
+        tree = Path(session[0]).resolve()
+    except Exception:  # noqa: BLE001 — a resolver must never take a hook down
         return SessionRoots(rejected=True)
-    session = _rev_parse(git, here, "--show-toplevel", "--git-common-dir")
-    if session is None:
-        return SessionRoots(rejected=True)
-    if _absolute(here, session[1]) != _absolute(REPO_ROOT, own[0]):
-        return SessionRoots(rejected=True)
-    tree = Path(session[0]).resolve()
     # HARNESS_STATE_ROOT outranks the session for *state* only: tests rely on it
     # (#407), and every hook's default STATE_ROOT already honours it, so the
     # state root stays un-rerooted. Classification and git still follow the tree.

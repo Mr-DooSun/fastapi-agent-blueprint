@@ -18,14 +18,21 @@ PY_LAUNCHER="${REPO_ROOT}/.agents/shared/harness-python.sh"
 # This copy can be running for another checkout's session: Claude Code desktop
 # runs a worktree session's hooks from the main checkout. The Stop payload's
 # `cwd` names the session's tree, and every git call and state write below works
-# there (#425). Empty = no cwd, keep this checkout (the pre-#425 behaviour);
-# `rejected` = a cwd this harness cannot place — skip, rather than report this
-# checkout's changes as the session's.
+# there (#425). No payload (a manual run) keeps this checkout, the pre-#425
+# behaviour. With a payload, `none` (no cwd) keeps it too; `rejected` — or no
+# answer at all, which means the resolver never ran — skips the hook rather
+# than report this checkout's changes and state as the session's.
 INPUT=""
 [ -t 0 ] || INPUT=$(cat)
-SESSION_ROOT=$(printf '%s' "$INPUT" \
-    | PYTHONPATH="${SHARED_DIR}" sh "$PY_LAUNCHER" -m governor.session_root_cli 2>/dev/null) || SESSION_ROOT=""
-[ "$SESSION_ROOT" = "rejected" ] && exit 0
+SESSION_ROOT=""
+if [ -n "$INPUT" ]; then
+    SESSION_ROOT=$(printf '%s' "$INPUT" \
+        | PYTHONPATH="${SHARED_DIR}" sh "$PY_LAUNCHER" -m governor.session_root_cli 2>/dev/null) || SESSION_ROOT=""
+    case "$SESSION_ROOT" in
+        "" | rejected) exit 0 ;;
+        none) SESSION_ROOT="" ;;
+    esac
+fi
 GIT_ROOT="${SESSION_ROOT:-$REPO_ROOT}"
 
 # bash 3.2 (macOS default) compatible lowercase. ${var,,} is bash 4+ only.
