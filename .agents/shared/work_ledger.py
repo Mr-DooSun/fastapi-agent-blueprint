@@ -65,12 +65,12 @@ Design constraints
 - Updates are serialised (ADR052-G4): each update helper holds an exclusive
   ``flock`` on ``current-work.json.lock`` from its read to its write, so two
   hooks or two sessions in one tree cannot lose each other's updates. An update
-  that cannot take the lock — another writer held it for ``_LOCK_TIMEOUT_S``,
-  or the lock call failed in a way that says nothing about other writers — is
-  dropped, since writing anyway could undo another writer's update. Only where
-  locking is unavailable (no ``fcntl``, a lock file that cannot be opened, or a
-  filesystem or sandbox that refuses ``flock``) do updates run unlocked, as
-  they all did before.
+  that cannot take the lock is dropped: another writer held it for
+  ``_LOCK_TIMEOUT_S``, or this caller could not open the lock file or was
+  refused ``flock`` — none of which shows that nobody else holds it, so writing
+  anyway could undo another writer's update. Only where nobody can lock at all
+  (no ``fcntl``, or a filesystem without ``flock`` for this file) do updates
+  run unlocked, as they all did before.
 """
 
 from __future__ import annotations
@@ -105,14 +105,12 @@ _LOCK_TIMEOUT_S = 2.0
 _LOCK_POLL_MAX_S = 0.025
 # How a refused flock reads. Busy: another writer holds it — EACCES too, which
 # is how fcntl(F_SETLK) reports a conflict where Python emulates flock with it.
-# Unsupported: the filesystem has no locking for this file, or a sandbox
-# refuses it, so nobody can hold the lock and the update runs unlocked. Any
-# other errno — ENOLCK (lock table full, or a remote lock manager failed) and
-# EINVAL among them — says nothing about other writers: the update is dropped.
+# Unsupported: the filesystem has no flock for this file, for any caller, so
+# nobody can hold the lock and the update runs unlocked. Anything else — EPERM
+# (a sandbox denying this caller), ENOLCK (lock table full, or a remote lock
+# manager failed), EINVAL — says nothing about other writers: it is dropped.
 _LOCK_BUSY = frozenset({errno.EAGAIN, errno.EWOULDBLOCK, errno.EACCES})
-_LOCK_UNSUPPORTED = frozenset(
-    {errno.ENOTSUP, errno.EOPNOTSUPP, errno.ENOSYS, errno.EPERM}
-)
+_LOCK_UNSUPPORTED = frozenset({errno.ENOTSUP, errno.EOPNOTSUPP, errno.ENOSYS})
 
 # Harness-generated turns reach UserPromptSubmit like typed prompts (#425):
 # Claude Code delivers a finished background task as <task-notification> and a
@@ -281,9 +279,11 @@ def _lock_ledger(ledger_path: Path) -> int | None:
     """Take the ledger lock: an exclusive ``flock`` on a file beside the ledger.
 
     Returns the descriptor whose ``os.close`` releases the lock, or ``None``
-    when locking is unavailable here and the update has to run unlocked. Raises
-    ``TimeoutError`` when another writer holds the lock past ``_LOCK_TIMEOUT_S``,
-    and passes on any ``flock`` error that is neither busy nor unsupported.
+    when nobody can lock this file (no ``fcntl``, or a filesystem without
+    ``flock``) and the update has to run unlocked. Raises ``TimeoutError`` when
+    another writer holds the lock past ``_LOCK_TIMEOUT_S``, and passes on any
+    other error from opening the lock file or from ``flock``: what this caller
+    cannot do says nothing about whether another writer holds the lock.
 
     Not the ledger itself: ``os.replace`` gives the ledger a new inode on every
     write, and a lock on the old inode excludes nobody. ``flock``, not
@@ -296,17 +296,14 @@ def _lock_ledger(ledger_path: Path) -> int | None:
         import fcntl
     except ImportError:
         return None
-    try:
-        # First use creates the state directory here, before anything is
-        # written, so even the very first updates are serialised.
-        ledger_path.parent.mkdir(parents=True, exist_ok=True)
-        fd = os.open(
-            ledger_path.with_name(ledger_path.name + ".lock"),
-            os.O_RDWR | os.O_CREAT,
-            0o644,
-        )
-    except OSError:
-        return None
+    # First use creates the state directory here, before anything is written,
+    # so even the very first updates are serialised.
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(
+        ledger_path.with_name(ledger_path.name + ".lock"),
+        os.O_RDWR | os.O_CREAT,
+        0o644,
+    )
     deadline = time.monotonic() + _LOCK_TIMEOUT_S
     delay = 0.001
     while True:
@@ -337,7 +334,7 @@ def _update_ledger(
     the first one's change. Returns whether the ledger was written. An update
     that cannot take the lock is dropped, not applied unlocked: after a timeout
     the holder is still running, and its write would land on top of ours or
-    ours on top of its; after an unexpected ``flock`` error nothing says who
+    ours on top of its; after any other lock error nothing shows that no one
     else holds it. If ``change`` raises, nothing is written and the lock is
     still released. Not reentrant: a nested call would time out on its own lock.
     """
