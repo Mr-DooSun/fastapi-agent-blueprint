@@ -6,7 +6,7 @@
 > This file is auto-extracted/updated from `src/user/` (reference domain) and `src/_core/` (Base classes)
 > when `/sync-guidelines` is run. **Run `/sync-guidelines` instead of editing manually.**
 >
-> Last updated: 2026-09-05 (#408 / PR #411 — §7 now carries the **whole** local pre-commit hook block, not three of eight. The new `doc-links` hook is recorded there with the rest, and the section states which hooks block and which is advisory and why: the discriminator this repo applies is determinism, not subject matter. The drift checklist already required §7 to match `.pre-commit-config.yaml`, and it had not since **#131** — five hooks were missing, the oldest of them `tier1-language-policy`, which is the failure mode the new hook exists to catch, one layer up). Prior: 2026-08-01 (#286 / PR #313 + #315 / PR #319 — Error Notification severity channel routing and its boot-validation gate recorded in §8). Prior: 2026-07-28 (#310 / PR #312 — worker task-failure dispatch and the NiceGUI admin non-goal added to §8; this header was not bumped at the time). Prior: 2026-07-23 (#17 / PR #304 — Error Notification optional infra added to §8 Active Features). Prior: 2026-07-02 (#260 — `examples-copyflow` pre-commit guard added to §7 Architecture Violation Check). Prior: 2026-06-01 (#211 / #197 Phase 5 — guardrail observability ledger + red-team suite)
+> Last updated: 2026-11-02 (#425 / PR #428 — §7 "Claude Hook" now lists every hook `.claude/settings.json` registers — it named four of ten, the same stale-subset failure #408 fixed for the pre-commit block — and states which tree a hook acts on: Claude Code desktop runs a worktree session's hooks from the main checkout, so each hook takes the session's tree from its payload `cwd` via `governor.resolve_session_roots`, never from its own file location). Prior: 2026-09-05 (#408 / PR #411 — §7 now carries the **whole** local pre-commit hook block, not three of eight. The new `doc-links` hook is recorded there with the rest, and the section states which hooks block and which is advisory and why: the discriminator this repo applies is determinism, not subject matter. The drift checklist already required §7 to match `.pre-commit-config.yaml`, and it had not since **#131** — five hooks were missing, the oldest of them `tier1-language-policy`, which is the failure mode the new hook exists to catch, one layer up). Prior: 2026-08-01 (#286 / PR #313 + #315 / PR #319 — Error Notification severity channel routing and its boot-validation gate recorded in §8). Prior: 2026-07-28 (#310 / PR #312 — worker task-failure dispatch and the NiceGUI admin non-goal added to §8; this header was not bumped at the time). Prior: 2026-07-23 (#17 / PR #304 — Error Notification optional infra added to §8 Active Features). Prior: 2026-07-02 (#260 — `examples-copyflow` pre-commit guard added to §7 Architecture Violation Check). Prior: 2026-06-01 (#211 / #197 Phase 5 — guardrail observability ledger + red-team suite)
 
 ## Section Index
 §0 Project Scale and Design Philosophy |
@@ -683,10 +683,30 @@ names only some of the hooks fails nothing when it goes stale.
 
 ### Claude Hook
 
+Every hook `.claude/settings.json` registers — a list that names only some of them
+fails nothing when it goes stale (the #408 lesson for the pre-commit block above):
+
 - SessionStart (check-required-plugins): verifies the pyright-lsp plugin is installed and the `CONTEXT7_API_KEY` env var is set.
-- PreToolUse (pre-tool-security): SQL injection, hardcoded secrets, Domain→Infra import, sensitive data logging check.
-- PostToolUse (post-tool-format): auto-formats `.py` files after Edit/Write (ruff format + ruff check).
-- Stop (stop-sync-reminder): classifies the changed files (via `git diff`) into Foundation / Structure buckets and recommends running `/sync-guidelines`.
+- SessionStart (session-start-context): injects the work-ledger summary of the session's tree.
+- UserPromptSubmit (user-prompt-submit): turns a leading exception token into a marker and stores the prompt as the ledger's `last_prompt` — except a prompt made only of harness `<task-notification>` / `<system-reminder>` blocks.
+- PreToolUse Edit|Write|Bash (pre-tool-security): SQL injection, hardcoded secrets, Domain→Infra import, sensitive data logging check.
+- PreToolUse Edit|Write (pre-tool-stage-block): blocks an implementation edit while the ledger stage is `planned` (ADR 054).
+- PostToolUse Edit|Write (post-tool-format): auto-formats `.py` files after Edit/Write (ruff format + ruff check).
+- PostToolUse Edit|Write (verify-first): reminds to verify after a `.py` edit unless an exploration token is active.
+- PostToolUse Edit|Write (stage-gate): once-per-session advisory for an implementation edit with no active plan (ADR 050).
+- PostToolUse Bash (verify-log): records verify-class commands as a per-session `verify-log-*.json` (#334) — read by the state-lifecycle tools, other sessions' stale logs pruned at Stop.
+- Stop (stop-sync-reminder): classifies the changed files (via `git diff`) into Foundation / Structure buckets and recommends running `/sync-guidelines`; also runs the Pillar 7 completion gate, consumes exception-token markers and refreshes the ledger's verification snapshot.
+
+**Which tree a hook acts on (#425).** Claude Code desktop launches a worktree session
+with `--project-config-root` pointing at the main checkout and runs every relative hook
+command from there, so a worktree session executes main's hook copies. Each hook
+therefore takes the session's tree from the payload `cwd` through
+`governor.resolve_session_roots` — accepted only for a working tree of the same
+repository — and never from its own file location. `HARNESS_STATE_ROOT` still outranks
+it for state (#407). A `cwd` the resolver cannot place makes the hook skip
+session-scoped work rather than fall back to its own checkout, which would be the bug
+again. Codex and Antigravity run hooks from the session's own checkout, so only their
+shared-ledger calls go through the resolver.
 
 ## §8. Active Features
 
