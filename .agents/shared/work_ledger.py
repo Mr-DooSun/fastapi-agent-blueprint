@@ -59,6 +59,16 @@ Design constraints
 - All public functions are fail-open: I/O errors return None / empty safely.
 - No top-level side effects — callers drive all reads and writes.
 - IC-14: no governor policy inline — this module owns only ledger I/O.
+- Writes are atomic (ADR052-G4): the new ledger is written beside the old one
+  and swapped in with ``os.replace``, so a reader gets one or the other, never
+  a partial file.
+- Updates are serialised (ADR052-G4): each update helper holds an exclusive
+  ``flock`` on ``current-work.json.lock`` from its read to its write, so two
+  hooks or two sessions in one tree cannot lose each other's updates. An update
+  that waits ``_LOCK_TIMEOUT_S`` for another writer is dropped — writing anyway
+  could undo that writer's update. Where locking is unavailable (no ``fcntl``,
+  or a filesystem or sandbox that refuses ``flock``) updates run unlocked, as
+  they all did before.
 """
 
 from __future__ import annotations
@@ -68,6 +78,9 @@ import json
 import os
 import re
 import subprocess
+import tempfile
+import time
+from collections.abc import Callable
 from datetime import UTC, datetime, timezone
 from pathlib import Path
 
@@ -81,6 +94,12 @@ SCHEMA_VERSION = 2
 # Maximum characters of last_prompt stored (avoids bloating the ledger).
 _PROMPT_MAX_CHARS = 1200
 _UNSET = object()
+
+# An update holds the ledger lock for well under a millisecond, so a wait this
+# long means a stuck holder, and a hook must not hang on one. Waiters poll,
+# backing off to _LOCK_POLL_MAX_S between attempts.
+_LOCK_TIMEOUT_S = 2.0
+_LOCK_POLL_MAX_S = 0.025
 
 # Harness-generated turns reach UserPromptSubmit like typed prompts (#425):
 # Claude Code delivers a finished background task as <task-notification> and a
@@ -206,7 +225,11 @@ def read_ledger(*, state_root: Path | None = None) -> dict | None:
 def write_ledger(
     data: dict, updated_by: str = "system", *, state_root: Path | None = None
 ) -> bool:
-    """Persist the ledger. Returns True on success."""
+    """Persist the ledger atomically. Returns True on success.
+
+    A blind write: it replaces whatever is there. Changing part of the ledger is
+    ``_update_ledger``'s job, which holds the lock across the read as well.
+    """
     with contextlib.suppress(Exception):
         data = _migrate_ledger(data) or data
         data["schema_version"] = SCHEMA_VERSION
@@ -215,11 +238,104 @@ def write_ledger(
         data["meta"]["updated_by"] = updated_by
         state_dir, ledger_path = _paths(state_root)
         state_dir.mkdir(parents=True, exist_ok=True)
-        ledger_path.write_text(
-            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        _replace_file(ledger_path, json.dumps(data, ensure_ascii=False, indent=2))
         return True
     return False
+
+
+def _replace_file(path: Path, text: str) -> None:
+    """Write ``text`` to a temporary file beside ``path``, then swap it in.
+
+    ``write_text`` truncates first and writes after, and a reader in between gets
+    an empty or half-written file. Here that is not harmless: ``read_ledger``
+    turns it into ``None``, and that reader's own update then writes a default
+    ledger back over everything. ``os.replace`` is atomic, so a reader opens the
+    old file or the new one. No ``fsync``: the race is between processes, which
+    share the page cache, and crash durability is not a goal.
+    """
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
+        raise
+
+
+def _lock_ledger(ledger_path: Path) -> int | None:
+    """Take the ledger lock: an exclusive ``flock`` on a file beside the ledger.
+
+    Returns the descriptor whose ``os.close`` releases the lock, or ``None``
+    when locking is unavailable here and the update has to run unlocked. Raises
+    ``TimeoutError`` when another writer holds the lock past ``_LOCK_TIMEOUT_S``.
+
+    Not the ledger itself: ``os.replace`` gives the ledger a new inode on every
+    write, and a lock on the old inode excludes nobody. ``flock``, not
+    ``lockf``: it belongs to the open file description, so it also excludes a
+    second descriptor in this process, and closing an unrelated descriptor for
+    the same file does not drop it. The lock file is never deleted — a writer
+    could still hold the unlinked inode while the next one locks a new file.
+    """
+    try:
+        import fcntl
+    except ImportError:
+        return None
+    try:
+        # First use creates the state directory here, before anything is
+        # written, so even the very first updates are serialised.
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(
+            ledger_path.with_name(ledger_path.name + ".lock"),
+            os.O_RDWR | os.O_CREAT,
+            0o644,
+        )
+    except OSError:
+        return None
+    deadline = time.monotonic() + _LOCK_TIMEOUT_S
+    delay = 0.001
+    while True:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return fd
+        except BlockingIOError:
+            if time.monotonic() < deadline:
+                time.sleep(delay)
+                delay = min(delay * 2, _LOCK_POLL_MAX_S)
+                continue
+            os.close(fd)
+            raise TimeoutError("another writer holds the ledger lock") from None
+        except OSError:  # ENOLCK, ENOTSUP, a sandbox's EPERM: no locking here
+            os.close(fd)
+            return None
+
+
+def _update_ledger(
+    change: Callable[[dict], None], *, updated_by: str, state_root: Path | None
+) -> bool:
+    """Apply ``change`` to the ledger and write it back, under the ledger lock.
+
+    Every update helper goes through here, so no two updates — in one process
+    or in two — can read the same ledger and have the second write throw away
+    the first one's change. Returns whether the ledger was written. An update
+    that times out waiting for the lock is dropped, not applied unlocked: the
+    holder is still running, and its write would land on top of ours or ours
+    on top of its. If ``change`` raises, nothing is written and the lock is
+    still released. Not reentrant: a nested call would time out on its own lock.
+    """
+    try:
+        lock = _lock_ledger(_paths(state_root)[1])
+    except TimeoutError:
+        return False
+    try:
+        ledger = read_ledger(state_root=state_root) or _default_ledger()
+        change(ledger)
+        return write_ledger(ledger, updated_by=updated_by, state_root=state_root)
+    finally:
+        if lock is not None:
+            with contextlib.suppress(OSError):
+                os.close(lock)
 
 
 def _changed_py_files(repo_root: Path | None = None) -> list[str]:
@@ -265,25 +381,33 @@ def update_last_prompt(
     """
     if _is_harness_notification(prompt):
         return
-    ledger = read_ledger(state_root=state_root) or _default_ledger()
-    ledger["last_prompt"] = prompt[:_PROMPT_MAX_CHARS] if prompt else None
-    if session_id:
-        ledger.setdefault("meta", {})["session_id"] = session_id
-    write_ledger(ledger, updated_by="hook:user_prompt_submit", state_root=state_root)
+
+    def record_prompt(ledger: dict) -> None:
+        ledger["last_prompt"] = prompt[:_PROMPT_MAX_CHARS] if prompt else None
+        if session_id:
+            ledger.setdefault("meta", {})["session_id"] = session_id
+
+    _update_ledger(
+        record_prompt, updated_by="hook:user_prompt_submit", state_root=state_root
+    )
 
 
 def update_verification_from_git(
     *, repo_root: Path | None = None, state_root: Path | None = None
 ) -> None:
     """Refresh changed_py_files from git. Called from Stop hook."""
-    ledger = read_ledger(state_root=state_root) or _default_ledger()
+    # Asked before the lock is taken: the answer does not depend on the ledger,
+    # and no other update should wait behind a subprocess.
     py_files = _changed_py_files(repo_root)
-    verification = ledger.setdefault("verification", {})
-    verification["changed_py_files"] = py_files
-    # Promote status to "pending" only when files exist and status was unknown.
-    if py_files and verification.get("status") == "unknown":
-        verification["status"] = "pending"
-    write_ledger(ledger, updated_by="hook:stop", state_root=state_root)
+
+    def record_changed_files(ledger: dict) -> None:
+        verification = ledger.setdefault("verification", {})
+        verification["changed_py_files"] = py_files
+        # Promote status to "pending" only when files exist and status was unknown.
+        if py_files and verification.get("status") == "unknown":
+            verification["status"] = "pending"
+
+    _update_ledger(record_changed_files, updated_by="hook:stop", state_root=state_root)
 
 
 def update_goal_scope_plan(
@@ -293,14 +417,16 @@ def update_goal_scope_plan(
     updated_by: str = "skill",
 ) -> None:
     """Set goal / scope / plan fields. Called from plan-feature, new-domain, etc."""
-    ledger = read_ledger() or _default_ledger()
-    if goal is not None:
-        ledger["goal"] = goal
-    if scope is not None:
-        ledger["scope"] = scope
-    if plan is not None:
-        ledger["plan"] = plan
-    write_ledger(ledger, updated_by=updated_by)
+
+    def set_fields(ledger: dict) -> None:
+        if goal is not None:
+            ledger["goal"] = goal
+        if scope is not None:
+            ledger["scope"] = scope
+        if plan is not None:
+            ledger["plan"] = plan
+
+    _update_ledger(set_fields, updated_by=updated_by, state_root=None)
 
 
 def update_workflow_state(
@@ -316,43 +442,46 @@ def update_workflow_state(
 ) -> None:
     """Update native workflow state for plan-feature / execute-plan."""
 
-    ledger = read_ledger() or _default_ledger()
-    workflow = _normalise_workflow(ledger.get("workflow"))
-    if stage is not _UNSET:
-        workflow["stage"] = stage
-    if plan_ref is not _UNSET:
-        workflow["plan_ref"] = plan_ref
-    if current_task is not _UNSET:
-        workflow["current_task"] = current_task
-    if tasks is not _UNSET:
-        workflow["tasks"] = (
-            [item for item in tasks if isinstance(item, dict)]
-            if isinstance(tasks, list)
-            else []
-        )
-    if review_mode is not _UNSET:
-        workflow["review"]["mode"] = review_mode
-    if review_status is not _UNSET:
-        workflow["review"]["status"] = review_status
-    if review_reason is not _UNSET:
-        workflow["review"]["reason"] = review_reason
-    ledger["workflow"] = workflow
-    write_ledger(ledger, updated_by=updated_by)
+    def set_workflow(ledger: dict) -> None:
+        workflow = _normalise_workflow(ledger.get("workflow"))
+        if stage is not _UNSET:
+            workflow["stage"] = stage
+        if plan_ref is not _UNSET:
+            workflow["plan_ref"] = plan_ref
+        if current_task is not _UNSET:
+            workflow["current_task"] = current_task
+        if tasks is not _UNSET:
+            workflow["tasks"] = (
+                [item for item in tasks if isinstance(item, dict)]
+                if isinstance(tasks, list)
+                else []
+            )
+        if review_mode is not _UNSET:
+            workflow["review"]["mode"] = review_mode
+        if review_status is not _UNSET:
+            workflow["review"]["status"] = review_status
+        if review_reason is not _UNSET:
+            workflow["review"]["reason"] = review_reason
+        ledger["workflow"] = workflow
+
+    _update_ledger(set_workflow, updated_by=updated_by, state_root=None)
 
 
 def mark_verified(
     command: str, passed: bool, *, state_root: Path | None = None
 ) -> None:
     """Record a verify-command result. Called from verify-aware hooks/skills."""
-    ledger = read_ledger(state_root=state_root) or _default_ledger()
-    verification = ledger.setdefault("verification", {})
-    verification["status"] = "passed" if passed else "failed"
-    verification["last_verified_at"] = _now_iso()
-    verification["last_command"] = command
-    # Clear pending py_files on pass.
-    if passed:
-        verification["changed_py_files"] = []
-    write_ledger(ledger, updated_by="hook:verify", state_root=state_root)
+
+    def record_result(ledger: dict) -> None:
+        verification = ledger.setdefault("verification", {})
+        verification["status"] = "passed" if passed else "failed"
+        verification["last_verified_at"] = _now_iso()
+        verification["last_command"] = command
+        # Clear pending py_files on pass.
+        if passed:
+            verification["changed_py_files"] = []
+
+    _update_ledger(record_result, updated_by="hook:verify", state_root=state_root)
 
 
 def build_workflow_advisory_segments(
