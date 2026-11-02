@@ -6,10 +6,10 @@ write was a truncating ``write_text``. So two processes in one tree — a
 UserPromptSubmit hook racing a Stop hook, a skill racing a hook, two sessions in
 one checkout — lost each other's updates, and a reader that caught the file
 between the truncate and the write got ``None`` from ``read_ledger`` and wrote a
-*default* ledger back. Measured before the fix: seven processes, one field each,
-ended with six of the seven fields ``None`` in three runs out of three, and a
-reader caught a partial file on about one read in ten. (PR #428's review deferred
-this as R7, once each worktree had its own ledger.)
+*default* ledger back. Measured on the code before the fix with a scratch probe of
+seven processes, one field each: six of the seven fields ended ``None`` in three
+runs out of three, and a reader caught a partial file on about one read in ten.
+(PR #428's review deferred this as R7, once each worktree had its own ledger.)
 
 The fix has two halves, and each race test here needs a specific one:
 
@@ -214,8 +214,9 @@ _HELPER_RACE: list[tuple[tuple[str, ...], str, Callable[[int], object]]] = [
 def test_each_update_helper_keeps_the_others_fields(tmp_path: Path) -> None:
     """Eight helpers racing on one ledger each leave their own last value.
 
-    Before the fix this lost six of seven fields in every run — not to stale
-    snapshots but to the default ledger that a torn read turns into.
+    On the code before the fix this failed at its first field, ``last_prompt``
+    ending ``None`` — lost not to a stale snapshot but to the default ledger a
+    torn read turns into. With the lock removed it fails on a stale snapshot.
     """
     rounds = 40
     scripts = [
@@ -334,21 +335,59 @@ def test_an_update_runs_unlocked_without_fcntl(
     assert not _lock_path(tmp_path).exists()
 
 
-@needs_flock
-def test_an_update_runs_unlocked_when_flock_is_refused(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A filesystem or sandbox that refuses ``flock`` costs the lock, not the update."""
+def _flock_failing_with(code: int, monkeypatch: pytest.MonkeyPatch) -> None:
     import fcntl
 
-    def refuse(fd: int, operation: int) -> None:
-        raise OSError(errno.ENOLCK, "No locks available")
+    def fail(fd: int, operation: int) -> None:
+        raise OSError(code, os.strerror(code))
 
-    monkeypatch.setattr(fcntl, "flock", refuse)
+    monkeypatch.setattr(fcntl, "flock", fail)
+
+
+@needs_flock
+@pytest.mark.parametrize("code", [errno.ENOLCK, errno.ENOTSUP, errno.EPERM])
+def test_an_update_runs_unlocked_where_flock_is_unsupported(
+    code: int, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A filesystem or sandbox that refuses ``flock`` costs the lock, not the update."""
+    _flock_failing_with(code, monkeypatch)
 
     wl.update_goal_scope_plan(goal="unlocked")
 
     assert _on_disk(tmp_path)["goal"] == "unlocked"
+
+
+@needs_flock
+def test_eacces_from_flock_counts_as_a_held_lock(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Where Python emulates ``flock`` with ``fcntl(F_SETLK)``, a conflict is EACCES.
+
+    Read as "unsupported", it would let the update run unlocked beside the holder.
+    """
+    wl.update_goal_scope_plan(goal="kept")
+    monkeypatch.setattr(wl, "_LOCK_TIMEOUT_S", 0.2)
+    _flock_failing_with(errno.EACCES, monkeypatch)
+
+    started = time.monotonic()
+    wl.update_goal_scope_plan(goal="dropped")
+    waited = time.monotonic() - started
+
+    assert 0.2 <= waited < 5, waited
+    assert _on_disk(tmp_path)["goal"] == "kept"
+
+
+@needs_flock
+def test_an_unexpected_flock_error_drops_the_update(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An error that says nothing about other writers neither writes nor raises."""
+    wl.update_goal_scope_plan(goal="kept")
+    _flock_failing_with(errno.EIO, monkeypatch)
+
+    wl.update_goal_scope_plan(goal="dropped")
+
+    assert _on_disk(tmp_path)["goal"] == "kept"
 
 
 @needs_flock

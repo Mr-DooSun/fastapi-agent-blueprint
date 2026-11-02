@@ -65,15 +65,18 @@ Design constraints
 - Updates are serialised (ADR052-G4): each update helper holds an exclusive
   ``flock`` on ``current-work.json.lock`` from its read to its write, so two
   hooks or two sessions in one tree cannot lose each other's updates. An update
-  that waits ``_LOCK_TIMEOUT_S`` for another writer is dropped — writing anyway
-  could undo that writer's update. Where locking is unavailable (no ``fcntl``,
-  or a filesystem or sandbox that refuses ``flock``) updates run unlocked, as
+  that cannot take the lock — another writer held it for ``_LOCK_TIMEOUT_S``,
+  or the lock call failed in a way that says nothing about other writers — is
+  dropped, since writing anyway could undo another writer's update. Only where
+  locking is unavailable (no ``fcntl``, a lock file that cannot be opened, or a
+  filesystem or sandbox that refuses ``flock``) do updates run unlocked, as
   they all did before.
 """
 
 from __future__ import annotations
 
 import contextlib
+import errno
 import json
 import os
 import re
@@ -100,6 +103,21 @@ _UNSET = object()
 # backing off to _LOCK_POLL_MAX_S between attempts.
 _LOCK_TIMEOUT_S = 2.0
 _LOCK_POLL_MAX_S = 0.025
+# How a refused flock reads. Busy: another writer holds it — EACCES too, which
+# is how fcntl(F_SETLK) reports a conflict where Python emulates flock with it.
+# Unsupported: this filesystem or sandbox does no locking, so run unlocked. Any
+# other errno says nothing about other writers, and the update is dropped.
+_LOCK_BUSY = frozenset({errno.EAGAIN, errno.EWOULDBLOCK, errno.EACCES})
+_LOCK_UNSUPPORTED = frozenset(
+    {
+        errno.ENOLCK,
+        errno.ENOTSUP,
+        errno.EOPNOTSUPP,
+        errno.EINVAL,
+        errno.ENOSYS,
+        errno.EPERM,
+    }
+)
 
 # Harness-generated turns reach UserPromptSubmit like typed prompts (#425):
 # Claude Code delivers a finished background task as <task-notification> and a
@@ -269,7 +287,8 @@ def _lock_ledger(ledger_path: Path) -> int | None:
 
     Returns the descriptor whose ``os.close`` releases the lock, or ``None``
     when locking is unavailable here and the update has to run unlocked. Raises
-    ``TimeoutError`` when another writer holds the lock past ``_LOCK_TIMEOUT_S``.
+    ``TimeoutError`` when another writer holds the lock past ``_LOCK_TIMEOUT_S``,
+    and passes on any ``flock`` error that is neither busy nor unsupported.
 
     Not the ledger itself: ``os.replace`` gives the ledger a new inode on every
     write, and a lock on the old inode excludes nobody. ``flock``, not
@@ -299,16 +318,18 @@ def _lock_ledger(ledger_path: Path) -> int | None:
         try:
             fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             return fd
-        except BlockingIOError:
-            if time.monotonic() < deadline:
+        except OSError as exc:
+            busy = exc.errno in _LOCK_BUSY
+            if busy and time.monotonic() < deadline:
                 time.sleep(delay)
                 delay = min(delay * 2, _LOCK_POLL_MAX_S)
                 continue
             os.close(fd)
-            raise TimeoutError("another writer holds the ledger lock") from None
-        except OSError:  # ENOLCK, ENOTSUP, a sandbox's EPERM: no locking here
-            os.close(fd)
-            return None
+            if exc.errno in _LOCK_UNSUPPORTED:
+                return None
+            if busy:
+                raise TimeoutError("another writer holds the ledger lock") from None
+            raise
 
 
 def _update_ledger(
@@ -319,14 +340,15 @@ def _update_ledger(
     Every update helper goes through here, so no two updates — in one process
     or in two — can read the same ledger and have the second write throw away
     the first one's change. Returns whether the ledger was written. An update
-    that times out waiting for the lock is dropped, not applied unlocked: the
-    holder is still running, and its write would land on top of ours or ours
-    on top of its. If ``change`` raises, nothing is written and the lock is
+    that cannot take the lock is dropped, not applied unlocked: after a timeout
+    the holder is still running, and its write would land on top of ours or
+    ours on top of its; after an unexpected ``flock`` error nothing says who
+    else holds it. If ``change`` raises, nothing is written and the lock is
     still released. Not reentrant: a nested call would time out on its own lock.
     """
     try:
         lock = _lock_ledger(_paths(state_root)[1])
-    except TimeoutError:
+    except OSError:  # TimeoutError included
         return False
     try:
         ledger = read_ledger(state_root=state_root) or _default_ledger()
