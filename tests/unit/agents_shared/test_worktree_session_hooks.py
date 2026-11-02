@@ -50,7 +50,10 @@ _COPIED_FILES = (".gitignore", "docs/ai/shared/governor-paths.md")
 _LAUNCHER = ".agents/shared/harness-python.sh"
 
 # Entry points exactly as registered in .claude/settings.json, .codex/hooks.json
-# and .gemini/settings.json — each run from the main checkout, as the harness does.
+# and .gemini/settings.json, each run from the main checkout the way Claude Code
+# desktop runs a worktree session's hooks. Codex and Gemini run hooks from the
+# session's own checkout instead; holding them to the same layout pins the shared
+# ledger contract, not their runtime.
 _USER_PROMPT_SUBMIT = {
     "claude": ["bash", ".claude/hooks/user-prompt-submit.sh"],
     "codex": ["sh", _LAUNCHER, ".codex/hooks/user-prompt-submit.py"],
