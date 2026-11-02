@@ -105,18 +105,13 @@ _LOCK_TIMEOUT_S = 2.0
 _LOCK_POLL_MAX_S = 0.025
 # How a refused flock reads. Busy: another writer holds it — EACCES too, which
 # is how fcntl(F_SETLK) reports a conflict where Python emulates flock with it.
-# Unsupported: this filesystem or sandbox does no locking, so run unlocked. Any
-# other errno says nothing about other writers, and the update is dropped.
+# Unsupported: the filesystem has no locking for this file, or a sandbox
+# refuses it, so nobody can hold the lock and the update runs unlocked. Any
+# other errno — ENOLCK (lock table full, or a remote lock manager failed) and
+# EINVAL among them — says nothing about other writers: the update is dropped.
 _LOCK_BUSY = frozenset({errno.EAGAIN, errno.EWOULDBLOCK, errno.EACCES})
 _LOCK_UNSUPPORTED = frozenset(
-    {
-        errno.ENOLCK,
-        errno.ENOTSUP,
-        errno.EOPNOTSUPP,
-        errno.EINVAL,
-        errno.ENOSYS,
-        errno.EPERM,
-    }
+    {errno.ENOTSUP, errno.EOPNOTSUPP, errno.ENOSYS, errno.EPERM}
 )
 
 # Harness-generated turns reach UserPromptSubmit like typed prompts (#425):

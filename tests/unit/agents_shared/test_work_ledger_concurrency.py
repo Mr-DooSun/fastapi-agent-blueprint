@@ -345,11 +345,13 @@ def _flock_failing_with(code: int, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @needs_flock
-@pytest.mark.parametrize("code", [errno.ENOLCK, errno.ENOTSUP, errno.EPERM])
+@pytest.mark.parametrize(
+    "code", [errno.ENOTSUP, errno.ENOSYS, errno.EPERM], ids=errno.errorcode.get
+)
 def test_an_update_runs_unlocked_where_flock_is_unsupported(
     code: int, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A filesystem or sandbox that refuses ``flock`` costs the lock, not the update."""
+    """Where nobody can hold the lock, it costs the lock and not the update."""
     _flock_failing_with(code, monkeypatch)
 
     wl.update_goal_scope_plan(goal="unlocked")
@@ -378,12 +380,19 @@ def test_eacces_from_flock_counts_as_a_held_lock(
 
 
 @needs_flock
-def test_an_unexpected_flock_error_drops_the_update(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(
+    "code", [errno.ENOLCK, errno.EINVAL, errno.EIO], ids=errno.errorcode.get
+)
+def test_a_flock_error_that_proves_nothing_drops_the_update(
+    code: int, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """An error that says nothing about other writers neither writes nor raises."""
+    """An error that says nothing about other writers neither writes nor raises.
+
+    ENOLCK included: a full lock table or a failed remote lock manager does not
+    mean nobody else holds the lock.
+    """
     wl.update_goal_scope_plan(goal="kept")
-    _flock_failing_with(errno.EIO, monkeypatch)
+    _flock_failing_with(code, monkeypatch)
 
     wl.update_goal_scope_plan(goal="dropped")
 
