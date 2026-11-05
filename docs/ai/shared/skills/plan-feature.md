@@ -26,6 +26,11 @@ After receiving user responses, organize the following:
 Before diving into architecture details, propose 2-3 candidate approaches
 for implementing the requirements gathered in Phase 0.
 
+Before comparing options, use [scoped ADR evidence](../adr-evidence.md) to select
+applicable current clauses and verify their material premises. Carry the decision
+basis in Selected Approach / Architecture Impact, including conflicts or unknowns.
+An ADR number alone is not evidence or an implementation authorization.
+
 **Requirements**:
 - Minimum 2, maximum 3 candidate approaches.
 - Each candidate is a *product/design-level* choice, not a listing of

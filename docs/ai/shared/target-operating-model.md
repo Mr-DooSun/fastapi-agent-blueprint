@@ -29,6 +29,8 @@ problem framing → approach options → plan → implement
 
 Steps are sequential. Returning to an earlier step is permitted (e.g. `verify` failure may force re-`plan`); skipping a mandatory step requires either an exception token (§3) or an automatic escape condition (§3 auto-escapes).
 
+Architecture and durable workflow choices use [scoped ADR evidence](adr-evidence.md) within existing plan, ticket, review and sync fields (ADR 064). Read applicable clauses and current implementation evidence; ADR intent does not prove runtime effects or grant permission.
+
 ### Step interaction with skills
 
 Each shared procedure and both tool wrappers retain a compact `Default Flow Position` pointer to this canonical per-skill table. Step and Phase counts remain procedure contracts; compacting routing does not relax their parity checks. Command names below use `/skill`; Codex uses the matching `$skill` name.

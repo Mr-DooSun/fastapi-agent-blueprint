@@ -21,6 +21,14 @@ Before execution starts, confirm the Execution Packet contains:
 - **Review Gates** — self-review, architecture/security review, sync-guidelines,
   and governor-changing review mode when applicable.
 
+Within Selected Approach / Architecture Impact, carry the approved
+[ADR decision basis](../adr-evidence.md), or the scoped reason none applies.
+Recheck its material code/configuration premises in the fresh session. If an older
+packet lacks this context, retrieve it from the approved decision and current
+sources; report an unknown or contradiction rather than inventing intent, treating
+it as missing approval, or silently choosing a new design. Existing scope and
+ADR 050/054 boundaries remain authoritative.
+
 If any field is missing, stop and return to `plan-feature`; do not infer the
 missing contract during execution.
 

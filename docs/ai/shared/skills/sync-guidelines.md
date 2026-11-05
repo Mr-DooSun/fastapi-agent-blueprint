@@ -77,7 +77,12 @@ language.
 
 ## Phase 1: Reconcile Drift Candidates with Code and References
 
-Process incoming drift first.
+Process incoming drift first. Reconcile [ADR decision evidence](../adr-evidence.md)
+with current code and dependent references. Identify durable choices needing a
+record or explicit successor; ordinary edits stay in PR/CHANGELOG. A contradiction
+between code and a decision requires evidence and a REVIEW disposition, not an
+automatic rewrite of history or a new permission grant. Include that reconciliation
+in the existing Input Drift Candidates / AUTO-FIX / REVIEW / Remaining fields.
 
 - verify whether each candidate is still real
 - promote still-valid candidates into `AUTO-FIX` or `REVIEW`

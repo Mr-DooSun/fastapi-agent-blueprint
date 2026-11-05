@@ -124,6 +124,8 @@ Use one mode and record `reviewer`:
 
 Resolve each R-point within two rounds (initial + follow-up); a third round signals splitting the PR. Record `rounds` and all Findings / Drift Candidates / Sync Required / Final Verdict in the PR description's `## Governor Footer`; close every R-point as Fixed / Deferred-with-rationale / Rejected with matching counts (Guard G). Governor Footer Lint CI enforces presence and shape. Promote durable governance constraints into the relevant ADR's Consequences (`ADR{NNN}-G{N}`); domain invariants belong in `project-dna.md` or the domain doc. The [governor-review-log archive](docs/history/archive/governor-review-log/README.md) is closed; do not add review records there.
 
+Architectural decisions use [scoped ADR evidence](docs/ai/shared/adr-evidence.md) in existing workflow fields; verify applicable clauses against current code (ADR 064).
+
 ### Skill Mapping
 
 Shared procedures define skill positions; wrappers may point to the [canonical step-to-skill table](docs/ai/shared/target-operating-model.md#1-default-coding-flow-7-step) instead of mirroring it.

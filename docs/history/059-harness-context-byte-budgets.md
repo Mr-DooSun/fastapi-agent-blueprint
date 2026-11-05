@@ -45,7 +45,9 @@ change the scan. It checks:
   including pipes and links, inside the Recent Major Changes table.
 - An absolute AGENTS.md budget below the default Codex document allowance.
 
-Numeric limits live in the checker and its hook-registration comment only.
+Checker budget limits live in the checker and its hook-registration comment only.
+The independent native project-document allowance is configured in
+[.codex/config.toml](../../.codex/config.toml); it is not another checker budget.
 Fenced examples are excluded from line checks but still consume file/total
 bytes. General shared-document prose and tables are outside line-cap scope;
 their migration requires a later, measured ratchet rather than retroactive
@@ -71,6 +73,11 @@ review and a Governor Footer. Do not raise it to avoid moving a retrospective.
   Preserve the index-selected scan, content-change dates, actionable
   `file:line` failures, and separate fenced-line vs full-file counting.
 
+- **ADR059-G2 — Independent loading defenses:** the lean AGENTS budget and native
+  project-document allowance are distinct controls. Changing either requires
+  checking actual tail ingestion independently of the configured margin; do not
+  treat a setting value or historical CLI observation as proof of loaded context.
+
 ### Verification and fork policy
 
 Run the checker, its unit tests, the language/link checks, and all pre-commit
@@ -81,3 +88,48 @@ Forks may use `SKIP=context-budget` for a deliberate local bypass. A bypass is
 not a passing verification result and does not replace the review requirement
 for changing this repository's policy. Existing safety, stage, locale and
 review-provenance semantics are unchanged.
+
+## Supplementary Decision Record — Native Loading and Lean Source
+
+This supplement records the implemented #413/#414 choice retrospectively, after
+[PR #434](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/434) assembled
+the accepted batch. Issue #413 explicitly required both defenses and described
+the weakness of either partial fix. This is not a claim that every comparison
+below was a separate formal design session.
+
+### Choice and partial alternatives
+
+- **Configuration only:** raising the native loading allowance can restore the
+  truncated tail immediately. It leaves document growth unchecked and makes
+  visibility depend entirely on that configuration being applied and honored.
+- **Trimming only:** keeping AGENTS below the default-sized loading budget restores
+  portability and reduces fixed context, but leaves no independent loading margin
+  when user/ancestor project instructions or future loading behavior differ.
+- **Both, selected:** retain the smaller, blocking AGENTS budget and a separate
+  repository native allowance with headroom. The allowance is defense in depth,
+  never permission to regrow the constitution or raise a checker ceiling.
+
+The cost is coordinating two different controls and an actual ingestion probe;
+a byte count alone cannot prove that a CLI loaded the file. Runtime settings
+remain tool-specific, while source compactness is a shared obligation.
+
+### Evidence, validation and reconsideration
+
+The silent truncation reported in [#413](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/413)
+is an observation of its stated CLI/environment. PR #434 reports a successful
+explicitly default-sized tail probe in the tested environment. Neither observation
+establishes a timeless default or proves all CLI versions honor project settings.
+The [live healthcheck](../ai/shared/commands.md#codex-healthcheck) deliberately
+checks the final AGENTS section with an explicit default-sized override; the
+[tail regression](../../tests/unit/tools/test_project_doc_tail.py) also pins that
+marker as the final section. The configured allowance therefore cannot hide a
+failure of the lean-source probe.
+
+Re-check current vendor documentation and actual ingestion when the CLI loader,
+trust/config precedence, ancestor instructions or project-document setting
+changes. If the tail disappears despite passing byte checks, investigate the
+loader/config contract before raising a ceiling. Revisit the need for the
+configuration margin only with evidence that the lean-source rule and actual
+loading remain reliable; a coherent change updates config, probes, documentation
+and affected checks together. The quarterly ratchet above governs checker
+ceilings, not an assumed vendor default.

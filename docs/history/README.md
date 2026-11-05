@@ -72,7 +72,8 @@ Read top-to-bottom; each builds on the ones above it.
 | [061](061-retire-runtime-verify-and-content-heuristics.md) | Retire Runtime Verify and Content Heuristics | Removes redundant runtime checks while preserving active safety, outcomes and continuity. |
 | [062](062-generated-harness-inventory.md) | Generated Harness Inventory | Tracked scope discovery, reviewed bucket judgments and generated-output gate. |
 | [063](063-on-demand-harness-documentation.md) | Consult Detailed References on Demand | Consulted commands, scoped projections and compact policy references with historical snapshots. |
-
+| [064](064-scoped-adr-evidence-in-agent-workflow.md) | Scoped ADR Evidence in Agent Workflow | Connect applicable decision clauses and status to choices, current evidence, conflicts and revisit routes. |
+| [065](065-native-skill-discovery-and-procedure-authority.md) | Native Skill Discovery and Shared Procedure Authority | Keep tool-native discovery and invocation metadata separate from shared procedure authority. |
 
 ## Archive
 
@@ -87,7 +88,7 @@ the rationale behind each archival bucket.
 
 ## Writing a new ADR
 
-Numbering continues sequentially (next free number is 064). Only add a new
+Numbering continues sequentially (next free number is 066). Only add a new
 ADR when the decision is **load-bearing** — i.e. it constrains how future
 code will be written, not merely which tool was picked. Purely
 operational choices can be captured in `CHANGELOG.md` or a PR description.
@@ -111,6 +112,19 @@ options, and why one was chosen.
   corrected after experience?
 - Acknowledging trade-offs and what was sacrificed
 
+Use the [scoped Decision Basis contract](../ai/shared/adr-evidence.md) when a task
+makes or tests an architectural choice. Start from the affected concern and this
+index; read only applicable clauses and their amendments/current carriers. A
+scoped explanation that no ADR decision is affected is sufficient when true.
+An Accepted status records a decision, not proof that code implements it or tests
+pass. An archive supplies history unless a current rule explicitly carries its
+constraint; do not promote historical rationale into current authority.
+
+Retrospective records are valid when labelled honestly. Distinguish the decision
+date from the recording date, cite contemporaneous evidence where available, and
+identify later reconstruction or missing evidence. Do not invent past alternatives
+or pretend the present author witnessed the original decision.
+
 ### Language
 
 ADRs must be written in English.
@@ -127,9 +141,12 @@ e.g.: 042-your-decision-topic.md
 ```markdown
 # {number}. {title}
 
-- Status: Accepted / Deprecated / Superseded by {number}
-- Date: YYYY-MM-DD
+- Status: Proposed / Accepted / Deprecated / Superseded by {number and clause scope}
+- Date: YYYY-MM-DD (label whether decision or recording date)
+- Record type: contemporaneous / retrospective
+- Decision evidence: {approved issue, PR, discussion, or unavailable}
 - Related issue: #{number}
+- Amends / supersedes: {linked ADR clauses/current carriers, or none}
 
 ## Summary
 <!-- 1-2 sentences: "To solve {problem}, we chose {approach}" -->
@@ -137,17 +154,23 @@ e.g.: 042-your-decision-topic.md
 ## Background
 <!-- Trigger: what made this decision necessary NOW -->
 <!-- Decision type: upfront design / experience-based correction / external factor -->
+<!-- For retrospective records, separate sourced history from later analysis. -->
 
 ## Problem
 
 ## Alternatives Considered
 ### A. {alternative}
 ### B. {alternative}
+<!-- Identify which alternatives were considered then; label later analysis. -->
 
 ## Decision
 
 ## Rationale
 <!-- Lead with architectural "why", not implementation details -->
+
+## Consequences
+<!-- Applicable scope, trade-offs, evidence/limits, and conditions for revisiting.
+Link current code/tests separately; do not treat Accepted as implementation proof. -->
 
 ### Self-check
 - [ ] Does this decision address the root cause, not just the symptom?
@@ -158,6 +181,19 @@ e.g.: 042-your-decision-topic.md
 
 ### Status values
 
-- **Accepted** — Currently in effect
-- **Deprecated** — No longer valid
-- **Superseded by XXX** — Replaced by another decision
+- **Proposed** — A candidate decision; not an accepted constraint or permission to implement.
+- **Accepted** — The recorded decision applies within its stated scope, subject to
+  explicit amendments/supersession and the current rule carrier. Verify implementation separately.
+- **Deprecated** — Retained history, no longer the current decision.
+- **Superseded by XXX** — Replaced in the linked scope; identify whether replacement
+  is complete or clause-specific instead of silently discarding unaffected decisions.
+
+Clarifications, reviewed corrections, status links and explicit dated amendments
+may be added to an Accepted ADR without rewriting its original rationale. A change
+to an underlying architectural constraint needs an explicit new/revisiting decision
+and links from the affected record/carriers, not silent editing to match today's
+code. Follow [ADR 047 D3](047-governor-review-provenance-consolidation.md#d3--durable-inherited-constraints-move-to-adr-consequences):
+existing `ADR047-G*` bodies are write-once; changed constraints get successor slots
+and alias supersession links. The closed governor-review archive permits only
+append-only English `Errata YYYY-MM-DD:` notes under its last section (ADR 047 D6);
+this template does not authorize rewriting frozen entries.
