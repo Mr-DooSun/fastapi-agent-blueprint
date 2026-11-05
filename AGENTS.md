@@ -19,9 +19,9 @@ Tool-specific harness files must reference this document instead of duplicating 
 Issue #117 introduced a hybrid local process governor. The four documents below, indexed from [ADR 045](docs/history/045-hybrid-harness-target-architecture.md), define how default coding work is routed:
 
 - [`docs/history/045-hybrid-harness-target-architecture.md`](docs/history/045-hybrid-harness-target-architecture.md) — top-level decisions + design-question resolutions
-- [`docs/ai/shared/harness-asset-matrix.md`](docs/ai/shared/harness-asset-matrix.md) — living inventory of every harness asset and its bucket (Keep / Replace / Overlay / Drop)
+- [`docs/ai/shared/harness-asset-matrix.md`](docs/ai/shared/harness-asset-matrix.md) — navigator over the generated harness inventory and reviewed path-to-bucket map (Keep / Replace / Overlay / Drop)
 - [`docs/ai/shared/target-operating-model.md`](docs/ai/shared/target-operating-model.md) — the target workflow, exception model, Claude/Codex/Antigravity alignment, and sample-workflow traces
-- [`docs/ai/shared/migration-strategy.md`](docs/ai/shared/migration-strategy.md) — phased migration plan, rollback rules, and the asset-move ordering
+- [Historical migration plan](docs/history/archive/harness-context/migration-strategy.md) — shipped phases, rollback record, and original asset-move ordering
 
 ### Hybrid Harness v1 status
 
@@ -114,7 +114,7 @@ Evaluate the flow per unit of implementation-class work, not per prompt. A capab
 
 ### Self-Review Step — Independent Review Trigger (Pillar 2)
 
-Self-review is mandatory. Changes touching Tier A, B, or C in [governor-paths.md](docs/ai/shared/governor-paths.md), unless entirely covered by an exclusion, must include independent review. Non-governor changes are exempt from independent review.
+Self-review is mandatory. Changes touching Tier A, B, or C in [governor-paths.md](docs/ai/shared/governor-paths.md), unless entirely covered by an exclusion, must include independent review. Non-governor changes are exempt from the governor requirement. Implementation tickets separately default to a one-round P0/P1 precision-filter pre-review; see [ticket workflow](docs/ai/shared/ticket-workflow.md) and [review protocol](docs/ai/shared/review-protocol.md#ticket-precision-filter-mode-adr-060) (ADR 060).
 
 Use one mode and record `reviewer`:
 
@@ -130,7 +130,7 @@ Shared procedures define skill positions; wrappers may point to the [canonical s
 
 ### Claude / Codex / Antigravity Alignment
 
-[migration-strategy.md](docs/ai/shared/migration-strategy.md) defines adapters to this canonical document. Codex needs prompt-time routing and changed-file completion checks; skill text alone cannot govern before invocation.
+[target-operating-model.md §5](docs/ai/shared/target-operating-model.md#5-claude--codex--antigravity-alignment) defines adapters to this canonical document. Codex needs prompt-time routing and changed-file completion checks; skill text alone cannot govern before invocation.
 
 ## Reasoning-Level Consistency Guards
 
@@ -301,23 +301,23 @@ RDB CRUD writes use Service-owned validation hooks, not Router checks, Repositor
 
 ## Common Commands
 
-See [repo-facts.md](docs/ai/shared/repo-facts.md#common-commands).
+See [commands.md](docs/ai/shared/commands.md).
 
 ### Run
 
-Run `make worktree-setup` once in a fresh worktree to copy gitignored env files and install `admin` / `aws` extras; `.worktreeinclude` copies env files only. See [run commands](docs/ai/shared/repo-facts.md#run).
+Run `make worktree-setup` once in a fresh worktree to copy gitignored env files and install `admin` / `aws` extras; `.worktreeinclude` copies env files only. See [run commands](docs/ai/shared/commands.md#run).
 
 ### Test
 
-See [test commands and prerequisites](docs/ai/shared/repo-facts.md#test).
+See [test commands and prerequisites](docs/ai/shared/commands.md#test).
 
 ### Lint / Format
 
-See [lint / format commands](docs/ai/shared/repo-facts.md#lint--format).
+See [lint / format commands](docs/ai/shared/commands.md#lint--format).
 
 ### Migration
 
-See [migration commands](docs/ai/shared/repo-facts.md#migration).
+See [migration commands](docs/ai/shared/commands.md#db-migrations).
 
 ## Drift Management
 

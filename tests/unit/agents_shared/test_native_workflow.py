@@ -15,6 +15,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import yaml
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SHARED_SKILLS = REPO_ROOT / "docs" / "ai" / "shared" / "skills"
 CLAUDE_SKILLS = REPO_ROOT / ".claude" / "skills"
@@ -285,3 +287,25 @@ def test_skill_routing_has_one_canonical_table_and_three_compact_pointers() -> N
             assert f"`{name}` routing" in section[0], path
             if name in guarded:
                 assert section[1].startswith("Recursion guard:"), path
+
+
+def test_user_only_skill_registration_preserves_vendor_specific_policies() -> None:
+    """On-demand investigations stay explicit; legacy Codex policies stay as shipped."""
+    claude_user_only = set()
+    for wrapper in CLAUDE_SKILLS.glob("*/SKILL.md"):
+        frontmatter = yaml.safe_load(_text(wrapper).split("---", 2)[1])
+        if frontmatter.get("disable-model-invocation") is True:
+            claude_user_only.add(wrapper.parent.name)
+    assert claude_user_only == {"sync-guidelines", "migrate-domain", "trace", "why"}
+    for name in ("trace", "why"):
+        frontmatter = yaml.safe_load(
+            _text(CLAUDE_SKILLS / name / "SKILL.md").split("---", 2)[1]
+        )
+        assert frontmatter["context"] == "fork"
+        assert frontmatter["agent"] == "Explore"
+        policy = yaml.safe_load(_text(CODEX_SKILLS / name / "agents" / "openai.yaml"))
+        assert policy["policy"]["allow_implicit_invocation"] is False
+    # These two legacy skills are explicit-only in Claude, but have no Codex
+    # invocation-policy override. B6/#427 must not silently change that policy.
+    for name in ("sync-guidelines", "migrate-domain"):
+        assert not (CODEX_SKILLS / name / "agents" / "openai.yaml").exists()

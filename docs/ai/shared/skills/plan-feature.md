@@ -149,6 +149,16 @@ Organize the results of Phases 0-4 above in the following format and present to 
 - Run full pre-commit
 ```
 
+## Ticket handoff
+
+Apply [ticket-workflow](../ticket-workflow.md#work-units-and-handoff): publish the
+approved packet as an epic with native ticket sub-issues (or a standalone ticket),
+each using the ticket brief template. Include file sets, dependencies, Parallel
+Group and L1-L3 supervision; try to falsify cited premises before approval. Do not
+invoke plan-feature recursively: decompose sub-features inside the same packet.
+Planning stops; execute-plan starts a fresh session from the ticket issue. If native
+issue writes are unavailable, report publication pending and provide complete bodies.
+
 ## Execution Packet
 
 The final plan must include an **Execution Packet** that can be consumed by

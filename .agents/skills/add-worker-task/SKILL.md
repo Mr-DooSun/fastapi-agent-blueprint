@@ -10,10 +10,10 @@ metadata:
 ## Default Flow Position
 See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `add-worker-task` routing.
 
-## Procedure
-1. Read `AGENTS.md` and `docs/ai/shared/skills/add-worker-task.md` for the full procedure.
-2. Read `docs/ai/shared/project-dna.md` for DI and conversion patterns.
-3. Confirm the target Service method exists; add it first if needed.
-4. Create payload schema, task function, and bootstrap wiring.
-5. Keep the task thin: validate payload, then call the Service.
-6. Verify imports and run targeted checks on the new worker files.
+## Procedure Authority
+Read `AGENTS.md`. Read and follow the [full procedure](../../../docs/ai/shared/skills/add-worker-task.md) before acting; it owns requirements, gates and outputs.
+
+## Procedure Overview
+1. Analysis — identify domain, task purpose, check existing Service method
+2. Implementation — Payload schema → Task function → Worker bootstrap → Service method
+3. Verification — pre-commit, import check

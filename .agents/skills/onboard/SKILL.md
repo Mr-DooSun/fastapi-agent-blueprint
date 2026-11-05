@@ -11,11 +11,14 @@ metadata:
 See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `onboard` routing.
 Recursion guard: Do not invoke this skill recursively or invoke plan-feature from inside it.
 
-## Procedure
-1. Read `AGENTS.md` and `docs/ai/shared/skills/onboard.md` for the full onboarding flow.
-2. Read `docs/ai/shared/project-dna.md`, `docs/ai/shared/onboarding-role-tracks.md`, and `README.md`.
-3. Ask the user for experience level and preferred format if not already indicated.
-4. Use `src/user/` as the reference domain and `src/_core/`, `src/_apps/` for shared infrastructure.
-5. Cover in order: why this architecture exists, how layers work, prohibitions, conversion patterns, workflow tools, next steps.
-6. Adapt depth using onboarding-role-tracks.md. Point to concrete files when context feels abstract.
-7. Do not invent architecture rules. Use shared docs as the source of truth.
+## Procedure Authority
+Read `AGENTS.md`. Read and follow the [full procedure](../../../docs/ai/shared/skills/onboard.md) before acting; it owns requirements, gates and outputs.
+
+## Procedure Overview
+1. Welcome — assess experience level and preferred format (Phase 0)
+2. Methodology — architecture evolution history via ADRs (Phase 1)
+3. Project Overview — structure, domains, tech stack (Phase 2)
+4. Architecture Rules — Absolute Prohibitions and terminology (Phase 3)
+5. Data Flow — conversion patterns with live code walkthrough (Phase 4)
+6. Development Workflow — Skills and CLI commands (Phase 5)
+7. Personalized Next Steps (Phase 6)

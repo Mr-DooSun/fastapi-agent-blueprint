@@ -7,7 +7,7 @@ This file intentionally keeps only Claude-specific setup and workflow guidance.
 1. Read `AGENTS.md` explicitly (not auto-loaded). Keep the core Default Coding Flow, exception tokens, ADR 050/054 boundaries and Reasoning-Level Consistency Guards in scope for all work. For routine source work, the Tool-Specific Harnesses, Common Commands and Drift Management sections and the Default Coding Flow subsections on Independent Review Trigger, Skill Mapping and Alignment may be deferred until harness/governor work needs them. Language Policy may be deferred only when no Tier 1 path is being edited.
 2. Read shared workflow references from `docs/ai/shared/` when the task needs deeper context (`project-dna.md`, checklists, onboarding tracks)
 3. Check current project status via `.claude/rules/project-status.md` (auto-loaded)
-4. Check DO/DON'T via `.claude/rules/architecture-conventions.md` (auto-loaded)
+4. Check DO/DON'T in shared `AGENTS.md` / `project-dna.md`; architecture and overview projections are path-scoped. Consult a relevant projection if needed and not visible.
 
 ## Claude Collaboration Rules
 - If diagnosis/review result is "adequate", do not force improvement suggestions
@@ -21,8 +21,8 @@ This file intentionally keeps only Claude-specific setup and workflow guidance.
 
 ## Skills — defined in `.claude/skills/` (auto-listed each session; Codex: `.agents/skills/`)
 
-Two are user-invoked only (`disable-model-invocation: true`) and therefore absent from the auto list:
-`/sync-guidelines` (closure step, see Quality Gate Flow) and `/migrate-domain {generate|upgrade|downgrade|status}`.
+Four are user-invoked only (`disable-model-invocation: true`) and therefore absent from the auto list:
+`/sync-guidelines` (closure), `/migrate-domain {generate|upgrade|downgrade|status}`, and on-demand `/trace` and `/why`.
 
 ## Default Coding Flow
 
@@ -52,7 +52,7 @@ Default Flow is **subordinate** to (a) active sandbox / approval policy, (b) `.c
 
 > Shared architecture rules, terminology, conversion patterns, and DTO criteria are defined in `AGENTS.md`.
 > Shared workflow references live in `docs/ai/shared/`.
-> Detailed shell commands are in `.claude/rules/commands.md` (auto-loaded); Makefile shortcuts are in `AGENTS.md`.
+> Consult [shared shell commands](docs/ai/shared/commands.md) when needed; architecture / overview rules load only for their scoped paths. Shared policy remains in `AGENTS.md`.
 > context7 is a project-required MCP server for Claude (configured via `.mcp.json`).
 
 ### Code Exploration / Reading (by priority)

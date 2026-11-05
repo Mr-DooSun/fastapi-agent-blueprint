@@ -4,6 +4,14 @@
 See [target-operating-model §1](../target-operating-model.md) — `sync-guidelines` routing.
 Recursion guard: Do not invoke this skill recursively or invoke plan-feature from inside it.
 
+## PR packaging
+
+Default to integrating triggered sync into the feature PR before final review;
+standalone sync PRs are reserved for release audits or independently discovered
+post-merge drift. Sync checks and drift closure are unchanged. Run the merged-PR
+Footer history audit (drift-checklist §1D) at release; a feature PR checks its own
+Footer and changed rules. See [ticket-workflow](../ticket-workflow.md).
+
 ## Operating Modes
 
 `/sync-guidelines` supports two modes:
@@ -101,9 +109,9 @@ Before closing:
   of copying shared procedure text
 - verify shared procedures do not contain tool-specific instructions
 - **Compact sync headers**: use `> Last synced: YYYY-MM-DD via <reference>` (at most 200 UTF-8 bytes); never append narrative or `Prior:` chains. The one-off sync-log migration does not authorise per-PR archive writes.
-- **Optional-infra projections**: behaviour (toggles, env vars, dispatch semantics) has one home in the shared constitution plus its operations runbook; auto-loaded projections carry one-line pointers only.
+- **Optional-infra projections**: behaviour (toggles, env vars, dispatch semantics) has one home in the shared constitution plus its operations runbook; tool projections carry one-line pointers only.
 - **`project-status.md` table hygiene**: each data row must be <= 300 UTF-8 bytes (including pipes, all cells, and links), with a single-sentence impact; narrative belongs in `CHANGELOG.md [Unreleased]` and the PR body, never a per-PR archive write; count rows in the `Recent Major Changes` table; if row count exceeds 15, flag for archival; scan cells for multi-line content that would break markdown table rendering; when a new version ships, archive pre-release rows to `docs/history/archive/project-status/` following the PR-B.1 pattern
-- Claude wrappers do not re-read auto-loaded `.claude/rules/*`; Codex wrappers read `AGENTS.md` explicitly — accepted asymmetry.
+- Canonical shared rules and live code govern every tool. Claude projections may be path-scoped: inspect relevant projection content when reviewing its consistency, even if it is not visible. Tool-neutral procedures do not require private tool projections for unrelated work; wrappers supply tool-specific source guidance.
 
 
 Emit the full sync contract and clearly state whether the quality gate is closed
@@ -169,7 +177,7 @@ Sources Loaded
 - docs/ai/shared/drift-checklist.md
 - docs/ai/shared/governor-paths.md
 - docs/ai/shared/harness-asset-matrix.md
-- docs/ai/shared/repo-facts.md
+- docs/ai/shared/commands.md (when the command surface changed; historical repo-facts is not a required source)
 - Affected shared procedures, wrappers, checklists, and harness docs
 
 Review Angles
@@ -178,8 +186,9 @@ Review Angles
 2. Shared-source consistency: do AGENTS.md, shared docs, wrappers, and harness
    docs agree without re-declaring governor-path globs?
 3. Hybrid C parity: do shared procedures and both wrapper families point to the
-   same canonical source without duplicating bodies? Claude wrappers do not
-   re-read auto-loaded rules; Codex wrappers explicitly read `AGENTS.md`.
+   same canonical source without duplicating bodies? Does the active wrapper load
+   relevant scoped projections when checking projection drift, without assuming
+   they are present or requiring them for unrelated tool-neutral work?
 4. Volatile facts: are file existence, path lists, index rows, and changed
    surfaces verified from current repository state?
 5. Closure discipline: are AUTO-FIX, REVIEW, Remaining, and Next Actions
