@@ -248,3 +248,40 @@ def test_codex_stop_hook_refreshes_work_ledger_before_building_segments() -> Non
         "Codex Stop hook must refresh work-ledger verification state before "
         "building native workflow advisory segments."
     )
+
+
+def test_skill_routing_has_one_canonical_table_and_three_compact_pointers() -> None:
+    """Routing compaction must preserve every skill and the seven local guards."""
+    import re
+
+    model = REPO_ROOT / "docs/ai/shared/target-operating-model.md"
+    table = _text(model).split("| Skill | Step(s) |", 1)[1].split("\n## §2", 1)[0]
+    names = set(re.findall(r"^\| `([^`]+)` \|", table, re.MULTILINE))
+    guarded = {
+        "plan-feature",
+        "review-pr",
+        "review-architecture",
+        "security-review",
+        "sync-guidelines",
+        "fix-bug",
+        "onboard",
+    }
+    shared_names = {path.stem for path in SHARED_SKILLS.glob("*.md")}
+    assert names == shared_names
+    for wrappers in (CLAUDE_SKILLS, CODEX_SKILLS):
+        assert {path.parent.name for path in wrappers.glob("*/SKILL.md")} == names
+    for name in sorted(names):
+        for path in (
+            SHARED_SKILLS / f"{name}.md",
+            CLAUDE_SKILLS / name / "SKILL.md",
+            CODEX_SKILLS / name / "SKILL.md",
+        ):
+            section = _text(path).split("## Default Flow Position\n", 1)[1]
+            section = section.split("\n## ", 1)[0].strip().splitlines()
+            assert len(section) == (2 if name in guarded else 1), path
+            target = re.search(r"\]\(([^)]+)\)", section[0])
+            assert target is not None, path
+            assert (path.parent / target.group(1)).resolve() == model.resolve(), path
+            assert f"`{name}` routing" in section[0], path
+            if name in guarded:
+                assert section[1].startswith("Recursion guard:"), path

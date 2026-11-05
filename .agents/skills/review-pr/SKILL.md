@@ -8,9 +8,8 @@ metadata:
 # Review PR
 
 ## Default Flow Position
-- Step: **`completion gate`** (final review at end of work)
-- Routes after: `/sync-guidelines` if drift detected
-- Recursion guard: do not invoke `/review-pr` recursively, do not invoke `/plan-feature` from inside
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `review-pr` routing.
+Recursion guard: Do not invoke this skill recursively or invoke plan-feature from inside it.
 
 ## Procedure
 1. Read `AGENTS.md`, `docs/ai/shared/review-protocol.md`, and `docs/ai/shared/skills/review-pr.md` for the full procedure.

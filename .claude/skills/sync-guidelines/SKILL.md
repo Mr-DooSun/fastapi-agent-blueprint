@@ -11,9 +11,8 @@ description: |
 # Guideline Synchronization Inspection
 
 ## Default Flow Position
-- Step: **`completion gate`** (or follow-up to `self-review` when drift detected)
-- Routes after: end of work
-- Recursion guard: do not invoke `/sync-guidelines` recursively, do not invoke `/plan-feature` from inside
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `sync-guidelines` routing.
+Recursion guard: Do not invoke this skill recursively or invoke plan-feature from inside it.
 
 ## Procedure Overview
 1. Determine the sync mode, gather incoming `Drift Candidates`, and load the governing sources (Phase 0)
@@ -40,10 +39,16 @@ After completing the shared procedure:
    (Recent Major Changes table, version context, violation status)
    - `git log --oneline --since="{last_synced_date}"` to identify major changes
    - project-dna.md §8 "Not implemented" items for Not Yet Implemented
-   - Table hygiene (Phase 3 check): warn if row count > 15; check for cell-wrap issues; on version release, archive pre-release rows to `docs/history/archive/project-status/` (PR-B.1 pattern)
+   - Table hygiene (Phase 3 check): require each data row <= 300 UTF-8 bytes including pipes, all cells, and links, with a one-sentence impact; narrative belongs in `CHANGELOG.md [Unreleased]` and the PR body, never a per-PR archive write; warn if row count > 15; check for cell-wrap issues; on version release, archive pre-release rows to `docs/history/archive/project-status/` (PR-B.1 pattern)
 3. Update `.claude/rules/project-overview.md`
    (infrastructure options, environment config, app entrypoint changes)
 4. Update `.claude/rules/commands.md`
    (new CLI commands, env vars, test commands, verification commands)
 
-All rules files: update "Last synced" date line to current date.
+Optional-infra behaviour (toggles, env vars, dispatch semantics) is described once in `AGENTS.md` § Optional Infrastructure Toggles plus its `docs/operations/` runbook; `.claude/rules/*` carry a one-line pointer only.
+
+All rules files and project-dna: use `> Last synced: YYYY-MM-DD via <reference>` (<= 200 UTF-8 bytes); update the date without narrative or `Prior:` chains. Preserve historical chains in the one-off sync-log archive; do not append to it per PR.
+
+Context-budget gate: run `uv run python tools/check_context_budget.py` after sync.
+The blocking hook enforces byte limits previously checked by eye. Sync dates equal
+the last content change; do not touch a file whose content did not change.

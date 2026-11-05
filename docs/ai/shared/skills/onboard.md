@@ -1,15 +1,10 @@
 # Interactive Onboarding — Detailed Procedure
 
 ## Default Flow Position
+See [target-operating-model §1](../target-operating-model.md) — `onboard` routing.
+Recursion guard: Do not invoke this skill recursively or invoke plan-feature from inside it.
 
-This skill is **outside** the normal Default Coding Flow. It belongs to **session-start** orientation only and is invoked explicitly by a user (typically a new contributor) at the beginning of a session, not as a step inside a coding task.
-
-Implications:
-- `/onboard` does not become an automatic phase of Default Flow.
-- A coding-flow session that starts with `/onboard` should treat the subsequent coding work as a fresh Default Flow run (the onboard session is its own context).
-- The `[exploration]` / `[탐색]` exception token is appropriate when a new contributor wants to combine onboarding with read-only investigation.
-
-Recursion guard: do **not** invoke `/onboard` recursively, and do not invoke `/plan-feature` from inside this skill.
+## Orientation Sources
 
 > **Design Principle**: This skill does not have its own architecture documentation.
 > All information is read at runtime from existing sources (README.md, ADR, AGENTS.md, `docs/ai/shared/project-dna.md`, harness guides, rules files, `docs/ai/shared/`, `src/user/` code).
@@ -151,7 +146,7 @@ Reference the ADRs in `docs/history/` directory and convey in narrative form wha
 
 Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the following:
 - This project is designed for pair programming with AI coding agents
-- 14 Skills (slash commands) automate domain creation, API addition, architecture verification, etc.
+- 15 Skills (slash commands) automate domain creation, API addition, architecture verification, etc.
 - Skills reference `AGENTS.md`, `docs/ai/shared/project-dna.md`, shared checklists, and rules to automatically follow project rules
 
 > "If you have any questions, feel free to ask. Otherwise, say 'next'."
@@ -285,11 +280,11 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 
 ## Phase 5: Development Workflow and Skills
 
-**Information Source**: Harness guide Skills section, commands reference
+**Information Source**: Each harness’s native skill index (the tool-specific location is in the wrapper), commands reference
 
 **Q&A Mode**: Present the following topic map and wait for questions.
 > **Phase 5 Topics -- Workflow & Skills**
-> 1. Skills overview -- 14 slash commands and their workflow order
+> 1. Skills overview -- 15 slash commands and their workflow order
 > 2. Frequently used CLI commands (server start, tests, lint)
 >
 > Ask about any topic, or say 'next' to move on.

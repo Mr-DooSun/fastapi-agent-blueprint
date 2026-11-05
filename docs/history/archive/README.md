@@ -80,6 +80,12 @@ The core reading order lives in [`../README.md`](../README.md).
 |------|-------------|
 | [project-status/project-status-pre-v0.4.0.md](project-status/project-status-pre-v0.4.0.md) | Major changes v0.2.0 → v0.4.0 (26 rows archived 2026-05-06) |
 | [project-status/project-status-v0.4.0-v0.5.0.md](project-status/project-status-v0.4.0-v0.5.0.md) | Major changes v0.4.0 → v0.5.0 (18 rows archived 2026-05-11, PR #187) |
+| [project-status/project-status-v0.5.0-v0.6.0.md](project-status/project-status-v0.5.0-v0.6.0.md) | Major changes v0.5.0 → v0.6.0 (6 rows) |
+| [project-status/project-status-v0.6.0-v0.8.0.md](project-status/project-status-v0.6.0-v0.8.0.md) | Major changes v0.6.0 → v0.8.0 (14 rows) |
+| [project-status/project-status-v0.8.0-v0.9.0.md](project-status/project-status-v0.8.0-v0.9.0.md) | Major changes v0.8.0 → v0.9.0 (15 rows) |
+| [project-status/project-status-v0.9.0-v0.11.0.md](project-status/project-status-v0.9.0-v0.11.0.md) | Major changes v0.9.0 → v0.11.0 (13 rows) |
+| [project-status/project-status-since-v0.11.1.md](project-status/project-status-since-v0.11.1.md) | Original 6 long-form rows through v0.11.2, including pre-v0.11.1 changes; one-off #417 migration |
+| [project-status/sync-log.md](project-status/sync-log.md) | Five original per-source sync narrative chains; one-off #415 migration |
 
 ### Governor review log (closed archive)
 

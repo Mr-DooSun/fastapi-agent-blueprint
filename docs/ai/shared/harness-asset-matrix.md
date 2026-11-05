@@ -1,6 +1,6 @@
 # Harness Asset Inventory Matrix
 
-> Last synced: 2026-11-02 (#425 / PR #428). Prior: 2026-08-05 (#334: added the two `.claude` verify-log hook rows and narrowed the shared/tool-specific boundary — the verify-log helpers moved into `governor/verify.py` while `session_id()` resolution stays per-tool; counts 88 → 90). Prior: 2026-07-20 (#297: corrected the Tier 1 counting-note breakdown — it wrongly listed `docs/history/047-*.md` as a Tier 1 row; no `docs/history/` ADR is a Tier 1 row, and the matrix rows exactly one ADR (`045`) in Tier 0. Companion `drift-checklist.md` §1C reconciliation with matrix practice; no asset count change, Total 88 → 88). Prior: 2026-07-18 (#292: refreshed the `review-pr` Tier 2 detail row — Current role updated from the pre-ADR-053 "architecture quality-gate" wording to the full Review Protocol contract incl. the ADR 055 `Summary Finding Ledger`; Notes corrected to record the Phase 4 completion-gate Stop hook as shipped (#123 / PR #128); no count change). Prior: 2026-07-10 (#65: added the Antigravity 2.0 adapter — `.gemini/settings.json` + `.antigravity/{plugin,gemini-extension,mcp_config,permissions}.json` + `.antigravity/rules/project-harness.md` + 8 `.antigravity/hooks/*.py` shims; counts 74 → 88 — the prior "73" undercounted Tier 1 by one, see counting note). Prior: 2026-07-09 (#281 / ADR 054: added `.claude/hooks/pre-tool-stage-block.{sh}` + `pre_tool_stage_block.py` Tier 3 rows for the plan→execute hard block; also rowed the previously-omitted `.claude/hooks/session-start-context.sh`; counts 70 → 73). Prior: 2026-07-03 (#268 / ADR 050: added `.claude/hooks/stage-gate.{sh}` + `post_tool_stage_gate.py` Tier 3 rows, `governor/stage_gate.py` module, counts 68 → 70). Prior: 2026-06-29 (#257: added native `execute-plan` Tier 2 row + counts)
+> Last synced: 2026-11-06 via #413, #415, #417–#420
 > Source of truth: this is a **living inventory**. Update when assets are added, renamed, or removed. `/sync-guidelines` validates that this file matches the actual filesystem.
 > Sibling docs: [ADR 045](../../history/045-hybrid-harness-target-architecture.md) · [target-operating-model.md](target-operating-model.md) · [migration-strategy.md](migration-strategy.md)
 
@@ -70,6 +70,8 @@ The shared constitution and the tool-level entry points. These files transitivel
 - **Notes**: Phase 1 edit is the first time this file gains a process-layer section; previously it covered only architecture and conventions.
 
 ### `CLAUDE.md`
+
+Native skill discovery owns the skill list; the guide names only the two user-invoked skills absent from that list. Auto-loaded rules are reused unless absent from the current context.
 
 - **Current role**: Claude-specific harness guide; redirects to `AGENTS.md` for shared rules.
 - **Why it exists**: Pre-existed AGENTS.md split (#66). Now an explicit Claude-only entry point.
@@ -314,7 +316,7 @@ rather than primary entry points (`Overlay`).
 
 ### `drift-checklist.md`
 
-- **Current role**: 258-line drift-detection items consumed by `/sync-guidelines`.
+- **Current role**: Drift-detection items consumed by `/sync-guidelines`.
 - **Why it exists**: Code ↔ shared docs ↔ tool harness alignment.
 - **Replacement feasibility**: Partial. Drift-detection becomes a `completion gate` activity in the Default Flow instead of a free-standing skill the user invokes.
 - **Bucket: Overlay** for the same reason as planning-checklists.
@@ -417,6 +419,8 @@ rather than primary entry points (`Overlay`).
 ---
 
 ## Tier 2 — Skills (3-Layer Hybrid C)
+
+All 45 `Default Flow Position` sections point to the canonical per-skill routing table in [target-operating-model §1](target-operating-model.md). The seven local recursion guards remain in every layer; Phase/Step overview parity is unchanged.
 
 Fifteen skills, each existing in three layers (`docs/ai/shared/skills/{name}.md` shared procedure + `.claude/skills/{name}/SKILL.md` wrapper + `.agents/skills/{name}/SKILL.md` wrapper). The bucket is assigned per skill (all three layers share the bucket); the matrix records the skill once.
 
@@ -810,9 +814,9 @@ Seven rule files (5 Claude + 1 Codex + 1 Antigravity). All `Keep` except `comman
 
 ### `.claude/rules/project-status.md`
 
-- **Current role**: Latest release notes, active domains, recent ADRs, status of "not yet implemented" features.
+- **Current role**: <= 300 B index table of recent changes, current version context, architecture status, and "not yet implemented" features.
 - **Bucket**: Keep.
-- **Notes**: Phase 1 update will record ADR 045 and Default Flow adoption in the Recent Major Changes table.
+- **Notes**: Narrative lives in CHANGELOG and the archive; routine PRs update only the compact index. Historical long-form migration is one-off; release-triggered archival remains supported.
 
 ### `.claude/rules/architecture-conventions.md`
 

@@ -8,9 +8,7 @@ metadata:
 # Add API
 
 ## Default Flow Position
-- Step: `implement` (`approach options` upstream is conditional — required for non-trivial response shape, cross-domain access, or new validation patterns)
-- Routes after: verify (`/test-domain {name} run`) → self-review (`/review-architecture {name}` only if layer interactions changed)
-- Recursion guard: do not invoke `/plan-feature` from inside this skill
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `add-api` routing.
 
 ## Procedure
 1. Read `AGENTS.md` and `docs/ai/shared/skills/add-api.md` for the full procedure.

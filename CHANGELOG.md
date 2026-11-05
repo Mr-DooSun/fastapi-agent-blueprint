@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Blocking `context-budget` hook and `tools/check_context_budget.py` prevent
+  tracked harness context from regrowing after the #414 cleanup (ADR 059).
+  Budgets cover unconditional auto-load, each rules file, sync headers, recent
+  status rows and AGENTS.md. **For forks:** `SKIP=context-budget` is an explicit
+  local escape hatch; increasing repository budgets requires independent review.
+
+### Changed
+
+- Condensed AGENTS.md with a larger Codex fallback allowance and tail-marker
+  healthchecks. Archived five source-specific sync histories and six released
+  status rows once, replaced duplicate notification prose with authority links,
+  and centralized all 45 skill-routing sections in the operating-model table.
+  Existing phases, recursion guards and architecture constraints remain intact.
+  Claude wrappers reuse visible auto-loaded rules; native skill discovery keeps
+  the two user-invoked-only skills explicit (#413, #415, #417–#420, #426).
+
 ## [0.11.2] - 2026-11-03
 
 ### Added

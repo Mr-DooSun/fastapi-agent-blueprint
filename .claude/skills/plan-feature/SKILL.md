@@ -13,15 +13,14 @@ Description: $ARGUMENTS
 
 ## Preparation
 
-1. Read `.claude/rules/architecture-conventions.md` -- confirm current DO/DON'T rules
-2. Read `.claude/rules/project-status.md` -- confirm work currently in progress
-3. Read `.claude/rules/project-overview.md` -- confirm tech stack and structure
+1. Use `.claude/rules/architecture-conventions.md` (auto-loaded); re-read only if the file is not visible in the current context.
+2. Use `.claude/rules/project-status.md` (auto-loaded); re-read only if the file is not visible in the current context.
+3. Use `.claude/rules/project-overview.md` (auto-loaded); re-read only if the file is not visible in the current context.
 4. Identify current domain list: use Glob pattern `src/*/` and exclude `_core`, `_apps` prefixes
 
 ## Default Flow Position
-- Steps: **`framing`** (Phase 0) + **`approach options`** (Phase 1) + **`plan`** (Phases 2~4)
-- Routes after: **STOP at the approved Execution Packet.** Execution is a separate, explicit step — invoke `/execute-plan`, which advances the ledger to `executing` (clearing the plan→execute block) and routes to the implement skills (`/new-domain`, `/add-api`, `/add-cross-domain`, etc.) internally. To run a single implement skill or self-evident follow-up directly, prefix the next prompt with a `[trivial]`/`[hotfix]` token (the block honours plan-waiver tokens) — invoking an implement skill while the stage is still `planned` without a token is hard-blocked. Never auto-continue from planning into implementation in the same turn ([ADR 054](../../../docs/history/054-plan-execute-boundary-hard-gate.md))
-- Recursion guard: do not invoke `/plan-feature` recursively. Implement skills must not call `/plan-feature` (planning happens before implement)
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `plan-feature` routing.
+Recursion guard: Do not invoke this skill recursively; implementation skills must not re-enter planning (ADR 050 scope expansion is separate).
 
 ## Procedure Overview
 1. Requirements Interview — 3-5 questions from 5 categories (Phase 0)

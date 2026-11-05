@@ -1,6 +1,10 @@
 # Bug Fix Workflow — Detailed Procedure
 
 ## Default Flow Position
+See [target-operating-model §1](../target-operating-model.md) — `fix-bug` routing.
+Recursion guard: Do not recurse or invoke plan-feature for the bug’s own framing/plan; ADR 050 scope expansion still routes to plan-feature.
+
+## Phase Contract
 
 This skill's four canonical phases map onto Default Coding Flow steps:
 
@@ -16,29 +20,13 @@ pins `/fix-bug` Phase 1 to `framing` and Phase 2 to `plan`. Do not rename, re-or
 them. The `Bug Fix Report` below is an **output section**, not a fifth phase, and `Commit` is an
 **opt-in post-step**.
 
-`approach options` is **conditionally mandatory**: required when the trace reveals that the fix
-could be implemented at multiple layers (e.g. validate at Service vs Router vs Schema) or that the
-bug indicates a missing architectural pattern. Skip for single-layer single-line fixes.
+## Scope Boundary — authorities this skill does not own
 
-After verify, route to:
-- `self-review` — `/review-architecture` if the fix changed layer interactions; `/security-review`
-  if security-relevant
-- `completion gate` — `/review-pr`
-
-The `[hotfix]` / `[긴급]` exception token is the natural escape for genuinely time-critical fixes;
-verify is still mandatory under `[hotfix]`. `[trivial]` / `[자명]` is **not** appropriate for a
-behaviour bug, because a regression test is required (see `target-operating-model.md` Trace 2).
-
-Recursion guard: do **not** invoke `/fix-bug` recursively. Do not invoke `/plan-feature` for the
-*bug's own* framing or planning — `/fix-bug`'s Phase 1+2 already cover those steps.
-
-That guard is **not** an exemption from [ADR 050](../../../history/050-midtask-scope-expansion-gate.md).
+The recursion guard is **not** an exemption from [ADR 050](../../../history/050-midtask-scope-expansion-gate.md).
 If the trace shows the fix requires a capability the repository does not have — a new pattern, a
 new infra surface, a new domain — that is new implementation-class work: **stop, report the gap,
 and route to `/plan-feature`** ([`AGENTS.md`](../../../../AGENTS.md#mid-task-scope-expansion-adr-050)
 § Mid-Task Scope Expansion). Scope expansion is not recursion.
-
-## Scope Boundary — authorities this skill does not own
 
 Bug fixing sits next to several existing contracts. This skill consumes them and must not
 redefine them:
@@ -161,6 +149,10 @@ exist, because the end state of `sys.modules` was read as what an earlier test h
 
 ## Phase 2: Trace
 
+The `[hotfix]` / `[긴급]` exception token is the natural escape for genuinely time-critical fixes;
+verify is still mandatory under `[hotfix]`. `[trivial]` / `[자명]` is **not** appropriate for a
+behaviour bug, because a regression test is required (see `target-operating-model.md` Trace 2).
+
 1. **Identify the actual execution path before assuming one.** Start from the real entry point,
    then the state or decision boundaries it crosses, then the failing operation. Pick the template
    that matches — this skill is triggered for any bug, and most of these paths contain no router:
@@ -242,7 +234,7 @@ enough". A candidate that is reachable but uncovered is `deferred` (with a cited
 or `open`; it is never `not reached`, because reachability is exactly what `not reached` denies.
 
 If the matrix shows the fix could land at more than one layer, `approach options` is now mandatory
-(see Default Flow Position).
+(see [target-operating-model §1](../target-operating-model.md), `fix-bug` row).
 
 ## Phase 3: Fix
 

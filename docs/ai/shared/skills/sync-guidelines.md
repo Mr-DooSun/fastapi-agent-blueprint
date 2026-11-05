@@ -1,18 +1,8 @@
 # Guideline Synchronization Quality Gate
 
 ## Default Flow Position
-
-This skill participates in the [Default Coding Flow](../../../../AGENTS.md#default-coding-flow) at the **`completion gate`** step (or as a follow-up to `self-review` when drift is detected).
-
-It is invoked when any of:
-- A `self-review` skill (`/review-architecture`, `/security-review`, `/review-pr`) reported `Drift Candidates` or `Sync Required: true`.
-- The change touched shared rule sources (`AGENTS.md`, `docs/ai/shared/`, `.claude/rules/`, `.codex/rules/`, `.antigravity/rules/`, `.gemini/`, ADRs).
-- An ADR was created or amended in the session.
-
-Recursion guard: do **not** invoke `/sync-guidelines` recursively from within itself, and do not invoke `/plan-feature` from inside this skill. This skill is the closure step of the flow; it does not re-enter the flow.
-
-Use this skill to close the documentation and workflow side of the quality gate
-after architecture, security, or workflow changes.
+See [target-operating-model §1](../target-operating-model.md) — `sync-guidelines` routing.
+Recursion guard: Do not invoke this skill recursively or invoke plan-feature from inside it.
 
 ## Operating Modes
 
@@ -110,7 +100,11 @@ Before closing:
 - verify Antigravity assets reference shared skills and governor policy instead
   of copying shared procedure text
 - verify shared procedures do not contain tool-specific instructions
-- **`project-status.md` table hygiene**: count rows in the `Recent Major Changes` table; if row count exceeds 15, flag for archival; scan cells for multi-line content that would break markdown table rendering; when a new version ships, archive pre-release rows to `docs/history/archive/project-status/` following the PR-B.1 pattern
+- **Compact sync headers**: use `> Last synced: YYYY-MM-DD via <reference>` (at most 200 UTF-8 bytes); never append narrative or `Prior:` chains. The one-off sync-log migration does not authorise per-PR archive writes.
+- **Optional-infra projections**: behaviour (toggles, env vars, dispatch semantics) has one home in the shared constitution plus its operations runbook; auto-loaded projections carry one-line pointers only.
+- **`project-status.md` table hygiene**: each data row must be <= 300 UTF-8 bytes (including pipes, all cells, and links), with a single-sentence impact; narrative belongs in `CHANGELOG.md [Unreleased]` and the PR body, never a per-PR archive write; count rows in the `Recent Major Changes` table; if row count exceeds 15, flag for archival; scan cells for multi-line content that would break markdown table rendering; when a new version ships, archive pre-release rows to `docs/history/archive/project-status/` following the PR-B.1 pattern
+- Claude wrappers do not re-read auto-loaded `.claude/rules/*`; Codex wrappers read `AGENTS.md` explicitly — accepted asymmetry.
+
 
 Emit the full sync contract and clearly state whether the quality gate is closed
 or waiting on review follow-up.
@@ -184,7 +178,8 @@ Review Angles
 2. Shared-source consistency: do AGENTS.md, shared docs, wrappers, and harness
    docs agree without re-declaring governor-path globs?
 3. Hybrid C parity: do shared procedures and both wrapper families point to the
-   same canonical source without duplicating bodies?
+   same canonical source without duplicating bodies? Claude wrappers do not
+   re-read auto-loaded rules; Codex wrappers explicitly read `AGENTS.md`.
 4. Volatile facts: are file existence, path lists, index rows, and changed
    surfaces verified from current repository state?
 5. Closure discipline: are AUTO-FIX, REVIEW, Remaining, and Next Actions
@@ -235,3 +230,7 @@ below and surface any findings as R-points with the same closure categories
 **Language Policy**
 - [ ] Any Tier 1 file modified contains only English prose (bilingual escape
   tokens and `LOCALE_DATA_FILES` are the two narrow exceptions).
+
+Context-budget gate: run `uv run python tools/check_context_budget.py` after sync.
+The blocking hook enforces byte limits previously checked by eye. Sync dates equal
+the last content change; do not touch a file whose content did not change.

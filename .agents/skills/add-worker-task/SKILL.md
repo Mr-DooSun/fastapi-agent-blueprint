@@ -8,9 +8,7 @@ metadata:
 # Add Worker Task
 
 ## Default Flow Position
-- Step: `implement` (`approach options` upstream conditional — required for new event types or broker patterns)
-- Routes after: verify (`/test-domain {name} run`, optional `make worker` smoke run)
-- Recursion guard: do not invoke `/plan-feature` from inside this skill
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `add-worker-task` routing.
 
 ## Procedure
 1. Read `AGENTS.md` and `docs/ai/shared/skills/add-worker-task.md` for the full procedure.

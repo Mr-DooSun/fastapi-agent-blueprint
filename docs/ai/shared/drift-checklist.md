@@ -29,7 +29,7 @@ Read CLAUDE.md and verify Claude-only guidance still matches the harness:
 
 - [ ] `.mcp.json` role is described as Claude-only MCP configuration
 - [ ] `.claude/settings.json` hooks still match the hook files and the CLAUDE.md tool guidance
-- [ ] Slash skill list matches the actual `.claude/skills/` directory
+- [ ] Native discovery matches `.claude/skills/`; `sync-guidelines` and `migrate-domain` remain user-only (`disable-model-invocation: true`) exceptions
 
 ## 1B. `.claude/rules/absolute-prohibitions.md` ↔ AGENTS.md Sync Check
 
@@ -100,6 +100,7 @@ Read each skill's SKILL.md and compare against reference code:
 Read each `.claude/rules/` file and compare against current code:
 
 ### architecture_conventions
+- [ ] Optional-infra behaviour (toggles, env vars, dispatch semantics) is described once in `AGENTS.md` § Optional Infrastructure Toggles plus its `docs/operations/` runbook; `.claude/rules/*` carry a one-line pointer only.
 - [ ] Data flow: covers both RDB and DynamoDB variants?
 - [ ] BaseService / BaseDynamoService generic signatures match the actual code?
 - [ ] Object Roles: includes DTO, Schema, Model, DynamoModel, and Admin Page?
@@ -109,20 +110,23 @@ Read each `.claude/rules/` file and compare against current code:
 - [ ] Recent Major Changes includes every notable PR / feature merged since the documented "Last synced" date?
 - [ ] Architecture Violation Status matches the live grep results?
 - [ ] Not Yet Implemented matches project-dna.md §8 "Not implemented"?
+- [ ] Recent Major Changes data rows are <= 300 UTF-8 bytes each (including pipes, all cells, and links); use one sentence per row, with narrative in `CHANGELOG.md [Unreleased]` and the PR body. Never write a per-PR archive entry; historical migration is one-off, and archive creation remains release-triggered.
 - [ ] Recent Major Changes table row count ≤ 15? (current: run `grep -c "^|" .claude/rules/project-status.md`); if > 15, flag for archival at next version release following the PR-B.1 pattern
 
 ### project_overview
+- [ ] Optional-infra behaviour (toggles, env vars, dispatch semantics) is described once in `AGENTS.md` § Optional Infrastructure Toggles plus its `docs/operations/` runbook; `.claude/rules/*` carry a one-line pointer only.
 - [ ] Infrastructure Options matches the subdirectories under `src/_core/infrastructure/`?
 - [ ] App Entrypoints matches the subdirectories under `src/_apps/`?
 - [ ] Environment Config matches the Settings validators in `src/_core/config.py`?
 
 ### commands (`.claude/rules/commands.md`)
+- [ ] Optional-infra behaviour (toggles, env vars, dispatch semantics) is described once in `AGENTS.md` § Optional Infrastructure Toggles plus its `docs/operations/` runbook; `.claude/rules/*` carry a one-line pointer only.
 - [ ] Run commands still target the current entrypoint files?
 - [ ] Architecture-verification greps still target current violation patterns (not legacy ones)?
 - [ ] Test commands still cover each infra variant (RDB, DynamoDB, Broker)?
 
 ### All rules files
-- [ ] "Last synced" date of every rules file is within the last two weeks?
+- [ ] "Last synced" date of every rules file is within the last two weeks? Keep each rules header and the `project-dna.md` date line in `> Last synced: YYYY-MM-DD via <reference>` form; no narrative or `Prior:` chains. Historical chains are preserved in the one-off `sync-log.md` archive.
 
 ## 4. project-dna.md ↔ Code Consistency Check
 
@@ -256,3 +260,7 @@ Use these scenario checks when validating the redesigned workflow:
 - Detailed steps per phase (inspection targets, conditions, branching logic)
 - Output format examples, checklists, file lists, grep patterns
 - Cross-references to other `docs/ai/shared/` documents
+
+Context-budget gate: run `uv run python tools/check_context_budget.py` after sync.
+The blocking hook enforces byte limits previously checked by eye. Sync dates equal
+the last content change; do not touch a file whose content did not change.
