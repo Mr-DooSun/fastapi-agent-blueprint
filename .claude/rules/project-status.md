@@ -18,9 +18,10 @@
   `nicegui` in `admin` extra, `boto3`/`aioboto3` in `aws` extra (#104). Admin identity is a separate bounded context with its own credential store + JWT realm (distinct secret/issuer/audience); NiceGUI admin login +
   page-level permissions backed by `admin_identity` (#218/ADR 049, supersedes the #154/#194 single-table model).
 
-## Recent Major Changes (since v0.11.2)
+## Recent Major Changes (since v0.12.0)
 
 > History:
+> - [v0.11.2→v0.12.0 archive](../../docs/history/archive/project-status/project-status-v0.11.2-v0.12.0.md) (4 rows)
 > - [through v0.11.2 archive](../../docs/history/archive/project-status/project-status-since-v0.11.1.md) (6 rows).
 > - [v0.9.0→v0.11.0 archive](../../docs/history/archive/project-status/project-status-v0.9.0-v0.11.0.md) (13 rows)
 > - [v0.8.0→v0.9.0 archive](../../docs/history/archive/project-status/project-status-v0.8.0-v0.9.0.md) (15 rows)
@@ -34,10 +35,6 @@ Narrative belongs in
 
 | Feature | Issue | Impact |
 |---------|-------|--------|
-| ADR decision evidence | #414, #427 | Scoped clauses, applicability and current proof flow through existing artifacts (ADR 064/065). |
-| Runtime verify and content heuristics retired | #414 | Verify-first reminders/logs and pre-edit heuristics removed; blocking `sensitive-logging` hook and generated harness inventory added (ADR 061–063). |
-| Ticket sessions and review packets | #427 | Native ticket briefs, fresh serial sessions and review packets with a path/size risk floor and one P0/P1 cross-vendor round (ADR 060). |
-| Context budgets and skill routing | #413, #415–#420, #426 | Compact tracked context, preserve routing in TOM, and block byte regrowth (ADR 059). |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN
