@@ -281,3 +281,19 @@ Review expectations:
 ## Code of Conduct
 
 Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
+
+### Runtime hook retirement and production logging
+
+ADR 061 retires per-edit verify reminders and command-log files; verification
+and independent review remain required. `pre-commit run sensitive-logging
+--all-files` blocks same-line credential names in production logger/logging/print
+statements. Tests are excluded because leak corpora are intentional; passing
+this lexical guard is not proof against multiline or indirect secret exposure.
+
+The lexical logging gate also flags legitimate event names such as
+`invalid_token`; it scans whole production files, not only the edited lines.
+After checking the flagged code exposes no secret, use `SKIP=sensitive-logging`
+for a deliberate per-run bypass, record the rationale, and run the remaining
+checks. A skip is not a passed logging check. The pattern also misses logger
+aliases (`log.info`), `structlog.get_logger().info`, multiline calls and indirect
+flows; security review remains required for those surfaces.

@@ -65,10 +65,13 @@ Read top-to-bottom; each builds on the ones above it.
 | [054](054-plan-execute-boundary-hard-gate.md) | Plan→Execute Boundary Hard Gate | `/plan-feature` ends at the approved Execution Packet; implementing from the `planned` stage without `/execute-plan` or a waiver token is hard-blocked on Claude, advisory on Codex. |
 | [055](055-summary-finding-ledger.md) | Summary Finding Ledger | Out-of-diff review findings post as a task-list ledger with complete carry-forward per round; any `OPEN` ledger key blocks Approve and the completion gate (closes the #292 merge-gate bypass). |
 | [056](056-zero-downtime-migration-safety.md) | Zero-Downtime Migration Safety | No-downtime migration playbook (expand-contract + per-engine safe/unsafe DDL) + an advisory checker that scans Alembic revisions for unsafe DDL; advisory-first, plan-time data-model contracts explicitly out of scope. |
-| [060](060-ticket-session-boundaries-and-review-packets.md) | Ticket Session Boundaries and Review Packets | Native ticket briefs, fresh serial execution, risk floors, precision-filter review and measured follow-up. |
-| [059](059-harness-context-byte-budgets.md) | Harness Context Byte Budgets | Blocking byte caps prevent automatic context from regrowing; sync dates record content changes. |
-| [058](058-base-repository-engine-guarantees.md) | What `BaseRepository` Guarantees Regardless of `DATABASE_ENGINE` | Five defects in the base class six domains and nine examples inherit. Bulk insert now refreshes like the singular path (it 500'd on any dialect without RETURNING, for rows already committed); offset pagination carries a deterministic order; search and sort fail closed with curated 4xx instead of returning the whole table or an opaque 500; the dead `related_entities` branch is gone. Verified by forcing the dialect flag rather than a MySQL CI leg — limitation stated. |
 | [057](057-audit-actor-correlation-only.md) | Admin Audit Actor — Correlation-Only, No Foreign Key | `admin_audit_log.admin_user_id` drops its foreign key: the value is an `admin_identity.id` and migration 0009's id-preserving copy left the two id spaces overlapping, so a constraint against either table can be satisfied by the wrong row. Integrity moves to the read path; the swallowed audit-write failure that hid it becomes loud. |
+| [058](058-base-repository-engine-guarantees.md) | What `BaseRepository` Guarantees Regardless of `DATABASE_ENGINE` | Five defects in the base class six domains and nine examples inherit. Bulk insert now refreshes like the singular path (it 500'd on any dialect without RETURNING, for rows already committed); offset pagination carries a deterministic order; search and sort fail closed with curated 4xx instead of returning the whole table or an opaque 500; the dead `related_entities` branch is gone. Verified by forcing the dialect flag rather than a MySQL CI leg — limitation stated. |
+| [059](059-harness-context-byte-budgets.md) | Harness Context Byte Budgets | Blocking byte caps prevent automatic context from regrowing; sync dates record content changes. |
+| [060](060-ticket-session-boundaries-and-review-packets.md) | Ticket Session Boundaries and Review Packets | Native ticket briefs, fresh serial execution, risk floors, precision-filter review and measured follow-up. |
+| [061](061-retire-runtime-verify-and-content-heuristics.md) | Retire Runtime Verify and Content Heuristics | Removes redundant runtime checks while preserving active safety, outcomes and continuity. |
+| [062](062-generated-harness-inventory.md) | Generated Harness Inventory | Tracked scope discovery, reviewed bucket judgments and generated-output gate. |
+| [063](063-on-demand-harness-documentation.md) | Consult Detailed References on Demand | Consulted commands, scoped projections and compact policy references with historical snapshots. |
 
 
 ## Archive
@@ -84,7 +87,7 @@ the rationale behind each archival bucket.
 
 ## Writing a new ADR
 
-Numbering continues sequentially (next free number is 061). Only add a new
+Numbering continues sequentially (next free number is 064). Only add a new
 ADR when the decision is **load-bearing** — i.e. it constrains how future
 code will be written, not merely which tool was picked. Purely
 operational choices can be captured in `CHANGELOG.md` or a PR description.

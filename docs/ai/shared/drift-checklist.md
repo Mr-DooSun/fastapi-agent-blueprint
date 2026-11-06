@@ -39,19 +39,18 @@ Read CLAUDE.md and verify Claude-only guidance still matches the harness:
 
 ## 1C. `harness-asset-matrix.md` ↔ Filesystem Sync Check (ADR 045)
 
-- [ ] Enumerate actual filesystem assets in scope:
-  - Tier 0: `AGENTS.md`, `CLAUDE.md`, `.codex/config.toml`, `.codex/hooks.json`, `.claude/settings.json`, `.claude/settings.local.json`, `.gemini/settings.json`, `.antigravity/plugin.json`, `.antigravity/gemini-extension.json`, `.antigravity/mcp_config.json`, `.antigravity/permissions.json`, `.mcp.json`, `.github/pull_request_template.md`, `.github/ISSUE_TEMPLATE/ticket.yml`, plus the ADR(s) the matrix carries as constitutional asset rows per the ADR inclusion rule below (currently `docs/history/045-hybrid-harness-target-architecture.md` only)
-  - Tier 1: every `docs/ai/shared/*.md` (parent folder only, not `skills/`), plus the non-`docs/ai/shared/` governor assets the matrix carries in Tier 1 — the `.agents/shared/governor/` package (one row), `tools/check_governor_footer.py`, `tools/review_packet.py`, and the frozen `docs/history/archive/governor-review-log/` directory (one row)
-  - Tier 2: every skill triple — `docs/ai/shared/skills/{name}.md`, `.claude/skills/{name}/SKILL.md`, `.agents/skills/{name}/SKILL.md`
-  - Tier 3: every file under `.claude/hooks/`, `.codex/hooks/`, and `.antigravity/hooks/` (excluding `__pycache__/**` and `*.pyc` caches — same exclusion as the matrix Verification block's `find`)
-  - Tier 4: every file under `.claude/rules/`, `.codex/rules/`, and `.antigravity/rules/`
-- [ ] **ADR inclusion rule.** The matrix is a *harness-asset* inventory, so it rows an ADR only when the ADR is itself a load-bearing harness asset — currently only `docs/history/045-*.md`, the constitutional navigator for the hybrid-harness initiative. Do **not** enumerate `docs/history/**` and require one matrix row per ADR: domain / runtime ADRs (e.g. 004, 011, 042) and pure-decision governor ADRs (e.g. 047, 048, 050, 052–055) are indexed by [`docs/history/README.md`](../../history/README.md), not rowed here. ADR coverage is therefore verified in two directions instead of a filesystem-wide per-ADR row requirement:
-  - Each matrix row whose Asset path matches `docs/history/NNN-*.md` still exists on disk and appears exactly once (matrix-internal consistency).
-  - `docs/history/README.md` indexes every top-level `docs/history/NNN-*.md` file (the ADR completeness backstop that replaces a matrix-side per-ADR check).
-- [ ] Verify each enumerated asset has exactly one row in `docs/ai/shared/harness-asset-matrix.md` (a Tier 2 skill triple maps to a single row covering all three wrapper layers). Historical `Drop` rows for files already removed from disk (e.g. `tools/check_g_closure.py`) are retained in the matrix by design and are exempt from this filesystem→row direction; validate them via the `Drop` bullet below.
-- [ ] Verify the Bucket Distribution Summary count equals the row count (subtracting `.gitignore`d entries from the share-percentage denominator)
-- [ ] Verify each row's `Bucket` is one of `Keep` / `Replace` / `Overlay` / `Drop` and matches the bucket definitions at the top of the matrix
-- [ ] For any asset classified `Drop`: verify with `rg <asset> .claude/ .codex/` that no harness component still references it
+- [ ] Run `python3 tools/generate_harness_inventory.py --check`. Discovery uses the
+  former matrix Verification scope (inventory Tier 0-4, not governor Tier A/B/C).
+  The check enforces complete skill triples, exact reviewed bucket coverage, absent
+  retirements, and generated==committed output. Consult the
+  [navigator](harness-asset-matrix.md#verification) for update/rollback steps.
+- [ ] Review changed path-to-bucket judgments in `harness-buckets.json`; generation
+  cannot decide whether an asset is load-bearing. New assets need an explicit choice.
+- [ ] For a new Drop transition, verify zero live callers across Claude, Codex,
+  Antigravity and Gemini; record replacement coverage or removal rationale. Historical
+  Drop entries remain traceable without repeating the old investigation every sync.
+- [ ] Keep ADR completeness separate: the history index covers all active ADRs;
+  inventory Tier 0 contains only the constitutional ADR 045, as before.
 
 ## 1D. Governor Footer + ADR Consequences Sync Check (ADR 047 D2 / D3)
 
@@ -123,7 +122,7 @@ Read each `.claude/rules/` file and compare against current code:
 - [ ] App Entrypoints matches the subdirectories under `src/_apps/`?
 - [ ] Environment Config matches the Settings validators in `src/_core/config.py`?
 
-### commands (`.claude/rules/commands.md`)
+### Consulted commands (`docs/ai/shared/commands.md`)
 - [ ] Optional-infra behaviour (toggles, env vars, dispatch semantics) is described once in `AGENTS.md` § Optional Infrastructure Toggles plus its `docs/operations/` runbook; `.claude/rules/*` carry a one-line pointer only.
 - [ ] Run commands still target the current entrypoint files?
 - [ ] Architecture-verification greps still target current violation patterns (not legacy ones)?
@@ -136,14 +135,16 @@ Read each `.claude/rules/` file and compare against current code:
 
 Compare each section of `docs/ai/shared/project-dna.md` against actual code:
 
+- [ ] Spot-check identifiers, defaults and behavioural claims in policy prose against their defining code, including newly rewritten paragraphs. Resolving a source link does not prove that prose matches the source (for example, admin read auditing uses `log_reads=False`).
+
 - [ ] **Layer structure**: Verify the directory structure in project-dna.md §1 matches the actual `src/user/` structure
   - Compare against Glob `src/user/**/*.py` results
-- [ ] **Base class paths**: Verify all import paths in §2 match actual file locations
+- [ ] **Base class paths**: Verify source-owner links in §2 resolve to the defining modules
   - Confirm each path can import the class from the corresponding module
-- [ ] **Generic types**: Verify signatures in §3 match current Base class definitions
+- [ ] **Generic types**: Verify §3 type-parameter policy against its linked Base class definitions
   - Check `BaseRepositoryProtocol`, `BaseRepository`, `SuccessResponse` class definitions
-- [ ] **CRUD methods**: Verify the `BaseRepositoryProtocol` method list in §4 is up to date
-  - Compare method lists against actual code
+- [ ] **CRUD methods**: Verify §4 links the live `BaseRepositoryProtocol` and pairs caller-facing aggregate reads with the Service
+  - Read the linked protocol and Service; avoid rebuilding a duplicate method catalog
 - [ ] **DI patterns**: Verify Singleton/Factory mappings in §5 match current `UserContainer` code
 - [ ] **Conversion Patterns**: Verify `model_validate`/`model_dump` usage in §6 matches current implementation
 - [ ] **Security tools**: Verify the tool list in §7 matches `pyproject.toml` and `.pre-commit-config.yaml`

@@ -1,6 +1,18 @@
+---
+paths:
+  - "src/_apps/**"
+  - "src/_core/config.py"
+  - "src/_core/infrastructure/di/**"
+  - "_env/**"
+  - "pyproject.toml"
+  - "docker-compose*.yml"
+  - "Makefile"
+  - "run_*_local.py"
+---
+
 # Project Overview
 
-> Last synced: 2026-11-06 via #413, #415, #417, #418
+> Last synced: 2026-11-06 via #414 B1/B4/B5
 > For tech stack, refer to project-dna.md §8; for layer structure, refer to §1.
 > For the Optional infra toggle surface (env var → disabled behavior per infra), see AGENTS.md "Optional Infrastructure Toggles" + [ADR 042](../../docs/history/042-optional-infrastructure-di-pattern.md).
 > This file only contains **project-level context** not covered in project-dna.md.

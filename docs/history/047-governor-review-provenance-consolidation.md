@@ -94,6 +94,10 @@ PR D adds an explicit Exclusion to `governor-paths.md` covering the three `.clau
 
 The carve-out covers only the `Last synced:` timestamp line on `project-overview.md` and `commands.md` — semantic edits (new sections, regenerated content) still trigger governor-changing. The `governor-review-log/README.md` Index table is **not** in this carve-out: after PR E it stops growing (closed historical archive), so future Index edits are themselves governance changes worth reviewing. The `/sync-guidelines` skill emits a structured Tier-classification line on closure, so reviewers can verify the exemption applies. `tests/unit/agents_shared/test_completion_gate.py` adds a regression test for each path covered by the carve-out.
 
+### Post-decision amendment — Consulted commands (#414 B1, ADR 063)
+
+[ADR 063](063-on-demand-harness-documentation.md) moves the command reference to `docs/ai/shared/commands.md`. The historical three-file D4 list above records the original decision; current exclusions in [governor-paths.md](../ai/shared/governor-paths.md) and `sync_cosmetic.py` cover only project-status / project-overview. Neither the obsolete command path nor the consulted shared command reference is exempt. Existing ADR047-G slot bodies remain unchanged.
+
 ### D5 — Phased multi-PR migration with dual-write guarantee
 
 Six PRs, in order. **Invariant: at any merge boundary, at least one of {old `governor-review-log/` artefact requirement, new Governor Footer linter} is active.** No "naked" interval.

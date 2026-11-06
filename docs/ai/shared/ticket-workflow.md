@@ -111,26 +111,30 @@ use an explicitly authorized, redacted sample; compare inferred intervals with
 owner timings, record uncertainty, and discard the proxy if agreement is poor.
 Do not collect transcripts automatically or treat silence as active review.
 
-## Lightweighting follow-ups (#414)
+## Lightweighting implementation status (#414)
 
-Tier A changes do not establish Tier B safety or measured effectiveness. The
-remaining work is explicitly **not implemented by this ticket**:
+The integrated change set implements the supported Tier A and Tier B work below.
+Implementation completion does not establish measured effectiveness or finish the
+prospective observation window of parent #427.
 
-| Candidate | Execution packet prerequisite and done-when | Verification / rollback |
+| Candidate | Implemented result | Evidence / rollback boundary |
 |---|---|---|
-| B1 scoped rules | Keep layer-selection and cross-layer invariants unconditional; split conventions by repeated layer globs; fix Storage drift against container; move command reference, update language and cosmetic scopes | Measure unconditional bytes, link/language and hook tests; restore rule paths/config together |
-| B2 verify hook removal | Preserve tokens, markers, safety, locale; remove all three adapters' call sites and update doctor C4/lifecycle coverage atomically | Full hook/doctor/lifecycle tests plus configured-command smoke; restore all call sites together |
-| B3 generated inventory | Commit a path-to-bucket map; derive inventory tiers from matrix Verification scope, not governor review tiers; generated==committed gate | Filesystem completeness including Drop exceptions and counts; restore matrix+generator gate together |
-| B4 archives | Move only migration/repo-facts and TOM A/C history; retain live TOM Appendix B Trace 2 and its consumers | Scan prose/backticks as well as links; revert moves and inbound links together |
-| B5 project-dna | Block-level reductions, <=48 KB; retain §5 policy and §14 guardrails, section numbers/headings; verify each claimed derivable fact against code | All section consumers, language/link checks, byte measurement; restore blocks if conventions become undiscoverable |
-| B6 wrapper generation | Keep every skill triple, required plan terms, legitimate tool-specific sync steps; preserve frontmatter and supported tools | Native workflow and cross-tool routing probes, generated==committed; restore wrappers+generator gate together |
-| B8 security categories | Prove replacement coverage for each removed category; move logging rule into deterministic pygrep; keep code_safety while Antigravity consumes it | Real negative probes for all adapters and logging hook; restore previous safety rules together |
-| B9 session summaries | Suppress only demonstrably stale completed state; preserve idle prompt-and-verify continuity and fix-bug records; no blanket idle suppression | Reproduce complete/idle/changed-files and worktree cases before behavior edits; restore summary predicate |
+| B1 scoped rules | Commands are consulted shared references; scoped rule projections retain unconditional layer-selection policy and correct Storage facts | Context budgets, rule-scope and reference tests; restore paths/config together |
+| B2 verify runtime | Removed verify-first/log consumers across all three adapters; actual outcomes, safety, locale and marker lifecycle remain (ADR 061) | Launcher, doctor, lifecycle and retirement regressions; restore writer/consumer contracts together |
+| B3 inventory | Reviewed bucket map, tracked-scope generator and generated-output gate (ADR 062) | Indexed completeness and generation tests; restore map/generator/CSV together |
+| B4 historical docs | Archived migration/repository facts and TOM A/C; retained navigators and live Appendix B traces | Archive-body and inbound-reference checks; restore moves and links together |
+| B5 project-dna | Reduced by block below the stated budget; §5 policies, §14 guardrails and all numbered headings remain | Heading/source-policy/byte checks; restore relevant blocks if undiscoverable |
+| B6 skill wrappers | Standardized the original 30 wrapper bodies; retained frontmatter, plan terms and legitimate tool notes. New trace/why wrappers remain compact with their isolation constraints | Native parity, invocation-flag, outline and source-authority regressions; restore wrappers and shared contracts together |
+| B7 sync packaging | Sync is part of the feature PR; release/post-merge audits remain standalone | Review/sync contracts and release Footer trigger; restore packaging rules together |
+| B8 security categories | Retired duplicate runtime content heuristics and added the production sensitive-logging commit gate; code_safety compatibility remains (ADR 061) | Real hook positive/negative/skip probes; removed pre-edit rejection is a disclosed guarantee change, not equivalent SQL coverage |
+| B9 summaries | Completed clean cache is suppressed; unresolved review/blockers and idle prompt/verification continuity remain | Complete/idle/outcome/worktree regressions; restore the summary predicate and framing together |
 
-Each needs its own approved packet/native follow-up issue before implementation;
-this table is a trackable backlog, not a claim that GitHub children were published.
-B7 is implemented in this contract. Antigravity/Gemini removal remains a separate
-owner product decision requiring ADR/product-promise changes. Do not perform the
-three refuted removals in #414; keep doctor coverage, safe launcher behavior, and
-review-protocol ownership. The parent audit can close only after its promised implementation and measurement
-criteria are satisfied or explicitly re-scoped; this ticket alone does not establish that.
+The remaining observation and owner-timing work is tracked only in
+[measurement follow-up #433](https://github.com/Mr-DooSun/fastapi-agent-blueprint/issues/433).
+It has no invented measurements: collect the prospective data and owner review
+before claiming #427's effectiveness goals or selecting a new execution topology.
+Parent #427 therefore retains a measurement remainder despite implemented workflow
+contracts. Antigravity/Gemini removal remains a separate owner product decision;
+this work preserves the adapters. The three refuted removals in #414 remain
+rejected: doctor coverage, safe launcher behavior and review-protocol ownership
+are retained. No observation-dependent success claim is used to close a gate.

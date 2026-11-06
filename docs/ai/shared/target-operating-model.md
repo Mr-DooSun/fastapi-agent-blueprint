@@ -2,7 +2,7 @@
 
 > Last synced: 2026-11-06 via #420
 > Source of truth for the workflow, mandatory steps, exception handling, Claude/Codex/Antigravity alignment, and sample-workflow traces. The shared-constitution summary lives in [`AGENTS.md` § Default Coding Flow](../../../AGENTS.md); this document is the long-form companion.
-> Sibling docs: [ADR 045](../../history/045-hybrid-harness-target-architecture.md) · [harness-asset-matrix.md](harness-asset-matrix.md) · [migration-strategy.md](migration-strategy.md)
+> Sibling docs: [ADR 045](../../history/045-hybrid-harness-target-architecture.md) · [harness-asset-matrix.md](harness-asset-matrix.md) · [historical migration plan](../../history/archive/harness-context/migration-strategy.md)
 
 ## Purpose
 
@@ -53,7 +53,7 @@ Each shared procedure and both tool wrappers retain a compact `Default Flow Posi
 | `trace` | Outside coding flow; read-only exploration | None; investigate only when requested. | Return cited execution path and unknown edges to the caller; no edits or stage mutation. | Do not recurse or invoke other skills. |
 | `why` | Outside coding flow; read-only exploration | None; investigate only when requested. | Return cited decision history and uncertainty to the caller; no edits or stage mutation. | Do not recurse or invoke other skills. |
 
-A skill must not invoke itself recursively. The seven guarded skills named by [migration-strategy.md](migration-strategy.md) retain a one-line recursion guard in every layer; the table also preserves implementation-skill planning guards. ADR 050 and ADR 054 in §2 govern scope expansion and the planning/execution boundary.
+A skill must not invoke itself recursively. The seven guarded skills named in the table above retain a one-line recursion guard in every layer; the table also preserves implementation-skill planning guards. ADR 050 and ADR 054 in §2 govern scope expansion and the planning/execution boundary.
 
 ## §2 Mandatory by Default
 
@@ -95,7 +95,7 @@ The mandatory-by-default rule is evaluated **per unit of implementation-class wo
 
 The distinguishing test: *is this change required by the approved plan's success criteria, or is it a capability the plan never mentioned?* Small gap-fixes that the current task's success criteria genuinely require are in-scope work, not expansions. Exception tokens keep their §3 semantics — a token that licensed skipping `plan` for the original prompt covers same-scope work only, not a mid-task capability addition.
 
-Enforcement is advisory-first (ADR 050) and ships as a tool-specific adapter over one shared `governor.stage_gate` policy: on Claude a `PostToolUse Edit|Write` reminder (#268, `.claude/hooks/post_tool_stage_gate.py`); on Codex a Stop-time `systemMessage` segment (#269, `.codex/hooks/stop-sync-reminder.py` — Codex has no `PostToolUse`, so it bridges the Stop-time changed-file set to the shared single-file decision); on Antigravity an `AfterAgent` plaintext segment (`.antigravity/hooks/stop-sync-reminder.py`) wired by `.gemini/settings.json`. Each adapter fires once per session when a `.py` file under `src/` or `examples/` is edited while the work ledger's `workflow.stage` is `idle`/`complete`/`blocked` and no *plan-waiver* token marker (`[trivial]`/`[hotfix]`, incl. Korean equivalents) is active — `[exploration]` does not suppress it, since an implementation edit inside a declared read-only session is itself a signal (ADR 050 D6). Missing or unreadable ledger state stays silent (fail-open) — contributors without the maintainer workflow never see it.
+Enforcement is advisory-first (ADR 050) and ships as a tool-specific adapter over one shared `governor.stage_gate` policy: on Claude a `PostToolUse Edit|Write` reminder (#268, `.claude/hooks/post_tool_stage_gate.py`); on Codex a Stop-time `systemMessage` segment (#269, `.codex/hooks/stop-sync-reminder.py` — Codex has no file-edit `PostToolUse` matcher, so it bridges the Stop-time changed-file set to the shared single-file decision); on Antigravity an `AfterAgent` JSON `systemMessage` segment (`.antigravity/hooks/stop-sync-reminder.py`) wired by `.gemini/settings.json`. Each adapter fires once per session when a `.py` file under `src/` or `examples/` is edited while the work ledger's `workflow.stage` is `idle`/`complete`/`blocked` and no *plan-waiver* token marker (`[trivial]`/`[hotfix]`, incl. Korean equivalents) is active — `[exploration]` does not suppress it, since an implementation edit inside a declared read-only session is itself a signal (ADR 050 D6). Missing or unreadable ledger state stays silent (fail-open) — contributors without the maintainer workflow never see it.
 
 ### Plan→Execute Boundary (ADR 054)
 
@@ -104,7 +104,7 @@ Enforcement is advisory-first (ADR 050) and ships as a tool-specific adapter ove
 This boundary is enforced by a **sibling gate** on the same `governor.stage_gate` policy, keyed to `PLAN_EXECUTE_GATED_STAGES = {planned}` — disjoint from the ADR 050 `GATED_STAGES` set. It fires when a `.py` file under `src/`/`examples/` is edited while `workflow.stage == "planned"` and no plan-waiver token (`[trivial]`/`[hotfix]`, incl. Korean equivalents) is active. **Enforcement strength is asymmetric by tool** (ADR054-G4):
 
 - **Claude — hard block.** A `PreToolUse Edit|Write` hook (`.claude/hooks/pre_tool_stage_block.py`) returns exit 2, blocking the edit and surfacing `PLAN_EXECUTE_REMINDER` to the model. Unlike the ADR 050 advisory it does **not** dedup — it holds on every edit (ADR054-G1 D5). There is deliberately no Claude `PostToolUse` advisory for `planned`: the block intercepts the same cases pre-edit, so one would be dead code (ADR 054 D4).
-- **Codex — Stop advisory.** Codex has no `PreToolUse` and cannot block; `plan_execute_segment` in `.codex/hooks/stop-sync-reminder.py` emits the same reminder at Stop time (once per session), mirroring the #269 `stage_gate_segment`.
+- **Codex — Stop advisory.** Codex has only Bash `PreToolUse` matching and cannot intercept file edits; `plan_execute_segment` in `.codex/hooks/stop-sync-reminder.py` emits the same reminder at Stop time (once per session), mirroring the #269 `stage_gate_segment`.
 
 Release paths: invoke `/execute-plan` (advances the ledger to `executing`, the gate stops matching) or use a plan-waiver token. The gate is **best-effort by fail-open** (ADR054-G5): any unreadable ledger, import failure, or malformed payload allows the edit — a workflow gate must never wedge editing. It also depends on `/plan-feature` writing `stage="planned"`; if that write is skipped the stage stays `idle`/`complete` and only the ADR 050 advisory applies (never a false block). As a workflow gate it ranks **below** the four precedence layers (§3) — safety hooks and Absolute Prohibitions still take priority, and plan-waiver tokens suppress it.
 
@@ -230,7 +230,10 @@ bug-path examples and onboarding history stories.
 
 ### Model identity
 
-This is **Mostly Local with Philosophy Overlay**, matching the bucket distribution in [harness-asset-matrix.md](harness-asset-matrix.md): ~75% Keep / ~24% Overlay / 0% Replace / ~1% Drop (matrix is canonical). The philosophy port adds the framing / governance layer; the substantive content is and remains local.
+This is **Mostly Local with Philosophy Overlay**. The [harness navigator](harness-asset-matrix.md#bucket-distribution-summary)
+links the generated inventory and reviewed bucket map; use its check command for
+current counts instead of copying percentages. The philosophy port adds the
+framing / governance layer; substantive content remains local.
 
 ## §5 Claude / Codex / Antigravity Alignment
 
@@ -242,19 +245,19 @@ This is **Mostly Local with Philosophy Overlay**, matching the bucket distributi
 |---|---|---|---|
 | SessionStart hook | yes | yes | yes |
 | Prompt hook | `UserPromptSubmit` | `UserPromptSubmit` | `BeforeAgent` |
-| Pre-tool matcher | `Edit`, `Write`, `Bash` | `Bash` only | `replace`, `write_file`, `run_shell_command` |
+| Pre-tool matcher | `Edit`, `Write` (stage boundary) | `Bash` only | `replace`, `write_file`, `run_shell_command` |
 | Post-tool matcher | `Edit`, `Write` | `Bash` only | `replace`, `write_file`, `run_shell_command` |
 | Session-end hook | `Stop` | `Stop` | `AfterAgent` |
 | File-level edits visible to post-tool hooks? | **yes** (`Edit`/`Write` matcher) | **no** (`apply_patch` and similar bypass `Bash`) | **yes** for `replace` / `write_file`; shell writes are command-derived |
 
-The asymmetry in the last row is critical (Codex review R7). Phase 3 verification-first cannot rely on Codex's `PostToolUse` because Codex performs file edits via mechanisms that do not match `^Bash$`.
+The file-edit asymmetry determines stage-gate delivery: Claude receives native edit events; Codex computes changed files at Stop because its post-tool matcher covers Bash only. ADR 061 retired the former verify-first reminder instead of treating command-name logs as successful verification.
 
 ### Adapter strategy
 
-- **Claude side**: file edits trigger `PostToolUse Edit|Write`. Phase 3 verification-first hook attaches there to suggest test runs after a code edit.
-- **Codex side**: file edits do not surface in `PostToolUse`. Phase 3 detection runs on the **Stop side** by computing `git status --porcelain` over the working tree and triggering the verification reminder when changed source files exist without a corresponding test run.
-- **Antigravity side**: `.gemini/settings.json` wires Gemini / Antigravity events to `.antigravity/hooks/`. Prompt handling runs on `BeforeAgent`, tool safety and verify logging run on `BeforeTool` / `AfterTool`, and sync / verify / completion / workflow / stage-gate reminders are merged on `AfterAgent`. Runtime markers and verify logs stay under `.antigravity/state/`.
-- **All adapters**: prompt hooks recognise the exception-token vocabulary identically (Phase 2). As of Phase 5 (#124, Hybrid Harness v1 milestone), the shared parser, marker writer, lifecycle reader, verify-first decision, and completion-gate logic all live in [`.agents/shared/governor/`](../../../.agents/shared/governor/). Hook scripts under `.claude/hooks/`, `.codex/hooks/`, and `.antigravity/hooks/` are thin shims that import from this package; they cannot redeclare reminder strings or governor-paths globs inline (`tests/unit/agents_shared/test_governor_boundary.py`). The hybrid governance model — escape-token vocabulary, tool-specific adapters, scope-of-impact-driven independent review — is permanent; only the *implementation* moved into the shared module. ADR 047 retargets the independent review *capture location* from `governor-review-log/` to the PR-description `## Governor Footer` block (CI-linted) without changing the trigger or review obligation itself.
+- **Claude side**: `PreToolUse Edit|Write` enforces the plan→execute boundary; `PostToolUse Edit|Write` formats Python and runs the once-per-session stage advisory. The per-edit content scanner and verify-first/log processes are retired (ADR 061).
+- **Codex side**: Bash hooks retain shell safety, formatting and supported actual verification-outcome recording. File-edit stage checks and workflow/verification advisories run at Stop using the changed-file set. No command-name log is written and no verify-first segment remains.
+- **Antigravity side**: `.gemini/settings.json` wires Gemini / Antigravity events to `.antigravity/hooks/`. Prompt handling runs on `BeforeAgent`, shell safety and formatting/outcome recording run on `BeforeTool` / `AfterTool`; sync / completion / workflow / stage-gate reminders are merged on `AfterAgent`. Runtime exception/stage markers stay under `.antigravity/state/`; per-command verify logs and verify-first reminders are retired by [ADR 061](../../history/061-retire-runtime-verify-and-content-heuristics.md).
+- **All adapters**: prompt hooks recognise the exception-token vocabulary identically (Phase 2). As of Phase 5 (#124, Hybrid Harness v1 milestone), the shared parser, marker writer, lifecycle reader, stage-gate and completion-gate logic all live in [`.agents/shared/governor/`](../../../.agents/shared/governor/). Hook scripts under `.claude/hooks/`, `.codex/hooks/`, and `.antigravity/hooks/` are thin shims that import from this package; they cannot redeclare reminder strings or governor-paths globs inline (`tests/unit/agents_shared/test_governor_boundary.py`). The hybrid governance model — escape-token vocabulary, tool-specific adapters, scope-of-impact-driven independent review — is permanent; only the *implementation* moved into the shared module. ADR 047 retargets the independent review *capture location* from `governor-review-log/` to the PR-description `## Governor Footer` block (CI-linted) without changing the trigger or review obligation itself.
 
 ### Canonical-truth precedence
 
@@ -271,8 +274,8 @@ When tool runtime config conflicts with shared rules, shared rules in `AGENTS.md
 | ADR Consequences (`ADR{NNN}-G{N}` slots, e.g. ADR 047) | 1 (Pillar 4 successor; ADR 047 D3) | Durable governance constraints inherited across PRs; `governor-review-log/` is the closed historical archive |
 | Session-start | 2 | Optional banner reminder |
 | UserPromptSubmit hook | 2 | Token-recognition + soft route hint |
-| PostToolUse / Stop side | 3 | Verification reminder (tool-specific adapter) |
-| Stop completion gate | 4 | Hard reminder (commit-time) when verification was skipped without an exception token; **and** when policy/harness paths were touched without a Governor Footer block in the PR description (post-ADR-047 — replaces the prior governor-review-log entry check) |
+| Post-tool result adapters | ADR 061 | Codex/Antigravity record supported actual verification outcomes; help/search/unknown/cancelled results do not establish a pass. Former Phase 3 verify-first/log runtime is retired. |
+| Stop completion/workflow adapters | 4 + ADR 052/061 | Non-blocking missing-verification/workflow and Governor Footer reminders; marker consumption stays unconditional. Governor Footer Lint CI, not the reminder, blocks a malformed/missing required PR-description footer. |
 | Shared parser/policy module | 5 | Single source for both adapters |
 
 ### Independent Review Cadence (Pillar 2)
@@ -289,7 +292,7 @@ Independent review is a sub-step of `self-review`, mandatory **only** when the c
 
 Per round (each PR may need one or several):
 
-1. **Trigger detection** — Stop or UserPromptSubmit hook (Phases 2~4) detects that `changed_files` intersects the governor-changing trigger glob defined in [`governor-paths.md`](governor-paths.md). Until those hooks land, the trigger detection is performed manually by the author against that file.
+1. **Trigger detection** — Stop or UserPromptSubmit hook (Phases 2~4) detects that `changed_files` intersects the governor-changing trigger glob defined in [`governor-paths.md`](governor-paths.md). The adapters are shipped; the author still verifies the detected scope against that file.
 2. **Reviewer invocation** — invoke the chosen review mode. The shared prompt template for `cross-tool` and `self-structured` modes lives in `docs/ai/shared/skills/{review-pr,review-architecture,security-review,sync-guidelines}.md` "Cross-Tool Review Prompt Template" / "Self-Structured Review Checklist".
 3. **R-points capture** — review output is annotated with `R1`, `R2`, … per finding, and the closure counts (`Fixed` / `Deferred-with-rationale` / `Rejected` per Guard G) are recorded in the PR description's `## Governor Footer` block (post-ADR-047). The pre-ADR-047 obligation to write `governor-review-log/pr-{NNN}-{slug}.md` is retired for new PRs; the directory is a closed historical archive.
 4. **Resolution discipline** — every R-point is either fixed in the PR or explicitly deferred with a rationale; deferred items become "Inherited Constraints" carried in the relevant ADR's Consequences (`ADR{NNN}-G{N}` slot) when they are durable governance rules, in `project-dna.md` or domain docs when they are durable domain invariants, or in the footer's `pr-scope-notes` line when they apply only to the current PR.
@@ -330,12 +333,12 @@ equivalent model/effort routing only when those tools expose it explicitly.
 | Shared constitution | `AGENTS.md` |
 | Default Flow definition | `AGENTS.md` § Default Coding Flow + `target-operating-model.md` (this file) |
 | Asset inventory | `harness-asset-matrix.md` |
-| Phase / migration plan | `migration-strategy.md` |
+| Historical phase / migration plan | [migration archive](../../history/archive/harness-context/migration-strategy.md) |
 | Top-level decisions | ADR 045 (and per-feature ADRs in `docs/history/`) |
 | Skill detail (procedure) | `docs/ai/shared/skills/{name}.md` |
 | Skill metadata + per-tool wrapper | `.claude/skills/{name}/SKILL.md` and `.agents/skills/{name}/SKILL.md` |
 | Architecture rules | `AGENTS.md` + `.claude/rules/architecture-conventions.md` + ADRs |
-| Claude rules (auto-load) | `.claude/rules/*.md` |
+| Claude rule projections | `.claude/rules/*.md`: unconditional files load by default; files with `paths:` load for matching paths |
 | Codex rules (prefix) | `.codex/rules/fastapi-agent-blueprint.rules` |
 | Antigravity rules (adapter) | `.antigravity/rules/*.md` |
 | Hook configuration | `.claude/settings.json`, `.codex/hooks.json`, and `.gemini/settings.json` |
@@ -347,25 +350,14 @@ When two locations could plausibly host the same fact, the table above resolves 
 
 The Target Operating Model is **Mostly Local with Philosophy Overlay**.
 
-- "Mostly Local" because the bucket distribution is ~75% Keep / ~24% Overlay / 0% Replace / ~1% Drop (88 active assets; matrix is canonical). The substantive content of the harness remains local.
+- "Mostly Local" because the substantive harness content remains local; current
+  asset counts and buckets come from the generated inventory linked by the matrix
+  navigator, not a copied historical percentage.
 - "Philosophy Overlay" because the *governance* layer — Default Flow, mandatory subset, exception vocabulary, completion-gate idea — is borrowed from the superpowers philosophy and grafted on top.
 
-This is not a balanced 50/50 hybrid. It is 80%-local-with-a-process-shell. That ratio is the answer to issue #117's Key Design Question 7 ("How should Claude and Codex stay aligned without duplicating too much harness logic?"), now extended to Antigravity: the tools share the philosophy overlay; the substantive content is the same per-tool because they read identical shared documents.
+The local implementation carries the process shell. This answers issue #117's Key Design Question 7 ("How should Claude and Codex stay aligned without duplicating too much harness logic?"), now extended to Antigravity: the tools share the philosophy overlay and read the same shared policy; current inventory counts remain generated rather than copied.
 
 ---
-
-## Appendix A — Eight Workstreams from Issue #117
-
-| Workstream | Where it lives in this model | Phase |
-|---|---|---|
-| `asset-triage` | [harness-asset-matrix.md](harness-asset-matrix.md) | 0 (this PR) |
-| `default-flow` | §1, `AGENTS.md` § Default Coding Flow | 1 (this PR) |
-| `verification-first` | §1 `verify` step; Codex R7 adapter spec in §5 | 3 |
-| `self-review` | §1 `self-review` step | 1 (skill body) → 4 (hook) |
-| `completion-gate` | §1 `completion gate` step | 4 |
-| `exception-model` | §3 | 1 (vocabulary defined) → 2 (parser) |
-| `cross-tool-consistency` | §5 + Phase 5 shared module | 1 (precedence) → 5 (consolidation) |
-| `migration-path` | [migration-strategy.md](migration-strategy.md) | 0 (this PR) |
 
 ## Appendix B — Sample Workflow Traces
 
@@ -429,15 +421,4 @@ This trace is a meta-trace: the present PR's Phase 0.5 was itself a sample of cr
 
 This trace shows that the model accommodates non-coding workflows (design review is "implementation" of a plan document).
 
-## Appendix C — Eight Design Questions (issue #117) — Resolution Pointers
-
-Detailed answers live in [ADR 045 §Eight Design Questions](../../history/045-hybrid-harness-target-architecture.md#eight-design-questions-issue-117--resolution-map). The pointers below name the canonical section of this document.
-
-1. Project-specific value vs commodity scaffolding → harness-asset-matrix.md Tier classification.
-2. Stay local / overlay / replace / drop → matrix bucket column.
-3. Minimum viable process governor → §1 + §3.
-4. Mandatory by default for coding work → §2.
-5. Where enforcement lives → §5 ("Where enforcement lives" table).
-6. Valid exception → §3.
-7. Claude / Codex / Antigravity alignment → §5.
-8. Rigor without friction → §1 (mandatory subset) + §3 (escape lanes) + §7 (model identity).
+> Historical design workstreams and resolution pointers: [Appendices A/C archive](../../history/archive/harness-context/target-operating-model-appendices.md).

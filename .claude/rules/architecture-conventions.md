@@ -1,6 +1,14 @@
+---
+paths:
+  - "src/**"
+  - "examples/**"
+  - "tests/**"
+  - "migrations/**"
+---
+
 # Architecture Conventions
 
-> Last synced: 2026-11-06 via #413, #415, #417, #418
+> Last synced: 2026-11-06 via #414 B1/B4/B5
 > For Absolute Prohibitions, Conversion Patterns, Write DTO criteria, Responsibility Matrix, Error Translation, Optional AI Infra (Protocol + Selector Pattern), Admin Service Contract, Optional Infrastructure Toggles (Error Notification), and **Default Coding Flow** (process layer, ADR 045), refer to AGENTS.md.
 > This file only contains **structural context** that supplements AGENTS.md for Claude.
 
@@ -49,27 +57,9 @@ Key differences from RDB/DynamoDB:
 - DO NOT simplify back to 1 TypeVar — this was tried and reverted (see ADR 011 Post-decision Update)
 - Service-owned CRUD write validation hooks are canonical in `AGENTS.md` § CRUD Write Validation; keep rule details there.
 
-## Broker Selection
-- `BROKER_TYPE` env var: SQS/RabbitMQ/InMemory via `providers.Selector` in CoreContainer. Task code uses `from src._apps.worker.broker import broker` with no conditional logic; stg/prod require explicit `BROKER_TYPE`.
+## Optional Infrastructure Selection
 
-## Storage Selection
-- `STORAGE_TYPE` env var: S3/MinIO, same `ObjectStorageClient` class with different constructor params (no `providers.Selector` needed — contrast with Broker). Settings computed properties (`storage_access_key`, etc.) resolve fields by `STORAGE_TYPE`.
-
-## Embedding (PydanticAI Adapter)
-- Single `PydanticAIEmbeddingAdapter` replaces per-provider clients (ADR 039)
-- No provider-level Selector — PydanticAI handles provider abstraction internally via `model_name` prefix
-- `CoreContainer.embedding_client` wraps the adapter in `providers.Selector`: enabled → real adapter; disabled → `StubEmbedder` for graceful degradation (ADR 042)
-- `EmbeddingConfig` (frozen dataclass VO) is constructed inside the lazy factory — not a standalone container provider
-- Implements `BaseEmbeddingProtocol` (embed_text, embed_batch, dimension)
-- Dimension auto-derived from model name — `settings.embedding_dimension` is single source of truth
-
-## LLM (PydanticAI Agent)
-- `build_llm_model()` factory returns PydanticAI Model object from `LLMConfig`
-- `CoreContainer.llm_model` wraps the factory in `providers.Selector`: enabled → real model; disabled → PydanticAI `TestModel` via `build_stub_llm_model` (or `None` when the `pydantic-ai` extra is uninstalled) (ADR 042)
-- `LLMConfig` (frozen dataclass VO) is constructed inside the lazy factory — not a standalone container provider
-- Domain services inject the Selector-resolved `llm_model` and create `Agent(model=llm_model)` at init; stub propagates transparently
-- Supports OpenAI, Anthropic, Bedrock providers via `model_name` prefix
-- Agents are reusable across requests (create once at service init)
+See [project-dna.md §5](../../docs/ai/shared/project-dna.md#5-di-pattern) for the canonical provider policy and [CoreContainer](../../src/_core/infrastructure/di/core_container.py) for live wiring. Storage uses enabled/disabled Selectors with lazy factories; provider-specific S3/MinIO parameters come from Settings.
 
 ## Object Roles
 
