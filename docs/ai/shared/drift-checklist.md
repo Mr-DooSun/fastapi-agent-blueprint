@@ -109,6 +109,7 @@ Read each `.claude/rules/` file and compare against current code:
 - [ ] Recent Major Changes includes every notable PR / feature merged since the documented "Last synced" date?
 - [ ] Architecture Violation Status matches the live grep results?
 - [ ] Not Yet Implemented matches project-dna.md §8 "Not implemented"?
+- [ ] Recent Major Changes data rows are <= 300 UTF-8 bytes each (including pipes, all cells, and links); use one sentence per row, with narrative in `CHANGELOG.md [Unreleased]` and the PR body. Never write a per-PR archive entry; historical migration is one-off, and archive creation remains release-triggered.
 - [ ] Recent Major Changes table row count ≤ 15? (current: run `grep -c "^|" .claude/rules/project-status.md`); if > 15, flag for archival at next version release following the PR-B.1 pattern
 
 ### project_overview

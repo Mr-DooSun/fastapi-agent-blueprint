@@ -40,7 +40,7 @@ After completing the shared procedure:
    (Recent Major Changes table, version context, violation status)
    - `git log --oneline --since="{last_synced_date}"` to identify major changes
    - project-dna.md §8 "Not implemented" items for Not Yet Implemented
-   - Table hygiene (Phase 3 check): warn if row count > 15; check for cell-wrap issues; on version release, archive pre-release rows to `docs/history/archive/project-status/` (PR-B.1 pattern)
+   - Table hygiene (Phase 3 check): require each data row <= 300 UTF-8 bytes including pipes, all cells, and links, with a one-sentence impact; narrative belongs in `CHANGELOG.md [Unreleased]` and the PR body, never a per-PR archive write; warn if row count > 15; check for cell-wrap issues; on version release, archive pre-release rows to `docs/history/archive/project-status/` (PR-B.1 pattern)
 3. Update `.claude/rules/project-overview.md`
    (infrastructure options, environment config, app entrypoint changes)
 4. Update `.claude/rules/commands.md`
