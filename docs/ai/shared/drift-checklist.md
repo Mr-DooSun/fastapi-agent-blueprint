@@ -100,6 +100,7 @@ Read each skill's SKILL.md and compare against reference code:
 Read each `.claude/rules/` file and compare against current code:
 
 ### architecture_conventions
+- [ ] Optional-infra behaviour (toggles, env vars, dispatch semantics) is described once in `AGENTS.md` § Optional Infrastructure Toggles plus its `docs/operations/` runbook; `.claude/rules/*` carry a one-line pointer only.
 - [ ] Data flow: covers both RDB and DynamoDB variants?
 - [ ] BaseService / BaseDynamoService generic signatures match the actual code?
 - [ ] Object Roles: includes DTO, Schema, Model, DynamoModel, and Admin Page?
@@ -113,11 +114,13 @@ Read each `.claude/rules/` file and compare against current code:
 - [ ] Recent Major Changes table row count ≤ 15? (current: run `grep -c "^|" .claude/rules/project-status.md`); if > 15, flag for archival at next version release following the PR-B.1 pattern
 
 ### project_overview
+- [ ] Optional-infra behaviour (toggles, env vars, dispatch semantics) is described once in `AGENTS.md` § Optional Infrastructure Toggles plus its `docs/operations/` runbook; `.claude/rules/*` carry a one-line pointer only.
 - [ ] Infrastructure Options matches the subdirectories under `src/_core/infrastructure/`?
 - [ ] App Entrypoints matches the subdirectories under `src/_apps/`?
 - [ ] Environment Config matches the Settings validators in `src/_core/config.py`?
 
 ### commands (`.claude/rules/commands.md`)
+- [ ] Optional-infra behaviour (toggles, env vars, dispatch semantics) is described once in `AGENTS.md` § Optional Infrastructure Toggles plus its `docs/operations/` runbook; `.claude/rules/*` carry a one-line pointer only.
 - [ ] Run commands still target the current entrypoint files?
 - [ ] Architecture-verification greps still target current violation patterns (not legacy ones)?
 - [ ] Test commands still cover each infra variant (RDB, DynamoDB, Broker)?

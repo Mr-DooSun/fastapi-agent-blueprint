@@ -1,6 +1,6 @@
 # Suggested Commands
 
-> Last synced: 2026-11-06 via #413, #415
+> Last synced: 2026-11-06 via #413, #415, #417, #418
 > Purpose: Quick reference for Claude Code when executing shell commands.
 > Also referenced when running Skills.
 > Default Flow context: see [`AGENTS.md` § Default Coding Flow](../../AGENTS.md#default-coding-flow). The commands below are consulted by the `implement` and `verify` steps; this file is **not** a primary entry point in the Default Flow.
@@ -217,26 +217,7 @@ STORAGE_TYPE=s3 python run_server_local.py --env local
 ```
 
 ## Error Notification (#17, #310, #286)
-```bash
-# Slack/Discord webhook alerts fired from the HTTP exception handlers and Taskiq worker task failures (optional infra, ADR 042)
-NOTIFICATION_PROVIDER=slack SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T/B/X python run_server_local.py --env local
-NOTIFICATION_PROVIDER=discord DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/<id>/<token> python run_server_local.py --env local
-
-# Severity channel routing (#286) — the threshold is the switch; the two URLs alone are rejected at boot
-NOTIFICATION_PROVIDER=slack SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T/B/BASE \
-  NOTIFICATION_WARNING_THRESHOLD=400 \
-  NOTIFICATION_CRITICAL_WEBHOOK_URL=https://hooks.slack.com/services/T/B/ALERTS \
-  NOTIFICATION_WARNING_WEBHOOK_URL=https://hooks.slack.com/services/T/B/MONITORING \
-  python run_server_local.py --env local
-```
-
-- Tuning: `NOTIFICATION_SEVERITY_THRESHOLD` (default 500 — 5xx only, and the critical-tier boundary once routing is on), `NOTIFICATION_COOLDOWN_SECONDS` (default 60; per-process, keyed on `error_code` — `{tier}:{error_code}` under routing, `{tier}:{task_name}:{error_code}` on the worker)
-- Channel routing (#286): `NOTIFICATION_WARNING_THRESHOLD` (unset by default) is the **sole switch** — it lowers the alerting floor to `min(severity, warning)` and routes that band to `NOTIFICATION_WARNING_WEBHOOK_URL`. Each per-tier URL falls back to the single provider webhook when unset, and setting one *without* the threshold fails at boot (#315)
-- Unset provider → `NoopNotificationClient` (one-time `notification_client_disabled` warning, logged at the first dispatch attempt rather than at boot; no alerts delivered)
-- Webhook URLs are credentials — keep them in gitignored env files only
-- Coverage: HTTP exception handlers + Taskiq worker task failures (#310). Worker alerts fire once per incident on the terminal failure — permanent errors immediately, retryable ones after the last attempt
-- Not alerted: `validation_exception_handler` (422), `http_exception_handler` (incl. a hand-raised 500), and NiceGUI admin exceptions (log-only, stated non-goal in AGENTS.md)
-- Operator runbook (setup, coverage limits, cooldown/payload caveats, local-sink verification): [`docs/operations/error-notifications.md`](../../docs/operations/error-notifications.md)
+Error Notification: see [AGENTS.md § Optional Infrastructure Toggles](../../AGENTS.md#optional-infrastructure-toggles) + [runbook](../../docs/operations/error-notifications.md).
 
 ## Admin Dashboard
 ```bash
