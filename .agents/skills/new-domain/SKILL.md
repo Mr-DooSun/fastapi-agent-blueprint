@@ -8,9 +8,7 @@ metadata:
 # New Domain
 
 ## Default Flow Position
-- Step: `implement` (architecture commitment — `approach options` upstream is mandatory)
-- Routes after: verify (`/test-domain {name} run`) → self-review (`/review-architecture {name}`) → completion gate (`/sync-guidelines` if shared docs reference the new domain)
-- Recursion guard: do not invoke `/plan-feature` from inside this skill
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `new-domain` routing.
 
 ## Procedure
 1. Read `AGENTS.md` and `docs/ai/shared/skills/new-domain.md` for the full procedure.

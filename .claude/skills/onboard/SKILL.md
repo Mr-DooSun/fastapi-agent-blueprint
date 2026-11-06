@@ -11,10 +11,8 @@ description: |
 # Interactive Onboarding for New Team Members
 
 ## Default Flow Position
-- **Outside** the normal Default Coding Flow — session-start orientation only
-- Subsequent coding work after `/onboard` is treated as a fresh Default Flow run
-- `[exploration]` / `[탐색]` token is appropriate for combining onboard with read-only investigation
-- Recursion guard: do not invoke `/onboard` recursively, do not invoke `/plan-feature` from inside
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `onboard` routing.
+Recursion guard: Do not invoke this skill recursively or invoke plan-feature from inside it.
 
 ## Pre-check: Collect Project State
 

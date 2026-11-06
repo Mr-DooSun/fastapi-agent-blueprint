@@ -11,9 +11,8 @@ description: |
 # Guideline Synchronization Inspection
 
 ## Default Flow Position
-- Step: **`completion gate`** (or follow-up to `self-review` when drift detected)
-- Routes after: end of work
-- Recursion guard: do not invoke `/sync-guidelines` recursively, do not invoke `/plan-feature` from inside
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `sync-guidelines` routing.
+Recursion guard: Do not invoke this skill recursively or invoke plan-feature from inside it.
 
 ## Procedure Overview
 1. Determine the sync mode, gather incoming `Drift Candidates`, and load the governing sources (Phase 0)

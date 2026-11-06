@@ -12,9 +12,8 @@ description: |
 Target: $ARGUMENTS (domain name, file path, or "all")
 
 ## Default Flow Position
-- Step: **`self-review`** (security-sensitive surfaces: auth, tokens, sensitive fields, file upload, credentials)
-- Routes after: completion gate (`/sync-guidelines` if drift; otherwise `/review-pr`)
-- Recursion guard: do not invoke `/security-review` recursively, do not invoke `/plan-feature` from inside
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `security-review` routing.
+Recursion guard: Do not invoke this skill recursively or invoke plan-feature from inside it.
 
 ## Procedure Overview
 1. Resolve the audit scope and run the feature-detection / reference-freshness preflight (Phase 0)

@@ -7,9 +7,7 @@ description: Execute an approved multi-task plan through native project workflow
 # Execute Plan
 
 ## Default Flow Position
-- Steps: **`implement`** + **`verify`** + **`self-review`** + **`completion gate`**
-- Consumes: approved **Execution Packet** from `/plan-feature`
-- Scope: complex, architecture-changing, governor-changing, or multi-task work
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `execute-plan` routing.
 
 ## Procedure Overview
 1. Read `AGENTS.md` and `docs/ai/shared/skills/execute-plan.md`.

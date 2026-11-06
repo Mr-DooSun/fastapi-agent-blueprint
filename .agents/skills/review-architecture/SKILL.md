@@ -8,9 +8,8 @@ metadata:
 # Review Architecture
 
 ## Default Flow Position
-- Step: **`self-review`** (architecture commitments)
-- Routes after: completion gate (`/sync-guidelines` if drift; otherwise `/review-pr`)
-- Recursion guard: do not invoke `/review-architecture` recursively, do not invoke `/plan-feature` from inside
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `review-architecture` routing.
+Recursion guard: Do not invoke this skill recursively or invoke plan-feature from inside it.
 
 ## Procedure
 1. Read `AGENTS.md` and `docs/ai/shared/skills/review-architecture.md` for the full procedure.

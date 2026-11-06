@@ -13,9 +13,8 @@ description: |
 Target: $ARGUMENTS (PR number, GitHub URL, or empty for current branch)
 
 ## Default Flow Position
-- Step: **`completion gate`** (final review at end of work)
-- Routes after: `/sync-guidelines` if drift detected
-- Recursion guard: do not invoke `/review-pr` recursively, do not invoke `/plan-feature` from inside
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `review-pr` routing.
+Recursion guard: Do not invoke this skill recursively or invoke plan-feature from inside it.
 
 ## Procedure Overview
 1. Resolve PR; collect diff + **intent** (PR body / issue / acceptance criteria) and load the

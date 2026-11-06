@@ -12,9 +12,7 @@ description: |
 Request: $ARGUMENTS
 
 ## Default Flow Position
-- Step: `implement` (`approach options` upstream is conditional — required for non-trivial response shape, cross-domain access, or new validation patterns)
-- Routes after: `/test-domain {name} run` (verify) → `/review-architecture {name}` only if layer interactions changed
-- Recursion guard: do not invoke `/plan-feature` from inside this skill
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `add-api` routing.
 
 ## Procedure Overview
 1. Analysis — identify domain, method, path; check existing code; determine needed changes

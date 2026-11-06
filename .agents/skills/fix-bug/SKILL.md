@@ -8,20 +8,13 @@ metadata:
 # Fix Bug
 
 ## Default Flow Position
-- Four canonical phases, 1:1 mapping: Reproduce → `framing`, Trace → `plan`, Fix → `implement`,
-  Verify → `verify`. The names are pinned by `target-operating-model.md` — do not rename or add
-  phases; the Bug Fix Report is an output section and Commit is an opt-in post-step
-- `approach options` upstream conditional — required if Trace reveals multiple layer-fix candidates
-  or a missing architectural pattern
-- Routes after: self-review (`/review-architecture` if layer changes; `/security-review` if
-  security-relevant) → completion gate (`/review-pr`)
-- `[hotfix]` / `[긴급]` is the natural escape for time-critical fixes; verify still mandatory.
-  `[trivial]` / `[자명]` is **not** appropriate for a behaviour bug — a regression test is required
-- Recursion guard: do not invoke `$fix-bug` recursively, and do not invoke `$plan-feature` for the
-  bug's own framing/plan. **Not an ADR 050 exemption** — if the fix needs a capability the repo
-  does not have, stop, report the gap, and route to `$plan-feature`
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `fix-bug` routing.
+Recursion guard: Do not recurse or invoke plan-feature for the bug’s own framing/plan; ADR 050 scope expansion still routes to plan-feature.
 
 ## Scope Boundary
+- Four canonical phases remain Reproduce → `framing`, Trace → `plan`, Fix → `implement`, Verify → `verify`; do not rename, re-order, or add phases. Bug Fix Report is an output section; Commit is opt-in.
+- `[hotfix]` / `[긴급]` keeps verify mandatory; `[trivial]` / `[자명]` is not appropriate for a behaviour bug, which requires a regression test.
+- ADR 050 still applies: if a fix needs a capability the repository lacks, stop, report the gap, and route to plan-feature. Scope expansion is not recursion.
 - Emits **`Outcome`** (`fixed` / `partial` / `not-a-bug` / `cannot-reproduce`), never `Verdict` —
   that vocabulary belongs to `review-protocol.md` §4 and its three review-skill consumers
 - Writes `update_goal_scope_plan(...)` only; **never** sets `workflow.stage` (owned by

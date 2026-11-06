@@ -8,9 +8,7 @@ metadata:
 # Add Admin Page
 
 ## Default Flow Position
-- Step: `implement` (`approach options` upstream conditional — required for sensitive fields or new admin auth surfaces)
-- Routes after: `/test-domain {name} run` (verify) → `/security-review` (self-review) if sensitive fields exposed
-- Recursion guard: do not invoke `/plan-feature` from inside this skill
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `add-admin-page` routing.
 
 ## Procedure Overview
 1. Analysis — verify domain exists, read DTO fields, ask user preferences

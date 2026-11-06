@@ -13,9 +13,7 @@ description: |
 Request: $ARGUMENTS (format: "from:{consumer} to:{provider}", e.g.: "from:order to:user")
 
 ## Default Flow Position
-- Step: `implement` (`approach options` upstream is **always mandatory** — cross-domain dependency is an architecture commitment)
-- Routes after: verify (`/test-domain {consumer} run`, `/test-domain {producer} run`) → self-review (`/review-architecture {consumer}`) → completion gate (`/sync-guidelines`)
-- Recursion guard: do not invoke `/plan-feature` from inside this skill
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `add-cross-domain` routing.
 
 ## Procedure Overview
 1. Analysis — identify consumer/provider, determine needed functionality

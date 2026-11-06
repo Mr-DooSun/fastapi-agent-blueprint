@@ -1,22 +1,11 @@
 # Execute Plan — Detailed Procedure
 
 ## Default Flow Position
-
-This skill owns the native execution handoff after `/plan-feature` or
-`$plan-feature` produces an approved Execution Packet.
-
-- **Consumes**: Execution Packet with Goal, Scope, Success Criteria, Selected
-  Approach, Architecture Impact, Task List, Verification Gates, and Review Gates.
-- **Participates in**: `implement`, `verify`, `self-review`, and `completion gate`.
-- **Routes to**: implementation skills such as `/new-domain`, `/add-api`,
-  `/add-cross-domain`, `/add-worker-task`, `/migrate-domain`, and the matching
-  Codex `$skill` names.
-
-Do not use this skill for trivial single-file edits, one-step single-skill
-work, or read-only exploration. Those continue through the normal Default
-Coding Flow and exception-token rules.
+See [target-operating-model §1](../target-operating-model.md) — `execute-plan` routing.
 
 ## Required Inputs
+
+Use this skill for complex, architecture-changing, governor-changing, or multi-task work after an approved Execution Packet. Do not use it for trivial single-file edits, one-step single-skill work, or read-only exploration; those follow the normal Default Coding Flow and exception-token rules.
 
 Before execution starts, confirm the Execution Packet contains:
 
