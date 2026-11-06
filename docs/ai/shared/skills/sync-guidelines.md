@@ -111,6 +111,7 @@ Before closing:
   of copying shared procedure text
 - verify shared procedures do not contain tool-specific instructions
 - **Compact sync headers**: use `> Last synced: YYYY-MM-DD via <reference>` (at most 200 UTF-8 bytes); never append narrative or `Prior:` chains. The one-off sync-log migration does not authorise per-PR archive writes.
+- **Optional-infra projections**: behaviour (toggles, env vars, dispatch semantics) has one home in the shared constitution plus its operations runbook; auto-loaded projections carry one-line pointers only.
 - **`project-status.md` table hygiene**: each data row must be <= 300 UTF-8 bytes (including pipes, all cells, and links), with a single-sentence impact; narrative belongs in `CHANGELOG.md [Unreleased]` and the PR body, never a per-PR archive write; count rows in the `Recent Major Changes` table; if row count exceeds 15, flag for archival; scan cells for multi-line content that would break markdown table rendering; when a new version ships, archive pre-release rows to `docs/history/archive/project-status/` following the PR-B.1 pattern
 
 Emit the full sync contract and clearly state whether the quality gate is closed

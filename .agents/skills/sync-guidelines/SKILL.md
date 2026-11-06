@@ -16,7 +16,7 @@ metadata:
 1. Determine the sync mode, gather incoming `Drift Candidates`, and load the governing sources (Phase 0)
 2. Reconcile drift candidates with code, shared references, harness docs, and wrappers (Phase 1)
 3. Refresh `project-dna` and dependent shared references as needed (Phase 2)
-4. Verify Hybrid C parity for Claude and Codex wrappers plus Antigravity shared-source references; keep sync headers in `> Last synced: YYYY-MM-DD via <reference>` form (<= 200 UTF-8 bytes, no narrative or `Prior:` chains); run `project-status.md` table hygiene check (each data row <= 300 UTF-8 bytes including pipes, all cells, and links and a one-sentence impact; narrative in `CHANGELOG.md [Unreleased]` and the PR body, never per-PR archive writes; row count > 15 → flag for archival, cell-wrap scan, version-release archive to `docs/history/archive/project-status/`); then close with the sync contract (Phase 3)
+4. Verify Hybrid C parity for Claude and Codex wrappers plus Antigravity shared-source references; keep sync headers in `> Last synced: YYYY-MM-DD via <reference>` form (<= 200 UTF-8 bytes, no narrative or `Prior:` chains); preserve optional-infra one-line pointers; run `project-status.md` table hygiene check (each data row <= 300 UTF-8 bytes including pipes, all cells, and links and a one-sentence impact; narrative in `CHANGELOG.md [Unreleased]` and the PR body, never per-PR archive writes; row count > 15 → flag for archival, cell-wrap scan, version-release archive to `docs/history/archive/project-status/`); then close with the sync contract (Phase 3)
 
 Read `AGENTS.md` and `docs/ai/shared/skills/sync-guidelines.md` for detailed steps.
 Also refer to `docs/ai/shared/drift-checklist.md` for inspection items.

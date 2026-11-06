@@ -1,6 +1,6 @@
 # Project Overview
 
-> Last synced: 2026-11-06 via #413, #415
+> Last synced: 2026-11-06 via #413, #415, #417, #418
 > For tech stack, refer to project-dna.md §8; for layer structure, refer to §1.
 > For the Optional infra toggle surface (env var → disabled behavior per infra), see AGENTS.md "Optional Infrastructure Toggles" + [ADR 042](../../docs/history/042-optional-infrastructure-di-pattern.md).
 > This file only contains **project-level context** not covered in project-dna.md.
@@ -26,7 +26,7 @@ Interface → Application → Domain ← Infrastructure
 - Embedding: Optional (EMBEDDING_PROVIDER env var, PydanticAIEmbeddingAdapter — OpenAI/Bedrock/Google/Ollama)
 - LLM: Optional (LLM_PROVIDER env var, build_llm_model() — OpenAI/Anthropic/Bedrock)
 - Message Broker: SQS/RabbitMQ/InMemory (BROKER_TYPE env var)
-- Error Notification: Optional (NOTIFICATION_PROVIDER env var, Slack/Discord webhook adapters via providers.Selector + NoopNotificationClient fallback; #17). Fired from the global exception handlers **and** from Taskiq worker task failures via `TaskFailureNotificationMiddleware` (#310); admin exceptions stay log-only by decision. Optional severity channel routing (#286): `NOTIFICATION_WARNING_THRESHOLD` — the sole switch — lowers the alerting floor to `min(severity, warning)` and routes that band to a second webhook, with `NOTIFICATION_CRITICAL_WEBHOOK_URL` / `NOTIFICATION_WARNING_WEBHOOK_URL` as per-tier overrides that fall back to the single target and are rejected at boot without the threshold (#315). Runbook: [`docs/operations/error-notifications.md`](../../docs/operations/error-notifications.md)
+- Error Notification: see [AGENTS.md § Optional Infrastructure Toggles](../../AGENTS.md#optional-infrastructure-toggles) + [runbook](../../docs/operations/error-notifications.md).
 - Logging: structlog + asgi-correlation-id; default level INFO; controlled via `LOG_LEVEL` / `LOG_JSON_FORMAT` env vars (dev/local/quickstart → console, stg/prod → JSON, #9)
 
 ## Environment Config Validation
