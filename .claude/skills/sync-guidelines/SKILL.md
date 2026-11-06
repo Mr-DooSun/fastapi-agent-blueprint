@@ -46,4 +46,4 @@ After completing the shared procedure:
 4. Update `.claude/rules/commands.md`
    (new CLI commands, env vars, test commands, verification commands)
 
-All rules files: update "Last synced" date line to current date.
+All rules files and project-dna: use `> Last synced: YYYY-MM-DD via <reference>` (<= 200 UTF-8 bytes); update the date without narrative or `Prior:` chains. Preserve historical chains in the one-off sync-log archive; do not append to it per PR.

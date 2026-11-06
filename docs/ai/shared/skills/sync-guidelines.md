@@ -110,6 +110,7 @@ Before closing:
 - verify Antigravity assets reference shared skills and governor policy instead
   of copying shared procedure text
 - verify shared procedures do not contain tool-specific instructions
+- **Compact sync headers**: use `> Last synced: YYYY-MM-DD via <reference>` (at most 200 UTF-8 bytes); never append narrative or `Prior:` chains. The one-off sync-log migration does not authorise per-PR archive writes.
 - **`project-status.md` table hygiene**: count rows in the `Recent Major Changes` table; if row count exceeds 15, flag for archival; scan cells for multi-line content that would break markdown table rendering; when a new version ships, archive pre-release rows to `docs/history/archive/project-status/` following the PR-B.1 pattern
 
 Emit the full sync contract and clearly state whether the quality gate is closed
