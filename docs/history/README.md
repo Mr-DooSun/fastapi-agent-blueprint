@@ -73,7 +73,7 @@ Read top-to-bottom; each builds on the ones above it.
 | [062](062-generated-harness-inventory.md) | Generated Harness Inventory | Tracked scope discovery, reviewed bucket judgments and generated-output gate. |
 | [063](063-on-demand-harness-documentation.md) | Consult Detailed References on Demand | Consulted commands, scoped projections and compact policy references with historical snapshots. |
 | [064](064-scoped-adr-evidence-in-agent-workflow.md) | Scoped ADR Evidence in Agent Workflow | Connect applicable decision clauses and status to choices, current evidence, conflicts and revisit routes. |
-| [065](065-native-skill-discovery-and-procedure-authority.md) | Native Skill Discovery and Shared Procedure Authority | Keep tool-native discovery and invocation metadata separate from shared procedure authority. |
+| [065](065-native-skill-discovery-and-procedure-authority.md) | Native Skill Discovery and Procedure Authority | Keep tool-native discovery and invocation metadata separate from shared procedure authority. |
 
 ## Archive
 
@@ -168,15 +168,15 @@ e.g.: 042-your-decision-topic.md
 ## Rationale
 <!-- Lead with architectural "why", not implementation details -->
 
-## Consequences
-<!-- Applicable scope, trade-offs, evidence/limits, and conditions for revisiting.
-Link current code/tests separately; do not treat Accepted as implementation proof. -->
-
 ### Self-check
 - [ ] Does this decision address the root cause, not just the symptom?
 - [ ] Is this the right approach for the current project scale?
 - [ ] Will a reader understand "why" 6 months from now without extra context?
 - [ ] Am I recording the decision process, or justifying a conclusion?
+
+## Consequences
+<!-- Applicable scope, trade-offs, evidence/limits, and conditions for revisiting.
+Link current code/tests separately; do not treat Accepted as implementation proof. -->
 ```
 
 ### Status values

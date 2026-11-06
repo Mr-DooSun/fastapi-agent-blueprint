@@ -1,12 +1,11 @@
 # 065. Native Skill Discovery and Procedure Authority
 
 - Status: Accepted
-- Date: 2026-11-06
-- Scope: #414 A5/A6/B6, #419, #420; #427 investigation-skill boundaries
-- Decision type: retrospective record of the owner-authorized, implemented batch,
-  originally reviewed in the superseded [PR #434](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/434)
-  for delivery through separate issue PRs
-- Refines: [ADR 047](047-governor-review-provenance-consolidation.md) G4
+- Date: 2026-11-06 (recording date; the batch was implemented and reviewed in PR #434, 2026-11-05 to 2026-11-06 UTC)
+- Record type: retrospective — record of the owner-authorized, implemented batch, delivered through separate issue PRs
+- Decision evidence: the superseded [PR #434](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/434) review
+- Related issue: #414 (A5/A6/B6), #419, #420; #427 (investigation-skill boundaries)
+- Amends / supersedes: refines [ADR 047](047-governor-review-provenance-consolidation.md) G4
 - Related: [ADR 045](045-hybrid-harness-target-architecture.md),
   [ADR 060](060-ticket-session-boundaries-and-review-packets.md),
   [ADR 063](063-on-demand-harness-documentation.md)

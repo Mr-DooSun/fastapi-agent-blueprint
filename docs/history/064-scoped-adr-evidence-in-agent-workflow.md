@@ -1,9 +1,12 @@
 # 064. Scoped ADR Evidence in Agent Workflow
 
 - Status: Accepted
-- Date: 2026-11-06
-- Decision type: Follow-up design requested during the original PR #434 review, for delivery through separate issue PRs; not an account of earlier deliberation
-- Related: [PR #434](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/434), [ADR 053](053-shared-review-protocol.md), [ADR 060](060-ticket-session-boundaries-and-review-packets.md), [ADR 063](063-on-demand-harness-documentation.md)
+- Date: 2026-11-06 (decision and recording date)
+- Record type: contemporaneous — follow-up design requested during the original PR #434 review, for delivery through separate issue PRs; not an account of earlier deliberation
+- Decision evidence: owner request in the [PR #434](https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/434) review
+- Related issue: none (delivered as a separate follow-up PR)
+- Amends / supersedes: none; adds verified current ADR clauses to the Review Protocol rule-source list ([ADR 053](053-shared-review-protocol.md) carrier)
+- Related: [ADR 060](060-ticket-session-boundaries-and-review-packets.md), [ADR 063](063-on-demand-harness-documentation.md)
 
 ## Problem and evidence
 
