@@ -92,7 +92,7 @@
 | Bug fix | `/fix-bug` | `"{description}"` | Reproduce (existence gate) -> Trace (Cause Impact Matrix) -> Fix -> Verify, then a Bug Fix Report carrying `Outcome` |
 | DB migration | `/migrate-domain` | `generate\|upgrade\|downgrade\|status` | Manual review required after autogenerate |
 | New member onboarding | `/onboard` | (none) | Experience-level adaptive (Beginner/Intermediate/Advanced) |
-| Sub-feature design | `/plan-feature` | `"{description}"` | Recursive use when splitting large features |
+| Sub-feature design | `/plan-feature` | `"{description}"` | Decompose inside the same Execution Packet; never invoke recursively |
 | PR review | `/review-pr` | `{number\|URL}` | Diff review + drift candidates + explicit sync-required decision |
 | DynamoDB migration | `python -m migrations.dynamodb.cli --env {env}` | — | DynamoDB table/GSI creation (manual CLI) |
 | **Unmappable** items | Manual implementation | — | External API integrations, middleware, etc. |
@@ -249,3 +249,11 @@ update_workflow_state(
     updated_by="skill:plan-feature",
 )
 ```
+
+## 7. Ticket Brief Projection
+
+Project an approved Execution Packet into the [ticket contract](ticket-workflow.md):
+intent, non-goals, done-when, premises with evidence, approved packet/approval,
+predecessors, file set, Parallel Group and Supervision L1-L3. Keep implementation
+choices in the packet. Epic/ticket/task criteria and fresh-session execution live
+in that contract; native issue bodies use the repository Execution Ticket template.

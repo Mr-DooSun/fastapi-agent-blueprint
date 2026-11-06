@@ -50,6 +50,8 @@ Each shared procedure and both tool wrappers retain a compact `Default Flow Posi
 | `sync-guidelines` | `completion gate`; follow-up to `self-review` when drift exists | No additional condition. Required after review-detected drift, changes to shared rule sources, or ADR creation/amendment. | End of work; close documentation/workflow drift without re-entering the flow. | No self-recursion or invocation of `plan-feature`. |
 | `fix-bug` | `framing` (Reproduce), `plan` (Trace), `implement` (Fix), `verify` (Verify) | Required if the trace reveals multiple candidate layers (Service/Router/Schema) or a missing architectural pattern; skip single-layer single-line fixes. | `review-architecture` if layer interactions changed; `security-review` if security-relevant → `review-pr`. | No self-recursion or `plan-feature` for the bug’s own framing/plan (Phases 1+2 own them). ADR 050 still requires stop → report → `plan-feature` for a missing capability; scope expansion is not recursion. |
 | `onboard` | Outside coding flow; explicit session-start orientation | Not a coding-flow phase; `[exploration]` is appropriate for accompanying read-only investigation. | Subsequent coding is a fresh Default Flow run. | No self-recursion or invocation of `plan-feature`. |
+| `trace` | Outside coding flow; read-only exploration | None; investigate only when requested. | Return cited execution path and unknown edges to the caller; no edits or stage mutation. | Do not recurse or invoke other skills. |
+| `why` | Outside coding flow; read-only exploration | None; investigate only when requested. | Return cited decision history and uncertainty to the caller; no edits or stage mutation. | Do not recurse or invoke other skills. |
 
 A skill must not invoke itself recursively. The seven guarded skills named by [migration-strategy.md](migration-strategy.md) retain a one-line recursion guard in every layer; the table also preserves implementation-skill planning guards. ADR 050 and ADR 054 in §2 govern scope expansion and the planning/execution boundary.
 
@@ -215,6 +217,16 @@ harness workflow state is missing, verification is pending, or governor-changing
 work lacks recorded review state. Future PRs may promote only high-confidence
 conditions to hard gates or CI failures after tests prove the detection avoids
 exploration, trivial edits, and single-skill work.
+
+### Ticket session boundary (ADR 060)
+
+[Ticket workflow](ticket-workflow.md) defines the native brief, epic/ticket/task
+criteria, fresh serial execution, PR risk floor, precision-filter review, integrated
+sync, and prospective measurement. The approved issue/packet, PR and CI provide
+durable intent/evidence; hydrate the existing local ledger as resume state. Keep
+ADR 054's explicit execute-plan boundary and gate behavior. Trace/why investigations
+are on demand, read-only and isolated; their shared procedures replace duplicated
+bug-path examples and onboarding history stories.
 
 ### Model identity
 

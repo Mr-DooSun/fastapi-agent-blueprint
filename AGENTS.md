@@ -114,7 +114,7 @@ Evaluate the flow per unit of implementation-class work, not per prompt. A capab
 
 ### Self-Review Step — Independent Review Trigger (Pillar 2)
 
-Self-review is mandatory. Changes touching Tier A, B, or C in [governor-paths.md](docs/ai/shared/governor-paths.md), unless entirely covered by an exclusion, must include independent review. Non-governor changes are exempt from independent review.
+Self-review is mandatory. Changes touching Tier A, B, or C in [governor-paths.md](docs/ai/shared/governor-paths.md), unless entirely covered by an exclusion, must include independent review. Non-governor changes are exempt from the governor requirement. Implementation tickets separately default to a one-round P0/P1 precision-filter pre-review; see [ticket workflow](docs/ai/shared/ticket-workflow.md) and [review protocol](docs/ai/shared/review-protocol.md#ticket-precision-filter-mode-adr-060) (ADR 060).
 
 Use one mode and record `reviewer`:
 

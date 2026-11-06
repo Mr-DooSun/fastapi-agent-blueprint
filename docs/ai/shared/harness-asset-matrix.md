@@ -58,6 +58,7 @@ The shared constitution and the tool-level entry points. These files transitivel
 | `.mcp.json` | Keep | Low | Low |
 | `docs/history/045-hybrid-harness-target-architecture.md` | Keep | Low | High |
 | `.github/pull_request_template.md` | Keep | Low | High |
+| `.github/ISSUE_TEMPLATE/ticket.yml` | Keep | Low | Unmeasured |
 
 ### `AGENTS.md`
 
@@ -202,6 +203,8 @@ rather than primary entry points (`Overlay`).
 | `.agents/shared/governor/` (package) | Keep | Low | High |
 | `tools/check_g_closure.py` | Drop | None (removed) | None |
 | `tools/check_governor_footer.py` | Keep | Low | High |
+| `ticket-workflow.md` | Keep | Low | Unmeasured |
+| `tools/review_packet.py` | Keep | Low | Unmeasured |
 
 ### `project-dna.md`
 
@@ -418,9 +421,19 @@ rather than primary entry points (`Overlay`).
 
 ---
 
+### Ticket and review packet assets (#427)
+
+- **Assets**: `ticket-workflow.md`, `tools/review_packet.py`, `.github/ISSUE_TEMPLATE/ticket.yml`.
+- **Bucket**: Keep (three rows across Tier 0/1).
+- **Current role**: Native brief/session contract, deterministic risk floor, issue form.
+- **Why they exist**: ADR 060; review evidence must fit a durable ticket handoff.
+- **Final location**: unchanged; metrics CSV is supporting data owned by ticket-workflow.
+- **Migration risk**: Low; no runtime enforcement or ledger schema change.
+- **Stability impact**: Unmeasured; the classifier does not certify correctness.
+
 ## Tier 2 — Skills (3-Layer Hybrid C)
 
-All 45 `Default Flow Position` sections point to the canonical per-skill routing table in [target-operating-model §1](target-operating-model.md). The seven local recursion guards remain in every layer; Phase/Step overview parity is unchanged.
+All 51 `Default Flow Position` sections point to the canonical per-skill routing table in [target-operating-model §1](target-operating-model.md). The seven local recursion guards remain in every layer; Phase/Step overview parity is unchanged.
 
 Fifteen skills, each existing in three layers (`docs/ai/shared/skills/{name}.md` shared procedure + `.claude/skills/{name}/SKILL.md` wrapper + `.agents/skills/{name}/SKILL.md` wrapper). The bucket is assigned per skill (all three layers share the bucket); the matrix records the skill once.
 
@@ -445,6 +458,9 @@ Bucket guideline:
 | `review-pr` | Overlay | Low | High |
 | `fix-bug` | Overlay | Low | Medium |
 | `onboard` | Overlay | Low | Low |
+| `trace` | Keep | Low | Unmeasured |
+| `why` | Keep | Low | Unmeasured |
+
 
 ### `new-domain` (Keep)
 
@@ -587,6 +603,15 @@ Bucket guideline:
 - **Notes**: Largest skill body (328 lines shared procedure); could be a future Drop candidate after a few revisions of usage data.
 
 ---
+
+### `trace` and `why`
+
+- **Current role**: On-demand read-only isolated investigations with source citations.
+- **Bucket**: Keep (two skill triples, 17 total).
+- **Why they exist**: #427; replace fix-bug's surface table and onboard's scripted histories.
+- **Final location**: Shared procedures plus Claude fork and Codex read-only wrappers.
+- **Migration risk**: Low; no automatic invocation or runtime hook changes.
+- **Stability impact**: Unmeasured; prospective measurement is required.
 
 ## Tier 3 — Hooks
 
@@ -852,17 +877,23 @@ Seven rule files (5 Claude + 1 Codex + 1 Antigravity). All `Keep` except `comman
 
 | Bucket | Count | Share | Notes |
 |---|---|---|---|
-| Keep | 66 | ~75% | Project-specific architecture / safety / reference value (incl. admin-design-system.md #193 + 4 design + 3 self-coherence-recovery process-governor artefacts + 2 Phase 2 #121 hooks + `session-start-context.sh` rowed in the #281 sync + Antigravity config assets + Phase 5 #124 shared governor package now extended by ADR 047 PR B-F with `sync_cosmetic.py`; ADR 047 PR B-F also added `tools/check_governor_footer.py` + `.github/workflows/governor-footer-lint.yml` in place of the removed `tools/check_g_closure.py`) |
-| Overlay | 21 | ~24% | Process discipline now routed by Default Flow (issue #268 adds the 2 stage-gate hooks; issue #281 / ADR 054 adds the 2 plan→execute block hooks; issue #257 adds `execute-plan`; Phase 3 #122 adds 3 verify-first; Phase 4 #123 adds 2 completion-gate hooks; the Antigravity verify-first / completion-gate / stop advisory shims add 3 Overlay assets; Phase 5 #124 reduces those hooks to thin shims without changing buckets) |
-| Replace | 0 | 0% | None in initial inventory; reserved for future passes |
-| Drop | 1 | ~1% | `tools/check_g_closure.py` retired by ADR 047 PR B-F (Guard G enforcement target moved to PR-description Governor Footer; `tools/check_governor_footer.py` is the replacement and is counted under `Keep`). |
-| **Total** | **90** | 100% | |
+| Keep | 71 | ~75% | Project references, safety, native ticket handoff and review tooling; excludes gitignored settings.local.json |
+| Overlay | 23 | ~24% | Process discipline routed by the Default Coding Flow |
+| Replace | 0 | 0% | None |
+| Drop | 1 | ~1% | Historical tools/check_g_closure.py retirement |
+| **Total** | **95** | 100% | Tracked matrix rows including the historical Drop |
 
-Counting note: `Tier 0=14` (tool entry points and top-level governance files), `Tier 1=22` (18 Keep + 3 Overlay + 1 Drop — the 18 Keep are the 15 `docs/ai/shared/*.md` reference/design docs [incl. `admin-design-system.md`, `governor-paths.md`, and the 3 design living docs] + the frozen `governor-review-log/` directory + the `.agents/shared/governor/` package + `tools/check_governor_footer.py`; the 3 Overlay are `planning-checklists.md` / `drift-checklist.md` / `onboarding-role-tracks.md`; the 1 Drop is the historical `tools/check_g_closure.py`. No `docs/history/` ADR is a Tier 1 row — the matrix rows exactly one ADR, `045`, in Tier 0), `Tier 2=15` (skill rows; each row covers all 3 wrapper layers), `Tier 3=33` (#334 added `.claude/hooks/verify-log.sh` + `.claude/hooks/verify_log.py` — the first `PostToolUse` **Bash** matcher in `.claude`, without which the tree produced none of the verify-log state its own tooling reads; #281 / ADR 054 added `.claude/hooks/pre-tool-stage-block.sh` + `.claude/hooks/pre_tool_stage_block.py` and rowed the previously-omitted `.claude/hooks/session-start-context.sh`; #268 added `.claude/hooks/stage-gate.sh` + `.claude/hooks/post_tool_stage_gate.py`; #269 folded Codex stage-gate into the existing Stop hook; Antigravity adds 8 Python hook shims; Phase 4 #123 = 18, Phase 3 = 16, Phase 2 = 13, Phase 1 = 10; Phase 5 #124 converted 6 of these to thin shims without changing the count), `Tier 4=7` — sum 91. The 90 figure above excludes `.claude/settings.local.json` from the matrix-row count because it is `.gitignore`d. The bucket-share percentages use 90 as the denominator (all 90 matrix rows, including the retired Drop, whose ~1% share is real; the "89 active" figure below excludes only that retired Drop row). (Tier 1 has 22 quick-table rows — 18 Keep, 3 Overlay, 1 Drop; a prior sync labelled this tier 21 and recorded base Keep as 54, undercounting the total by one Keep row — corrected here.)
+Counting note: quick-table rows are Tier 0=15, Tier 1=24, Tier 2=17,
+Tier 3=33, Tier 4=7: 96 including gitignored `.claude/settings.local.json`.
+Excluding that local-only row gives 95 (71 Keep + 23 Overlay + 1 Drop),
+or 94 active tracked assets. #427 adds five Keep rows: the ticket issue form,
+ticket-workflow reference, review_packet tool, and trace/why skill triples.
+The prior summary's Overlay count was 21 despite 23 actual quick-table rows;
+this reconciliation counts the rows rather than carrying that stale count forward.
 
 This distribution matches the "Mostly Local with Philosophy Overlay" model declared in [ADR 045 §D4](../../history/045-hybrid-harness-target-architecture.md). The `Replace` column is empty (0): no asset's content is being rewritten. The `Drop` column has exactly one historical entry — `tools/check_g_closure.py`, a file removed by ADR 047 PR B-F and retained as a `Drop` row so the retirement stays traceable. (During the first triage the only `Drop` candidate then identified — a sh-wrapper `.py` pair — was overturned by self-verification as an active component; the `check_g_closure.py` Drop was recorded later, once that file was genuinely removed.)
 
-If a future `Replace` candidate emerges, the threshold is: Keep+Overlay would otherwise force the asset into structural inconsistency with the Default Flow. None of the current 89 active assets meet that (the 90th matrix row is the retired `tools/check_g_closure.py` Drop, which is not a `Replace` candidate).
+If a future `Replace` candidate emerges, the threshold is: Keep+Overlay would otherwise force the asset into structural inconsistency with the Default Flow. None of the current 94 active assets meet that (the 95th matrix row is the retired `tools/check_g_closure.py` Drop, which is not a `Replace` candidate).
 
 ## Verification
 
@@ -872,7 +903,7 @@ The following self-checks must pass before this matrix is treated as authoritati
   ```bash
   # Tier 0 (the only constitutional ADR row is docs/history/045-*.md; every other
   #  docs/history/NNN-*.md ADR is indexed by docs/history/README.md, not rowed here)
-  ls AGENTS.md CLAUDE.md .codex/config.toml .codex/hooks.json \
+  ls .github/ISSUE_TEMPLATE/ticket.yml AGENTS.md CLAUDE.md .codex/config.toml .codex/hooks.json \
      .claude/settings.json .claude/settings.local.json .gemini/settings.json \
      .antigravity/plugin.json .antigravity/gemini-extension.json \
      .antigravity/mcp_config.json .antigravity/permissions.json .mcp.json \

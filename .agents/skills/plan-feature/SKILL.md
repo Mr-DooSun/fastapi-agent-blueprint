@@ -32,3 +32,7 @@ Recursion guard: Do not invoke this skill recursively; implementation skills mus
    complex, architecture-changing, governor-changing, or multi-task work to
    `$execute-plan` as a separate step. Do not implement within `$plan-feature`
    (ADR 054; on Codex the plan→execute drift surfaces as a Stop-time advisory).
+
+Ticket handoff follows `docs/ai/shared/ticket-workflow.md`: planning publishes
+native ticket briefs and stops; execution loads the approved ticket issue in a
+fresh session and reconciles local ledger state against issue/PR/CI evidence.

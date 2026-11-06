@@ -24,6 +24,16 @@ Before execution starts, confirm the Execution Packet contains:
 If any field is missing, stop and return to `plan-feature`; do not infer the
 missing contract during execution.
 
+## Ticket input and fresh session
+
+Accept a ticket issue reference; load its approved parent Execution Packet and the
+[ticket workflow](../ticket-workflow.md). Run in a fresh session for that ticket,
+retaining existing explicit authorization. Verify premises and predecessor/PR/CI
+state first. Hydrate the existing ledger goal/scope/plan and planned task fields
+from the issue before entering executing; a missing local ledger is not a missing
+approval. A stale or contradictory ledger cannot supply intent. Keep ADR 054's
+explicit execute-plan boundary and the existing stage vocabulary/schema.
+
 ## Execution Procedure
 
 1. **Record workflow start** in the shared ledger:
@@ -53,16 +63,17 @@ missing contract during execution.
 5. **Run Verification Gates exactly**. Verification failure returns to the
    current task; do not mark the task complete until the failing gate passes or
    is explicitly deferred with rationale.
-6. **Run Review Gates** before completion. Governor-changing work defaults to
-   cross-tool review by the other harness — Codex-implemented work is reviewed
+6. **Run Review Gates** before completion. Implementation tickets default to one precision-filter
+   cross-tool review by the other harness per `review-protocol.md` §7; mandatory
+   governor review and full requested audits remain required. Codex-implemented work is reviewed
    by Claude, Claude-implemented work is reviewed by Codex:
    ```bash
    # Codex-implemented change set → Claude reviews:
    claude -p --permission-mode plan "<review prompt>"
    # Claude-implemented change set → Codex reviews:
-   codex exec --sandbox read-only "<review prompt>"
+   codex exec --model gpt-6.1-sol --sandbox read-only "<review prompt>"
    ```
-   Start from the default model and effort; escalate to a stronger model or
+   Use the ticket review model above with default effort; escalate to a stronger model or
    higher effort only when warranted (AGENTS.md § Independent Review Trigger;
    `target-operating-model.md` §5 Model And Effort Cost Policy).
    If the reviewing tool's authentication or tooling fails, use
@@ -76,7 +87,11 @@ missing contract during execution.
        updated_by="skill:execute-plan",
    )
    ```
-7. **Close workflow state** only after Verification Gates and Review Gates are
+7. **Integrate sync into the feature PR** before final review; standalone sync
+   is reserved for release audits or post-merge drift. Generate the review packet
+   (`uv run python tools/review_packet.py --base origin/main`) and report actual gate
+   outputs and unverified limits. Follow the ticket measurement protocol.
+8. **Close workflow state** only after Verification Gates and Review Gates are
    satisfied:
    ```python
    update_workflow_state(

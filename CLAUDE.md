@@ -21,8 +21,8 @@ This file intentionally keeps only Claude-specific setup and workflow guidance.
 
 ## Skills — defined in `.claude/skills/` (auto-listed each session; Codex: `.agents/skills/`)
 
-Two are user-invoked only (`disable-model-invocation: true`) and therefore absent from the auto list:
-`/sync-guidelines` (closure step, see Quality Gate Flow) and `/migrate-domain {generate|upgrade|downgrade|status}`.
+Four are user-invoked only (`disable-model-invocation: true`) and therefore absent from the auto list:
+`/sync-guidelines` (closure), `/migrate-domain {generate|upgrade|downgrade|status}`, and on-demand `/trace` and `/why`.
 
 ## Default Coding Flow
 

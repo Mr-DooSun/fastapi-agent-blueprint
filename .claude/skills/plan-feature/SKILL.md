@@ -43,3 +43,7 @@ Also refer to `docs/ai/shared/planning-checklists.md` for question bank and temp
 For complex, architecture-changing, governor-changing, or multi-task work, hand
 the approved Execution Packet to `/execute-plan` **as a separate step** — do not
 implement within `/plan-feature`. Stopping at the packet is mandatory (ADR 054).
+
+Ticket handoff follows `docs/ai/shared/ticket-workflow.md`: planning publishes
+native ticket briefs and stops; execution loads the approved ticket issue in a
+fresh session and reconciles local ledger state against issue/PR/CI evidence.

@@ -193,7 +193,7 @@ def test_links_na_passes():
 
 
 def test_links_url_then_na_entry_passes():
-    """#314: the PR template prescribes `<PR url>, <prior-log url or "n/a">`.
+    """#314: the PR template prescribes `<PR URL>, n/a`.
     A first-round PR has no prior log, so `n/a` must be valid as a trailing
     list entry — not only as the entire value."""
     good = VALID_FOOTER.replace(
@@ -213,8 +213,8 @@ def test_links_template_literal_example_passes():
     template = (REPO_ROOT / ".github" / "pull_request_template.md").read_text(
         encoding="utf-8"
     )
-    assert '- links: <PR url>, <prior-log url or "n/a">' in template, (
-        "template links shape changed — update this test and the checker together"
+    assert "- links: <PR URL>, n/a" in template, (
+        "template links shape changed — re-verify this contract against the checker"
     )
     good = VALID_FOOTER.replace(
         "https://github.com/Mr-DooSun/fastapi-agent-blueprint/pull/158",
