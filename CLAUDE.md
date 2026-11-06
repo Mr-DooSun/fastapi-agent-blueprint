@@ -12,7 +12,7 @@ This file intentionally keeps only Claude-specific setup and workflow guidance.
 ## Claude Collaboration Rules
 - If diagnosis/review result is "adequate", do not force improvement suggestions
 - Only propose modifying or deleting existing Claude-specific structures when the benefit is clear
-- Skill `SKILL.md` frontmatter supported attributes: `name`, `argument-hint`, `description`, `disable-model-invocation`, `compatibility`
+- Skill frontmatter follows the [Claude Code reference](https://code.claude.com/docs/en/skills#frontmatter-reference), including `context: fork`, `agent`, `model`, `effort`, `allowed-tools` and `paths`; consult the reference for supported fields and semantics instead of maintaining a local exhaustive list.
 - Before changing shared rules or structure, follow the drift management rules in `AGENTS.md`
 - Shared workflow references now live under `docs/ai/shared/`; Claude skills should point there instead of keeping private copies
 - When delegating to agents, explicitly pass the list of changed files
