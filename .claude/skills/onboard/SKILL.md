@@ -20,9 +20,9 @@ description: |
 
 Execute the following to understand the current project state (do not output to the user):
 
-1. Read `.claude/rules/project-overview.md` -- tech stack and app structure
-2. Read `.claude/rules/project-status.md` -- confirm work in progress
-3. Read `.claude/rules/architecture-conventions.md` -- current DO/DON'T rules
+1. Use `.claude/rules/project-overview.md` (auto-loaded); re-read only if the file is not visible in the current context.
+2. Use `.claude/rules/project-status.md` (auto-loaded); re-read only if the file is not visible in the current context.
+3. Use `.claude/rules/architecture-conventions.md` (auto-loaded); re-read only if the file is not visible in the current context.
 4. Glob `src/*/` to identify current domain list (excluding `_core`, `_apps`)
 5. `git log --oneline -5` to check recent activity
 
@@ -39,7 +39,7 @@ Read `docs/ai/shared/skills/onboard.md` for the full onboarding flow, including
 Q&A/Explore mode rules, topic maps, and experience-level adjustments.
 
 ## Claude-Specific: Phase 2 and Phase 5 Sources
-- Phase 2 tech stack: read from `.claude/rules/project-overview.md`
-- Phase 5 Skills list: read from `CLAUDE.md` Skills section
-- Phase 5 CLI commands: read from `.claude/rules/commands.md`
+- Phase 2 tech stack: use `.claude/rules/project-overview.md` (auto-loaded); re-read only if the file is not visible in the current context.
+- Phase 5 Skills list: use the native `.claude/skills/` index; include the two user-only skills named in `CLAUDE.md`.
+- Phase 5 CLI commands: use `.claude/rules/commands.md` (auto-loaded); re-read only if the file is not visible in the current context.
 - Phase 6 wrap-up: include `CLAUDE.md` as a key reference material

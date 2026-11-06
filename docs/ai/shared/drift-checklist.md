@@ -29,7 +29,7 @@ Read CLAUDE.md and verify Claude-only guidance still matches the harness:
 
 - [ ] `.mcp.json` role is described as Claude-only MCP configuration
 - [ ] `.claude/settings.json` hooks still match the hook files and the CLAUDE.md tool guidance
-- [ ] Slash skill list matches the actual `.claude/skills/` directory
+- [ ] Native discovery matches `.claude/skills/`; `sync-guidelines` and `migrate-domain` remain user-only (`disable-model-invocation: true`) exceptions
 
 ## 1B. `.claude/rules/absolute-prohibitions.md` ↔ AGENTS.md Sync Check
 

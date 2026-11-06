@@ -26,4 +26,4 @@ Identify domains using Glob pattern `src/*/` and exclude `_core`, `_apps` prefix
 
 Read `docs/ai/shared/skills/new-domain.md` for detailed steps.
 Also refer to `docs/ai/shared/scaffolding-layers.md` for the detailed file list and import paths.
-Read `.claude/rules/architecture-conventions.md` for object roles and data flow.
+Use `.claude/rules/architecture-conventions.md` (auto-loaded); re-read only if the file is not visible in the current context.

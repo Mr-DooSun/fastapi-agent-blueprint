@@ -13,9 +13,9 @@ Description: $ARGUMENTS
 
 ## Preparation
 
-1. Read `.claude/rules/architecture-conventions.md` -- confirm current DO/DON'T rules
-2. Read `.claude/rules/project-status.md` -- confirm work currently in progress
-3. Read `.claude/rules/project-overview.md` -- confirm tech stack and structure
+1. Use `.claude/rules/architecture-conventions.md` (auto-loaded); re-read only if the file is not visible in the current context.
+2. Use `.claude/rules/project-status.md` (auto-loaded); re-read only if the file is not visible in the current context.
+3. Use `.claude/rules/project-overview.md` (auto-loaded); re-read only if the file is not visible in the current context.
 4. Identify current domain list: use Glob pattern `src/*/` and exclude `_core`, `_apps` prefixes
 
 ## Default Flow Position
