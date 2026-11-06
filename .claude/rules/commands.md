@@ -190,6 +190,9 @@ uv run python tools/check_examples_copyflow.py
 # No argv = full repo; pass paths to check only those files.
 uv run python tools/check_doc_links.py
 
+# Check tracked harness byte budgets (blocking context-budget hook, ADR 059)
+uv run python tools/check_context_budget.py
+
 # Scan Alembic revisions for unsafe (non-zero-downtime) DDL — advisory (ADR 056)
 uv run python tools/check_migration_safety.py
 ```

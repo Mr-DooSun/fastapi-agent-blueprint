@@ -230,3 +230,7 @@ below and surface any findings as R-points with the same closure categories
 **Language Policy**
 - [ ] Any Tier 1 file modified contains only English prose (bilingual escape
   tokens and `LOCALE_DATA_FILES` are the two narrow exceptions).
+
+Context-budget gate: run `uv run python tools/check_context_budget.py` after sync.
+The blocking hook enforces byte limits previously checked by eye. Sync dates equal
+the last content change; do not touch a file whose content did not change.

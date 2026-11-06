@@ -326,5 +326,6 @@ See [migration commands](docs/ai/shared/repo-facts.md#migration).
 - `AGENTS.md` is the canonical source for shared rules — tool-specific harness docs point here, never re-copy
 - Shared rule sources: `AGENTS.md`, `docs/ai/shared/`, `.claude/`, `.codex/`, `.antigravity/`, `.gemini/`, `.agents/`
 - Update related docs in the same change when shared rules or harness behavior changes (see drift-checklist.md for the full sync checklist)
+- Context growth: `python3 tools/check_context_budget.py` blocks over-budget tracked harness content (ADR 059); sync dates record content changes, never periodic refreshes.
 - Language drift: new prose in Tier 1 paths must be English — run `python3 tools/check_language_policy.py` before closing work
 - Link drift: a document that points at a moved authority is drift the reader cannot see. `python3 tools/check_doc_links.py` resolves every relative markdown link and `#anchor` in the repository against the git index (#408); it runs blocking on every commit, so the usual reason to invoke it by hand is to check a target *before* moving or renaming it

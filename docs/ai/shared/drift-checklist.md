@@ -126,7 +126,7 @@ Read each `.claude/rules/` file and compare against current code:
 - [ ] Test commands still cover each infra variant (RDB, DynamoDB, Broker)?
 
 ### All rules files
-- [ ] "Last synced" date of every rules file is within the last two weeks? Keep each rules header and the `project-dna.md` date line in `> Last synced: YYYY-MM-DD via <reference>` form; no narrative or `Prior:` chains. Historical chains are preserved in the one-off `sync-log.md` archive.
+- [ ] Sync dates equal the last substantive content change; never refresh an unchanged file merely for age. Keep each rules header and the `project-dna.md` date line in `> Last synced: YYYY-MM-DD via <reference>` form; no narrative or `Prior:` chains. Historical chains are preserved in the one-off `sync-log.md` archive.
 
 ## 4. project-dna.md ↔ Code Consistency Check
 
@@ -260,3 +260,7 @@ Use these scenario checks when validating the redesigned workflow:
 - Detailed steps per phase (inspection targets, conditions, branching logic)
 - Output format examples, checklists, file lists, grep patterns
 - Cross-references to other `docs/ai/shared/` documents
+
+Context-budget gate: run `uv run python tools/check_context_budget.py` after sync.
+The blocking hook enforces byte limits previously checked by eye. Sync dates equal
+the last content change; do not touch a file whose content did not change.

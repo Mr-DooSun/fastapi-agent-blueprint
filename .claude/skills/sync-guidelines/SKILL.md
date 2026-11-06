@@ -48,3 +48,7 @@ After completing the shared procedure:
 Optional-infra behaviour (toggles, env vars, dispatch semantics) is described once in `AGENTS.md` § Optional Infrastructure Toggles plus its `docs/operations/` runbook; `.claude/rules/*` carry a one-line pointer only.
 
 All rules files and project-dna: use `> Last synced: YYYY-MM-DD via <reference>` (<= 200 UTF-8 bytes); update the date without narrative or `Prior:` chains. Preserve historical chains in the one-off sync-log archive; do not append to it per PR.
+
+Context-budget gate: run `uv run python tools/check_context_budget.py` after sync.
+The blocking hook enforces byte limits previously checked by eye. Sync dates equal
+the last content change; do not touch a file whose content did not change.
