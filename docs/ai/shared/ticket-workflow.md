@@ -18,7 +18,11 @@ brief is a projection of that packet, not a second implementation plan. Use the
 A standalone ticket may carry its packet in its own body. The brief records:
 
 1. Intent, explicit non-goals, observable done-when criteria.
-2. Premises with code, test, issue, ADR, or runtime evidence pointers.
+2. Premises with code, test, issue, ADR, or runtime evidence pointers. For an
+   affected architectural choice, project the [scoped Decision Basis](adr-evidence.md)
+   from the packet: why the current clause applies, the constraint on this ticket,
+   and code/test evidence or an explicit unknown. An ADR ID alone is not evidence
+   that the premise holds; keep implementation options in the parent packet.
 3. Parent packet/reference and approval evidence, predecessors, file set,
    Parallel Group, and Supervision L1/L2/L3 from
    [planning-checklists](planning-checklists.md#4-supervision-level-definitions).
@@ -35,7 +39,11 @@ its premises before editing, using the existence gate in
 [fix-bug Phase 1](skills/fix-bug.md#phase-1-reproduce): distinguish observed,
 inferred, and second-hand claims; a disproved premise needs a corrected contract,
 not a speculative implementation. Check only relevant references, avoiding broad
-repository rediscovery. Newly missing capability follows ADR 050.
+repository rediscovery. Recheck only the applicable clause's status/amendments and
+current carrier against the ticket's code evidence; an Accepted ADR alone cannot
+confirm a runtime claim. Report unresolved decision/code conflicts through the
+scoped contract rather than silently overriding current rules. Newly missing
+capability follows ADR 050.
 
 Run sequentially by default. Parallel tickets require disjoint declared file sets,
 no unresolved dependency, and available human review capacity. Discovery of overlap
@@ -57,7 +65,10 @@ tracked working tree, including staged edits; unrelated base-tip commits are exc
 The command reports changed files ranked by risk and
 added/deleted counts; binary changes are high risk. It does not run verification.
 The PR's first screen contains intent, derived risk + reasons, highest-risk files,
-commands with concise observed output/exit status, and unverified limits. Put
+commands with concise observed output/exit status, and unverified limits. For an
+affected design choice, connect intent/change summary to its governing clause and
+current evidence through the packet's scoped Decision Basis; do not add a ceremonial
+ADR-read checkbox. Put
 supporting details below the collapsed section; keep the real Governor Footer
 outside it. Never copy a template example as a test result.
 

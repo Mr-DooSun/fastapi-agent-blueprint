@@ -1,6 +1,6 @@
 # Project Status
 
-> Last synced: 2026-11-06 via #413, #415, #417, #418
+> Last synced: 2026-11-06 via #414, #427
 
 ## Current Version Context
 - Latest release: v0.11.2 (2026-11-03)
@@ -34,6 +34,7 @@ Narrative belongs in
 
 | Feature | Issue | Impact |
 |---------|-------|--------|
+| ADR decision evidence | #414, #427 | Scoped clauses, applicability and current proof flow through existing artifacts (ADR 064/065). |
 | Context budgets and skill routing | #413, #415–#420, #426 | Compact tracked context, preserve routing in TOM, and block byte regrowth (ADR 059). |
 
 ## Architecture Violation Status
