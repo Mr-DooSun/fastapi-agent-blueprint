@@ -27,3 +27,7 @@ See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.
    are satisfied.
 
 Read `docs/ai/shared/skills/execute-plan.md` for the full procedure.
+
+Ticket handoff follows `docs/ai/shared/ticket-workflow.md`: planning publishes
+native ticket briefs and stops; execution loads the approved ticket issue in a
+fresh session and reconciles local ledger state against issue/PR/CI evidence.

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Native execution ticket briefs, fresh serial sessions and compact review packets
+  with a deterministic path/size risk floor. On-demand cited `/trace` and `/why`
+  extend the native index to 17 skill pairs; ADR 060 records the contract (#427).
+
 - Blocking `context-budget` hook and `tools/check_context_budget.py` prevent
   tracked harness context from regrowing after the #414 cleanup (ADR 059).
   Budgets cover unconditional auto-load, each rules file, sync headers, recent
@@ -16,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   local escape hatch; increasing repository budgets requires independent review.
 
 ### Changed
+
+- Sync belongs in the feature PR; standalone work is for release/post-merge audits.
+  Ticket review uses one verified P0/P1 cross-vendor round, preserving full audits.
+  Measurement records are empty until observations exist; no effect is claimed.
 
 - Condensed AGENTS.md with a larger Codex fallback allowance and tail-marker
   healthchecks. Archived five source-specific sync histories and six released

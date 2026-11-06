@@ -240,6 +240,36 @@ This protocol does not restate or re-label them. Two review-facing anchors:
   scope; both produce R-points closed with the Guard G vocabulary and reference this protocol
   for dimensions, basis, and output shape.
 
+### Ticket precision-filter mode (ADR 060)
+
+Implementation tickets default to one fresh-context cross-vendor read-only review
+round, followed by verification of known-finding closure. Use
+`codex exec --model gpt-6.1-sol --sandbox read-only "<review prompt>"` for a
+Claude-implemented ticket; `codex exec --help` documents the `--model` knob.
+For Codex implementation use the available Claude reviewer; do not claim vendor
+independence for a same-vendor child. If unavailable, retain the existing
+self-structured/human fallback and record the reason in the PR and Governor Footer.
+No model availability, quota, or superiority is inferred from the command alone.
+
+The precision filter reports only verified P0/P1 defects: P0 is a release-stopping
+failure affecting all applicable use, P1 is a concrete high-impact correctness,
+security, contract, or governance failure requiring attention before merge.
+Retain the protocol's severity vocabulary (`BLOCKING`/`HIGH`) and add priority
+P0/P1; the vocabularies are not mechanically interchangeable. Each finding needs
+an affected execution path, cited evidence or failing probe, impact, and actionable
+fix. Verify each candidate against current code/contract before forwarding it;
+discard unsupported or merely stylistic suggestions. Preserve the Effect Answer,
+coverage, unverified limits, Guard G closure and footer evidence contracts. Say
+"no verified P0/P1 findings" rather than declaring the entire system defect-free.
+
+This filter controls the additional ticket pre-review, not explicit full PR,
+security or architecture audits, deterministic failures, or previously known
+lower-priority findings. Those retain normal scope/severity and closure rules.
+One round limits fresh discovery; targeted closure verification is permitted.
+If unresolved severe findings need another discovery round, split the ticket or
+record a justified escalation rather than silently accumulating rounds. Preserve
+ADR 048's existing maximum guidance and honest total round count.
+
 ## §8 Skill Scope Boundaries
 
 | Skill | Scope | Default Flow step |

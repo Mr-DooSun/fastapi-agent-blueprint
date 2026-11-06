@@ -29,7 +29,7 @@ Read CLAUDE.md and verify Claude-only guidance still matches the harness:
 
 - [ ] `.mcp.json` role is described as Claude-only MCP configuration
 - [ ] `.claude/settings.json` hooks still match the hook files and the CLAUDE.md tool guidance
-- [ ] Native discovery matches `.claude/skills/`; `sync-guidelines` and `migrate-domain` remain user-only (`disable-model-invocation: true`) exceptions
+- [ ] Native discovery matches `.claude/skills/`; `sync-guidelines`, `migrate-domain`, `trace` and `why` remain user-only (`disable-model-invocation: true`) exceptions. Codex explicitly disables implicit invocation for `trace`/`why`; the two legacy sync/migrate skills retain their existing Codex invocation policy
 
 ## 1B. `.claude/rules/absolute-prohibitions.md` ↔ AGENTS.md Sync Check
 
@@ -40,8 +40,8 @@ Read CLAUDE.md and verify Claude-only guidance still matches the harness:
 ## 1C. `harness-asset-matrix.md` ↔ Filesystem Sync Check (ADR 045)
 
 - [ ] Enumerate actual filesystem assets in scope:
-  - Tier 0: `AGENTS.md`, `CLAUDE.md`, `.codex/config.toml`, `.codex/hooks.json`, `.claude/settings.json`, `.claude/settings.local.json`, `.gemini/settings.json`, `.antigravity/plugin.json`, `.antigravity/gemini-extension.json`, `.antigravity/mcp_config.json`, `.antigravity/permissions.json`, `.mcp.json`, `.github/pull_request_template.md`, plus the ADR(s) the matrix carries as constitutional asset rows per the ADR inclusion rule below (currently `docs/history/045-hybrid-harness-target-architecture.md` only)
-  - Tier 1: every `docs/ai/shared/*.md` (parent folder only, not `skills/`), plus the non-`docs/ai/shared/` governor assets the matrix carries in Tier 1 — the `.agents/shared/governor/` package (one row), `tools/check_governor_footer.py`, and the frozen `docs/history/archive/governor-review-log/` directory (one row)
+  - Tier 0: `AGENTS.md`, `CLAUDE.md`, `.codex/config.toml`, `.codex/hooks.json`, `.claude/settings.json`, `.claude/settings.local.json`, `.gemini/settings.json`, `.antigravity/plugin.json`, `.antigravity/gemini-extension.json`, `.antigravity/mcp_config.json`, `.antigravity/permissions.json`, `.mcp.json`, `.github/pull_request_template.md`, `.github/ISSUE_TEMPLATE/ticket.yml`, plus the ADR(s) the matrix carries as constitutional asset rows per the ADR inclusion rule below (currently `docs/history/045-hybrid-harness-target-architecture.md` only)
+  - Tier 1: every `docs/ai/shared/*.md` (parent folder only, not `skills/`), plus the non-`docs/ai/shared/` governor assets the matrix carries in Tier 1 — the `.agents/shared/governor/` package (one row), `tools/check_governor_footer.py`, `tools/review_packet.py`, and the frozen `docs/history/archive/governor-review-log/` directory (one row)
   - Tier 2: every skill triple — `docs/ai/shared/skills/{name}.md`, `.claude/skills/{name}/SKILL.md`, `.agents/skills/{name}/SKILL.md`
   - Tier 3: every file under `.claude/hooks/`, `.codex/hooks/`, and `.antigravity/hooks/` (excluding `__pycache__/**` and `*.pyc` caches — same exclusion as the matrix Verification block's `find`)
   - Tier 4: every file under `.claude/rules/`, `.codex/rules/`, and `.antigravity/rules/`
@@ -59,7 +59,11 @@ The canonical definition of "governor-changing PR" is in [`governor-paths.md`](g
 
 After ADR 047 / ADR 048, independent review provenance lives in the PR description's `## Governor Footer` block (CI-linted) and durable governance constraints live in ADR Consequences slots (`ADR{NNN}-G{N}`). The pre-ADR-047 `governor-review-log/` archive is closed; this check no longer enumerates that directory for new PRs.
 
-- [ ] Enumerate merged PRs touching the Tier A / B / C globs since the last sync run:
+Run this merged-PR history audit at release. During a feature PR, check its own
+Footer and changed ADR slots; integrate sync in that PR. Standalone sync remains
+available for post-merge drift.
+
+- [ ] At release, enumerate merged PRs touching the Tier A / B / C globs since the last release audit:
   ```bash
   gh pr list --state merged --search "merged:>=$(cat .last-sync-date 2>/dev/null || echo 2026-05-03)" --json number,title,files,body
   ```

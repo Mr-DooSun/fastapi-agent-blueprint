@@ -87,3 +87,12 @@ The block hook performs no network access, writes nothing (pure read of ledger +
 - **ADR054-G4** — Claude blocks; Codex advises (no `PreToolUse`). Introducing a blocking Codex path, or downgrading the Claude block to advisory, re-enters this ADR.
 - **ADR054-G5** — The gate is best-effort by fail-open (D9). Making it fail-closed is a governor change.
 - **ADR054-G6** — Surface is `.py` under `src/`/`examples/` via `Edit|Write` only (D7). Widening to `Bash` writes or other paths re-enters this ADR (and ADR050-G3).
+
+## Amendment — ADR 060 (2026-11-06)
+
+[ADR 060](060-ticket-session-boundaries-and-review-packets.md) adopts native ticket
+briefs and fresh serial execution sessions. Issue/approved packet, PR and CI are
+durable evidence; the ledger is a local resume cache hydrated from the ticket.
+The explicit execute-plan boundary, existing stage gate, fail-open behavior and
+schema compatibility remain unchanged. This amends the handoff/authority model,
+not the historical implementation or runtime hooks.

@@ -157,14 +157,10 @@ behaviour bug, because a regression test is required (see `target-operating-mode
    then the state or decision boundaries it crosses, then the failing operation. Pick the template
    that matches — this skill is triggered for any bug, and most of these paths contain no router:
 
-   | Surface | Path to trace |
-   |---|---|
-   | HTTP CRUD | Router → UseCase → Service → Repository |
-   | Worker / scheduler | broker message → `@broker.task` → Service → Repository (+ middleware order) |
-   | Admin (NiceGUI) | `@ui.page` handler → Admin Page Config → `_get_service()` → Service |
-   | Optional infra / provider | `providers.Selector` → adapter → SDK (+ the stub branch) |
-   | Harness / hook | tool event → per-tool shim → `.agents/shared/governor/` policy |
-   | Boot / config | `Settings` validator → container wiring → `bootstrap_app` |
+   Use the execution-surface reference in [trace](trace.md) when identifying the path.
+   This is an inline reference, not a standalone trace invocation: no new fork or
+   standalone no-fix restriction applies. Fix-bug owns the mandatory trace, Cause
+   Impact Matrix, fix recommendations and verification gates.
 
 2. **Record three distinct things.** Conflating them is what produces symptom-only fixes:
    - **symptom site** — where the failure becomes visible;

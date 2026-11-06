@@ -4,6 +4,14 @@
 See [target-operating-model §1](../target-operating-model.md) — `sync-guidelines` routing.
 Recursion guard: Do not invoke this skill recursively or invoke plan-feature from inside it.
 
+## PR packaging
+
+Default to integrating triggered sync into the feature PR before final review;
+standalone sync PRs are reserved for release audits or independently discovered
+post-merge drift. Sync checks and drift closure are unchanged. Run the merged-PR
+Footer history audit (drift-checklist §1D) at release; a feature PR checks its own
+Footer and changed rules. See [ticket-workflow](../ticket-workflow.md).
+
 ## Operating Modes
 
 `/sync-guidelines` supports two modes:
