@@ -176,3 +176,29 @@ def test_retrospective_headers_do_not_regrow_under_byte_cap(tmp_path, header):
     failures, _ = check(tmp_path, {".claude/rules/a.md": header})
     assert len(failures) == 1
     assert failures[0].line == 1
+
+
+def test_indented_code_block_backticks_do_not_open_a_fence(tmp_path):
+    source = (
+        "# Rules\n\n    ```\n    literal backticks in an indented code block\n\n"
+        "> Last synced: " + "x" * 220 + "\n"
+    )
+    failures, _ = check(tmp_path, {".claude/rules/a.md": source})
+    assert [item.kind for item in failures] == ["sync header"]
+    assert failures[0].line == 6
+
+
+def test_fence_indented_up_to_three_spaces_still_hides_examples(tmp_path):
+    source = "1. Example:\n   ```markdown\n   > Prior: old history\n   ```\n"
+    assert check(tmp_path, {".claude/rules/a.md": source})[0] == []
+
+
+def test_second_sync_header_is_rejected(tmp_path):
+    source = (
+        "# Rules\n\n> Last synced: 2026-11-06 via #416\n\n"
+        "> Last synced: 2026-11-05 via #415\n"
+    )
+    failures, _ = check(tmp_path, {".claude/rules/a.md": source})
+    assert [(item.kind, item.line) for item in failures] == [
+        ("duplicate sync header", 5)
+    ]
