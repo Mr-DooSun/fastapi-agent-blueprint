@@ -1,9 +1,9 @@
 # Project Status
 
-> Last synced: 2026-11-06 via #414, #427
+> Last synced: 2026-11-07 via v0.12.0 release
 
 ## Current Version Context
-- Latest release: v0.11.2 (2026-11-03)
+- Latest release: v0.12.0 (2026-11-07)
 - Active domains: auth (customer JWT access/refresh token API, #4), user (reference domain — pure customer identity after #218; admin fields removed), admin_identity (admin/operator identity + separate JWT realm,
   #218/ADR 049), classification (prototype), docs (RAG consumer example, #80), ai_usage (usage ledger, #75)
 - Contributor examples: `examples/todo/` (minimal CRUD, mirrors `src/user/` layout), `examples/blog/` (Protocol-based cross-domain DIP, #237), `examples/webhook_receiver/` (background worker task, #240),

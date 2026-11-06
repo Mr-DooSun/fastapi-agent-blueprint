@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-07
+
+### Upgrading
+
+No `src/` runtime logic changed; the FastAPI version string is the only
+`src/` edit. What a fork picks up is harness and tooling:
+
+- **Two new blocking pre-commit hooks.** `context-budget` caps tracked harness
+  context (unconditional auto-load, each rules file, sync headers, recent status
+  rows, `AGENTS.md`); `sensitive-logging` rejects credential-named fields in `src/` and `examples/` log calls. Run
+  `pre-commit run --all-files` after merging and trim or fix what they report.
+  `SKIP=context-budget` is a local escape hatch only.
+- **Pre-edit SQL/secret/domain-import heuristics and verify-first reminders are
+  gone** (ADR 061). If a fork relied on those pre-edit rejections, keep
+  gitleaks, the architecture checks and `/security-review` in its flow.
+
 ### Added
 
 - Scoped ADR decision evidence now carries applicable clauses, current-source
@@ -1165,7 +1181,8 @@ Quality Gate review contract, `/plan-feature` Approach Options stage,
 - ADR documentation (001-013)
 - CONTRIBUTING guide and issue templates
 
-[Unreleased]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.11.2...HEAD
+[Unreleased]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.11.2...v0.12.0
 [0.11.2]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.11.1...v0.11.2
 [0.11.1]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/Mr-DooSun/fastapi-agent-blueprint/compare/v0.10.1...v0.11.0
