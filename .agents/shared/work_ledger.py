@@ -483,6 +483,22 @@ def update_workflow_state(
     _update_ledger(set_workflow, updated_by=updated_by, state_root=None)
 
 
+def _is_shell_control_token(token: str) -> bool:
+    """Return True for a shlex punctuation token that sequences, pipes or backgrounds.
+
+    ``shlex`` groups adjacent operator characters, so ``|&``, ``&|`` and ``;;``
+    arrive as single tokens; any token carrying ``|`` or ``;`` is rejected, as is
+    an ``&`` run without a redirection. Pure redirections such as ``2>&1`` keep
+    the command's own exit status and stay allowed; plain ``>``/``>>`` output
+    redirection stays rejected as before.
+    """
+    if not token or set(token) - set(";&|<>"):
+        return False
+    if token in {">", ">>"} or "|" in token or ";" in token:
+        return True
+    return not set(token) & set("<>")
+
+
 def is_verification_command(command: str) -> bool:
     """Recognize simple verify invocations without creating command-log state.
 
@@ -498,7 +514,7 @@ def is_verification_command(command: str) -> bool:
         args = list(lexer)
     except ValueError:
         return False
-    if any(part in {";", "&&", "||", "|", "&", ">", ">>"} for part in args):
+    if any(_is_shell_control_token(part) for part in args):
         return False
     if args[:2] == ["uv", "run"]:
         args = args[2:]
