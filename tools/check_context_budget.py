@@ -21,9 +21,10 @@ SYNC_LINE_MAX = 200
 RECENT_ROW_MAX = 300
 AGENTS_MAX = 30720
 REPO_ROOT = Path(__file__).resolve().parent.parent
-# CommonMark: a fence opens with at most three spaces of indentation; four or
-# more make an indented code block whose backticks are literal text.
-FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+# Any indentation opens a fence: list-nested fences (four or more spaces) are
+# common here. Known limit: backticks inside a top-level indented code block
+# also open one; telling the two apart needs container-aware Markdown parsing.
+FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
 
 
 @dataclass(frozen=True)
