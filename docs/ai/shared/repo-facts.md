@@ -53,9 +53,14 @@ This file contains stable repository facts for Claude, Codex, and Antigravity wo
 ```bash
 codex mcp list
 codex mcp get context7
-codex debug prompt-input -c 'project_doc_max_bytes=400' "healthcheck" | rg "Shared Collaboration Rules|AGENTS\\.md"
+codex debug prompt-input -c 'project_doc_max_bytes=32768' "healthcheck" | rg -o '## Drift Management'
 codex execpolicy check --rules .codex/rules/fastapi-agent-blueprint.rules git push origin main
 ```
+
+The default 32 KiB project-doc cap truncates silently. Check the final
+`## Drift Management` section, not a head marker; repository config raises
+the cap to 64 KiB as a fallback. The probe tests 32 KiB explicitly, while
+`AGENTS.md` must remain <= 30,720 B.
 
 ## Why context7 stays MCP (not plugin) — 2026-04-26 review
 
@@ -80,3 +85,53 @@ Re-evaluate when any of the following becomes true:
    `SLASH_COMMAND_TOOL_CHAR_BUDGET` default is raised meaningfully.
 4. The team grows enough that plugin-based onboarding automation becomes
    a clear win over the current `.mcp.json` + `.codex/config.toml` flow.
+
+## Common Commands
+
+### Run
+
+```bash
+make quickstart   # zero-config evaluation (SQLite + InMemory broker)
+make demo         # curl walkthrough against running quickstart
+make dev          # real local dev (PostgreSQL via docker-compose)
+make worker
+make diagrams     # regenerate SVGs under docs/assets/architecture/
+
+make worktree-setup  # bootstrap a fresh git worktree (copy gitignored env files
+                     # + install admin/aws extras). Idempotent; agent-agnostic.
+```
+
+A git worktree is a fresh checkout: `_env/*.env` is gitignored and the
+`admin`/`aws` extras are not part of uv's default sync, so run
+`make worktree-setup` once in a new worktree. Worktree managers can call it from
+their post-create hook (`paseo.json` in this repo does). Tools that read
+`.worktreeinclude` — Claude Code, Conductor, Roo Code, CodeBuddy — copy the env
+files themselves when they create the worktree; the extras still need the target.
+
+### Test
+
+```bash
+make test
+make test-cov
+make check        # fast local alias for check-core
+make check-core   # lint + format check + core tests
+make check-full   # CI-parity checks; requires admin + aws extras and dynamodb-local
+make check-minimal
+```
+
+### Lint / Format
+
+```bash
+make lint
+make format
+make pre-commit
+```
+
+### Migration
+
+```bash
+make migrate
+make migration
+uv run alembic downgrade -1
+uv run alembic current
+```
