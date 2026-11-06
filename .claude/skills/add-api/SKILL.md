@@ -9,15 +9,15 @@ description: |
 
 # Add API Endpoint
 
-Request: $ARGUMENTS
+Input: $ARGUMENTS
 
 ## Default Flow Position
 See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `add-api` routing.
+
+## Procedure Authority
+Read and follow the [full procedure](../../../docs/ai/shared/skills/add-api.md) before acting; it owns requirements, gates and outputs.
 
 ## Procedure Overview
 1. Analysis — identify domain, method, path; check existing code; determine needed changes
 2. Implementation (bottom-up) — Repository → Service → UseCase(conditional) → Schema → Router
 3. Post-completion verification — pre-commit, tests, Swagger check
-
-Read `docs/ai/shared/skills/add-api.md` for detailed steps.
-Also refer to `docs/ai/shared/project-dna.md` §6 for conversion patterns and §9 for router pattern.

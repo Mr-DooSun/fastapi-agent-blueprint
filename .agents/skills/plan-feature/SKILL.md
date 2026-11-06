@@ -11,28 +11,14 @@ metadata:
 See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `plan-feature` routing.
 Recursion guard: Do not invoke this skill recursively; implementation skills must not re-enter planning (ADR 050 scope expansion is separate).
 
+## Procedure Authority
+Read `AGENTS.md`. Read and follow the [full procedure](../../../docs/ai/shared/skills/plan-feature.md) before acting; it owns requirements, gates and outputs.
+
 ## Procedure Overview
-1. Requirements Interview — 3-5 questions from 5 categories (Phase 0)
-2. Approach Options — propose 2-3 candidates with trade-offs, recommend one (Phase 1)
-3. Architecture Impact Analysis — layer, domain, DTO, cross-domain (Phase 2)
-4. Security Checkpoint — 6-item assessment matrix (Phase 3)
-5. Task Breakdown — skill mapping, supervision levels, execution order (Phase 4)
-6. Execution Packet — include Goal, Scope, Success Criteria, Selected Approach,
-   Architecture Impact, Task List, Verification Gates, and Review Gates.
-7. Work-ledger update — after task breakdown is confirmed, record goal/scope/plan and workflow state via
-   `from work_ledger import update_goal_scope_plan, update_workflow_state; update_goal_scope_plan(goal=..., scope=..., plan=..., updated_by="skill:plan-feature"); update_workflow_state(stage="planned", plan_ref=..., tasks=..., updated_by="skill:plan-feature")`
-
-1. Read `AGENTS.md` and `docs/ai/shared/skills/plan-feature.md` for the full procedure.
-2. Read `docs/ai/shared/planning-checklists.md` for question bank and templates.
-3. Interview the user on requirements (data model, business rules, integrations).
-4. Propose 2-3 approach options with trade-offs and recommend one.
-5. Analyze architecture impact, run security checkpoint, break into tasks.
-6. Present the implementation plan in the standard output format, including the Execution Packet.
-7. After approval, write the ledger (`stage="planned"`) and **stop** — hand
-   complex, architecture-changing, governor-changing, or multi-task work to
-   `$execute-plan` as a separate step. Do not implement within `$plan-feature`
-   (ADR 054; on Codex the plan→execute drift surfaces as a Stop-time advisory).
-
-Ticket handoff follows `docs/ai/shared/ticket-workflow.md`: planning publishes
-native ticket briefs and stops; execution loads the approved ticket issue in a
-fresh session and reconciles local ledger state against issue/PR/CI evidence.
+1. Requirements Interview (Phase 0).
+2. Compare Approach Options (Phase 1).
+3. Architecture Impact Analysis (Phase 2).
+4. Security Checkpoint (Phase 3).
+5. Task Breakdown (Phase 4).
+6. Produce the Execution Packet: Goal, Scope, Success Criteria, Selected Approach, Architecture Impact, Task List, Verification Gates, Review Gates.
+7. After approval use update_workflow_state to record planned; stop. Execution requires a separate execute-plan invocation (ADR 054).

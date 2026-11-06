@@ -1,10 +1,10 @@
 # Suggested Commands
 
-> Last synced: 2026-11-06 via #413, #415, #417, #418
-> Purpose: Quick reference for Claude Code when executing shell commands.
+> Last synced: 2026-11-06 via #414 B1/B4/B5
+> Purpose: Consulted shell-command reference for Claude, Codex, and Antigravity; load when needed.
 > Also referenced when running Skills.
-> Default Flow context: see [`AGENTS.md` § Default Coding Flow](../../AGENTS.md#default-coding-flow). The commands below are consulted by the `implement` and `verify` steps; this file is **not** a primary entry point in the Default Flow.
-> Makefile targets (`make dev`, `make test`, etc.) are available as shortcuts — see `AGENTS.md` Common Commands.
+> Default Flow context: see [`AGENTS.md` § Default Coding Flow](../../../AGENTS.md#default-coding-flow). The commands below are consulted by the `implement` and `verify` steps; this file is **not** a primary entry point in the Default Flow.
+> Makefile targets are shortcuts; shared policy remains in [AGENTS.md](../../../AGENTS.md).
 
 ## Run
 ```bash
@@ -190,8 +190,16 @@ uv run python tools/check_examples_copyflow.py
 # No argv = full repo; pass paths to check only those files.
 uv run python tools/check_doc_links.py
 
+# Sensitive logging production-source lexical gate (ADR 061).
+# Review false positives before a deliberate SKIP=sensitive-logging bypass;
+# skipping is not a passing logging check. See CONTRIBUTING.md.
+uv run pre-commit run sensitive-logging --all-files
+
 # Check tracked harness byte budgets (blocking context-budget hook, ADR 059)
 uv run python tools/check_context_budget.py
+
+# Check generated harness inventory and reviewed buckets (blocking, ADR 062)
+uv run python tools/generate_harness_inventory.py --check
 
 # Scan Alembic revisions for unsafe (non-zero-downtime) DDL — advisory (ADR 056)
 uv run python tools/check_migration_safety.py
@@ -220,7 +228,7 @@ STORAGE_TYPE=s3 python run_server_local.py --env local
 ```
 
 ## Error Notification (#17, #310, #286)
-Error Notification: see [AGENTS.md § Optional Infrastructure Toggles](../../AGENTS.md#optional-infrastructure-toggles) + [runbook](../../docs/operations/error-notifications.md).
+Error Notification: see [AGENTS.md § Optional Infrastructure Toggles](../../../AGENTS.md#optional-infrastructure-toggles) + [runbook](../../operations/error-notifications.md).
 
 ## Admin Dashboard
 ```bash
@@ -238,3 +246,18 @@ uv sync --extra admin   # install; → http://127.0.0.1:8001/admin
 ADMIN_BRAND_NAME="Acme Admin" uv run python run_server_local.py --env local  # header/login brand text
 ADMIN_DARK_MODE_DEFAULT=true ...       # unset=follow OS; true/false to force initial light/dark
 ```
+
+## Codex Healthcheck
+
+Run from a trusted checkout. The default 32 KiB project-doc cap truncates silently;
+assert the final section instead of a head marker. The explicit default cap tests
+the lean constitution, while project config provides a 64 KiB fallback.
+
+```bash
+codex mcp list
+codex mcp get context7
+codex debug prompt-input -c 'project_doc_max_bytes=32768' "healthcheck" | rg -o '## Drift Management'
+codex execpolicy check --rules .codex/rules/fastapi-agent-blueprint.rules git push origin main
+```
+
+Context7 setup / trust troubleshooting: [CONTRIBUTING.md](../../../CONTRIBUTING.md#codex-minimum-setup).

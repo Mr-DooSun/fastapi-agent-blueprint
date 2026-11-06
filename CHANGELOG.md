@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Generated harness inventory with reviewed bucket map and a blocking freshness
+  check; detailed per-asset rationale is frozen once (#414 B3, ADR 062).
+
 - Native execution ticket briefs, fresh serial sessions and compact review packets
   with a deterministic path/size risk floor. On-demand cited `/trace` and `/why`
   extend the native index to 17 skill pairs; ADR 060 records the contract (#427).
@@ -32,6 +35,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Existing phases, recursion guards and architecture constraints remain intact.
   Claude wrappers reuse visible auto-loaded rules; native skill discovery keeps
   the two user-invoked-only skills explicit (#413, #415, #417–#420, #426).
+
+- Harness verification summaries describe previous local cache; completed clean tasks no longer reappear as resumed sessions, while idle prompt/verification continuity remains.
+
+### Removed
+
+- Per-edit verify-first reminders and verify-log files across Claude, Codex and Antigravity (ADR 061). Existing actual command outcomes and stage/token safety remain.
+- Runtime SQL/secret/domain-import heuristics; their pre-edit rejection guarantee is intentionally retired. Sensitive logging moves to the blocking production-source `sensitive-logging` commit hook; gitleaks, architecture gates and security review retain their independent scopes.
 
 ## [0.11.2] - 2026-11-03
 

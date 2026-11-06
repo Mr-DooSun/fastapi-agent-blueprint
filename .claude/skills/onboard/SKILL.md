@@ -14,15 +14,8 @@ description: |
 See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `onboard` routing.
 Recursion guard: Do not invoke this skill recursively or invoke plan-feature from inside it.
 
-## Pre-check: Collect Project State
-
-Execute the following to understand the current project state (do not output to the user):
-
-1. Use `.claude/rules/project-overview.md` (auto-loaded); re-read only if the file is not visible in the current context.
-2. Use `.claude/rules/project-status.md` (auto-loaded); re-read only if the file is not visible in the current context.
-3. Use `.claude/rules/architecture-conventions.md` (auto-loaded); re-read only if the file is not visible in the current context.
-4. Glob `src/*/` to identify current domain list (excluding `_core`, `_apps`)
-5. `git log --oneline -5` to check recent activity
+## Procedure Authority
+Read and follow the [full procedure](../../../docs/ai/shared/skills/onboard.md) before acting; it owns requirements, gates and outputs.
 
 ## Procedure Overview
 1. Welcome — assess experience level and preferred format (Phase 0)
@@ -33,11 +26,5 @@ Execute the following to understand the current project state (do not output to 
 6. Development Workflow — Skills and CLI commands (Phase 5)
 7. Personalized Next Steps (Phase 6)
 
-Read `docs/ai/shared/skills/onboard.md` for the full onboarding flow, including
-Q&A/Explore mode rules, topic maps, and experience-level adjustments.
-
-## Claude-Specific: Phase 2 and Phase 5 Sources
-- Phase 2 tech stack: use `.claude/rules/project-overview.md` (auto-loaded); re-read only if the file is not visible in the current context.
-- Phase 5 Skills list: use the native `.claude/skills/` index; include the two user-only skills named in `CLAUDE.md`.
-- Phase 5 CLI commands: use `.claude/rules/commands.md` (auto-loaded); re-read only if the file is not visible in the current context.
-- Phase 6 wrap-up: include `CLAUDE.md` as a key reference material
+## Tool Sources
+Use the native skill index plus user-invoked-only `/sync-guidelines`, `/migrate-domain`, `/trace`, and `/why` entries in `CLAUDE.md`. Architecture and overview rules are scoped; use their visible context only when their paths apply, and consult the relevant rule if needed and not already visible. Consult `docs/ai/shared/commands.md` for CLI guidance on demand. Include `CLAUDE.md` among Phase 6 references; the shared procedure defines topics and outputs.
