@@ -151,7 +151,7 @@ Reference the ADRs in `docs/history/` directory and convey in narrative form wha
 
 Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the following:
 - This project is designed for pair programming with AI coding agents
-- 14 Skills (slash commands) automate domain creation, API addition, architecture verification, etc.
+- 15 Skills (slash commands) automate domain creation, API addition, architecture verification, etc.
 - Skills reference `AGENTS.md`, `docs/ai/shared/project-dna.md`, shared checklists, and rules to automatically follow project rules
 
 > "If you have any questions, feel free to ask. Otherwise, say 'next'."
@@ -285,11 +285,11 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 
 ## Phase 5: Development Workflow and Skills
 
-**Information Source**: Harness guide Skills section, commands reference
+**Information Source**: Each harness’s native skill index (the tool-specific location is in the wrapper), commands reference
 
 **Q&A Mode**: Present the following topic map and wait for questions.
 > **Phase 5 Topics -- Workflow & Skills**
-> 1. Skills overview -- 14 slash commands and their workflow order
+> 1. Skills overview -- 15 slash commands and their workflow order
 > 2. Frequently used CLI commands (server start, tests, lint)
 >
 > Ask about any topic, or say 'next' to move on.
