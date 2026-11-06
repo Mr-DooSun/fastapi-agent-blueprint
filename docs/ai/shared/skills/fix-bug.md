@@ -4,7 +4,7 @@
 See [target-operating-model §1](../target-operating-model.md) — `fix-bug` routing.
 Recursion guard: Do not recurse or invoke plan-feature for the bug’s own framing/plan; ADR 050 scope expansion still routes to plan-feature.
 
-## Phase Contract
+## Flow Step Mapping
 
 This skill's four canonical phases map onto Default Coding Flow steps:
 
