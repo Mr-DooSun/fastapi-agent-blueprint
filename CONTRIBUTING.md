@@ -94,14 +94,14 @@ Verification:
 ```bash
 codex mcp list
 codex mcp get context7
-codex debug prompt-input -c 'project_doc_max_bytes=400' "healthcheck" | rg "Shared Collaboration Rules|AGENTS\\.md"
+codex debug prompt-input -c 'project_doc_max_bytes=32768' "healthcheck" | rg -o '## Drift Management'
 codex execpolicy check --rules .codex/rules/fastapi-agent-blueprint.rules git push origin main
 ```
 
 Verification targets:
 - `context7` appears in `codex mcp list`
 - `codex mcp get context7` resolves the configured server
-- `codex debug prompt-input` includes `AGENTS.md` content when the project is trusted
+- `codex debug prompt-input` includes the final `## Drift Management` section when the project is trusted. The default 32 KiB cap truncates silently; a head-marker assertion cannot detect it. The probe explicitly tests 32 KiB; repository config provides a 64 KiB fallback
 - `codex execpolicy check` returns a non-`allow` decision for protected commands
 
 Operational notes:
@@ -119,8 +119,8 @@ CODEX_HOME="$TMP_CODEX_HOME" codex mcp list
 CODEX_HOME="$TMP_CODEX_HOME" codex mcp get context7
 CODEX_HOME="$TMP_CODEX_HOME" codex debug prompt-input \
   -c "projects.\"$PWD\".trust_level=\"trusted\"" \
-  -c 'project_doc_max_bytes=400' \
-  "healthcheck" | rg "Shared Collaboration Rules|AGENTS\\.md"
+  -c 'project_doc_max_bytes=32768' \
+  "healthcheck" | rg -o '## Drift Management'
 ```
 
 `CODEX_HOME` alone is not enough. Without the temporary `config.toml` trust entry, Codex will ignore the repo's `.codex/config.toml`.
