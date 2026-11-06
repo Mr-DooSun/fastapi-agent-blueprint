@@ -285,7 +285,7 @@ Read the **AI Pair Programming (AIDD)** section of `README.md` and explain the f
 
 ## Phase 5: Development Workflow and Skills
 
-**Information Source**: Each harness’s native skill index (the tool-specific location is in the wrapper), commands reference
+**Information Source**: Each harness’s native skill index (`.claude/skills/` for Claude, whose wrapper also names the user-invoked-only skills; `.agents/skills/` for Codex and Antigravity), commands reference
 
 **Q&A Mode**: Present the following topic map and wait for questions.
 > **Phase 5 Topics -- Workflow & Skills**
