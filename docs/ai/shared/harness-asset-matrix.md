@@ -810,9 +810,9 @@ Seven rule files (5 Claude + 1 Codex + 1 Antigravity). All `Keep` except `comman
 
 ### `.claude/rules/project-status.md`
 
-- **Current role**: Latest release notes, active domains, recent ADRs, status of "not yet implemented" features.
+- **Current role**: <= 300 B index table of recent changes, current version context, architecture status, and "not yet implemented" features.
 - **Bucket**: Keep.
-- **Notes**: Phase 1 update will record ADR 045 and Default Flow adoption in the Recent Major Changes table.
+- **Notes**: Narrative lives in CHANGELOG and the archive; routine PRs update only the compact index. Historical long-form migration is one-off; release-triggered archival remains supported.
 
 ### `.claude/rules/architecture-conventions.md`
 

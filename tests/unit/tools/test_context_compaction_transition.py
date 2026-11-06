@@ -25,3 +25,11 @@ def test_sync_headers_stay_compact_without_prior_chains() -> None:
         ), name
         assert "Prior:" not in headers[0], name
         assert not any(line.startswith("> Prior:") for line in lines), name
+
+
+def test_current_status_rows_stay_within_the_upcoming_byte_cap() -> None:
+    text = (REPO_ROOT / ".claude" / "rules" / "project-status.md").read_text()
+    section = text.split("## Recent Major Changes", 1)[1].split("\n## ", 1)[0]
+    rows = [line for line in section.splitlines() if line.startswith("|")]
+    assert rows
+    assert all(len(line.encode()) <= 300 for line in rows)
