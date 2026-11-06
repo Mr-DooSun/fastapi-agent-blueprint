@@ -21,7 +21,9 @@ SYNC_LINE_MAX = 200
 RECENT_ROW_MAX = 300
 AGENTS_MAX = 30720
 REPO_ROOT = Path(__file__).resolve().parent.parent
-FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
+# CommonMark: a fence opens with at most three spaces of indentation; four or
+# more make an indented code block whose backticks are literal text.
+FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 
 
 @dataclass(frozen=True)
@@ -140,6 +142,7 @@ def check_budget(root: Path, paths) -> tuple[list[Violation], int]:
         if path == "CLAUDE.md" or (rule and not has_paths_frontmatter(source)):
             total += size
         recent = False
+        sync_headers = 0
         try:
             lines = list(visible_lines(source))
         except ValueError as exc:
@@ -156,6 +159,19 @@ def check_budget(root: Path, paths) -> tuple[list[Violation], int]:
             continue
         for number, line in lines:
             size = len(line.encode("utf-8"))
+            if (rule or dna) and line.startswith(("> Last synced:", "> Last updated:")):
+                sync_headers += 1
+                if sync_headers > 1:
+                    failures.append(
+                        Violation(
+                            path,
+                            number,
+                            "duplicate sync header",
+                            size,
+                            0,
+                            "keep one sync header per file; routine history belongs in git/CHANGELOG",
+                        )
+                    )
             if (
                 (rule or dna)
                 and line.startswith(("> Last synced:", "> Last updated:"))
