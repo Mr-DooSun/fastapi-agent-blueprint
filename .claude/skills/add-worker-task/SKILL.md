@@ -13,9 +13,7 @@ description: |
 Request: $ARGUMENTS (domain name and task description, e.g.: "order process_payment")
 
 ## Default Flow Position
-- Step: `implement` (`approach options` upstream conditional — required for new event types or broker patterns)
-- Routes after: `/test-domain {name} run` (verify) → `make worker` smoke run if applicable
-- Recursion guard: do not invoke `/plan-feature` from inside this skill
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `add-worker-task` routing.
 
 ## Procedure Overview
 1. Analysis — identify domain, task purpose, check existing Service method

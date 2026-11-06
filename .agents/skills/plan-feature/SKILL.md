@@ -8,9 +8,8 @@ metadata:
 # Plan Feature
 
 ## Default Flow Position
-- Steps: **`framing`** (Phase 0) + **`approach options`** (Phase 1) + **`plan`** (Phases 2~4)
-- Routes after: **STOP at the approved Execution Packet.** Execution is a separate, explicit step — invoke `$execute-plan`, which advances the ledger to `executing` and routes to the implement skills internally. To run a single implement skill directly, use a `[trivial]`/`[hotfix]` token. Never auto-continue from planning into implementation in the same turn ([ADR 054](../../../docs/history/054-plan-execute-boundary-hard-gate.md); Codex surfaces the drift as a Stop-time advisory, Claude hard-blocks)
-- Recursion guard: do not invoke `/plan-feature` recursively. Implement skills must not call `/plan-feature` (planning happens before implement)
+See [target-operating-model §1](../../../docs/ai/shared/target-operating-model.md) — `plan-feature` routing.
+Recursion guard: Do not invoke this skill recursively; implementation skills must not re-enter planning (ADR 050 scope expansion is separate).
 
 ## Procedure Overview
 1. Requirements Interview — 3-5 questions from 5 categories (Phase 0)
