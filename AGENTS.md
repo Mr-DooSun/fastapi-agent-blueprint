@@ -193,7 +193,7 @@ Provider SDK exceptions (PydanticAI, boto3, openai, anthropic) must be translate
 
 ## Optional AI Infra: Protocol + Selector Pattern
 
-AI features use a domain `typing.Protocol`, a real infrastructure adapter, a deterministic stub, and a container `providers.Selector(real=..., stub=...)`. Tight DTO coupling may place the adapter in domain-specific infrastructure. The selector returns `"real"` when `settings.llm_model_name` is set, otherwise `"stub"`.
+AI features use a domain `typing.Protocol`, a real infrastructure adapter, a deterministic stub, and a container `providers.Selector(real=..., stub=...)`. Tight DTO coupling may place the adapter in domain-specific infrastructure. Each selector returns `"real"` when its own feature setting is set (`settings.llm_model_name` for LLM features, `settings.embedding_model_name` for embeddings), otherwise `"stub"`.
 
 Examples and paths: [scaffolding-layers.md](docs/ai/shared/scaffolding-layers.md) (classifier); `src/docs/infrastructure/di/docs_container.py` (RAG). Decisions: [ADR 040](docs/history/040-rag-as-reusable-pattern.md), [ADR 042](docs/history/042-optional-infrastructure-di-pattern.md). Status / observability context: [ai-infrastructure-overview.md](docs/ai/shared/ai-infrastructure-overview.md).
 
