@@ -236,7 +236,7 @@ Blocking: `no-domain-infra-import` (src), `no-domain-infra-import-examples` (rel
 - `harness-hook-surface` blocks bare Python wrappers bypassing the shared launcher.
 - `migration-safety` is advisory (ADR056-G1), because unsafe DDL depends on deployment context.
 
-- `context-budget` blocks tracked harness byte overages (ADR 059): indexed-path selection with working-tree content, `always_run` and no filename filtering. Fenced examples skip line checks only; sync dates record content changes.
+- `context-budget` blocks tracked harness byte overages (ADR 059): indexed-path selection with working-tree content, `always_run` and no filename filtering. Fenced examples skip line checks only. The hook checks sync-header shape and size, not date truth; dates recording the last substantive content change is a review rule.
 - `harness-inventory` blocks generated-inventory drift and missing/unreviewed bucket decisions (ADR 062); the generator checks the indexed asset scope.
 - `sensitive-logging` blocks same-line credential names in production logger/logging/print calls (ADR 061). It is lexical, not data-flow analysis; documented false-positive bypasses and review limits live in [CONTRIBUTING.md](../../../CONTRIBUTING.md#runtime-hook-retirement-and-production-logging).
 
@@ -279,6 +279,7 @@ Live registration: [Claude settings](../../../.claude/settings.json); implementa
 - `install_task_middleware` registers the notifier after the same retry middleware instance; Taskiq calls `on_error` in reverse, so notification sees retry state before `_retries` is incremented.
 - `ErrorNotifier._cooldown_key` and `NotificationRouter.resolve()` must use identical severity band tests, with both thresholds supplied from the same setting; an alert's cooldown tier must equal its delivery tier.
 - The three client Selectors share one `_noop_notification_client` Singleton so disabled notification logs `notification_client_disabled` once. The router Selector's disabled branch is `providers.Object(None)`, not the Noop client.
+- Exception handlers resolve `ErrorNotifier` at runtime through `request.app.state.container`; `_core/exceptions` never imports notification infrastructure, and dispatch never raises into the response path.
 
 Guards: [middleware order](../../../tests/unit/_apps/worker/test_task_bootstrap_order.py), [cooldown](../../../tests/unit/_core/infrastructure/notification/test_error_notifier.py), [routing](../../../tests/unit/_core/infrastructure/notification/test_notification_router.py), [shared Noop](../../../tests/integration/_core/infrastructure/test_optional_infra.py). Optional extras and disabled behaviour are canonical in [AGENTS.md](../../../AGENTS.md#optional-infrastructure-toggles); dependency membership lives in [pyproject.toml](../../../pyproject.toml).
 

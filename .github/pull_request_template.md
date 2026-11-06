@@ -45,8 +45,9 @@ architectural decision is affected, one scope-based reason is enough.
 ### Governor Footer guidance
 
 Required for governor-changing paths in [governor-paths](../docs/ai/shared/governor-paths.md),
-with exclusions applied. Otherwise use `trigger: no` and omit other fields or delete
-the footer. [AGENTS.md](../AGENTS.md#default-coding-flow) defines review obligations.
+with exclusions applied: set `trigger: yes` and fill every field. Otherwise keep the
+default `trigger: no`; the linter then ignores the remaining lines, so leave or delete
+them, or delete the footer. [AGENTS.md](../AGENTS.md#default-coding-flow) defines review obligations.
 The real footer below stays outside this collapsed block and outside code fences.
 
 Use one field per line, the exact order and single space after the colon. The
@@ -62,7 +63,7 @@ completed body with `python3 tools/check_governor_footer.py <body.md>`.
 </details>
 
 ## Governor Footer
-- trigger: yes/no
+- trigger: no
 - reviewer: <actual tool or fallback>
 - rounds: N
 - r-points-fixed: N

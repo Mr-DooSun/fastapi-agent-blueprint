@@ -79,6 +79,7 @@ from src.{name}.interface.admin.configs.{name}_admin_config import {name}_admin_
 # Injected by bootstrap_admin() after discovery
 page_configs: list[BaseAdminPage] = []
 
+
 @ui.page("/admin/{name}")
 @admin_error_boundary(context="{name}_list")
 async def {name}_list_page(page: int = 1, search: str = ""):
@@ -87,6 +88,7 @@ async def {name}_list_page(page: int = 1, search: str = ""):
         return
     admin_layout(page_configs, current_domain="{name}", session=session)
     await {name}_admin_page.render_list(page=page, search=search)
+
 
 @ui.page("/admin/{name}/{record_id}")
 @admin_error_boundary(context="{name}_detail")

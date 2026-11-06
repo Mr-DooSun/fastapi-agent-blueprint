@@ -334,6 +334,42 @@ def test_non_governor_changing_with_trigger_no_passes_in_require_mode():
     assert violations == []
 
 
+PLACEHOLDER_FIELDS = """\
+- reviewer: <actual tool or fallback>
+- rounds: N
+- r-points-fixed: N
+- r-points-deferred: N
+- r-points-rejected: N
+- touched-adr-consequences: none
+- pr-scope-notes: <one-line scope>
+- final-verdict: merge-ready/minor-fixes/needs-reinforcement/block
+- links: <PR URL>, n/a
+"""
+
+
+@pytest.mark.parametrize("rest", ["", PLACEHOLDER_FIELDS])
+def test_trigger_no_footer_only_validates_the_trigger_line(rest):
+    body = _wrap_body("## Governor Footer\n- trigger: no\n" + rest)
+    fields, violations = cgf.parse_footer(body, source="t")
+    assert fields is not None and fields["trigger"][1] == "no"
+    assert violations == []
+    assert (
+        cgf.check_body(
+            body,
+            source="t",
+            require_governor_footer=True,
+            changed_files=["src/user/domain/services/user_service.py"],
+        )
+        == []
+    )
+
+
+def test_trigger_yes_still_validates_placeholder_fields():
+    body = _wrap_body("## Governor Footer\n- trigger: yes\n" + PLACEHOLDER_FIELDS)
+    _, violations = cgf.parse_footer(body, source="t")
+    assert len(violations) == 6
+
+
 def test_log_only_backfill_is_not_governor_changing():
     body = "# PR description\n\nNo footer.\n"
     violations = cgf.check_body(
