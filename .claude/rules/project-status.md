@@ -29,11 +29,12 @@
 > - [v0.4.0→v0.5.0 archive](../../docs/history/archive/project-status/project-status-v0.4.0-v0.5.0.md) (18 rows)
 > - [pre-v0.4.0 archive](../../docs/history/archive/project-status/project-status-pre-v0.4.0.md) (26 rows)
 
-No post-release major changes are recorded yet. Narrative belongs in
+Narrative belongs in
 `CHANGELOG.md [Unreleased]` and the PR body; this table is a <= 300 B row index.
 
 | Feature | Issue | Impact |
 |---------|-------|--------|
+| Context budgets and skill routing | #413, #415–#420, #426 | Compact tracked context, preserve routing in TOM, and block byte regrowth (ADR 059). |
 
 ## Architecture Violation Status
 - Domain → Infrastructure import: CLEAN

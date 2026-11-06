@@ -260,3 +260,7 @@ Use these scenario checks when validating the redesigned workflow:
 - Detailed steps per phase (inspection targets, conditions, branching logic)
 - Output format examples, checklists, file lists, grep patterns
 - Cross-references to other `docs/ai/shared/` documents
+
+Context-budget gate: run `uv run python tools/check_context_budget.py` after sync.
+The blocking hook enforces byte limits previously checked by eye. Sync dates equal
+the last content change; do not touch a file whose content did not change.

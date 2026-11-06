@@ -74,6 +74,12 @@ Do not duplicate shared architecture rules into tool-specific docs. Update `AGEN
 Shared workflow references that both tools consume live under [docs/ai/shared](docs/ai/shared).
 When running `/sync-guidelines` or `$sync-guidelines`, do not stop at automatic doc edits. The final result must explicitly include `project-dna`, `AUTO-FIX`, `REVIEW`, and `Remaining`.
 
+The blocking `context-budget` pre-commit hook checks tracked harness bytes. Run
+`uv run python tools/check_context_budget.py` after synchronization; failures name
+the source line and the destination for detail. Sync dates record content changes,
+so leave unchanged files alone. Budget increases require governor-changing review
+([ADR 059](docs/history/059-harness-context-byte-budgets.md)).
+
 ## Claude Minimum Setup
 
 ```bash

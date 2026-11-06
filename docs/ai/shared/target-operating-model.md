@@ -1,6 +1,6 @@
 # Target Operating Model
 
-> Last synced: 2026-11-06 (#420: canonical per-skill routing table and compact Hybrid C pointers; ADR 045 flow unchanged)
+> Last synced: 2026-11-06 via #420
 > Source of truth for the workflow, mandatory steps, exception handling, Claude/Codex/Antigravity alignment, and sample-workflow traces. The shared-constitution summary lives in [`AGENTS.md` § Default Coding Flow](../../../AGENTS.md); this document is the long-form companion.
 > Sibling docs: [ADR 045](../../history/045-hybrid-harness-target-architecture.md) · [harness-asset-matrix.md](harness-asset-matrix.md) · [migration-strategy.md](migration-strategy.md)
 

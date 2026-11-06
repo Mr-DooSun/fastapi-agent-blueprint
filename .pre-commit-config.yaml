@@ -187,6 +187,17 @@ repos:
         pass_filenames: false
         always_run: true
 
+      # Context byte budgets (#416, ADR 059): deterministic size facts are
+      # blocking under project-dna §0, unlike intent-based governor advisories.
+      # Caps: auto-load 40960 B, each rule 16384 B, sync line 200 B,
+      # recent-status row 300 B, AGENTS.md 30720 B. Raise only with review.
+      - id: context-budget
+        name: "Context budget: cap tracked auto-loaded harness bytes"
+        language: system
+        entry: python3 tools/check_context_budget.py
+        pass_filenames: false
+        always_run: true
+
       # Guard G closure enforcement (post-ADR 047):
       # The canonical Guard G enforcement target moved from the per-PR
       # governor-review-log/ archive to the PR-description Governor Footer

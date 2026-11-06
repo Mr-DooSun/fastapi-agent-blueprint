@@ -23,3 +23,7 @@ Also refer to `docs/ai/shared/drift-checklist.md` for inspection items.
 Closing summary must include: `Mode`, `Input Drift Candidates`, `project-dna`, `AUTO-FIX`, `REVIEW`, `Remaining`, `Next Actions` - see "Sync Contract" in the shared procedure.
 For cross-tool review prompts, use the shared procedure's
 `Cross-Tool Review Prompt Template` section; do not duplicate the template here.
+
+Context-budget gate: run `uv run python tools/check_context_budget.py` after sync.
+The blocking hook enforces byte limits previously checked by eye. Sync dates equal
+the last content change; do not touch a file whose content did not change.
