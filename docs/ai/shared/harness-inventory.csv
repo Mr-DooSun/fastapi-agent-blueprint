@@ -16,6 +16,7 @@ tier,asset,bucket,status,members
 0,docs/history/045-hybrid-harness-target-architecture.md,Keep,tracked,
 1,.agents/shared/governor/,Keep,tracked,
 1,docs/ai/shared/admin-design-system.md,Keep,tracked,
+1,docs/ai/shared/adr-evidence.md,Keep,tracked,
 1,docs/ai/shared/ai-infrastructure-overview.md,Keep,tracked,
 1,docs/ai/shared/architecture-diagrams.md,Keep,tracked,
 1,docs/ai/shared/architecture-review-checklist.md,Keep,tracked,

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Scoped ADR decision evidence now carries applicable clauses, current-source
+  proof and explicit uncertainty through planning, ticket execution, review and
+  sync (ADR 064). ADR 065 records native discovery and shared-procedure authority;
+  ADR 059/063 clarify the batch decisions without rewriting historical slots.
+
 - Generated harness inventory with reviewed bucket map and a blocking freshness
   check; detailed per-asset rationale is frozen once (#414 B3, ADR 062).
 

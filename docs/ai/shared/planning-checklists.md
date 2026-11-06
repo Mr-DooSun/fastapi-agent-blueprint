@@ -153,10 +153,15 @@
 
 ### Recommended Approach
 - Selected: Option {X}
-- Why: {rationale for the chosen approach}
+- Why: {rationale; for an affected architectural choice, link its scoped Decision Basis
+  under Architecture Impact rather than only listing ADR IDs}
 - Why not others: Option {Y} — {one-line reason}; Option {Z} — {one-line reason}
 
 ## 3. Architecture Impact Analysis
+
+{For affected choices, apply `docs/ai/shared/adr-evidence.md` inside this section:
+explain how the governing clause changes the choice and link current evidence or
+limits. If none is affected, give one scope-based reason.}
 
 ### Changes by Layer
 | Layer | Change Type | Details |
@@ -221,9 +226,12 @@ Required fields:
 - **Goal**: one sentence.
 - **Scope**: affected domains, files, interfaces, and explicit exclusions.
 - **Success Criteria**: observable completion conditions.
-- **Selected Approach**: selected option and rationale.
+- **Selected Approach**: selected option and rationale, including how applicable
+  decision clauses influenced the choice; link the existing Architecture Impact evidence.
 - **Architecture Impact**: layer, domain, dependency, DTO, migration, and
-  compatibility impact.
+  compatibility impact, with a scoped [Decision Basis](adr-evidence.md) for affected
+  choices (or a scope-based no-affected-decision reason). This reuses the existing
+  field; it adds no required top-level packet field.
 - **Task List**: ordered task IDs, titles, mapped skills, dependencies, and
   initial status.
 - **Verification Gates**: exact commands or manual probes with expected result.
@@ -255,5 +263,7 @@ update_workflow_state(
 Project an approved Execution Packet into the [ticket contract](ticket-workflow.md):
 intent, non-goals, done-when, premises with evidence, approved packet/approval,
 predecessors, file set, Parallel Group and Supervision L1-L3. Keep implementation
-choices in the packet. Epic/ticket/task criteria and fresh-session execution live
+choices in the packet; project applicable decision constraints and their evidence
+through the existing premises field, linking the packet's Decision Basis rather
+than copying the ADR. Epic/ticket/task criteria and fresh-session execution live
 in that contract; native issue bodies use the repository Execution Ticket template.

@@ -11,7 +11,13 @@
 
 ## Change Summary
 
-- <behavior, compatibility, and relevant design decisions>
+- <behavior, compatibility, and relevant design decisions; for an affected choice,
+  link the ticket/packet's scoped Decision Basis and explain the governing clause's
+  effect on the choice with current code/test evidence or an explicit unknown>
+
+Use the [scoped ADR evidence contract](../docs/ai/shared/adr-evidence.md) inside this
+change summary; an ID list or Accepted status is not implementation proof. If no
+architectural decision is affected, one scope-based reason is enough.
 
 ## Type of Change
 

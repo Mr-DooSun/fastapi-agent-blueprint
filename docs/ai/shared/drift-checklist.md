@@ -60,7 +60,12 @@ After ADR 047 / ADR 048, independent review provenance lives in the PR descripti
 
 Run this merged-PR history audit at release. During a feature PR, check its own
 Footer and changed ADR slots; integrate sync in that PR. Standalone sync remains
-available for post-merge drift.
+available for post-merge drift. For affected architectural choices, inspect their
+[scoped Decision Basis](adr-evidence.md): a current clause/code disagreement is
+`REVIEW`, not an automatic rewrite of the decision to match code. When a decision
+is explicitly amended or superseded, follow the affected live carriers, packet
+premises and checklists; preserve historical rationale and write-once slots under
+ADR 047. No whole-archive scan is required for an unrelated change.
 
 - [ ] At release, enumerate merged PRs touching the Tier A / B / C globs since the last release audit:
   ```bash
