@@ -435,7 +435,7 @@ rather than primary entry points (`Overlay`).
 
 All 51 `Default Flow Position` sections point to the canonical per-skill routing table in [target-operating-model §1](target-operating-model.md). The seven local recursion guards remain in every layer; Phase/Step overview parity is unchanged.
 
-Fifteen skills, each existing in three layers (`docs/ai/shared/skills/{name}.md` shared procedure + `.claude/skills/{name}/SKILL.md` wrapper + `.agents/skills/{name}/SKILL.md` wrapper). The bucket is assigned per skill (all three layers share the bucket); the matrix records the skill once.
+Seventeen skills, each existing in three layers (`docs/ai/shared/skills/{name}.md` shared procedure + `.claude/skills/{name}/SKILL.md` wrapper + `.agents/skills/{name}/SKILL.md` wrapper). The bucket is assigned per skill (all three layers share the bucket); the matrix records the skill once.
 
 Bucket guideline:
 - Skills that scaffold or audit *project-specific architecture* (3-tier hybrid, optional infra DI, ADR 040/042/043 patterns) → **Keep**.

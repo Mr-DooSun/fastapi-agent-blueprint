@@ -21,7 +21,7 @@ def test_filled_template_footer_is_outside_details_and_code_fences():
     root = Path(__file__).resolve().parents[3]
     template = (root / ".github/pull_request_template.md").read_text()
     assert template.index("</details>") < template.index("\n## Governor Footer\n")
-    body = template.replace("- trigger: yes/no", "- trigger: yes")
+    body = template.replace("- trigger: no\n", "- trigger: yes\n")
     body = body.replace(
         "- reviewer: <actual tool or fallback>", "- reviewer: claude-code"
     )
@@ -55,3 +55,23 @@ def test_filled_template_footer_is_outside_details_and_code_fences():
         require_governor_footer=True,
         changed_files=["AGENTS.md"],
     )
+
+
+def test_unfilled_template_passes_only_for_non_governor_changes():
+    root = Path(__file__).resolve().parents[3]
+    template = (root / ".github/pull_request_template.md").read_text()
+    assert not check_body(
+        template,
+        source="template",
+        require_governor_footer=True,
+        changed_files=["src/user/domain/services/user_service.py"],
+    )
+    violations = check_body(
+        template,
+        source="template",
+        require_governor_footer=True,
+        changed_files=["AGENTS.md"],
+    )
+    assert [v.reason for v in violations] == [
+        "governor-changing PR must declare 'trigger: yes' (ADR 047 D2)"
+    ]
