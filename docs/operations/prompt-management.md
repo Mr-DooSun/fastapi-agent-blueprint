@@ -125,20 +125,24 @@ process, filter `ai_usage` by `prompt_version` rather than waiting a fixed time.
 
 ## Failure modes
 
-A prompt fetch never fails a request. Every failure below serves the code
+A prompt fetch never fails a request, and a request never waits more than
+3 seconds for one. Every failure below except the warm-cache row serves the code
 persona and records `prompt_source=inline`.
 
 | Situation | What happens | Log event (warning) |
 |---|---|---|
-| Langfuse unreachable on a cold cache (first call in a process) | The call waits for one retry with a 3 s timeout each (about 6 s), then uses code text | `prompt_fallback_served` |
-| Langfuse unreachable on a warm cache | The last fetched version keeps being served; background refreshes fail quietly | none from the app |
+| Langfuse slow or unreachable on a cold cache (first call in a process) | The call waits at most 3 s, then uses code text. The fetch carries on in a background thread — the SDK's HTTP client retries and honours `Retry-After` for up to minutes — and fills the cache when it lands. Concurrent calls for the same prompt join that one fetch instead of starting more | `prompt_fetch_timeout`, or `prompt_fallback_served` if the SDK gives up first |
+| Langfuse unreachable on a warm cache | The **last fetched Langfuse version** keeps being served — not the code text — and the ledger still records it as `langfuse`. Background refreshes fail quietly | none from the app |
 | `PROMPT_LABEL` not carried by any version (typo, label removed) | Langfuse answers 404 and does **not** fall back to another label, so a cold process serves code text on every call | `prompt_fallback_served` |
 | Prompt not found under that name | Same as above | `prompt_fallback_served` |
 | Prompt is chat-type, or the text is empty | Code text | `prompt_unusable_content` |
 | Any other error raised by the client | Code text | `prompt_fetch_failed` (logs `exc_type` only) |
 
-Each event carries `prompt_name` and `label`. The `langfuse` SDK logger may also
-log its own warning for a fetch error.
+Each event carries `prompt_name` and `label`. The SDK's own two fetch-error
+records (`Error while fetching prompt`, `Returning fallback prompt`) are dropped
+by a filter on the `langfuse` logger, because they interpolate the HTTP response
+body — which can carry whatever a proxy or Langfuse put there. The events above
+replace them.
 
 A sustained stream of `prompt_fallback_served` usually means a wrong
 `PROMPT_LABEL`, prompt name, or `LANGFUSE_BASE_URL` — the feature then looks
@@ -157,7 +161,8 @@ into the `ai_usage` ledger:
 | `external_prompt_ref` | `"{name}@{version}"`, e.g. `docs_answer@7` | empty |
 
 The admin **AI Usage** page shows the Prompt, Prompt Version and Prompt Source
-columns. After a promotion, new rows should show the new version within one TTL;
+columns. After a promotion, new rows show the new version once each process has
+refreshed (one TTL plus one call — see [Propagation delay](#propagation-delay));
 rows with `prompt_source=inline` while the feature is enabled are degraded calls.
 `external_prompt_ref` identifies the exact text, because Langfuse versions are
 immutable — use it to find the requests a bad version affected. The label is not

@@ -100,13 +100,23 @@ cross the "admin-panel product" non-goal. Nothing in #447 changed that argument.
    an edited persona *after* the boundary guidance. Input escaping and the ADR 051
    guardrails are unchanged; the prompt-leak check now runs against the resolved
    instructions.
-5. **Degrade, never fail.** The Langfuse SDK `get_prompt` is synchronous, so it runs
-   in `asyncio.to_thread`. `max_retries=1` and `fetch_timeout_seconds=3` bound a
-   cold-cache miss; a warm cache returns immediately and, after the TTL, serves the
-   stale value while refreshing in the background. A raised exception, an SDK
+5. **Degrade, never fail, never wait long.** The Langfuse SDK `get_prompt` is
+   synchronous and its knobs do not bound it: `max_retries` limits only the outer
+   loop, while the generated HTTP client retries each attempt twice more and honours
+   `Retry-After` up to 60 s per sleep (review R1 measured ~4 minutes against a 503).
+   So the request never waits on the SDK call: each fetch runs on a daemon thread,
+   single-flight per prompt name, and the request waits at most 3 s
+   (`prompt_fetch_timeout`) before degrading while the fetch carries on and warms
+   the cache. Daemon threads, not a pool, so a fetch sleeping on `Retry-After`
+   cannot hold a shutdown and cannot starve the shared default executor. A warm
+   cache returns immediately and, after the TTL, serves the stale value while
+   refreshing in the background; during an outage a warm process keeps serving the
+   last fetched Langfuse version, not the code text. A raised exception, an SDK
    fallback (`is_fallback`), or non-text / empty content all return the inline
    snapshot and log a warning (`prompt_fetch_failed` with `exc_type` only,
-   `prompt_fallback_served`, `prompt_unusable_content`). The client is built with
+   `prompt_fallback_served`, `prompt_unusable_content`). The SDK's own two fetch-error
+   log records are filtered out, because they interpolate the HTTP response body
+   (review R2). The client is built with
    `tracing_enabled=False`: trace export stays on the OTEL path (ADR 046 §1).
 6. **Ledger linkage.** The real answer agent and classifier pass the resolved
    snapshot to `track_agent_usage` on every call, inline included, filling
@@ -193,8 +203,8 @@ runbook says so.
   serves the old version on its first call afterwards. ADR 046 Problem §3 named
   this; the ledger's
   `external_prompt_ref` is now the way to identify affected calls.
-- A cold-cache miss against a slow or down Langfuse can delay a call by about
-  6 seconds (two 3-second attempts) before degrading. `PROMPT_CACHE_TTL_SECONDS=0`
+- A cold-cache miss against a slow or down Langfuse delays a call by at most the
+  3-second request deadline before degrading. `PROMPT_CACHE_TTL_SECONDS=0`
   puts that round-trip on every call.
 - Langfuse answers 404 for a label no version carries and does not fall back to
   another label, so a `PROMPT_LABEL` typo degrades every call to code text,
@@ -216,9 +226,11 @@ runbook says so.
 
 **Limits of the evidence.** The Langfuse path is verified with a fake client in
 `tests/unit/_core/infrastructure/prompt/test_prompt_providers.py` (success, `is_fallback`, exception, unusable content, label/TTL
-pass-through). A live round-trip against a running Langfuse is not part of CI, and
-the ~6 s cold-miss bound is derived from the configured retry/timeout values, not
-measured.
+pass-through, deadline and single-flight) and against the real SDK 4.18.0 over an
+`httpx.MockTransport` (a 503 with `Retry-After: 60` returns in under 2 s; a 401 body
+never reaches the logs). Propagation timing was measured against the real SDK and a
+stand-in prompt API, not a running Langfuse server; a live round-trip is not part of
+CI.
 
 **Revisit when** a consumer needs prompt variables, a per-tenant prompt model
 exists, traffic must be split between versions, or a second backend (for example

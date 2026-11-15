@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `PROMPT_CACHE_TTL_SECONDS` (default 60). Only the persona is editable: the
   prompt-injection boundary tail stays in code and is always appended last. Any
   fetch failure, SDK fallback or unusable prompt degrades to the code persona and
-  logs a warning; requests never fail on Langfuse. Every call by these agents now
+  logs a warning; requests never fail on Langfuse and never wait more than 3 s
+  for it. Every call by these agents now
   records `prompt_name` / `prompt_version` / `prompt_source` /
   `external_prompt_ref` (`"{name}@{version}"`) in the `ai_usage` ledger, inline
   calls included — no migration. Unset, behaviour is unchanged. Operator runbook:
