@@ -30,6 +30,20 @@ class DbPromptProvider:
     async def get_active(self, name: str, *, default: str) -> PromptSnapshot:
         try:
             active = await self._repository.get_active(name)
+            if active is None:
+                return inline_snapshot(name, default)
+            version = str(active.version)
+            # Inside the try: a stored row the snapshot rejects (e.g. empty
+            # text written around the service) is store corruption, and must
+            # degrade like any other store failure rather than fail the call.
+            return PromptSnapshot(
+                name=name,
+                content=active.content,
+                version=version,
+                source="self",
+                # Versions are append-only, so name@version names exact text.
+                external_ref=f"{name}@{version}",
+            )
         except Exception as exc:
             # exc_type only: a driver error message can carry the DSN.
             _logger.warning(
@@ -38,16 +52,3 @@ class DbPromptProvider:
                 exc_type=type(exc).__name__,
             )
             return inline_snapshot(name, default)
-
-        if active is None:
-            return inline_snapshot(name, default)
-
-        version = str(active.version)
-        return PromptSnapshot(
-            name=name,
-            content=active.content,
-            version=version,
-            source="self",
-            # Versions are append-only, so name@version names exact text.
-            external_ref=f"{name}@{version}",
-        )

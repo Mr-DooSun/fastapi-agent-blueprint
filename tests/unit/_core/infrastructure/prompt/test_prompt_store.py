@@ -233,3 +233,44 @@ async def test_unique_constraint_rejects_a_duplicate_number(service, test_db, na
     # hand-written SQL, which the repository does not contain.
     assert not hasattr(PromptStoreRepository, "update_version")
     _ = update  # imported to document the absence above
+
+
+# ── Review round 1 (#451) ───────────────────────────────────────────────────
+
+
+async def _force_active(test_db, name: str, version: int, content: str | None) -> None:
+    """Write store rows around the service, as hand-edited data would."""
+    from src._core.infrastructure.prompt.models.prompt_model import PromptActiveModel
+
+    async with test_db.session() as session:
+        if content is not None:
+            session.add(
+                PromptVersionModel(
+                    name=name, version=version, content=content, created_by="sql"
+                )
+            )
+        session.add(PromptActiveModel(name=name, version=version, activated_by="sql"))
+        await session.commit()
+
+
+async def test_corrupt_stored_text_degrades_instead_of_failing(repo, test_db, name):
+    from structlog.testing import capture_logs
+
+    await _force_active(test_db, name, 1, "")  # empty text the service would refuse
+    with capture_logs() as logs:
+        snapshot = await DbPromptProvider(repo).get_active(name, default=_DEFAULT)
+
+    assert (snapshot.content, snapshot.source) == (_DEFAULT, "inline")
+    assert any(e["event"] == "prompt_store_unavailable" for e in logs)
+
+
+async def test_dangling_pointer_is_reported_not_silently_ignored(repo, test_db, name):
+    from structlog.testing import capture_logs
+
+    await _force_active(test_db, name, 7, None)  # pointer, no version row
+    with capture_logs() as logs:
+        snapshot = await DbPromptProvider(repo).get_active(name, default=_DEFAULT)
+
+    assert snapshot.source == "inline"
+    event = next(e for e in logs if e["event"] == "prompt_store_unavailable")
+    assert event["exc_type"] == "DanglingActivePointer"

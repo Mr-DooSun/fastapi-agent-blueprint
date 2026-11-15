@@ -277,8 +277,10 @@ the Decision left open:
 - A compromised account holding `prompts` can change agent behaviour (see the
   trust-boundary note above).
 - The optimistic check is check-then-write, not a transaction: two activations
-  within the same few milliseconds can both pass. Both are audited, and the last
-  write wins.
+  within the same few milliseconds can both pass it. With a version already
+  active, both succeed and are audited and the last wins; with nothing active,
+  the second loses the primary-key race on the pointer row and is audited as a
+  failure.
 - Existing admins do not receive `prompts` automatically. Only the first admin
   created by the setup wizard gets every key; everyone else must be granted it on
   `/admin/accounts`.

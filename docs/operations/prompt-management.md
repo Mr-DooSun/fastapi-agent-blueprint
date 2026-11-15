@@ -76,9 +76,10 @@ Every write, successful or refused, is recorded in the admin audit log
 | `PROMPT_REVERT` | `name` |
 
 A refused write carries a stable `failure_reason`, for example
-`PROMPT_CONTENT_INVALID` (empty or too long) or `PROMPT_ACTIVE_CHANGED`. The
-permission is re-checked on every write, so revoking it takes effect even for a
-page that is already open.
+`PROMPT_CONTENT_INVALID` (empty or too long), `PROMPT_ACTIVE_CHANGED`, or
+`PERMISSION_DENIED`. The permission is re-checked on every write, so revoking it
+takes effect even for a page that is already open, and the refused attempt is
+still audited.
 
 ## Verifying which prompt served a call
 
@@ -110,6 +111,13 @@ search the logs for that event.
   boundary rules, runtime guardrails and audit log limit and record what an edit
   can do; they do not prevent it.
 - The concurrent-edit check is check-then-write: two activations within the same
-  few milliseconds can both pass. Both are audited and the last write wins.
+  few milliseconds can both pass it. When a version is already active, both
+  writes succeed, both are audited, and the last one wins. When **nothing** is
+  active yet, the two writes race to insert the same pointer row: the first
+  wins and the second fails on the primary key, shows an error, and is audited
+  as a failure.
+- A pointer to a version that does not exist (hand-edited or partially restored
+  data) is not read as "nothing active": agents serve the code text and log
+  `prompt_store_unavailable` with `exc_type=DanglingActivePointer`.
 - No diff view, test run before activation, labels or prompt variables
   ([ADR 066](../history/066-prompt-provider-contract.md) Decision 5 defers them).

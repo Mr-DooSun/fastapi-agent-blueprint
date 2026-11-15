@@ -200,6 +200,16 @@ async def _run_write(
 ) -> None:
     username = await _authorised_username()
     if username is None:
+        # Refused before any side effect, but still evidence: a write attempted
+        # after the permission was revoked (or a replayed event) is exactly what
+        # an investigation looks for.
+        await get_audit_logger().log(
+            action=action,
+            domain=_PAGE_KEY,
+            record_id=name,
+            result=AuditResult.FAILURE,
+            failure_reason="PERMISSION_DENIED",
+        )
         return
     async with button_loading(button):
         try:

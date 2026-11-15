@@ -24,6 +24,15 @@ from src._core.infrastructure.prompt.models.prompt_model import (
 )
 
 
+class DanglingActivePointer(RuntimeError):
+    """``prompt_active`` names a version that ``prompt_version`` does not hold.
+
+    The write path cannot produce this (activate checks the version exists and
+    versions are never deleted); it means hand-edited or partially restored
+    data. Raised rather than read as "nothing active" so the provider logs it.
+    """
+
+
 class PromptStoreRepository:
     def __init__(self, database: Database | Callable[[], Database]) -> None:
         """Accept a ``Database`` or a zero-arg provider returning one.
@@ -55,7 +64,9 @@ class PromptStoreRepository:
                 PromptActiveModel.activated_by,
                 PromptActiveModel.activated_at,
             )
-            .join(
+            # Outer join: "no pointer" and "pointer to a missing version" must
+            # stay distinguishable — the first is normal, the second is not.
+            .outerjoin(
                 PromptVersionModel,
                 (PromptVersionModel.name == PromptActiveModel.name)
                 & (PromptVersionModel.version == PromptActiveModel.version),
@@ -66,6 +77,8 @@ class PromptStoreRepository:
             row = (await session.execute(stmt)).one_or_none()
         if row is None:
             return None
+        if row.content is None:
+            raise DanglingActivePointer(f"{name}@{row.version}")
         return ActivePromptDTO(
             name=row.name,
             version=row.version,
