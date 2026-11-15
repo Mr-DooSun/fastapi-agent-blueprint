@@ -186,8 +186,11 @@ jobs:
       # reported 20 unresolved imports across src/ (pydantic_ai.*, opentelemetry.*,
       # tiktoken) — noise that hides real findings and cannot be fixed in code.
       # Measured on a CI-equivalent install: 89 errors before, 69 after.
+      # langfuse (#447): the prompt provider's lazy `from langfuse import
+      # Langfuse` is otherwise an unresolved import, and the enabled-branch
+      # wiring test skips without it.
       - name: Install dependencies
-        run: uv sync --locked --group dev --extra admin --extra aws --extra sqs --extra rabbitmq --extra pydantic-ai --extra pydantic-ai-anthropic --extra otel
+        run: uv sync --locked --group dev --extra admin --extra aws --extra sqs --extra rabbitmq --extra pydantic-ai --extra pydantic-ai-anthropic --extra otel --extra langfuse
 
       # Scope comes from [tool.pyright] in pyproject.toml, and since #381 it is
       # all of src/ at 0 errors — it started as an allow-list of clean packages

@@ -83,6 +83,9 @@ pydantic-ai = ["pydantic-ai-slim[openai]>=1.99.0,<2", "tiktoken>=0.7.0"]
 pydantic-ai-anthropic = ["pydantic-ai-slim[anthropic]>=1.99.0,<2"]
 pydantic-ai-google = ["pydantic-ai-slim[google]>=1.99.0,<2"]
 pydantic-ai-duckduckgo = ["pydantic-ai-slim[duckduckgo]>=1.99.0,<2"]
+# Runtime prompt management (#447, ADR 066). Opt-in: only the Langfuse prompt
+# provider imports it, lazily, when PROMPT_PROVIDER=langfuse.
+langfuse = ["langfuse>=4.18.0,<5"]
 otel = [
     "opentelemetry-api>=1.40.0",
     "opentelemetry-sdk>=1.40.0",

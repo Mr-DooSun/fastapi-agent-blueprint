@@ -266,6 +266,7 @@ Live registration: [Claude settings](../../../.claude/settings.json); implementa
 | LLM (PydanticAI Agent) | Active | build_llm_model(), LLMConfig, Agent structured output |
 | OpenTelemetry tracing | Active | Optional `otel` extra; server/worker instrumentation. See [OTEL runbook](../../../docs/operations/observability-otel.md). |
 | Langfuse observability recipe | Active | Opt-in OTLP recipe. See [Langfuse runbook](../../../docs/operations/observability-langfuse.md). |
+| Prompt management (Langfuse) | Active | Optional `langfuse` extra; `PROMPT_PROVIDER=langfuse` resolves agent personas by label, inline otherwise. Boundary tail stays in code ([ADR 066](../../history/066-runtime-prompt-provider-langfuse-opt-in.md)); [operator runbook](../../../docs/operations/prompt-management.md). |
 | Text chunking (semantic-text-splitter) | Active | chunk_text(), chunk_text_by_tokens() in src._core.common.text_utils |
 | Structured Logging (structlog) | Active | Server/worker pipeline and sensitive-field prohibition: [AGENTS.md](../../../AGENTS.md#structured-logging). |
 | JWT/Authentication | Active | HS256 access/refresh rotation, hashed persistence, Bearer-protected user routes (§15 / §17). |

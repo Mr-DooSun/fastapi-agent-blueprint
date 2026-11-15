@@ -249,3 +249,29 @@ result = {
             "would be read by Settings and silently change the result"
         )
         assert out["client"] == "NoopNotificationClient"
+
+
+class TestPromptProviderEnabled:
+    """#447: the Langfuse branch receives the configured label and TTL."""
+
+    def test_langfuse_provider_receives_label_and_ttl(self):
+        pytest.importorskip("langfuse")
+        out = resolve_in_env(
+            {
+                "PROMPT_PROVIDER": "langfuse",
+                "LANGFUSE_PUBLIC_KEY": "pk-lf-probe",
+                "LANGFUSE_SECRET_KEY": "sk-lf-probe",
+                "LANGFUSE_BASE_URL": "http://127.0.0.1:9",
+                "PROMPT_LABEL": "staging",
+                "PROMPT_CACHE_TTL_SECONDS": "15",
+            },
+            """
+provider = container.prompt_provider()
+result = {
+    "type": type(provider).__name__,
+    "label": provider._label,
+    "ttl": provider._cache_ttl_seconds,
+}
+""",
+        )
+        assert out == {"type": "LangfusePromptProvider", "label": "staging", "ttl": 15}

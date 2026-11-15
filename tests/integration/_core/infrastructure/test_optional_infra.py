@@ -53,6 +53,7 @@ def clean_optional_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "notification_warning_threshold",
         "notification_critical_webhook_url",
         "notification_warning_webhook_url",
+        "prompt_provider",
     ):
         monkeypatch.setattr(settings, field, None)
     monkeypatch.setattr(settings, "broker_type", None)
@@ -76,6 +77,14 @@ class TestCoreContainerMinimalBoot:
     def test_embedding_client_returns_stub(self, clean_optional_env: None):
         container = CoreContainer()
         assert isinstance(container.embedding_client(), StubEmbedder)
+
+    def test_prompt_provider_serves_code_prompts(self, clean_optional_env: None):
+        from src._core.infrastructure.prompt.inline_prompt_provider import (
+            InlinePromptProvider,
+        )
+
+        container = CoreContainer()
+        assert isinstance(container.prompt_provider(), InlinePromptProvider)
 
     def test_notification_client_returns_noop(self, clean_optional_env: None):
         container = CoreContainer()

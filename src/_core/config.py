@@ -18,6 +18,7 @@ KNOWN_EMBEDDING_PROVIDERS = (
 KNOWN_STORAGE_TYPES = ("s3", "minio")
 KNOWN_LLM_PROVIDERS = ("openai", "anthropic", "bedrock")
 KNOWN_NOTIFICATION_PROVIDERS = ("slack", "discord")
+KNOWN_PROMPT_PROVIDERS = ("langfuse",)
 # The only Selector key that had no tuple and no boot check until #328.
 # `s3` is the natural typo — it is the correct spelling for STORAGE_TYPE —
 # and it used to boot clean in prod, then 500 on the first docs request
@@ -470,6 +471,55 @@ class Settings(BaseSettings):
             "OTLP collector endpoint. Defaults to gRPC (e.g. "
             "http://localhost:4317). Required when OTEL_ENABLED=true. "
             "See docs/operations/observability-otel.md for HTTP exporter swap."
+        ),
+    )
+
+    # ----------------------------------------------------------------
+    # Prompt management (Optional — #447, ADR 066)
+    # ----------------------------------------------------------------
+    prompt_provider: str | None = Field(
+        default=None,
+        validation_alias="PROMPT_PROVIDER",
+        description=(
+            "Where agent personas are resolved at runtime. Unset → the text "
+            "shipped in code (InlinePromptProvider). 'langfuse' → resolved by "
+            "PROMPT_LABEL from Langfuse, falling back to the code text on any "
+            "failure. Requires the [langfuse] extra."
+        ),
+    )
+    langfuse_public_key: str | None = Field(
+        default=None, validation_alias="LANGFUSE_PUBLIC_KEY"
+    )
+    langfuse_secret_key: str | None = Field(
+        default=None, validation_alias="LANGFUSE_SECRET_KEY"
+    )
+    langfuse_base_url: str | None = Field(
+        default=None,
+        validation_alias="LANGFUSE_BASE_URL",
+        description=(
+            "Langfuse host, e.g. https://cloud.langfuse.com or a self-hosted "
+            "URL. Required with PROMPT_PROVIDER=langfuse — the SDK's own "
+            "default would silently send credentials to Langfuse Cloud."
+        ),
+    )
+    prompt_label: str = Field(
+        default="production",
+        min_length=1,
+        validation_alias="PROMPT_LABEL",
+        description=(
+            "Langfuse label to serve. A label no version carries is a 404 in "
+            "Langfuse (no fallback to another label), so a typo degrades every "
+            "call to the code text — visible as prompt_fallback_served logs."
+        ),
+    )
+    prompt_cache_ttl_seconds: int = Field(
+        default=60,
+        ge=0,
+        validation_alias="PROMPT_CACHE_TTL_SECONDS",
+        description=(
+            "Per-process client cache TTL. Bounds how long an edit or rollback "
+            "takes to reach every server/worker process. 0 disables caching "
+            "and puts a Langfuse round-trip on every agent call."
         ),
     )
 
@@ -948,6 +998,37 @@ class Settings(BaseSettings):
         if self.otel_enabled and not self.otel_exporter_otlp_endpoint:
             errors.append(
                 "[OTEL] OTEL_ENABLED=true requires: otel_exporter_otlp_endpoint missing"
+            )
+
+        prompt_provider = (self.prompt_provider or "").lower().strip()
+        if prompt_provider and prompt_provider not in KNOWN_PROMPT_PROVIDERS:
+            errors.append(
+                f"[prompt_provider] Unknown prompt provider "
+                f"'{self.prompt_provider}'. "
+                f"Expected one of: {', '.join(KNOWN_PROMPT_PROVIDERS)}"
+            )
+
+        langfuse_fields = {
+            "langfuse_public_key": self.langfuse_public_key,
+            "langfuse_secret_key": self.langfuse_secret_key,
+            "langfuse_base_url": self.langfuse_base_url,
+        }
+        if prompt_provider == "langfuse":
+            missing = sorted(k for k, v in langfuse_fields.items() if not v)
+            if missing:
+                errors.append(
+                    "[Prompt/Langfuse] PROMPT_PROVIDER=langfuse requires: "
+                    f"{', '.join(missing)} missing"
+                )
+        elif not prompt_provider and any(langfuse_fields.values()):
+            # Same reasoning as the notification webhook check above: the
+            # credentials have no effect without the switch, and an operator
+            # who pasted them expects prompts to come from Langfuse.
+            errors.append(
+                "[Prompt/Langfuse] LANGFUSE_* credentials are set but "
+                "PROMPT_PROVIDER is not, so prompts are served from code and "
+                "the credentials are silently ignored. Set "
+                "PROMPT_PROVIDER=langfuse, or remove them"
             )
 
         if env in STRICT_ENVS and self.ai_usage_public_api_enabled:

@@ -781,6 +781,74 @@ class TestOtelConfig:
             assert s.otel_exporter_otlp_endpoint == "http://localhost:4317"
 
 
+class TestPromptConfig:
+    """Prompt management settings (#447, ADR 066)."""
+
+    _LANGFUSE = {
+        "LANGFUSE_PUBLIC_KEY": "pk-lf-test",
+        "LANGFUSE_SECRET_KEY": "sk-lf-test",
+        "LANGFUSE_BASE_URL": "https://langfuse.example.com",
+    }
+
+    def test_unset_by_default_serves_code_prompts(self):
+        env = {"ENV": "local", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.prompt_provider is None
+            assert s.prompt_label == "production"
+            assert s.prompt_cache_ttl_seconds == 60
+
+    def test_langfuse_with_full_group_accepted(self):
+        env = {
+            "ENV": "local",
+            "PROMPT_PROVIDER": "langfuse",
+            **self._LANGFUSE,
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            s = _create_settings()
+            assert s.prompt_provider == "langfuse"
+
+    @pytest.mark.parametrize(
+        "missing",
+        ["LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_BASE_URL"],
+    )
+    def test_langfuse_with_partial_group_rejected(self, missing):
+        group = {k: v for k, v in self._LANGFUSE.items() if k != missing}
+        env = {
+            "ENV": "local",
+            "PROMPT_PROVIDER": "langfuse",
+            **group,
+            **_REQUIRED_VARS,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(
+                ValidationError,
+                match=rf"Prompt/Langfuse.*{missing.lower()}",
+            ):
+                _create_settings()
+
+    def test_unknown_provider_rejected(self):
+        env = {"ENV": "local", "PROMPT_PROVIDER": "logfire", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match="Unknown prompt provider"):
+                _create_settings()
+
+    def test_credentials_without_provider_rejected(self):
+        # Pasting the keys and forgetting the switch would silently keep
+        # serving code prompts while the operator edits Langfuse.
+        env = {"ENV": "local", **self._LANGFUSE, **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError, match="PROMPT_PROVIDER is not"):
+                _create_settings()
+
+    def test_negative_cache_ttl_rejected(self):
+        env = {"ENV": "local", "PROMPT_CACHE_TTL_SECONDS": "-1", **_REQUIRED_VARS}
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ValidationError):
+                _create_settings()
+
+
 class TestDocsUrlGating:
     """`docs_url` / `redoc_url` / `openapi_url` are exposed only in dev envs.
 

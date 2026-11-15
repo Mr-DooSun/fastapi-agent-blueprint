@@ -5,6 +5,7 @@
 - Related issues: #74 (Langfuse integration — superseded), #75 (AI Usage domain), #97 (simple-chatbot example)
 - Related ADRs: [037](037-pydanticai-agent-integration.md)(PydanticAI), [042](042-optional-infrastructure-di-pattern.md)(Optional Infra DI), [038 (archive)](archive/038-llm-observability-dual-path.md)(superseded by this ADR)
 - Supersedes: [archive/038](archive/038-llm-observability-dual-path.md)
+- Amended by: ADR [066](066-runtime-prompt-provider-langfuse-opt-in.md) — implements the deferred §4 `get_active` contract as an optional prompt provider (inline default, Langfuse opt-in) after the first trigger condition was met (#447), and redefines §3's `external_prompt_ref` as `"{name}@{version}"` because the Langfuse SDK exposes no prompt UUID. §1, §2 and the rejection of a self-built editor are unchanged.
 
 ## Summary
 
