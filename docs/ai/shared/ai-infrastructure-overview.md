@@ -36,7 +36,7 @@ PydanticAI Agent execution
 | Trace output | OTEL (OTLP exporter) | Backend-agnostic; `Agent.instrument_all()` one line; any OTLP backend works | [046](../../history/046-otel-core-langfuse-recipe-prompt-domain-defer.md) |
 | Langfuse | Opt-in recipe | MIT OSS; current recipe receives OTLP traces only; prompt linking, eval, and A/B analysis require Langfuse SDK/API or span processing; not required at quickstart | [046](../../history/046-otel-core-langfuse-recipe-prompt-domain-defer.md) |
 | Customer Billing | Self-owned `ai_usage` domain | Business-critical data cannot depend on external system | [046](../../history/046-otel-core-langfuse-recipe-prompt-domain-defer.md) |
-| Prompt management | Prompt provider contract; inline implementation only | ADR 046's first trigger was met (non-developer editing without deploy). Only the persona is resolvable; the boundary tail stays in code. Langfuse rejected for operational burden; operator editing comes as a minimal self-hosted DB store (follow-up) | [066](../../history/066-prompt-provider-contract.md) (amends [046](../../history/046-otel-core-langfuse-recipe-prompt-domain-defer.md)) |
+| Prompt management | Prompt provider contract + minimal self-hosted DB store (#451) | ADR 046's first trigger was met (non-developer editing without deploy). Only the persona is editable; the boundary tail stays in code. Langfuse rejected for operational burden; operators edit on `/admin/prompts` ([runbook](../../operations/prompt-management.md)) | [066](../../history/066-prompt-provider-contract.md) (amends [046](../../history/046-otel-core-langfuse-recipe-prompt-domain-defer.md)) |
 
 ### OTEL Backend Comparison
 
@@ -79,8 +79,8 @@ Issue #15 (PydanticAI Core) — COMPLETED
 5. **LLMConfig value object** — Domain layer cannot import Settings (infrastructure). `LLMConfig(model_name, api_key)` carries only what agents need.
 6. **OTEL path independence** — OTEL→backend failure does not affect customer billing. Self DB failure does not affect tracing.
 7. **Optional infrastructure** — `OTEL_ENABLED=false` (default) means zero overhead at quickstart. `uv sync --extra otel` enables tracing.
-8. **Prompt provider, not a prompt domain** — `PromptProviderProtocol.get_active(name, *, default) -> PromptSnapshot` (ADR 066). `InlinePromptProvider` (a plain `CoreContainer` Singleton) is the only implementation. The planned self-hosted DB store swaps that provider, must degrade to the code persona on any failure, and is limited to the minimum in ADR 066 Decision 5; a full prompt editor remains rejected.
-9. **prompt_version is metadata, not a registry** — Nullable `prompt_version` in `ai_usage_log` is a billing/analytics label. Real agent calls record `prompt_name` and `prompt_source`; inline calls leave `prompt_version` and `external_prompt_ref` null (ADR 066 Decision 4).
+8. **Prompt provider, not a prompt domain** — `PromptProviderProtocol.get_active(name, *, default) -> PromptSnapshot` (ADR 066). `DbPromptProvider` (a plain `CoreContainer` Singleton, #451) serves the active stored version (`source="self"`) or the code persona; it reads once per call with no cache and degrades to the code persona (`inline`, `prompt_store_unavailable` log) on any failure. The store is limited to the minimum in ADR 066 Decision 5 (registered names only, append-only versions, save ≠ activate, `prompts` permission, audited writes); a full prompt editor remains rejected.
+9. **prompt_version is metadata, not a registry** — Nullable `prompt_version` in `ai_usage_log` is a billing/analytics label. Real agent calls record `prompt_name` and `prompt_source`; inline calls leave `prompt_version` and `external_prompt_ref` null (ADR 066 Decision 4), and a stored version records `prompt_version=<n>` and `external_prompt_ref=name@<n>`.
 
 ## File Map by Issue
 

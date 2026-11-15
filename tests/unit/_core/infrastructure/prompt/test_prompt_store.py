@@ -131,7 +131,8 @@ async def test_activate_rollback_and_revert(service, repo, name) -> None:
     await service.save_version(name, "v2 text", "alice")
 
     await service.activate(name, 2, "alice", expected_active=None)
-    assert (await repo.get_active(name)).content == "v2 text"  # type: ignore[union-attr]
+    active_v2 = await repo.get_active(name)
+    assert active_v2 is not None and active_v2.content == "v2 text"
 
     # A rollback is activating an older version.
     await service.activate(name, 1, "bob", expected_active=2)
