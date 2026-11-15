@@ -9,30 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Runtime prompt management (#447, ADR 066). With `PROMPT_PROVIDER=langfuse` and
-  the new `langfuse` extra, the personas of the RAG answer agent (`docs_answer`)
-  and the classifier (`classification`) are resolved from Langfuse by
-  `PROMPT_LABEL` (default `production`), cached per process for
-  `PROMPT_CACHE_TTL_SECONDS` (default 60). Only the persona is editable: the
-  prompt-injection boundary tail stays in code and is always appended last. Any
-  fetch failure, SDK fallback or unusable prompt degrades to the code persona and
-  logs a warning; requests never fail on Langfuse and never wait more than 3 s
-  for it. Every call by these agents now
-  records `prompt_name` / `prompt_version` / `prompt_source` /
-  `external_prompt_ref` (`"{name}@{version}"`) in the `ai_usage` ledger, inline
-  calls included — no migration. Unset, behaviour is unchanged. Operator runbook:
-  `docs/operations/prompt-management.md`.
+- Prompt provider contract (#447, ADR 066). The RAG answer agent (`docs_answer`)
+  and the classifier (`classification`) now resolve their persona through
+  `PromptProviderProtocol.get_active(name, *, default)`; the only implementation,
+  `InlinePromptProvider`, serves the code text, so behaviour is unchanged. The
+  prompt-injection boundary tail stays in code and `compose_instructions` always
+  appends it last. Every call by these agents now records `prompt_name` and
+  `prompt_source=inline` in the `ai_usage` ledger — no migration. Operator
+  editing without a deploy is planned as a minimal self-hosted, DB-backed store
+  in a follow-up ticket; Langfuse was evaluated and rejected.
 
 ### Changed
 
-- **For forks:** the `langfuse` extra moved the locked OpenTelemetry packages
-  from 1.40 to 1.45.2. They are shared with the `otel` extra, so an OTEL-enabled
-  deployment picks up the newer packages on its next `uv sync --locked`.
 - **For forks:** `PydanticAIAnswerAgent` and `PydanticAIClassifier` no longer pass
   `instructions=` to the `Agent` constructor; instructions are composed and passed
   per run. A subclass or patch that relied on the constructor instructions must
-  move to `compose_instructions` and run-time instructions. Setting any
-  `LANGFUSE_*` variable without `PROMPT_PROVIDER` is now rejected at boot.
+  move to `compose_instructions` and run-time instructions.
 
 ## [0.12.0] - 2026-11-07
 

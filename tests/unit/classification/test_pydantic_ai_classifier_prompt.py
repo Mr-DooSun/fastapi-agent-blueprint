@@ -92,7 +92,7 @@ class _FixedPersona:
     async def get_active(self, name: str, *, default: str) -> PromptSnapshot:
         self.calls.append((name, default))
         return PromptSnapshot(
-            name=name, content=self.persona, version="3", source="langfuse"
+            name=name, content=self.persona, version="3", source="self"
         )
 
 

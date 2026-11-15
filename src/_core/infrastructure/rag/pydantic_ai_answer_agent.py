@@ -39,7 +39,7 @@ _logger = structlog.stdlib.get_logger(__name__)
 _AGENT_NAME: Final[str] = "docs_answer"
 
 # The persona is the operator-editable part of the instructions (#447): under
-# PROMPT_PROVIDER=langfuse it is resolved per call under this prompt name, and
+# an operator-editable provider it is resolved per call under this prompt name, and
 # this constant is both the inline default and the fallback. The boundary
 # guidance (``RAG_INSTRUCTIONS_TAIL``) is NOT editable — ``compose_instructions``
 # appends it in code after whatever persona was resolved.

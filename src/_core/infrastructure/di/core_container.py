@@ -55,11 +55,6 @@ def _llm_selector() -> str:
     return "enabled" if settings.llm_model_name else "disabled"
 
 
-def _prompt_selector() -> str:
-    provider = (settings.prompt_provider or "").lower().strip()
-    return "enabled" if provider == "langfuse" else "disabled"
-
-
 def _notification_selector() -> str:
     return "enabled" if settings.notification_webhook_url else "disabled"
 
@@ -258,28 +253,6 @@ def _build_inline_prompt_provider():
     )
 
     return InlinePromptProvider()
-
-
-def _build_langfuse_prompt_provider(
-    public_key: str | None,
-    secret_key: str | None,
-    base_url: str | None,
-    label: str,
-    cache_ttl_seconds: int,
-):
-    from src._core.infrastructure.prompt.langfuse_prompt_provider import (
-        build_langfuse_prompt_provider,
-    )
-
-    # Settings validation rejects PROMPT_PROVIDER=langfuse without all three,
-    # so the empty-string defaults are never reached on the enabled branch.
-    return build_langfuse_prompt_provider(
-        public_key=public_key or "",
-        secret_key=secret_key or "",
-        base_url=base_url or "",
-        label=label,
-        cache_ttl_seconds=cache_ttl_seconds,
-    )
 
 
 def _build_notification_client(
@@ -497,24 +470,14 @@ class CoreContainer(containers.DeclarativeContainer):
     )
 
     #########################################################
-    # Prompt management (optional — PROMPT_PROVIDER=langfuse, #447 / ADR 066)
-    # Disabled → InlinePromptProvider: the persona shipped in code. Unlike a
-    # data store, a consumer always needs *a* prompt, so the disabled branch is
-    # a working provider rather than None.
+    # Prompt provider (#447 / ADR 066)
+    # Resolves the persona each real agent call uses. Today the only
+    # implementation is the code text (InlinePromptProvider); the
+    # self-hosted, DB-backed provider is a follow-up that swaps this one
+    # provider and nothing else.
     #########################################################
 
-    prompt_provider = providers.Selector(
-        _prompt_selector,
-        enabled=providers.Singleton(
-            _build_langfuse_prompt_provider,
-            public_key=settings.langfuse_public_key,
-            secret_key=settings.langfuse_secret_key,
-            base_url=settings.langfuse_base_url,
-            label=settings.prompt_label,
-            cache_ttl_seconds=settings.prompt_cache_ttl_seconds,
-        ),
-        disabled=providers.Singleton(_build_inline_prompt_provider),
-    )
+    prompt_provider = providers.Singleton(_build_inline_prompt_provider)
 
     #########################################################
     # Error Notification (optional — NOTIFICATION_PROVIDER=slack|discord)

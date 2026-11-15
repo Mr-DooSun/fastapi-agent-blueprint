@@ -53,7 +53,6 @@ def clean_optional_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "notification_warning_threshold",
         "notification_critical_webhook_url",
         "notification_warning_webhook_url",
-        "prompt_provider",
     ):
         monkeypatch.setattr(settings, field, None)
     monkeypatch.setattr(settings, "broker_type", None)

@@ -42,7 +42,7 @@ quickstart:
 	fi
 	@echo "→ Syncing dependencies (includes admin extra for the dashboard)"
 	@# `uv sync --extra admin` installs exactly that, so every *other* extra —
-	@# aws, otel, pydantic-ai, sqs, rabbitmq, langfuse — is uninstalled. Right for a
+	@# aws, otel, pydantic-ai, sqs, rabbitmq — is uninstalled. Right for a
 	@# first-time user, a trap inside a dev checkout: `pytest tests/` then aborts
 	@# during collection (two modules import `aioboto3`) and `uv run pyright`
 	@# reports 47 unresolved imports. The `dev` group itself survives, because uv
@@ -56,7 +56,7 @@ quickstart:
 	if [ -n "$$had_extras" ] && [ ! -d "$$had_extras" ]; then \
 		echo ""; \
 		echo "!  This was a development environment. The sync above uninstalled the"; \
-		echo "!  aws / otel / pydantic-ai / sqs / rabbitmq / langfuse extras, which quickstart"; \
+		echo "!  aws / otel / pydantic-ai / sqs / rabbitmq extras, which quickstart"; \
 		echo "!  does not need. Until you restore them, 'pytest tests/' aborts during"; \
 		echo "!  collection and 'uv run pyright' reports unresolved imports."; \
 		echo "!  Restore with:  make setup"; \

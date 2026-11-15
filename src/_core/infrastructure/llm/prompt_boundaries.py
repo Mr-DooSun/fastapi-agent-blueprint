@@ -16,9 +16,9 @@ Design invariants (codex-reviewed, cf. plan §1):
 * **Instruction tails are ``Final[LiteralString]``** so static analysis
   (``uv run pyright``) blocks future f-string interpolation of untrusted
   data into the agent's persistent behavioural contract.
-* **The persona is runtime data; the tail is not (#447, ADR 066).** Since
-  prompt management, the persona prose may come from Langfuse — operator
-  text that was never code-reviewed. ``compose_instructions`` is the only
+* **The persona is runtime data; the tail is not (#447, ADR 066).** The persona
+  arrives through ``PromptProviderProtocol`` — today the code text, and with the
+  planned operator-editable store (#451) text that was never code-reviewed. ``compose_instructions`` is the only
   place a persona meets a tail, and it always puts the tail *last*, so an
   edited persona can add guidance but cannot remove or follow the boundary
   rules. The tail parameter stays ``LiteralString``: only code can supply it.

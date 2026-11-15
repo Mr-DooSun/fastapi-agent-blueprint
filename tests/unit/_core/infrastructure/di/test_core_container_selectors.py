@@ -20,7 +20,6 @@ from src._core.infrastructure.di.core_container import (
     _notification_routing_selector,
     _notification_selector,
     _notification_warning_selector,
-    _prompt_selector,
     _s3vector_selector,
     _storage_selector,
 )
@@ -217,14 +216,3 @@ class TestNotificationRoutingSelector:
     def test_enabled_when_warning_threshold_set(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setattr(settings, "notification_warning_threshold", 400)
         assert _notification_routing_selector() == "enabled"
-
-
-class TestPromptSelector:
-    def test_disabled_when_provider_unset(self, monkeypatch: pytest.MonkeyPatch):
-        monkeypatch.setattr(settings, "prompt_provider", None)
-        assert _prompt_selector() == "disabled"
-
-    @pytest.mark.parametrize("value", ["langfuse", "Langfuse", " langfuse "])
-    def test_enabled_for_langfuse(self, monkeypatch: pytest.MonkeyPatch, value: str):
-        monkeypatch.setattr(settings, "prompt_provider", value)
-        assert _prompt_selector() == "enabled"

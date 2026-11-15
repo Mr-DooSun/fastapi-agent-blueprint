@@ -30,7 +30,7 @@ _logger = structlog.stdlib.get_logger(__name__)
 _AGENT_NAME: Final[str] = "classification"
 
 # Operator-editable persona (#447): resolved per call under this prompt name
-# when PROMPT_PROVIDER=langfuse; this constant is the inline default and the
+# by an operator-editable provider; this constant is the inline default and the
 # fallback. The boundary tail is appended in code — see ``compose_instructions``
 # and the parallel block in ``pydantic_ai_answer_agent.py``.
 _PROMPT_NAME: Final[str] = _AGENT_NAME

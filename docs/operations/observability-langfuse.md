@@ -38,11 +38,6 @@ remain out of scope and require a later SDK/API or custom span-processor issue:
 - A/B prompt label analysis
 - Live prompt editing with trace feedback
 
-Editing agent personas in Langfuse without a deploy is a separate opt-in
-feature (`PROMPT_PROVIDER=langfuse`) that can point at this same local stack.
-It links each call to a prompt version through the `ai_usage` ledger, not
-through traces. See [prompt-management.md](prompt-management.md).
-
 ## Prerequisites
 
 Install the OTEL and PydanticAI extras:

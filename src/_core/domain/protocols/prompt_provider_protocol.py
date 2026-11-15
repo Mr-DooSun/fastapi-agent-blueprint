@@ -20,8 +20,8 @@ class PromptProviderProtocol(Protocol):
 
     Bundled implementations (``src/_core/infrastructure/prompt/``):
     - ``InlinePromptProvider`` — returns ``default`` (quickstart / unset).
-    - ``LangfusePromptProvider`` — resolves by label from Langfuse
-      (``PROMPT_PROVIDER=langfuse``).
+    An operator-editable, DB-backed provider (``source="self"``) is the planned
+    second implementation; it must keep the same degrade-to-``default`` rule.
     """
 
     async def get_active(self, name: str, *, default: str) -> PromptSnapshot: ...
