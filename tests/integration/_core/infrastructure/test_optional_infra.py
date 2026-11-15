@@ -77,13 +77,15 @@ class TestCoreContainerMinimalBoot:
         container = CoreContainer()
         assert isinstance(container.embedding_client(), StubEmbedder)
 
-    def test_prompt_provider_serves_code_prompts(self, clean_optional_env: None):
-        from src._core.infrastructure.prompt.inline_prompt_provider import (
-            InlinePromptProvider,
+    def test_prompt_provider_is_the_db_store(self, clean_optional_env: None):
+        # Not optional: the store lives in the mandatory RDB, and an empty
+        # store serves the code text (#451, ADR 066).
+        from src._core.infrastructure.prompt.db_prompt_provider import (
+            DbPromptProvider,
         )
 
         container = CoreContainer()
-        assert isinstance(container.prompt_provider(), InlinePromptProvider)
+        assert isinstance(container.prompt_provider(), DbPromptProvider)
 
     def test_notification_client_returns_noop(self, clean_optional_env: None):
         container = CoreContainer()

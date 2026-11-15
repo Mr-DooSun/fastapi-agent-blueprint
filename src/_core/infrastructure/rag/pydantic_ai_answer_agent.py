@@ -33,6 +33,7 @@ from src._core.infrastructure.llm.prompt_boundaries import (
 from src._core.infrastructure.prompt.inline_prompt_provider import (
     InlinePromptProvider,
 )
+from src._core.infrastructure.prompt.registry import register_prompt
 
 _logger = structlog.stdlib.get_logger(__name__)
 
@@ -50,6 +51,7 @@ _PERSONA: Final[LiteralString] = (
     "Cite sources as [source_title]. "
     "If the context doesn't contain the answer, say so plainly."
 )
+register_prompt(_PROMPT_NAME, _PERSONA)
 
 # PII token types precise enough to BLOCK on fabrication. ``email`` (``@`` anchor)
 # and ``ipv4`` (range-validated dotted quad) rarely collide with non-PII text;
