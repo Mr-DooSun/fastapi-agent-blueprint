@@ -39,11 +39,16 @@ _MAX_RETRIES = 0
 
 # The SDK logs fetch failures itself, before our code sees them, with the
 # exception text interpolated — and that text includes the HTTP response body
-# (#447 review R2). Those two records are dropped; `get_active` emits the
-# sanitised replacements (`prompt_fetch_failed` / `prompt_fallback_served`).
+# (#447 review R2). Three records do this in 4.18.0: two on the request path,
+# and one from the warm-cache background refresh thread, which no request ever
+# observes. All three are dropped. The request-path failures are replaced by
+# `get_active`'s sanitised events (`prompt_fetch_failed` /
+# `prompt_fallback_served`); a failed background refresh leaves the previous
+# version in the cache, which is what keeps being served.
 _SDK_RAW_ERROR_PREFIXES = (
     "Error while fetching prompt",
     "Returning fallback prompt",
+    "PromptCacheRefreshConsumer encountered an error",
 )
 
 
@@ -150,13 +155,16 @@ class LangfusePromptProvider:
 
     async def get_active(self, name: str, *, default: str) -> PromptSnapshot:
         waiter = asyncio.wrap_future(self._fetch(name, default))
+        # Registered before awaiting, so the outcome is retrieved on every
+        # path — including this task being cancelled mid-wait, which never
+        # reaches the timeout branch (#447 review R3). Without it a late
+        # failure surfaces as "Future exception was never retrieved", with the
+        # exception text, through the loop's default handler.
+        waiter.add_done_callback(_consume_outcome)
         # asyncio.wait, not wait_for: a deadline must abandon the wait, not the
         # fetch — the fetch finishing later is what warms the cache.
         done, _ = await asyncio.wait({waiter}, timeout=self._deadline)
         if not done:
-            # Nobody awaits this waiter again; retrieve its outcome when it
-            # lands so a late failure is not reported as "never retrieved".
-            waiter.add_done_callback(_consume_outcome)
             _logger.warning(
                 "prompt_fetch_timeout",
                 prompt_name=name,

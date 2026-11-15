@@ -107,16 +107,21 @@ cross the "admin-panel product" non-goal. Nothing in #447 changed that argument.
    So the request never waits on the SDK call: each fetch runs on a daemon thread,
    single-flight per prompt name, and the request waits at most 3 s
    (`prompt_fetch_timeout`) before degrading while the fetch carries on and warms
-   the cache. Daemon threads, not a pool, so a fetch sleeping on `Retry-After`
-   cannot hold a shutdown and cannot starve the shared default executor. A warm
+   the cache. Daemon threads, not a pool, so a cold fetch sleeping on `Retry-After`
+   cannot hold a shutdown and cannot starve the shared default executor. That claim
+   is scoped to this cold-fetch path: the SDK's own warm-cache refresh consumer is
+   joined at exit, so a refresh in flight during an outage can still delay process
+   shutdown by its retry sleeps (review round 2 measured ~3 s) — SDK behaviour this
+   provider does not control. A warm
    cache returns immediately and, after the TTL, serves the stale value while
    refreshing in the background; during an outage a warm process keeps serving the
    last fetched Langfuse version, not the code text. A raised exception, an SDK
    fallback (`is_fallback`), or non-text / empty content all return the inline
    snapshot and log a warning (`prompt_fetch_failed` with `exc_type` only,
-   `prompt_fallback_served`, `prompt_unusable_content`). The SDK's own two fetch-error
-   log records are filtered out, because they interpolate the HTTP response body
-   (review R2). The client is built with
+   `prompt_fallback_served`, `prompt_unusable_content`). The SDK's own three
+   fetch-error log records — two on the request path, one from the warm-cache
+   refresh thread — are filtered out, because they interpolate the HTTP response
+   body (review R2). The client is built with
    `tracing_enabled=False`: trace export stays on the OTEL path (ADR 046 §1).
 6. **Ledger linkage.** The real answer agent and classifier pass the resolved
    snapshot to `track_agent_usage` on every call, inline included, filling

@@ -262,3 +262,88 @@ async def test_real_sdk_error_body_never_reaches_the_logs(
     assert secret not in repr(logs)
     # Our sanitised replacement is still emitted.
     assert any(e.get("event") == "prompt_fallback_served" for e in logs)
+
+
+async def test_real_sdk_warm_refresh_error_body_never_reaches_the_logs(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Review round 2: the warm-cache background refresh logged the body too."""
+    import time
+
+    secret = "sk-lf-LEAKED-ON-REFRESH"
+    state = {"fail": False}
+
+    def flaky(request: Any) -> Any:
+        import httpx
+
+        if state["fail"]:
+            return httpx.Response(401, json={"message": f"expired {secret}"})
+        return httpx.Response(
+            200,
+            json={
+                "name": "r2_refresh",
+                "version": 3,
+                "prompt": "Cached persona.",
+                "type": "text",
+                "config": {},
+                "labels": ["production"],
+                "tags": [],
+            },
+        )
+
+    provider = _real_sdk_provider(flaky, deadline=5, public_key="pk-lf-r2-refresh")
+    provider._cache_ttl_seconds = 1  # noqa: SLF001 - force a quick expiry
+    first = await provider.get_active("r2_refresh", default=_DEFAULT)
+    assert first.source == "langfuse"
+
+    state["fail"] = True
+    time.sleep(2.1)  # the SDK compares whole epoch seconds
+    with caplog.at_level(logging.DEBUG):
+        stale = await provider.get_active("r2_refresh", default=_DEFAULT)
+        await asyncio.sleep(1.0)  # let the SDK's refresh thread fail and log
+
+    # The failed refresh keeps serving the cached Langfuse version...
+    assert (stale.source, stale.version) == ("langfuse", "3")
+    # ...and its error text, response body included, is not logged.
+    assert secret not in caplog.text
+
+
+async def test_cancelled_request_still_retrieves_a_late_failure() -> None:
+    """Review round 2 R3: cancellation skipped the outcome callback."""
+    import gc
+
+    unretrieved: list[dict[str, Any]] = []
+    loop = asyncio.get_running_loop()
+    previous = loop.get_exception_handler()
+    loop.set_exception_handler(lambda _loop, ctx: unretrieved.append(ctx))
+    try:
+
+        class _FailsLate(_FakeClient):
+            def __init__(self) -> None:
+                super().__init__()
+                self.release = threading.Event()
+
+            def get_prompt(self, name: str, **kwargs: Any) -> Any:
+                self.release.wait(timeout=5)
+                raise RuntimeError("late failure body")
+
+        client = _FailsLate()
+        provider = LangfusePromptProvider(
+            client, label="production", cache_ttl_seconds=60, request_deadline_seconds=5
+        )
+        task = asyncio.create_task(provider.get_active("r3", default=_DEFAULT))
+        await asyncio.sleep(0.05)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        client.release.set()
+        await asyncio.sleep(0.1)
+        # Drop every reference — the provider's in-flight map holds the
+        # concurrent future, which holds the asyncio waiter alive.
+        del task, provider, client
+        gc.collect()
+        await asyncio.sleep(0)
+    finally:
+        loop.set_exception_handler(previous)
+
+    assert not [c for c in unretrieved if "never retrieved" in str(c.get("message"))]

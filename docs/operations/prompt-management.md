@@ -132,14 +132,15 @@ persona and records `prompt_source=inline`.
 | Situation | What happens | Log event (warning) |
 |---|---|---|
 | Langfuse slow or unreachable on a cold cache (first call in a process) | The call waits at most 3 s, then uses code text. The fetch carries on in a background thread — the SDK's HTTP client retries and honours `Retry-After` for up to minutes — and fills the cache when it lands. Concurrent calls for the same prompt join that one fetch instead of starting more | `prompt_fetch_timeout`, or `prompt_fallback_served` if the SDK gives up first |
-| Langfuse unreachable on a warm cache | The **last fetched Langfuse version** keeps being served — not the code text — and the ledger still records it as `langfuse`. Background refreshes fail quietly | none from the app |
+| Langfuse unreachable on a warm cache | The **last fetched Langfuse version** keeps being served — not the code text — and the ledger still records it as `langfuse`. The SDK's background refresh fails and retries on the next expired call; its error record is filtered (below), so nothing is logged | none |
 | `PROMPT_LABEL` not carried by any version (typo, label removed) | Langfuse answers 404 and does **not** fall back to another label, so a cold process serves code text on every call | `prompt_fallback_served` |
 | Prompt not found under that name | Same as above | `prompt_fallback_served` |
 | Prompt is chat-type, or the text is empty | Code text | `prompt_unusable_content` |
 | Any other error raised by the client | Code text | `prompt_fetch_failed` (logs `exc_type` only) |
 
-Each event carries `prompt_name` and `label`. The SDK's own two fetch-error
-records (`Error while fetching prompt`, `Returning fallback prompt`) are dropped
+Each event carries `prompt_name` and `label`. The SDK's own three fetch-error
+records (`Error while fetching prompt`, `Returning fallback prompt`, and the
+background `PromptCacheRefreshConsumer encountered an error`) are dropped
 by a filter on the `langfuse` logger, because they interpolate the HTTP response
 body — which can carry whatever a proxy or Langfuse put there. The events above
 replace them.
