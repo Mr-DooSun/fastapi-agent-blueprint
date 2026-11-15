@@ -51,6 +51,7 @@ Read top-to-bottom; each builds on the ones above it.
 | [042](042-optional-infrastructure-di-pattern.md) | Optional Infrastructure (Selector + Lazy Factory) | How every non-DB infra (storage, DynamoDB, vectors, embedding, LLM) is made optional without breaking app boot. |
 | [051](051-runtime-llm-guardrails.md) | Runtime LLM Guardrails | The runtime prompt-injection + output-integrity layer every LLM adapter wires; precise-block / fuzzy-log + `GUARDRAILS_ENABLED` kill-switch. |
 | [066](066-prompt-provider-contract.md) | Prompt Provider Contract | Implements ADR 046's deferred `get_active` contract with an inline provider; the boundary tail stays in code and runs last, and the ledger names the prompt. Langfuse rejected; operator editing comes as a minimal self-hosted store. |
+| [067](067-agent-catalog-and-ledger-run-observability.md) | Agent Catalog and Ledger-Based Run Observability (Proposed) | See workflows, do not build them: code-defined `pydantic-graph` diagrams, an agent registry and per-request call trees from the usage ledger, in the admin; visual workflow authoring rejected. |
 
 ### 5. Process & harness governance
 
@@ -89,7 +90,7 @@ the rationale behind each archival bucket.
 
 ## Writing a new ADR
 
-Numbering continues sequentially (next free number is 067). Only add a new
+Numbering continues sequentially (next free number is 068). Only add a new
 ADR when the decision is **load-bearing** — i.e. it constrains how future
 code will be written, not merely which tool was picked. Purely
 operational choices can be captured in `CHANGELOG.md` or a PR description.
