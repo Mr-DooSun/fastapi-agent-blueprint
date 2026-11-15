@@ -88,8 +88,12 @@ verified.
    existing docs RAG) → summarise → answer.
    - Each sub-agent has its own registered prompt and composes instructions with the
      code-owned tail last (ADR 066).
-   - Stub models apply with no LLM configured (ADR 042), so quickstart demonstrates
-     everything with zero config.
+   - Stub models apply with no LLM configured (ADR 042), so no LLM **credentials** are
+     needed. The `pydantic-ai` **package** still is: `make quickstart` installs only
+     the `admin` extra, and without `pydantic-ai` the stub factory returns `None`
+     (`stub_llm_model.py`; ADR 042) and `pydantic-graph` is absent. The demo path is
+     therefore `uv sync --extra admin --extra pydantic-ai` with no keys, unless the
+     owner chooses to widen quickstart (see defaults below).
 5. **Admin surfaces.**
    - `/admin/agents`: catalog, workflow diagram and recent runs. Behind a new
      read-only permission key `agents`. A "Run sample" action is
@@ -103,7 +107,11 @@ verified.
 These may change before acceptance:
 - the reference flow — the owner's real flow should replace it if one exists;
 - the domain name `research_assistant`;
-- the permission split: `agents` for the catalog, `ai_usage` for the call tree.
+- the permission split: `agents` for the catalog, `ai_usage` for the call tree;
+- how the demo is installed: document `--extra pydantic-ai` for the demo (proposed),
+  or add `pydantic-ai` to `make quickstart`. The second makes the zero-config path
+  heavier for every adopter. Either way, the catalog and `/admin/agents` must still
+  render without `pydantic-ai`, listing agents with "not runnable here".
 
 ## Rationale
 
