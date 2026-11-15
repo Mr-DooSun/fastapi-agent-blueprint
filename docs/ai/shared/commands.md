@@ -20,7 +20,7 @@ make worktree-setup
 
 # Zero-config quickstart (SQLite + InMemory broker, no external infra).
 # NOTE: this runs `uv sync --extra admin`, so every *other* extra is uninstalled
-# (aws, otel, pydantic-ai, sqs, rabbitmq). The `dev` group survives — uv syncs
+# (aws, otel, pydantic-ai, sqs, rabbitmq, langfuse). The `dev` group survives — uv syncs
 # default groups regardless of `--extra` — so the damage is not to test tooling
 # but to what it can import: `pytest tests/` aborts during collection (two modules
 # import `aioboto3`) and `uv run pyright` reports 47 unresolved imports. The target
@@ -229,6 +229,9 @@ STORAGE_TYPE=s3 python run_server_local.py --env local
 
 ## Error Notification (#17, #310, #286)
 Error Notification: see [AGENTS.md § Optional Infrastructure Toggles](../../../AGENTS.md#optional-infrastructure-toggles) + [runbook](../../operations/error-notifications.md).
+
+## Prompt Management (#447)
+Prompt management: see [AGENTS.md § Optional Infrastructure Toggles](../../../AGENTS.md#optional-infrastructure-toggles) + [runbook](../../operations/prompt-management.md).
 
 ## Admin Dashboard
 ```bash

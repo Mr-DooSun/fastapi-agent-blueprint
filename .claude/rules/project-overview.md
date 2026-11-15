@@ -12,7 +12,7 @@ paths:
 
 # Project Overview
 
-> Last synced: 2026-11-06 via #414 B1/B4/B5
+> Last synced: 2026-11-16 via #447
 > For tech stack, refer to project-dna.md §8; for layer structure, refer to §1.
 > For the Optional infra toggle surface (env var → disabled behavior per infra), see AGENTS.md "Optional Infrastructure Toggles" + [ADR 042](../../docs/history/042-optional-infrastructure-di-pattern.md).
 > This file only contains **project-level context** not covered in project-dna.md.
@@ -39,6 +39,7 @@ Interface → Application → Domain ← Infrastructure
 - LLM: Optional (LLM_PROVIDER env var, build_llm_model() — OpenAI/Anthropic/Bedrock)
 - Message Broker: SQS/RabbitMQ/InMemory (BROKER_TYPE env var)
 - Error Notification: see [AGENTS.md § Optional Infrastructure Toggles](../../AGENTS.md#optional-infrastructure-toggles) + [runbook](../../docs/operations/error-notifications.md).
+- Prompt management (Langfuse opt-in, #447): see [AGENTS.md § Optional Infrastructure Toggles](../../AGENTS.md#optional-infrastructure-toggles) + [runbook](../../docs/operations/prompt-management.md).
 - Logging: structlog + asgi-correlation-id; default level INFO; controlled via `LOG_LEVEL` / `LOG_JSON_FORMAT` env vars (dev/local/quickstart → console, stg/prod → JSON, #9)
 
 ## Environment Config Validation
@@ -46,7 +47,7 @@ Interface → Application → Domain ← Infrastructure
 - stg/prod: unsafe defaults blocked, broker required, partial config groups rejected
 - STORAGE_TYPE-driven validation: S3/MinIO config group required when set
 - VECTOR_STORE_TYPE-driven validation: unknown value rejected against `KNOWN_VECTOR_STORE_TYPES` (`inmemory`, `s3vectors`); `s3vectors` requires the full S3Vectors config group. Unset → `inmemory`, whose filter support is a strict subset of the S3 syntax (#328)
-- Partial config group validation: S3, MinIO, DynamoDB, S3Vectors, SQS, Embedding (OpenAI/Bedrock), LLM (OpenAI/Anthropic/Bedrock), Notification (Slack/Discord), Notification/Routing (warning threshold below severity; per-tier webhook URL requires both a provider and the warning threshold)
+- Partial config group validation: S3, MinIO, DynamoDB, S3Vectors, SQS, Embedding (OpenAI/Bedrock), LLM (OpenAI/Anthropic/Bedrock), Notification (Slack/Discord), Notification/Routing (warning threshold below severity; per-tier webhook URL requires both a provider and the warning threshold), Prompt/Langfuse (keys + base URL with `PROMPT_PROVIDER=langfuse`; keys without it rejected)
 - Logging: `LOG_LEVEL` (DEBUG/INFO/WARNING/ERROR), `LOG_JSON_FORMAT` (None → derive from ENV; True/False to force-override)
 
 ## Key Value Objects
@@ -56,4 +57,5 @@ Interface → Application → Domain ← Infrastructure
 - VectorSearchResult: Vector search result container (items, distances, count). CursorPage counterpart for vector search.
 - EmbeddingConfig: Immutable embedding configuration (model_name, dimension, credentials). Domain-layer VO for PydanticAI Embedder.
 - LLMConfig: Immutable LLM configuration (model_name, credentials). Domain-layer VO for PydanticAI Agent.
+- PromptSnapshot: The prompt that served one agent call (name, content, version, source, external_ref). Returned by `PromptProviderProtocol.get_active` and passed to `track_agent_usage` (ADR 046 / ADR 066).
 - DailyCount: One day's record count from a date-grouped aggregate (#368). Returned by `BaseRepository.count_datas_by_day` / `BaseService.count_datas_by_day`. Days with no rows are **absent**, not zero-filled — gap-filling is a caller policy, so a chart fills them and an alerting consumer need not.
