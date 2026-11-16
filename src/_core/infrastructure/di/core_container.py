@@ -247,12 +247,22 @@ def _build_llm_model(
     return build_llm_model(llm_config=config)
 
 
-def _build_inline_prompt_provider():
-    from src._core.infrastructure.prompt.inline_prompt_provider import (
-        InlinePromptProvider,
-    )
+def _build_prompt_store_repository(database):
+    from src._core.infrastructure.prompt.repository import PromptStoreRepository
 
-    return InlinePromptProvider()
+    return PromptStoreRepository(database)
+
+
+def _build_prompt_store_service(repository):
+    from src._core.infrastructure.prompt.service import PromptStoreService
+
+    return PromptStoreService(repository)
+
+
+def _build_db_prompt_provider(repository):
+    from src._core.infrastructure.prompt.db_prompt_provider import DbPromptProvider
+
+    return DbPromptProvider(repository)
 
 
 def _build_notification_client(
@@ -470,14 +480,24 @@ class CoreContainer(containers.DeclarativeContainer):
     )
 
     #########################################################
-    # Prompt provider (#447 / ADR 066)
-    # Resolves the persona each real agent call uses. Today the only
-    # implementation is the code text (InlinePromptProvider); the
-    # self-hosted, DB-backed provider is a follow-up that swaps this one
-    # provider and nothing else.
+    # Prompt store + provider (#447 / #451 / ADR 066)
+    # Resolves the persona each real agent call uses: the active stored
+    # version, or the code text when none is active or the store fails.
+    # Not optional and not a Selector — the store lives in the mandatory RDB,
+    # and an empty store serves exactly what InlinePromptProvider would.
+    # The repository takes the database *provider* (`.provider`) so
+    # override_database() is seen by every read, as for the audit log.
     #########################################################
 
-    prompt_provider = providers.Singleton(_build_inline_prompt_provider)
+    prompt_store_repository = providers.Singleton(
+        _build_prompt_store_repository, database=database.provider
+    )
+    prompt_store_service = providers.Singleton(
+        _build_prompt_store_service, repository=prompt_store_repository
+    )
+    prompt_provider = providers.Singleton(
+        _build_db_prompt_provider, repository=prompt_store_repository
+    )
 
     #########################################################
     # Error Notification (optional — NOTIFICATION_PROVIDER=slack|discord)

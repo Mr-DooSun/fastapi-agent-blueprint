@@ -23,6 +23,7 @@ from src._core.infrastructure.llm.prompt_boundaries import (
 from src._core.infrastructure.prompt.inline_prompt_provider import (
     InlinePromptProvider,
 )
+from src._core.infrastructure.prompt.registry import register_prompt
 from src.classification.domain.dtos.classification_dto import ClassificationDTO
 
 _logger = structlog.stdlib.get_logger(__name__)
@@ -39,6 +40,7 @@ _PERSONA: Final[LiteralString] = (
     "Classify the given text into one of the provided categories. "
     "Return your confidence score (0 to 1) and a brief reasoning."
 )
+register_prompt(_PROMPT_NAME, _PERSONA)
 
 
 class PydanticAIClassifier:
