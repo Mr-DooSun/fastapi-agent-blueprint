@@ -247,6 +247,14 @@ def _build_llm_model(
     return build_llm_model(llm_config=config)
 
 
+def _build_inline_prompt_provider():
+    from src._core.infrastructure.prompt.inline_prompt_provider import (
+        InlinePromptProvider,
+    )
+
+    return InlinePromptProvider()
+
+
 def _build_notification_client(
     http_client: HttpClient, provider: str | None, webhook_url: str | None
 ):
@@ -460,6 +468,16 @@ class CoreContainer(containers.DeclarativeContainer):
         ),
         disabled=providers.Singleton(_build_stub_llm_model),
     )
+
+    #########################################################
+    # Prompt provider (#447 / ADR 066)
+    # Resolves the persona each real agent call uses. Today the only
+    # implementation is the code text (InlinePromptProvider); the
+    # self-hosted, DB-backed provider is a follow-up that swaps this one
+    # provider and nothing else.
+    #########################################################
+
+    prompt_provider = providers.Singleton(_build_inline_prompt_provider)
 
     #########################################################
     # Error Notification (optional — NOTIFICATION_PROVIDER=slack|discord)

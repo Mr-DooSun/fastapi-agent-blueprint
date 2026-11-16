@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Prompt provider contract (#447, ADR 066). The RAG answer agent (`docs_answer`)
+  and the classifier (`classification`) now resolve their persona through
+  `PromptProviderProtocol.get_active(name, *, default)`; the only implementation,
+  `InlinePromptProvider`, serves the code text, so behaviour is unchanged. The
+  prompt-injection boundary tail stays in code and `compose_instructions` always
+  appends it last. Every call by these agents now records `prompt_name` and
+  `prompt_source=inline` in the `ai_usage` ledger — no migration. Operator
+  editing without a deploy is planned as a minimal self-hosted, DB-backed store
+  in a follow-up ticket; Langfuse was evaluated and rejected.
+
+### Changed
+
+- **For forks:** `PydanticAIAnswerAgent` and `PydanticAIClassifier` no longer pass
+  `instructions=` to the `Agent` constructor; instructions are composed and passed
+  per run. A subclass or patch that relied on the constructor instructions must
+  move to `compose_instructions` and run-time instructions.
+
 ## [0.12.0] - 2026-11-07
 
 ### Upgrading

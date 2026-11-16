@@ -77,6 +77,14 @@ class TestCoreContainerMinimalBoot:
         container = CoreContainer()
         assert isinstance(container.embedding_client(), StubEmbedder)
 
+    def test_prompt_provider_serves_code_prompts(self, clean_optional_env: None):
+        from src._core.infrastructure.prompt.inline_prompt_provider import (
+            InlinePromptProvider,
+        )
+
+        container = CoreContainer()
+        assert isinstance(container.prompt_provider(), InlinePromptProvider)
+
     def test_notification_client_returns_noop(self, clean_optional_env: None):
         container = CoreContainer()
         assert isinstance(container.notification_client(), NoopNotificationClient)
